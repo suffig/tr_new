@@ -7,12 +7,14 @@ import DeleteTab from './admin/DeleteTab';
 import SearchTab from './admin/SearchTab';
 import TeamSettingsTab from './admin/TeamSettingsTab';
 import EventsSettingsTab from './admin/EventsSettingsTab';
+import SeasonManagerTab from './admin/SeasonManagerTab';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('search');
 
   const subTabs = [
     { id: 'search', label: 'Globale Suche', icon: 'fas fa-search' },
+    { id: 'season', label: 'Saison-Manager', icon: 'fas fa-calendar-alt' },
     { id: 'matches', label: 'Spiele hinzufügen', icon: 'fas fa-futbol' },
     { id: 'bans', label: 'Sperren hinzufügen', icon: 'fas fa-ban' },
     { id: 'players', label: 'Spieler hinzufügen', icon: 'fas fa-users' },
@@ -26,6 +28,8 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false }) { 
     switch (activeSubTab) {
       case 'search':
         return <SearchTab onNavigate={onNavigate} />;
+      case 'season':
+        return <SeasonManagerTab />;
       case 'matches':
         return <AddMatchTab />;
       case 'bans':

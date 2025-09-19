@@ -1,72 +1,95 @@
 /**
  * Alcohol Calculator Persistence Utility
  * Handles saving and loading of alcohol calculator values over time
+ * Now supports season-based data versioning for FC26 compatibility
  */
 
-const STORAGE_KEY = 'alcoholCalculatorValues';
-const STORAGE_VERSION = '1.0';
+import { getCurrentSeason, getSeasonStorageKey, SEASONS } from './seasonManager.js';
+
+const LEGACY_STORAGE_KEY = 'alcoholCalculatorValues';
+const STORAGE_VERSION = '2.0'; // Updated for FC26 support
 
 /**
  * Default calculator values
  */
-const getDefaultValues = () => ({
-  aekPlayer: '',
-  realPlayer: '',
-  aekGoals: 0,
-  realGoals: 0,
-  mode: 'manual', // 'manual' or 'automatic'
-  gameDay: new Date().toISOString().split('T')[0],
-  beerCount: {
-    aek: 0,
-    real: 0
-  },
-  // Individual tracking for Alexander and Philip
-  alexanderShots: {
-    cl40: 0, // 2cl shots at 40% alcohol
-    cl20: 0  // 2cl shots at 20% alcohol
-  },
-  philipShots: {
-    cl40: 0, // 2cl shots at 40% alcohol
-    cl20: 0  // 2cl shots at 20% alcohol
-  },
-  // Cumulative shots from all matches (automatically updated)
-  cumulativeShots: {
-    aek: 0,      // Total cl of shots AEK has drunk from Real goals
-    real: 0,     // Total cl of shots Real has drunk from AEK goals
-    total: 0,    // Total cl of shots from all matches
-    lastMatchId: null, // Track last processed match to avoid duplicates
-    lastUpdated: null  // When cumulative shots were last updated
-  },
-  // Timestamp tracking for time-based calculations
-  lastUpdated: new Date().toISOString(),
-  drinkingStartTime: null, // When drinking started for time decay calculations
-  version: STORAGE_VERSION
-});
+const getDefaultValues = (season = null) => {
+  const currentSeason = season || getCurrentSeason();
+  return {
+    aekPlayer: '',
+    realPlayer: '',
+    aekGoals: 0,
+    realGoals: 0,
+    mode: 'manual', // 'manual' or 'automatic'
+    gameDay: new Date().toISOString().split('T')[0],
+    beerCount: {
+      aek: 0,
+      real: 0
+    },
+    // Individual tracking for Alexander and Philip
+    alexanderShots: {
+      cl40: 0, // 2cl shots at 40% alcohol
+      cl20: 0  // 2cl shots at 20% alcohol
+    },
+    philipShots: {
+      cl40: 0, // 2cl shots at 40% alcohol
+      cl20: 0  // 2cl shots at 20% alcohol
+    },
+    // Cumulative shots from all matches (automatically updated)
+    cumulativeShots: {
+      aek: 0,      // Total cl of shots AEK has drunk from Real goals
+      real: 0,     // Total cl of shots Real has drunk from AEK goals
+      total: 0,    // Total cl of shots from all matches
+      lastMatchId: null, // Track last processed match to avoid duplicates
+      lastUpdated: null  // When cumulative shots were last updated
+    },
+    // Timestamp tracking for time-based calculations
+    lastUpdated: new Date().toISOString(),
+    drinkingStartTime: null, // When drinking started for time decay calculations
+    version: STORAGE_VERSION,
+    season: currentSeason // Track which season this data belongs to
+  };
+};
 
 /**
  * Load calculator values from localStorage
+ * @param {string} season - Optional season to load from (defaults to current season)
  * @returns {Object} Calculator values with fallback to defaults
  */
-export const loadCalculatorValues = () => {
+export const loadCalculatorValues = (season = null) => {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const currentSeason = season || getCurrentSeason();
+    const storageKey = getSeasonStorageKey('alcoholCalculator', currentSeason);
+    let saved = localStorage.getItem(storageKey);
+    
+    // Fallback to legacy key for backwards compatibility
+    if (!saved && currentSeason === SEASONS.LEGACY) {
+      saved = localStorage.getItem(LEGACY_STORAGE_KEY);
+      
+      // If legacy data exists, migrate it to the new system
+      if (saved) {
+        console.log('Migrating legacy alcohol calculator data to season-based storage');
+        localStorage.setItem(storageKey, saved);
+      }
+    }
+    
     if (!saved) {
-      return getDefaultValues();
+      return getDefaultValues(currentSeason);
     }
 
     const parsed = JSON.parse(saved);
     
     // Version compatibility check
-    if (!parsed.version || parsed.version !== STORAGE_VERSION) {
+    if (!parsed.version || (parsed.version !== STORAGE_VERSION && parsed.version !== '1.0')) {
       console.log('Alcohol calculator: Version mismatch, using defaults');
-      return getDefaultValues();
+      return getDefaultValues(currentSeason);
     }
 
     // Ensure all required fields exist with defaults
-    const defaults = getDefaultValues();
+    const defaults = getDefaultValues(currentSeason);
     const merged = {
       ...defaults,
       ...parsed,
+      season: currentSeason, // Always set current season
       beerCount: {
         ...defaults.beerCount,
         ...(parsed.beerCount || {})
@@ -88,28 +111,32 @@ export const loadCalculatorValues = () => {
     return merged;
   } catch (error) {
     console.error('Error loading alcohol calculator values:', error);
-    return getDefaultValues();
+    return getDefaultValues(season);
   }
 };
 
 /**
  * Save calculator values to localStorage
  * @param {Object} values - Calculator values to save
+ * @param {string} season - Optional season to save to (defaults to current season)
  */
-export const saveCalculatorValues = (values) => {
+export const saveCalculatorValues = (values, season = null) => {
   try {
+    const currentSeason = season || getCurrentSeason();
     const toSave = {
       ...values,
       lastUpdated: new Date().toISOString(),
-      version: STORAGE_VERSION
+      version: STORAGE_VERSION,
+      season: currentSeason
     };
     
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(toSave));
+    const storageKey = getSeasonStorageKey('alcoholCalculator', currentSeason);
+    localStorage.setItem(storageKey, JSON.stringify(toSave));
     
     // Dispatch custom event to notify other components if needed (browser only)
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('alcoholCalculatorValuesChanged', {
-        detail: toSave
+        detail: { ...toSave, season: currentSeason }
       }));
     }
     
@@ -124,13 +151,16 @@ export const saveCalculatorValues = (values) => {
  * Update specific calculator values and save
  * @param {Object} updates - Partial updates to merge with existing values
  * @param {Object} currentValues - Current calculator values
+ * @param {string} season - Optional season to save to (defaults to current season)
  * @returns {Object} Updated values
  */
-export const updateCalculatorValues = (updates, currentValues) => {
+export const updateCalculatorValues = (updates, currentValues, season = null) => {
+  const currentSeason = season || getCurrentSeason();
   const updated = {
     ...currentValues,
     ...updates,
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
+    season: currentSeason
   };
   
   // Handle nested updates
@@ -148,37 +178,43 @@ export const updateCalculatorValues = (updates, currentValues) => {
     };
   }
   
-  saveCalculatorValues(updated);
+  saveCalculatorValues(updated, currentSeason);
   return updated;
 };
 
 /**
  * Set drinking start time for time decay calculations
  * @param {Object} currentValues - Current calculator values
+ * @param {string} season - Optional season to save to (defaults to current season)
  * @returns {Object} Updated values with drinking start time
  */
-export const setDrinkingStartTime = (currentValues) => {
+export const setDrinkingStartTime = (currentValues, season = null) => {
+  const currentSeason = season || getCurrentSeason();
   const updated = {
     ...currentValues,
     drinkingStartTime: new Date().toISOString(),
-    lastUpdated: new Date().toISOString()
+    lastUpdated: new Date().toISOString(),
+    season: currentSeason
   };
   
-  saveCalculatorValues(updated);
+  saveCalculatorValues(updated, currentSeason);
   return updated;
 };
 
 /**
  * Clear all calculator values (reset to defaults)
+ * @param {string} season - Optional season to clear (defaults to current season)
  * @returns {Object} Default values
  */
-export const clearCalculatorValues = () => {
+export const clearCalculatorValues = (season = null) => {
   try {
-    localStorage.removeItem(STORAGE_KEY);
-    return getDefaultValues();
+    const currentSeason = season || getCurrentSeason();
+    const storageKey = getSeasonStorageKey('alcoholCalculator', currentSeason);
+    localStorage.removeItem(storageKey);
+    return getDefaultValues(currentSeason);
   } catch (error) {
     console.error('Error clearing alcohol calculator values:', error);
-    return getDefaultValues();
+    return getDefaultValues(season);
   }
 };
 
@@ -228,11 +264,13 @@ export const wasUpdatedToday = (values) => {
  * This function should be called whenever a new match is added
  * @param {Array} matches - Array of all matches from the database
  * @param {Object} currentValues - Current calculator values
+ * @param {string} season - Optional season to update (defaults to current season)
  * @returns {Object} Updated calculator values with new cumulative shots
  */
-export const updateCumulativeShotsFromMatches = (matches, currentValues = null) => {
+export const updateCumulativeShotsFromMatches = (matches, currentValues = null, season = null) => {
   try {
-    const values = currentValues || loadCalculatorValues();
+    const currentSeason = season || getCurrentSeason();
+    const values = currentValues || loadCalculatorValues(currentSeason);
     
     if (!matches || !Array.isArray(matches)) {
       console.warn('Invalid matches array provided to updateCumulativeShotsFromMatches');
@@ -308,12 +346,12 @@ export const updateCumulativeShotsFromMatches = (matches, currentValues = null) 
         lastMatchId: latestMatchId,
         lastUpdated: new Date().toISOString()
       }
-    }, values);
+    }, values, currentSeason);
     
     return updatedValues;
   } catch (error) {
     console.error('Error updating cumulative shots from matches:', error);
-    return currentValues || loadCalculatorValues();
+    return currentValues || loadCalculatorValues(season);
   }
 };
 
@@ -322,11 +360,13 @@ export const updateCumulativeShotsFromMatches = (matches, currentValues = null) 
  * This is optimized for single match updates to avoid recalculating everything
  * @param {Object} newMatch - The newly added match
  * @param {Object} currentValues - Current calculator values
+ * @param {string} season - Optional season to update (defaults to current season)
  * @returns {Object} Updated calculator values
  */
-export const addShotsFromNewMatch = (newMatch, currentValues = null) => {
+export const addShotsFromNewMatch = (newMatch, currentValues = null, season = null) => {
   try {
-    const values = currentValues || loadCalculatorValues();
+    const currentSeason = season || getCurrentSeason();
+    const values = currentValues || loadCalculatorValues(currentSeason);
     
     if (!newMatch || typeof newMatch !== 'object') {
       console.warn('Invalid match object provided to addShotsFromNewMatch');
@@ -350,12 +390,12 @@ export const addShotsFromNewMatch = (newMatch, currentValues = null) => {
         lastMatchId: newMatch.id,
         lastUpdated: new Date().toISOString()
       }
-    }, values);
+    }, values, currentSeason);
     
     return updatedValues;
   } catch (error) {
     console.error('Error adding shots from new match:', error);
-    return currentValues || loadCalculatorValues();
+    return currentValues || loadCalculatorValues(season);
   }
 };
 
