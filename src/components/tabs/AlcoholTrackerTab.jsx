@@ -1,10 +1,17 @@
 import { useState, useEffect, useCallback } from 'react';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
+import { getCurrentSeason, getSeasonStorageKey } from '../../utils/seasonManager.js';
 
 export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   // Sub-navigation state
   const [activeSection, setActiveSection] = useState('alcohol');
+  
+  // Season-aware storage helpers
+  const getSeasonBeerKey = () => getSeasonStorageKey('beerConsumption');
+  const getSeasonShotKey = () => getSeasonStorageKey('shotConsumption');
+  const getSeasonDrinkingTimeKey = () => getSeasonStorageKey('drinkingStartTime');
+  const getSeasonBlackjackKey = () => getSeasonStorageKey('blackjackGames');
   
   // Load manager data from localStorage (set via TeamSettingsTab)
   const [managers, setManagers] = useState({
@@ -98,8 +105,31 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     // Load manager settings from database
     loadManagersFromDatabase();
 
-    // Load beer consumption from localStorage (keeping this in localStorage for now)
-    const savedBeer = localStorage.getItem('beerConsumption');
+    // Migrate legacy alcohol tracker data if needed
+    const currentSeason = getCurrentSeason();
+    if (currentSeason === 'legacy') {
+      // Check for legacy data and migrate it
+      const legacyBeer = localStorage.getItem('beerConsumption');
+      const legacyShots = localStorage.getItem('shotConsumption');
+      const legacyStartTime = localStorage.getItem('drinkingStartTime');
+      const legacyBlackjack = localStorage.getItem('blackjackGames');
+      
+      if (legacyBeer && !localStorage.getItem(getSeasonBeerKey())) {
+        localStorage.setItem(getSeasonBeerKey(), legacyBeer);
+      }
+      if (legacyShots && !localStorage.getItem(getSeasonShotKey())) {
+        localStorage.setItem(getSeasonShotKey(), legacyShots);
+      }
+      if (legacyStartTime && !localStorage.getItem(getSeasonDrinkingTimeKey())) {
+        localStorage.setItem(getSeasonDrinkingTimeKey(), legacyStartTime);
+      }
+      if (legacyBlackjack && !localStorage.getItem(getSeasonBlackjackKey())) {
+        localStorage.setItem(getSeasonBlackjackKey(), legacyBlackjack);
+      }
+    }
+
+    // Load beer consumption from season-aware localStorage
+    const savedBeer = localStorage.getItem(getSeasonBeerKey());
     if (savedBeer) {
       try {
         setBeerConsumption(JSON.parse(savedBeer));
@@ -108,8 +138,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       }
     }
 
-    // Load shot consumption from localStorage (keeping this in localStorage for now)
-    const savedShots = localStorage.getItem('shotConsumption');
+    // Load shot consumption from season-aware localStorage
+    const savedShots = localStorage.getItem(getSeasonShotKey());
     if (savedShots) {
       try {
         setShotConsumption(JSON.parse(savedShots));
@@ -118,14 +148,14 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       }
     }
 
-    // Load drinking start time from localStorage (keeping this in localStorage for now)
-    const savedStartTime = localStorage.getItem('drinkingStartTime');
+    // Load drinking start time from season-aware localStorage
+    const savedStartTime = localStorage.getItem(getSeasonDrinkingTimeKey());
     if (savedStartTime) {
       setDrinkingStartTime(savedStartTime);
     }
 
-    // Load blackjack game data from localStorage (keeping this in localStorage for now)
-    const savedBlackjack = localStorage.getItem('blackjackGames');
+    // Load blackjack game data from season-aware localStorage
+    const savedBlackjack = localStorage.getItem(getSeasonBlackjackKey());
     if (savedBlackjack) {
       try {
         setBlackjackGames(JSON.parse(savedBlackjack));
@@ -140,19 +170,49 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       loadManagersFromDatabase();
     };
 
+    // Listen for season changes and reload data
+    const handleSeasonChange = () => {
+      // Reload all alcohol tracker data when season changes
+      const newBeer = localStorage.getItem(getSeasonBeerKey());
+      const newShots = localStorage.getItem(getSeasonShotKey());
+      const newStartTime = localStorage.getItem(getSeasonDrinkingTimeKey());
+      const newBlackjack = localStorage.getItem(getSeasonBlackjackKey());
+      
+      setBeerConsumption(newBeer ? JSON.parse(newBeer) : { alexander: 0, philip: 0 });
+      setShotConsumption(newShots ? JSON.parse(newShots) : {
+        alexander: { shots20: 0, shots40: 0 },
+        philip: { shots20: 0, shots40: 0 }
+      });
+      setDrinkingStartTime(newStartTime || null);
+      setBlackjackGames(newBlackjack ? JSON.parse(newBlackjack) : {
+        alexander: { wins: 0, losses: 0, totalEarnings: 0, blackjacks: 0, doubles: 0, splits: 0 },
+        philip: { wins: 0, losses: 0, totalEarnings: 0, blackjacks: 0, doubles: 0, splits: 0 },
+        gameHistory: [],
+        currentRound: {
+          active: false, alexanderHand: null, philipHand: null,
+          alexanderActions: [], philipActions: [], bankWins: false
+        }
+      });
+    };
+
     window.addEventListener('managerSettingsChanged', handleManagerChange);
-    return () => window.removeEventListener('managerSettingsChanged', handleManagerChange);
+    window.addEventListener('seasonChanged', handleSeasonChange);
+    
+    return () => {
+      window.removeEventListener('managerSettingsChanged', handleManagerChange);
+      window.removeEventListener('seasonChanged', handleSeasonChange);
+    };
   }, [loadManagersFromDatabase]);
 
-  // Save data to localStorage
+  // Save data to season-aware localStorage
   const saveBeerConsumption = (newConsumption) => {
     setBeerConsumption(newConsumption);
-    localStorage.setItem('beerConsumption', JSON.stringify(newConsumption));
+    localStorage.setItem(getSeasonBeerKey(), JSON.stringify(newConsumption));
   };
 
   const saveShotConsumption = (newConsumption) => {
     setShotConsumption(newConsumption);
-    localStorage.setItem('shotConsumption', JSON.stringify(newConsumption));
+    localStorage.setItem(getSeasonShotKey(), JSON.stringify(newConsumption));
   };
 
   const addBeer = (person) => {
@@ -166,7 +226,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     if (!drinkingStartTime) {
       const startTime = new Date().toISOString();
       setDrinkingStartTime(startTime);
-      localStorage.setItem('drinkingStartTime', startTime);
+      localStorage.setItem(getSeasonDrinkingTimeKey(), startTime);
     }
   };
 
@@ -181,7 +241,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     if (!drinkingStartTime) {
       const startTime = new Date().toISOString();
       setDrinkingStartTime(startTime);
-      localStorage.setItem('drinkingStartTime', startTime);
+      localStorage.setItem(getSeasonDrinkingTimeKey(), startTime);
     }
   };
 
@@ -200,7 +260,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     if (!drinkingStartTime) {
       const startTime = new Date().toISOString();
       setDrinkingStartTime(startTime);
-      localStorage.setItem('drinkingStartTime', startTime);
+      localStorage.setItem(getSeasonDrinkingTimeKey(), startTime);
     }
   };
 
@@ -211,7 +271,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       philip: { shots20: 0, shots40: 0 }
     });
     setDrinkingStartTime(null);
-    localStorage.removeItem('drinkingStartTime');
+    localStorage.removeItem(getSeasonDrinkingTimeKey());
   };
 
   // Blood Alcohol Content calculation using Widmark formula with time decay
@@ -331,7 +391,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // New Blackjack game functions - both vs bank system
   const saveBlackjackData = (newData) => {
     setBlackjackGames(newData);
-    localStorage.setItem('blackjackGames', JSON.stringify(newData));
+    localStorage.setItem(getSeasonBlackjackKey(), JSON.stringify(newData));
   };
 
   // Start a new round
