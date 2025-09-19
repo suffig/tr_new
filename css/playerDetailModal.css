@@ -1,0 +1,836 @@
+/* Player Detail Modal Styles - Enhanced */
+.player-detail-modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1060; /* Higher than regular modals */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1), visibility 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 20px;
+    padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); /* Account for bottom navigation and safe area */
+    box-sizing: border-box;
+    /* Ensure modal stays centered and doesn't overflow */
+    overflow: hidden;
+}
+
+.player-detail-modal.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+.player-detail-modal.fade-out {
+    opacity: 0;
+    visibility: hidden;
+}
+
+.modal-backdrop {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    animation: backdropFadeIn 0.4s ease-out;
+}
+
+.modal-content {
+    position: relative;
+    background: var(--bg-secondary);
+    border-radius: 20px;
+    box-shadow: 
+        0 25px 50px rgba(0, 0, 0, 0.5),
+        0 0 0 1px var(--border-light),
+        0 0 40px rgba(59, 130, 246, 0.15);
+    width: 100%;
+    max-width: 900px;
+    max-height: calc(100vh - 8rem - env(safe-area-inset-bottom, 0px)); /* Account for bottom nav and safe area */
+    overflow: hidden;
+    transform: scale(0.8) translateY(40px);
+    transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    border: 1px solid var(--border-light);
+    /* Ensure content fits within viewport */
+    display: flex;
+    flex-direction: column;
+}
+
+.player-detail-modal.show .modal-content {
+    transform: scale(1);
+}
+
+.modal-header {
+    background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+    color: white;
+    padding: 24px;
+    border-bottom: 1px solid var(--border-light);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    /* Ensure header doesn't shrink */
+    flex-shrink: 0;
+}
+
+.player-title-section h2 {
+    margin: 0;
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+}
+
+.player-subtitle {
+    margin-top: 8px;
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.team-badge {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.team-badge.team-aek {
+    background: rgba(59, 130, 246, 0.8);
+    color: white;
+}
+
+.team-badge.team-real {
+    background: rgba(239, 68, 68, 0.8);
+    color: white;
+}
+
+.team-badge.team-ehemalige {
+    background: rgba(107, 114, 128, 0.8);
+    color: white;
+}
+
+.position-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 600;
+}
+
+.fifa-badge {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: #92400e;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.875rem;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.modal-close {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: white;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-size: 1.3rem;
+    z-index: 10;
+}
+
+.modal-close:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.3);
+}
+
+.modal-close:active {
+    transform: scale(0.95) rotate(90deg);
+}
+
+.modal-body {
+    max-height: calc(100vh - 10rem - env(safe-area-inset-bottom, 0px)); /* Account for header and bottom nav and safe area */
+    overflow-y: auto;
+    padding: 0;
+    /* Enhanced scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(59, 130, 246, 0.5) rgba(255, 255, 255, 0.1);
+    /* Ensure body can grow and shrink as needed */
+    flex: 1;
+    min-height: 0; /* Allow flexbox to shrink */
+}
+
+.modal-body::-webkit-scrollbar {
+    width: 8px;
+}
+
+.modal-body::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+}
+
+.modal-body::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, 0.5);
+    border-radius: 4px;
+    transition: background 0.2s ease;
+}
+
+.modal-body::-webkit-scrollbar-thumb:hover {
+    background: rgba(59, 130, 246, 0.7);
+}
+
+.player-content {
+    padding: 24px;
+}
+
+.section-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #f8fafc;
+    margin: 0 0 20px 0;
+    padding-bottom: 12px;
+    border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.section-title i {
+    color: #3b82f6;
+}
+
+.sofifa-link {
+    margin-left: auto;
+    background: rgba(59, 130, 246, 0.1);
+    color: #60a5fa;
+    padding: 6px 12px;
+    border-radius: 8px;
+    text-decoration: none;
+    font-size: 0.875rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+}
+
+.sofifa-link:hover {
+    background: rgba(59, 130, 246, 0.2);
+    color: white;
+    transform: translateY(-1px);
+}
+
+.basic-info-section {
+    margin-bottom: 32px;
+}
+
+.info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 16px;
+}
+
+.info-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item label {
+    display: block;
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin-bottom: 4px;
+    font-weight: 500;
+}
+
+.info-item span {
+    font-size: 1rem;
+    color: #f8fafc;
+    font-weight: 600;
+}
+
+.team-name.team-aek {
+    color: #60a5fa;
+}
+
+.team-name.team-real {
+    color: #f87171;
+}
+
+.team-name.team-ehemalige {
+    color: #9ca3af;
+}
+
+.market-value {
+    color: #10b981;
+}
+
+.goals {
+    color: #f59e0b;
+}
+
+.fifa-stats-section {
+    margin-bottom: 32px;
+}
+
+.fifa-overview {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+    align-items: start;
+}
+
+.fifa-card {
+    background: linear-gradient(135deg, #1f2937 0%, #374151 100%);
+    border-radius: 16px;
+    padding: 20px;
+    min-width: 180px;
+    text-align: center;
+    border: 2px solid #4b5563;
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.3);
+    transition: transform 0.2s ease;
+}
+
+.fifa-card:hover {
+    transform: translateY(-2px);
+}
+
+.fifa-card.fifa-card-icon {
+    background: linear-gradient(135deg, #7c3aed 0%, #a855f7 100%);
+    border-color: #8b5cf6;
+    box-shadow: 0 0 20px rgba(124, 58, 237, 0.3);
+}
+
+.fifa-card.fifa-card-gold {
+    background: linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%);
+    border-color: #f59e0b;
+    color: #92400e;
+    box-shadow: 0 0 20px rgba(245, 158, 11, 0.3);
+}
+
+.fifa-card.fifa-card-silver {
+    background: linear-gradient(135deg, #6b7280 0%, #9ca3af 100%);
+    border-color: #6b7280;
+    color: #1f2937;
+    box-shadow: 0 0 20px rgba(107, 114, 128, 0.3);
+}
+
+.fifa-card.fifa-card-bronze {
+    background: linear-gradient(135deg, #ea580c 0%, #f97316 100%);
+    border-color: #ea580c;
+    color: #9a3412;
+    box-shadow: 0 0 20px rgba(234, 88, 12, 0.3);
+}
+
+.fifa-card.fifa-card-common {
+    background: linear-gradient(135deg, #374151 0%, #4b5563 100%);
+    border-color: #4b5563;
+}
+
+.fifa-rating {
+    margin-bottom: 12px;
+}
+
+.overall-rating {
+    display: block;
+    font-size: 2.5rem;
+    font-weight: 900;
+    line-height: 1;
+}
+
+.rating-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+.fifa-positions {
+    margin-bottom: 12px;
+}
+
+.fifa-position {
+    display: inline-block;
+    background: rgba(255, 255, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin: 0 2px;
+}
+
+.fifa-potential {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.potential-rating {
+    display: block;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+.potential-label {
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    opacity: 0.8;
+}
+
+.player-details {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.detail-row:last-child {
+    border-bottom: none;
+}
+
+.detail-row .label {
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.detail-row .value {
+    color: #f8fafc;
+    font-weight: 600;
+}
+
+.fifa-value {
+    color: #10b981;
+}
+
+.fifa-attributes {
+    margin-bottom: 32px;
+}
+
+.subsection-title {
+    font-size: 1.125rem;
+    font-weight: 600;
+    color: #f8fafc;
+    margin: 0 0 16px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.attributes-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 16px;
+}
+
+.attribute-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 16px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.attribute-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.attribute-icon {
+    font-size: 1.2rem;
+}
+
+.attribute-name {
+    flex: 1;
+    font-weight: 600;
+    color: #f8fafc;
+}
+
+.attribute-value {
+    font-weight: 700;
+    color: #f8fafc;
+    font-size: 1.1rem;
+}
+
+.attribute-bar {
+    height: 8px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.attribute-fill {
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.5s ease;
+}
+
+.fifa-skills {
+    margin-bottom: 32px;
+}
+
+.skills-accordion {
+    display: grid;
+    gap: 8px;
+}
+
+.skill-group {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    overflow: hidden;
+}
+
+.skill-group-header {
+    width: 100%;
+    background: none;
+    border: none;
+    padding: 16px;
+    color: #f8fafc;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+}
+
+.skill-group-header:hover {
+    background: rgba(255, 255, 255, 0.05);
+}
+
+.skill-group-content {
+    padding: 16px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: none;
+}
+
+.skills-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+}
+
+.skill-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 0;
+}
+
+.skill-name {
+    flex: 1;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+.skill-value {
+    color: #f8fafc;
+    font-weight: 600;
+    font-size: 0.875rem;
+    min-width: 30px;
+    text-align: right;
+}
+
+.skill-bar {
+    width: 60px;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+.skill-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.3s ease;
+}
+
+.no-fifa-data {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+}
+
+.no-data-icon {
+    font-size: 4rem;
+    color: #4b5563;
+    margin-bottom: 20px;
+}
+
+.no-fifa-data h3 {
+    color: #f8fafc;
+    font-size: 1.5rem;
+    margin-bottom: 12px;
+}
+
+.no-data-message {
+    font-size: 1rem;
+    line-height: 1.6;
+    margin-bottom: 24px;
+}
+
+.estimated-stats {
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 12px;
+    padding: 20px;
+    margin: 20px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.estimated-stats h4 {
+    color: #f8fafc;
+    margin-bottom: 16px;
+}
+
+.estimated-attributes {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.attr-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.estimation-note {
+    color: #fbbf24;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.fifa-info {
+    margin-top: 24px;
+    padding-top: 24px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.fifa-note {
+    color: #94a3b8;
+    font-size: 0.875rem;
+    margin: 0;
+}
+
+.fifa-note a {
+    color: #60a5fa;
+    text-decoration: none;
+}
+
+.fifa-note a:hover {
+    text-decoration: underline;
+}
+
+.loading-spinner {
+    text-align: center;
+    padding: 40px 20px;
+    color: #94a3b8;
+}
+
+.loading-spinner i {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    color: #3b82f6;
+}
+
+/* Responsive design - Enhanced */
+@media (max-width: 768px) {
+    .player-detail-modal {
+        padding: 10px;
+        padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px)); /* Account for bottom nav on mobile and safe area */
+    }
+    
+    .modal-content {
+        max-height: calc(100vh - 8rem - env(safe-area-inset-bottom, 0px));
+        border-radius: 16px;
+    }
+    
+    .modal-header {
+        padding: 16px;
+    }
+    
+    .player-title-section h2 {
+        font-size: 1.5rem;
+    }
+    
+    .player-content {
+        padding: 16px;
+    }
+    
+    .fifa-overview {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+    
+    .fifa-card {
+        min-width: auto;
+    }
+    
+    .info-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .attributes-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .skills-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .estimated-attributes {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-height: 700px) {
+    .player-detail-modal {
+        padding: 8px;
+        padding-bottom: calc(6rem + env(safe-area-inset-bottom, 0px));
+    }
+    
+    .modal-content {
+        max-height: calc(100vh - 9rem - env(safe-area-inset-bottom, 0px));
+    }
+    
+    .modal-body {
+        max-height: calc(100vh - 11rem - env(safe-area-inset-bottom, 0px));
+    }
+    
+    .modal-header {
+        padding: 12px 16px;
+    }
+    
+    .player-content {
+        padding: 12px;
+    }
+}
+
+@media (max-height: 600px) {
+    .player-detail-modal {
+        padding: 5px;
+        padding-bottom: calc(5rem + env(safe-area-inset-bottom, 0px));
+        /* Force proper alignment on short screens */
+        align-items: flex-start;
+        padding-top: 10px;
+    }
+    
+    .modal-content {
+        max-height: calc(100vh - 7rem - env(safe-area-inset-bottom, 0px));
+        border-radius: 12px;
+        /* Ensure content stays within bounds */
+        min-height: 0;
+    }
+    
+    .modal-body {
+        max-height: calc(100vh - 9rem - env(safe-area-inset-bottom, 0px));
+        /* Ensure scrolling works on short screens */
+        overflow-y: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+}
+
+/* Additional safety for extremely short screens */
+@media (max-height: 500px) {
+    .player-detail-modal {
+        padding: 2px;
+        padding-bottom: calc(4rem + env(safe-area-inset-bottom, 0px));
+        align-items: flex-start;
+        padding-top: 5px;
+    }
+    
+    .modal-content {
+        max-height: calc(100vh - 5rem - env(safe-area-inset-bottom, 0px));
+        border-radius: 8px;
+    }
+    
+    .modal-header {
+        padding: 8px 12px;
+    }
+    
+    .modal-body {
+        max-height: calc(100vh - 7rem - env(safe-area-inset-bottom, 0px));
+    }
+    
+    .player-content {
+        padding: 8px;
+    }
+}
+
+/* Enhanced animations */
+@keyframes backdropFadeIn {
+    from {
+        opacity: 0;
+        backdrop-filter: blur(0px);
+        -webkit-backdrop-filter: blur(0px);
+    }
+    to {
+        opacity: 1;
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+    }
+}
+
+/* Animation keyframes - Enhanced */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px) scale(0.95);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.player-detail-modal .modal-content {
+    animation: fadeInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Loading state enhancements */
+.loading-spinner {
+    text-align: center;
+    padding: 60px 20px;
+    color: #94a3b8;
+}
+
+.loading-spinner i {
+    font-size: 3rem;
+    margin-bottom: 16px;
+    color: #3b82f6;
+    animation: spin 1s linear infinite, pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}

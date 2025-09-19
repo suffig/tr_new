@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test AlcoholTracker Components</title>
+    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .custom-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E0 #F7FAFC;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #F7FAFC;
+            border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #CBD5E0;
+            border-radius: 3px;
+        }
+        .modern-card {
+            background: white;
+            border: 1px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            margin: 1rem 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+        
+        // Mock alcohol progression graph component
+        const AlcoholProgressionGraph = ({ beerConsumption, shotConsumption, drinkingStartTime }) => {
+            const [drinkEvents] = useState([
+                {
+                    timestamp: new Date().toISOString(),
+                    alexanderChange: 1,
+                    philipChange: 0,
+                    beers: { alexander: 1, philip: 0 }
+                },
+                {
+                    timestamp: new Date(Date.now() - 300000).toISOString(),
+                    alexanderChange: 0,
+                    philipChange: 1,
+                    shots: { philip: { shots20: 1, shots40: 0 } }
+                }
+            ]);
+            
+            if (!drinkingStartTime) return null;
+            
+            return (
+                <div className="modern-card mt-6">
+                    <h3 className="font-bold text-lg text-gray-800 mb-4">📈 Alkoholverlauf beider Manager</h3>
+                    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 overflow-x-auto">
+                        <div className="text-center text-gray-500 py-8">
+                            <div className="text-4xl mb-2">📊</div>
+                            <p>Graph würde hier angezeigt (Demo)</p>
+                        </div>
+                        
+                        {/* Enhanced Mobile Legend */}
+                        <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+                            <div className="text-sm font-medium text-gray-700 mb-2 text-center">Legende</div>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="flex items-center gap-2 justify-center">
+                                    <div className="w-5 h-2 bg-blue-500 rounded-full"></div>
+                                    <span className="text-sm">Alexander</span>
+                                </div>
+                                <div className="flex items-center gap-2 justify-center">
+                                    <div className="w-5 h-2 bg-green-500 rounded-full"></div>
+                                    <span className="text-sm">Philip</span>
+                                </div>
+                                <div className="flex items-center gap-2 justify-center">
+                                    <span className="text-lg">🍺</span>
+                                    <span className="text-sm">Bier</span>
+                                </div>
+                                <div className="flex items-center gap-2 justify-center">
+                                    <span className="text-lg">🥃</span>
+                                    <span className="text-sm">Shots</span>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* Enhanced Drink Events Timeline with Icons */}
+                        {drinkEvents.length > 0 && (
+                            <div className="mt-4 p-3 bg-purple-50 border border-purple-200 rounded-lg">
+                                <div className="font-medium text-purple-800 mb-3 flex items-center gap-2">
+                                    <span className="text-lg">🍺</span>
+                                    <span>Getränke-Timeline (letzte 5)</span>
+                                </div>
+                                <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
+                                    {drinkEvents.map((event, i) => (
+                                        <div key={i} className="flex justify-between items-center p-2 bg-white rounded-md border border-purple-100">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-xs text-purple-600 font-mono">
+                                                    {new Date(event.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                                                </span>
+                                            </div>
+                                            <div className="flex items-center gap-3">
+                                                {event.alexanderChange > 0 && (
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-xs text-blue-600 font-medium">Alex:</span>
+                                                        <span className="flex items-center text-sm">
+                                                            🍺<span className="text-xs text-blue-600 ml-0.5">+{event.alexanderChange}</span>
+                                                        </span>
+                                                    </div>
+                                                )}
+                                                {event.philipChange > 0 && (
+                                                    <div className="flex items-center gap-1">
+                                                        <span className="text-xs text-green-600 font-medium">Phil:</span>
+                                                        <span className="flex items-center text-sm">
+                                                            🥃<span className="text-xs text-green-600 ml-0.5">+{event.philipChange}</span>
+                                                        </span>
+                                                    </div>
+                                                )}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            );
+        };
+        
+        // Test component that shows the improvements
+        const TestComponent = () => {
+            const [beerConsumption] = useState({ alexander: 2, philip: 1 });
+            const [shotConsumption] = useState({
+                alexander: { shots20: 1, shots40: 0 },
+                philip: { shots20: 0, shots40: 1 }
+            });
+            const [drinkingStartTime] = useState(new Date().toISOString());
+            
+            // Blackjack test state
+            const [blackjackGames] = useState({
+                alexander: { 
+                    wins: 3, 
+                    losses: 1, 
+                    totalEarnings: 12.5,
+                    blackjacks: 2,
+                    doubles: 1,
+                    splits: 0
+                },
+                philip: { 
+                    wins: 2, 
+                    losses: 2, 
+                    totalEarnings: -2.5,
+                    blackjacks: 1,
+                    doubles: 2,
+                    splits: 1
+                },
+                currentRound: {
+                    active: false,
+                    alexanderHand: null,
+                    philipHand: null,
+                    alexanderActions: [],
+                    philipActions: [],
+                    bankWins: false
+                },
+                gameHistory: [
+                    {
+                        id: 1,
+                        results: { alexander: 5, philip: -5 },
+                        description: "Alex: +5€, Phil: -5€",
+                        dateText: new Date().toLocaleString('de-DE')
+                    }
+                ]
+            });
+            
+            return (
+                <div className="max-w-4xl mx-auto p-4 bg-gray-100 min-h-screen">
+                    <h1 className="text-2xl font-bold text-center mb-6">🍺🃏 Alkohol & Blackjack Tracker - Verbesserungen Test</h1>
+                    
+                    {/* Alcohol Graph Demo */}
+                    <AlcoholProgressionGraph 
+                        beerConsumption={beerConsumption}
+                        shotConsumption={shotConsumption}
+                        drinkingStartTime={drinkingStartTime}
+                    />
+                    
+                    {/* Blackjack Demo */}
+                    <div className="modern-card mt-6">
+                        <h3 className="text-lg font-semibold mb-4">🃏 Neue Blackjack Interface (Demo)</h3>
+                        
+                        {/* Stats Demo */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                            <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 rounded-lg">
+                                <h4 className="font-bold text-lg text-blue-700 mb-3">🔵 Alexander</h4>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-blue-700 text-sm">Gewinnrunden:</span>
+                                        <span className="font-bold text-green-600">{blackjackGames.alexander.wins}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-blue-700 text-sm">Bilanz:</span>
+                                        <span className="font-bold text-green-600">+{blackjackGames.alexander.totalEarnings}€</span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-xs mt-3 pt-2 border-t border-blue-200">
+                                        <div className="text-center">
+                                            <div className="font-bold text-purple-600">{blackjackGames.alexander.blackjacks}</div>
+                                            <div className="text-blue-600">🃏 BJ</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-orange-600">{blackjackGames.alexander.doubles}</div>
+                                            <div className="text-blue-600">🎲 Double</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-pink-600">{blackjackGames.alexander.splits}</div>
+                                            <div className="text-blue-600">✂️ Split</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div className="p-4 bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 rounded-lg">
+                                <h4 className="font-bold text-lg text-green-700 mb-3">🟢 Philip</h4>
+                                <div className="space-y-2">
+                                    <div className="flex justify-between">
+                                        <span className="text-green-700 text-sm">Gewinnrunden:</span>
+                                        <span className="font-bold text-green-600">{blackjackGames.philip.wins}</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-green-700 text-sm">Bilanz:</span>
+                                        <span className="font-bold text-red-600">{blackjackGames.philip.totalEarnings}€</span>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-2 text-xs mt-3 pt-2 border-t border-green-200">
+                                        <div className="text-center">
+                                            <div className="font-bold text-purple-600">{blackjackGames.philip.blackjacks}</div>
+                                            <div className="text-green-600">🃏 BJ</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-orange-600">{blackjackGames.philip.doubles}</div>
+                                            <div className="text-green-600">🎲 Double</div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="font-bold text-pink-600">{blackjackGames.philip.splits}</div>
+                                            <div className="text-green-600">✂️ Split</div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        {/* New Game Flow Demo */}
+                        <div className="p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 rounded-lg">
+                            <h4 className="font-bold text-lg mb-4 text-indigo-700">🎰 Neue Blackjack-Runde (Demo)</h4>
+                            <div className="text-center">
+                                <div className="text-6xl mb-4">🃏</div>
+                                <p className="text-indigo-600 mb-4">Beide Manager vs Bank - Komplexe Regeln</p>
+                                <button className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white px-8 py-3 rounded-lg font-bold">
+                                    🚀 Runde starten
+                                </button>
+                            </div>
+                        </div>
+                        
+                        {/* Rules Info */}
+                        <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <h5 className="font-medium text-blue-800 mb-2">🃏 Neue Blackjack Regeln</h5>
+                            <ul className="text-xs text-blue-700 space-y-1">
+                                <li>• Beide Spieler vs Bank (nicht gegeneinander)</li>
+                                <li>• Grundeinsatz: 5€ pro Runde</li>
+                                <li>• Bank gewinnt + keine Aktionen = kein Gewinn/Verlust</li>
+                                <li>• Blackjack + anderer gewinnt = +2,50€</li>
+                                <li>• Blackjack bei Double/Split = -2,50€</li>
+                                <li>• Double/Split verdoppelt Gewinn/Verlust</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div className="text-center mt-6 text-gray-600">
+                        <p>✅ Mobile Optimierungen: Bessere Grafik-Dimensionen, Icons in Timeline, Touch-freundliche Buttons</p>
+                        <p>✅ Blackjack: Komplett neues "Beide vs Bank" System mit komplexen Regeln</p>
+                    </div>
+                </div>
+            );
+        };
+        
+        ReactDOM.render(<TestComponent />, document.getElementById('root'));
+    </script>
+</body>
+</html>

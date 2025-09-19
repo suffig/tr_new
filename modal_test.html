@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>Modal Test - FIFA Tracker</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link href="css/tailwind-play-output.css" rel="stylesheet">
+    <link href="css/new-design.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/fonts/fontawesome-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background: #0f172a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header class="bg-slate-600 border-b-2 border-slate-500 px-4 py-3 shadow-xl">
+        <div class="flex justify-between items-center">       
+            <h1 class="text-lg font-bold text-slate-100">Modal Enhancement Test</h1>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="p-4 content-safe-area bg-slate-700">
+        <div class="max-w-4xl mx-auto">
+            <h2 class="text-2xl font-bold text-white mb-6">Enhanced Modal System Demo</h2>
+            
+            <!-- Enhanced Player Cards -->
+            <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3 mb-8">
+                <div class="player-card team-aek-card" onclick="showPlayerModal('Max Mustermann')">
+                    <div class="player-info">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="player-name">Max Mustermann</h3>
+                            <span class="position-badge badge-att">ST</span>
+                        </div>
+                        <div class="text-gray-300 text-sm">Team: AEK Athen</div>
+                        <div class="player-stats">
+                            <span>Tore: 15</span>
+                            <span>Assists: 8</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="player-card team-real-card" onclick="showPlayerModal('John Doe')">
+                    <div class="player-info">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="player-name">John Doe</h3>
+                            <span class="position-badge badge-def">IV</span>
+                        </div>
+                        <div class="text-gray-300 text-sm">Team: Real Madrid</div>
+                        <div class="player-stats">
+                            <span>Tore: 2</span>
+                            <span>Assists: 5</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Test Buttons -->
+            <div class="space-y-4">
+                <div class="bg-slate-800 p-6 rounded-lg border border-slate-600">
+                    <h3 class="text-xl font-semibold text-white mb-4">Modal Tests</h3>
+                    <div class="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
+                        <button class="bg-blue-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all transform hover:scale-105" onclick="showSimpleModal()">
+                            🎭 Simple Modal
+                        </button>
+                        <button class="bg-purple-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-purple-700 transition-all transform hover:scale-105" onclick="showFormModal()">
+                            📝 Form Modal
+                        </button>
+                        <button class="bg-green-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-green-700 transition-all transform hover:scale-105" onclick="showStackTest()">
+                            📚 Modal Stack Test
+                        </button>
+                        <button class="bg-orange-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-orange-700 transition-all transform hover:scale-105" onclick="showMobileTest()">
+                            📱 Mobile Test
+                        </button>
+                        <button class="bg-indigo-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition-all transform hover:scale-105" onclick="showLargeModal()">
+                            🎪 Large Modal
+                        </button>
+                        <button class="bg-red-600 text-white px-4 py-3 rounded-lg font-semibold hover:bg-red-700 transition-all transform hover:scale-105" onclick="runBasicTests()">
+                            🧪 Run Tests
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Results Section -->
+                <div id="test-results" class="hidden bg-slate-800 p-6 rounded-lg border border-slate-600">
+                    <h3 class="text-xl font-semibold text-white mb-4">Test Results</h3>
+                    <div id="results-content"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Bottom Navigation -->
+    <nav class="fixed bottom-0 left-0 right-0 w-full z-100 flex justify-center items-center bg-slate-800 border-t-2 border-slate-600 p-2 min-h-16">
+        <div class="text-slate-300 text-sm">Bottom Navigation (Z-Index: 100)</div>
+    </nav>
+
+    <!-- Modal Root -->
+    <div id="modal-root"></div>
+
+    <script type="module">
+        // Use the legacy modal API for simpler testing
+        import { showModal, hideModal } from './modal.js';
+        
+        // Make globally available
+        window.hideModal = hideModal;
+        
+        window.showPlayerModal = function(playerName) {
+            const modalContent = `
+                <div class="player-modal-content">
+                    <h2 class="text-2xl font-bold text-white mb-4">${playerName}</h2>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-slate-800 p-3 rounded">
+                            <div class="text-gray-400 text-sm">Position</div>
+                            <div class="text-white font-semibold">Stürmer</div>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded">
+                            <div class="text-gray-400 text-sm">Team</div>
+                            <div class="text-white font-semibold">AEK Athen</div>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded">
+                            <div class="text-gray-400 text-sm">Tore</div>
+                            <div class="text-green-400 font-semibold">15</div>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded">
+                            <div class="text-gray-400 text-sm">Assists</div>
+                            <div class="text-blue-400 font-semibold">8</div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <button class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-all">
+                            Spieler bearbeiten
+                        </button>
+                        <button class="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-all">
+                            FIFA Daten anzeigen
+                        </button>
+                    </div>
+                </div>
+            `;
+            showModal(modalContent);
+        };
+        
+        window.showSimpleModal = function() {
+            const content = `
+                <div class="text-center">
+                    <h2 class="text-2xl font-bold text-white mb-4">🎭 Enhanced Modal</h2>
+                    <p class="text-gray-300 mb-6">
+                        This modal uses the new enhanced system with:
+                    </p>
+                    <ul class="text-left text-gray-300 space-y-2 mb-6">
+                        <li>✅ Backdrop blur effects</li>
+                        <li>✅ Smooth bounce animations</li>
+                        <li>✅ Z-index management (1050+ vs nav 100)</li>
+                        <li>✅ Mobile-safe bottom padding</li>
+                        <li>✅ Touch-friendly close button</li>
+                    </ul>
+                    <button class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700 transition-all" onclick="hideModal()">
+                        Verstanden
+                    </button>
+                </div>
+            `;
+            showModal(content);
+        };
+        
+        window.showFormModal = function() {
+            const content = `
+                <div class="form-modal">
+                    <h2 class="text-2xl font-bold text-white mb-6">📝 Enhanced Form</h2>
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-gray-300 text-sm font-medium mb-2">Name</label>
+                            <input type="text" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Enter name">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm font-medium mb-2">Email</label>
+                            <input type="email" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" placeholder="Enter email">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm font-medium mb-2">Message</label>
+                            <textarea class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all" rows="4" placeholder="Enter message"></textarea>
+                        </div>
+                        <div class="flex space-x-3 pt-4">
+                            <button type="submit" class="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-all transform hover:scale-105">
+                                Submit
+                            </button>
+                            <button type="button" class="flex-1 bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-all transform hover:scale-105" onclick="hideModal()">
+                                Cancel
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            showModal(content);
+        };
+        
+        window.showStackTest = function() {
+            let modalCount = 1;
+            
+            function showNextModal() {
+                const content = `
+                    <div class="text-center">
+                        <h2 class="text-xl font-bold text-white mb-4">Modal ${modalCount}</h2>
+                        <p class="text-gray-300 mb-4">
+                            This demonstrates modal stacking. Each new modal should appear above the previous one.
+                        </p>
+                        <p class="text-sm text-blue-300 mb-6">
+                            Z-Index: ${1050 + modalCount}
+                        </p>
+                        <div class="space-x-2">
+                            ${modalCount < 3 ? `<button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-all" onclick="showStackModal(${modalCount + 1})">
+                                Open Modal ${modalCount + 1}
+                            </button>` : ''}
+                            <button class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-all" onclick="hideModal()">
+                                Close This Modal
+                            </button>
+                        </div>
+                    </div>
+                `;
+                showModal(content);
+            }
+            
+            window.showStackModal = function(num) {
+                modalCount = num;
+                showNextModal();
+            };
+            
+            showNextModal();
+        };
+        
+        window.showMobileTest = function() {
+            const content = `
+                <div class="mobile-test">
+                    <h2 class="text-xl font-bold text-white mb-4">📱 Mobile Optimization Test</h2>
+                    <div class="space-y-4">
+                        <div class="bg-green-900 p-3 rounded">
+                            <div class="text-green-300 font-semibold">✅ Bottom Navigation Safe Area</div>
+                            <div class="text-green-200 text-sm">Modal padding accounts for 80px bottom nav</div>
+                        </div>
+                        <div class="bg-blue-900 p-3 rounded">
+                            <div class="text-blue-300 font-semibold">✅ Touch-Friendly Elements</div>
+                            <div class="text-blue-200 text-sm">Minimum 48px touch targets</div>
+                        </div>
+                        <div class="bg-purple-900 p-3 rounded">
+                            <div class="text-purple-300 font-semibold">✅ Responsive Height</div>
+                            <div class="text-purple-200 text-sm">Max height: calc(100vh - 160px)</div>
+                        </div>
+                        <div class="bg-orange-900 p-3 rounded">
+                            <div class="text-orange-300 font-semibold">✅ Backdrop Blur</div>
+                            <div class="text-orange-200 text-sm">Modern glass-morphism effect</div>
+                        </div>
+                    </div>
+                    <div class="mt-6">
+                        <button class="w-full bg-blue-600 text-white py-3 px-4 rounded hover:bg-blue-700 transition-all text-lg" onclick="hideModal()">
+                            Close (Touch-friendly)
+                        </button>
+                    </div>
+                </div>
+            `;
+            showModal(content);
+        };
+        
+        window.showLargeModal = function() {
+            const content = `
+                <div class="large-modal" style="max-height: 600px; overflow-y: auto;">
+                    <h2 class="text-2xl font-bold text-white mb-6">🎪 Large Content Modal</h2>
+                    <div class="space-y-4">
+                        ${Array.from({length: 20}, (_, i) => `
+                            <div class="bg-slate-800 p-4 rounded-lg">
+                                <h3 class="text-white font-semibold">Section ${i + 1}</h3>
+                                <p class="text-gray-300">
+                                    This is a large modal with scrollable content. It tests the scrollbar styling 
+                                    and ensures proper height calculations that don't overlap with the bottom navigation.
+                                </p>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <div class="mt-6 sticky bottom-0 bg-slate-700 p-4 -m-4 border-t border-slate-600">
+                        <button class="w-full bg-red-600 text-white py-2 px-4 rounded hover:bg-red-700 transition-all" onclick="hideModal()">
+                            Close Large Modal
+                        </button>
+                    </div>
+                </div>
+            `;
+            showModal(content);
+        };
+        
+        window.runBasicTests = function() {
+            const results = [];
+            
+            // Test 1: Check if modal overlay has correct z-index
+            showModal('<div>Test modal</div>');
+            const modal = document.querySelector('.modal-overlay');
+            const zIndex = window.getComputedStyle(modal).zIndex;
+            results.push({
+                test: 'Z-Index Management',
+                passed: parseInt(zIndex) > 1000,
+                details: `Modal z-index: ${zIndex} (should be > 1000)`
+            });
+            
+            // Test 2: Check backdrop blur
+            const hasBackdropFilter = window.getComputedStyle(modal).backdropFilter !== 'none';
+            results.push({
+                test: 'Backdrop Blur Effect',
+                passed: hasBackdropFilter,
+                details: hasBackdropFilter ? 'Backdrop filter active' : 'No backdrop filter'
+            });
+            
+            // Test 3: Check mobile safe padding
+            const paddingBottom = window.getComputedStyle(modal).paddingBottom;
+            const hasSafePadding = paddingBottom && paddingBottom !== '1rem';
+            results.push({
+                test: 'Mobile Safe Area',
+                passed: hasSafePadding,
+                details: `Bottom padding: ${paddingBottom}`
+            });
+            
+            // Test 4: Check close button size
+            const closeButton = modal.querySelector('.modal-close');
+            if (closeButton) {
+                const buttonRect = closeButton.getBoundingClientRect();
+                const isTouchFriendly = buttonRect.width >= 40 && buttonRect.height >= 40;
+                results.push({
+                    test: 'Touch-Friendly Close Button',
+                    passed: isTouchFriendly,
+                    details: `Button size: ${buttonRect.width}x${buttonRect.height}px`
+                });
+            }
+            
+            hideModal();
+            
+            // Display results
+            displayResults(results);
+        };
+        
+        function displayResults(results) {
+            const resultsDiv = document.getElementById('test-results');
+            const contentDiv = document.getElementById('results-content');
+            
+            const passedCount = results.filter(r => r.passed).length;
+            const totalCount = results.length;
+            const passRate = ((passedCount / totalCount) * 100).toFixed(1);
+            
+            contentDiv.innerHTML = `
+                <div class="grid grid-cols-3 gap-4 mb-6">
+                    <div class="bg-green-900 p-3 rounded text-center">
+                        <div class="text-green-400 text-2xl font-bold">${passedCount}</div>
+                        <div class="text-green-300 text-sm">Passed</div>
+                    </div>
+                    <div class="bg-red-900 p-3 rounded text-center">
+                        <div class="text-red-400 text-2xl font-bold">${totalCount - passedCount}</div>
+                        <div class="text-red-300 text-sm">Failed</div>
+                    </div>
+                    <div class="bg-blue-900 p-3 rounded text-center">
+                        <div class="text-blue-400 text-2xl font-bold">${passRate}%</div>
+                        <div class="text-blue-300 text-sm">Pass Rate</div>
+                    </div>
+                </div>
+                <div class="space-y-3">
+                    ${results.map(result => `
+                        <div class="flex items-center justify-between bg-slate-700 p-3 rounded">
+                            <div>
+                                <div class="text-white font-medium">${result.test}</div>
+                                <div class="text-gray-400 text-sm">${result.details}</div>
+                            </div>
+                            <div class="text-2xl">
+                                ${result.passed ? '✅' : '❌'}
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            `;
+            
+            resultsDiv.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>

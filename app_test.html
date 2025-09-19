@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>FIFA Statistik-Tracker - Funktionstest</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link href="css/tailwind-play-output.css" rel="stylesheet">
+    <link href="css/new-design.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/fonts/fontawesome-icons.css">
+    <style>
+        body {
+            min-height: 100vh;
+            background: #0f172a;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        }
+    </style>
+</head>
+<body>
+    <!-- Login Area -->
+    <div id="login-area"></div>
+    
+    <!-- App Container -->
+    <div class="app-container" style="display: none;">
+        <!-- Header -->
+        <header class="bg-slate-600 border-b-2 border-slate-500 px-4 py-3 shadow-xl">
+            <div class="flex justify-between items-center w-full px-2">       
+                <a href="#" class="flex items-center">
+                    <img src="assets/logo-fusta.png" class="h-10 mr-3" alt="FUSTA Logo" />
+                    <span class="self-center text-lg font-bold whitespace-nowrap text-slate-100">FUSTA</span>
+                </a>
+                <div class="flex items-center gap-2">
+                    <button id="logout-btn" class="inline-flex items-center justify-center border-2 font-sans font-medium text-center transition-all duration-300 ease-in disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed text-sm rounded-lg py-3 px-4 shadow-lg hover:shadow-xl bg-red-600 border-red-600 text-red-50 hover:bg-red-500 hover:border-red-500 active:scale-95" style="display: none;">
+                        <i class="fas fa-sign-out-alt text-lg"></i>
+                        <span class="ml-2 hidden sm:inline">Abmelden</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Loading Overlay -->
+        <div id="tab-loader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 999; align-items: center; justify-content: center;">
+            <div class="spinner"></div>
+        </div>
+
+        <!-- Main Content -->
+        <main class="p-3 pb-28 lg:pb-8 relative min-h-[calc(100vh-140px)] bg-slate-700">
+            <div id="app">
+                <!-- Content will be dynamically loaded here -->
+            </div>
+        </main>
+
+        <!-- Bottom Navigation -->
+        <nav id="bottom-nav" class="fixed bottom-0 left-0 right-0 w-full z-100 flex justify-between items-center bg-slate-800 border-t-2 border-slate-600 p-2 min-h-16">
+            <a href="#" id="nav-squad" class="nav-item flex flex-col items-center text-slate-300 hover:text-blue-400 transition-colors p-2 rounded-lg">
+                <i class="fas fa-users text-xl"></i>
+                <span class="text-xs mt-1">Kader</span>
+            </a>
+            <a href="#" id="nav-matches" class="nav-item flex flex-col items-center text-slate-300 hover:text-blue-400 transition-colors p-2 rounded-lg">
+                <i class="fas fa-futbol text-xl"></i>
+                <span class="text-xs mt-1">Spiele</span>
+            </a>
+            <a href="#" id="nav-bans" class="nav-item flex flex-col items-center text-slate-300 hover:text-blue-400 transition-colors p-2 rounded-lg">
+                <i class="fas fa-ban text-xl"></i>
+                <span class="text-xs mt-1">Sperren</span>
+            </a>
+            <a href="#" id="nav-finanzen" class="nav-item flex flex-col items-center text-slate-300 hover:text-blue-400 transition-colors p-2 rounded-lg">
+                <i class="fas fa-euro-sign text-xl"></i>
+                <span class="text-xs mt-1">Finanzen</span>
+            </a>
+            <a href="#" id="nav-stats" class="nav-item flex flex-col items-center text-slate-300 hover:text-blue-400 transition-colors p-2 rounded-lg">
+                <i class="fas fa-chart-bar text-xl"></i>
+                <span class="text-xs mt-1">Stats</span>
+            </a>
+            <a href="#" id="nav-spieler" class="nav-item flex flex-col items-center text-slate-300 hover:text-blue-400 transition-colors p-2 rounded-lg">
+                <i class="fas fa-star text-xl"></i>
+                <span class="text-xs mt-1">Spieler</span>
+            </a>
+        </nav>
+    </div>
+
+    <!-- Modal Root -->
+    <div id="modal-root"></div>
+
+    <!-- Include main application script -->
+    <script type="module" src="main.js"></script>
+</body>
+</html>

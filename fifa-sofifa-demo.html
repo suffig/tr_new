@@ -1,0 +1,571 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIFA SoFIFA Integration Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .gradient-bg {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .fifa-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .fifa-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+        }
+        .console-output {
+            background: #1a1a1a;
+            color: #00ff41;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <div class="container mx-auto px-4 py-8">
+        <!-- Header -->
+        <div class="gradient-bg text-white rounded-lg p-6 mb-8">
+            <h1 class="text-3xl font-bold mb-2">🎮 FIFA SoFIFA Integration Demo</h1>
+            <p class="text-lg opacity-90">Erweiterte FIFA-Spielerdatenbank mit SoFIFA-Integration</p>
+            <div class="mt-4 text-sm bg-white bg-opacity-20 rounded p-3">
+                <strong>✨ Neue Features:</strong> Echte SoFIFA-Integration, Fuzzy-Suche, Batch-Processing, CORS-Handling, Caching & mehr!
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">🔍 Spieler Suchen</h2>
+            <div class="flex flex-wrap gap-4 mb-4">
+                <input type="text" id="playerSearch" placeholder="Spielername eingeben (z.B. haaland, mbappe, vinicius...)" 
+                       class="flex-1 min-w-[200px] px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+                <button onclick="searchPlayer()" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                    Suchen
+                </button>
+                <button onclick="testFuzzyMatching()" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                    Fuzzy Test
+                </button>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <span class="text-sm text-gray-600">Schnellsuche:</span>
+                <button onclick="quickSearch('haaland')" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">haaland</button>
+                <button onclick="quickSearch('mbappe')" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">mbappe</button>
+                <button onclick="quickSearch('vinicius')" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">vinicius</button>
+                <button onclick="quickSearch('jude')" class="text-xs bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded">jude</button>
+            </div>
+        </div>
+
+        <!-- Results Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+            <!-- Player Card -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">📊 Spielerdaten</h3>
+                <div id="playerCard" class="text-center text-gray-500">
+                    Suchen Sie nach einem Spieler, um seine Daten anzuzeigen
+                </div>
+            </div>
+
+            <!-- Stats & Info -->
+            <div class="bg-white rounded-lg shadow-md p-6">
+                <h3 class="text-lg font-semibold mb-4">📈 System Status</h3>
+                <div id="systemStats" class="space-y-2 text-sm"></div>
+            </div>
+        </div>
+
+        <!-- Testing Section -->
+        <div class="bg-white rounded-lg shadow-md p-6 mb-6">
+            <h3 class="text-lg font-semibold mb-4">🧪 Integration Tests</h3>
+            <div class="flex flex-wrap gap-4 mb-4">
+                <button onclick="runBasicTests()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                    Basic Tests
+                </button>
+                <button onclick="testSofifaIntegration()" class="bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                    SoFIFA Integration
+                </button>
+                <button onclick="testBatchProcessing()" class="bg-teal-600 hover:bg-teal-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                    Batch Processing
+                </button>
+                <button onclick="clearConsole()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                    Clear Console
+                </button>
+            </div>
+            <div id="testConsole" class="console-output rounded-lg p-4 h-64 overflow-y-auto whitespace-pre-wrap"></div>
+        </div>
+
+        <!-- All Players Section -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold mb-4">👥 Alle Spieler in der Datenbank</h3>
+            <div id="allPlayers" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4"></div>
+        </div>
+
+        <!-- Database Players Integration -->
+        <div class="bg-white rounded-lg shadow-md p-6">
+            <h3 class="text-lg font-semibold mb-4">🗄️ Database Players + SoFIFA Integration</h3>
+            <div class="flex flex-wrap gap-4 mb-4">
+                <button onclick="loadStoredPlayers()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                    📋 Load Database Players
+                </button>
+                <button onclick="processStoredPlayersWithSofifa()" class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-lg font-medium transition">
+                    🌐 Process with SoFIFA
+                </button>
+                <button onclick="clearStoredResults()" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-lg font-medium transition">
+                    Clear
+                </button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <div class="lg:col-span-2">
+                    <h4 class="font-semibold mb-2">Enhanced Players</h4>
+                    <div id="storedPlayersResults" class="space-y-2 max-h-64 overflow-y-auto">
+                        <p class="text-gray-500">Klicke "Load Database Players" um zu starten</p>
+                    </div>
+                </div>
+                <div>
+                    <h4 class="font-semibold mb-2">Statistics</h4>
+                    <div id="storedPlayersStats" class="text-sm space-y-1">
+                        <p class="text-gray-500">Keine Statistiken</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import FIFADataService from './src/utils/fifaDataService.js';
+        import SofifaIntegration from './src/utils/sofifaIntegration.js';
+
+        // Global state
+        let testResults = [];
+
+        // Console capture
+        const testConsole = document.getElementById('testConsole');
+        const originalConsoleLog = console.log;
+        
+        console.log = function(...args) {
+            const message = args.join(' ');
+            testConsole.textContent += new Date().toLocaleTimeString() + ' ' + message + '\n';
+            testConsole.scrollTop = testConsole.scrollHeight;
+            originalConsoleLog.apply(console, args);
+        };
+
+        // Initialize page
+        window.addEventListener('load', async function() {
+            await loadSystemStats();
+            await loadAllPlayers();
+            console.log('🎉 FIFA SoFIFA Integration Demo bereit!');
+        });
+
+        // Search functionality
+        window.searchPlayer = async function() {
+            const searchTerm = document.getElementById('playerSearch').value.trim();
+            if (!searchTerm) return;
+
+            showLoading('playerCard');
+            
+            try {
+                console.log(\`🔍 Suche nach: "\${searchTerm}"\`);
+                const playerData = await FIFADataService.getPlayerData(searchTerm, { useLiveData: true });
+                displayPlayer(playerData);
+                await loadSystemStats(); // Update stats
+            } catch (error) {
+                console.error('❌ Suchfehler:', error.message);
+                document.getElementById('playerCard').innerHTML = \`
+                    <div class="text-red-500">
+                        <p>❌ Fehler bei der Suche</p>
+                        <p class="text-sm">\${error.message}</p>
+                    </div>
+                \`;
+            }
+        };
+
+        window.quickSearch = function(term) {
+            document.getElementById('playerSearch').value = term;
+            searchPlayer();
+        };
+
+        // Display player
+        function displayPlayer(playerData) {
+            const playerCard = document.getElementById('playerCard');
+            
+            if (!playerData || !playerData.found) {
+                playerCard.innerHTML = \`
+                    <div class="text-gray-500">
+                        <p>❌ Spieler nicht gefunden</p>
+                        <p class="text-sm">Versuchen Sie einen anderen Namen</p>
+                    </div>
+                \`;
+                return;
+            }
+
+            const cardColor = FIFADataService.getPlayerCardColor(playerData.overall);
+            const ratingColor = FIFADataService.getRatingColor(playerData.overall);
+            
+            playerCard.innerHTML = \`
+                <div class="fifa-card \${cardColor} rounded-lg p-6 text-center">
+                    <h4 class="text-xl font-bold mb-2">\${playerData.suggestedName || playerData.searchName}</h4>
+                    <div class="text-3xl font-bold \${ratingColor} mb-4">\${playerData.overall}</div>
+                    
+                    <div class="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                            <span class="font-semibold">Position:</span><br>
+                            \${Array.isArray(playerData.positions) ? playerData.positions.join(', ') : 'N/A'}
+                        </div>
+                        <div>
+                            <span class="font-semibold">Verein:</span><br>
+                            \${playerData.club || 'N/A'}
+                        </div>
+                        <div>
+                            <span class="font-semibold">Nationalität:</span><br>
+                            \${playerData.nationality || 'N/A'}
+                        </div>
+                        <div>
+                            <span class="font-semibold">Alter:</span><br>
+                            \${playerData.age || 'N/A'}
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-white border-opacity-20">
+                        <div class="text-xs opacity-75">
+                            Quelle: \${playerData.source}<br>
+                            \${playerData.sofifaUrl ? \`<a href="\${playerData.sofifaUrl}" target="_blank" class="underline">SoFIFA Profil</a>\` : ''}
+                            \${playerData.lastUpdated ? \`<br>Aktualisiert: \${new Date(playerData.lastUpdated).toLocaleString()}\` : ''}
+                        </div>
+                    </div>
+                </div>
+            \`;
+        }
+
+        // System stats
+        async function loadSystemStats() {
+            try {
+                const stats = FIFADataService.getSofifaStats();
+                const cacheStats = SofifaIntegration.getCacheStats();
+                
+                document.getElementById('systemStats').innerHTML = \`
+                    <div class="flex justify-between">
+                        <span>Spieler in DB:</span>
+                        <span class="font-semibold">\${stats.database.totalPlayers}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>SoFIFA Coverage:</span>
+                        <span class="font-semibold">\${stats.database.sofifaUrlCoverage}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Cache Einträge:</span>
+                        <span class="font-semibold">\${cacheStats.size}</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Rate Limit:</span>
+                        <span class="font-semibold">\${cacheStats.rateLimit.requests}/\${cacheStats.rateLimit.maxRequests}</span>
+                    </div>
+                    <div class="mt-3 p-2 bg-green-100 rounded text-green-800 text-xs">
+                        ✅ System bereit für SoFIFA Integration
+                    </div>
+                \`;
+            } catch (error) {
+                console.error('❌ Fehler beim Laden der Stats:', error.message);
+            }
+        }
+
+        // Load all players
+        async function loadAllPlayers() {
+            try {
+                const players = FIFADataService.getAvailablePlayers();
+                const playerGrid = document.getElementById('allPlayers');
+                
+                playerGrid.innerHTML = players.map(playerName => {
+                    const playerData = FIFADataService.fifaDatabase[playerName];
+                    const cardColor = FIFADataService.getPlayerCardColor(playerData.overall);
+                    
+                    return \`
+                        <div class="fifa-card \${cardColor} rounded-lg p-4 cursor-pointer" onclick="quickSearch('\${playerName}')">
+                            <h5 class="font-bold text-sm mb-1">\${playerName}</h5>
+                            <div class="text-lg font-bold">\${playerData.overall}</div>
+                            <div class="text-xs opacity-75 mt-1">
+                                \${playerData.club}<br>
+                                \${Array.isArray(playerData.positions) ? playerData.positions.join(', ') : 'N/A'}
+                            </div>
+                        </div>
+                    \`;
+                }).join('');
+                
+            } catch (error) {
+                console.error('❌ Fehler beim Laden der Spieler:', error.message);
+            }
+        }
+
+        // Test functions
+        window.runBasicTests = async function() {
+            console.log('🧪 Starte Basic Tests...');
+            
+            try {
+                const players = FIFADataService.getAvailablePlayers();
+                console.log(\`✅ \${players.length} Spieler geladen\`);
+                
+                const haaland = await FIFADataService.getPlayerData('Erling Haaland', { useLiveData: false });
+                console.log(\`✅ Haaland Test: Overall \${haaland.overall}\`);
+                
+                const urlValidation = FIFADataService.validateSofifaUrls();
+                console.log(\`✅ URL Validation: \${urlValidation.valid.length} gültig\`);
+                
+                console.log('🎉 Basic Tests erfolgreich!');
+            } catch (error) {
+                console.error('❌ Basic Tests fehlgeschlagen:', error.message);
+            }
+        };
+
+        window.testFuzzyMatching = async function() {
+            console.log('🔍 Starte Fuzzy Matching Tests...');
+            
+            const testCases = ['haaland', 'mbappe', 'vinicius', 'jude', 'sergio'];
+            
+            for (const testCase of testCases) {
+                try {
+                    const result = await FIFADataService.getPlayerData(testCase, { useLiveData: false });
+                    if (result.found) {
+                        console.log(\`✅ "\${testCase}" → \${result.suggestedName || result.searchName}\`);
+                    } else {
+                        console.log(\`❌ "\${testCase}" → Nicht gefunden\`);
+                    }
+                } catch (error) {
+                    console.log(\`❌ "\${testCase}" → Fehler: \${error.message}\`);
+                }
+            }
+        };
+
+        window.testSofifaIntegration = async function() {
+            console.log('🌐 Starte SoFIFA Integration Tests...');
+            
+            try {
+                const connectivityTest = await FIFADataService.testSofifaConnectivity();
+                console.log(\`📊 Connectivity Test: Success=\${connectivityTest.success}\`);
+                console.log(\`📊 Test Player: \${connectivityTest.testPlayer}\`);
+                
+                if (connectivityTest.responseTime) {
+                    console.log(\`⏱️ Response Time: \${connectivityTest.responseTime}\`);
+                }
+                
+                if (connectivityTest.error) {
+                    console.log(\`⚠️ Expected Limitation: \${connectivityTest.error}\`);
+                }
+                
+                console.log('ℹ️ CORS Beschränkungen sind in Browser-Umgebungen normal');
+                
+            } catch (error) {
+                console.error('❌ SoFIFA Test fehlgeschlagen:', error.message);
+            }
+        };
+
+        window.testBatchProcessing = async function() {
+            console.log('📦 Starte Batch Processing Test...');
+            
+            try {
+                const playerNames = ['haaland', 'mbappe', 'vinicius'];
+                const results = await FIFADataService.batchGetPlayerData(playerNames, { 
+                    useLiveData: false,
+                    batchSize: 2
+                });
+                
+                console.log(\`✅ Batch verarbeitet: \${results.length} Spieler\`);
+                results.forEach(player => {
+                    if (player.found) {
+                        console.log(\`  → \${player.suggestedName || player.searchName}: \${player.overall}\`);
+                    }
+                });
+                
+            } catch (error) {
+                console.error('❌ Batch Processing fehlgeschlagen:', error.message);
+            }
+        };
+
+        window.clearConsole = function() {
+            testConsole.textContent = '';
+        };
+
+        function showLoading(elementId) {
+            document.getElementById(elementId).innerHTML = \`
+                <div class="flex justify-center items-center py-8">
+                    <div class="loading-spinner"></div>
+                    <span class="ml-3">Lädt...</span>
+                </div>
+            \`;
+        }
+
+        // Keyboard shortcuts
+        document.getElementById('playerSearch').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchPlayer();
+            }
+        });
+
+        // New functions for database player integration
+        window.loadStoredPlayers = async function() {
+            console.log('📋 Loading all stored players from database...');
+            showLoading('storedPlayersResults');
+            
+            try {
+                // Import the data access function dynamically
+                const { getAllPlayers } = await import('./data.js');
+                const storedPlayers = await getAllPlayers();
+                
+                console.log(\`✅ Loaded \${storedPlayers.length} players from database\`);
+                
+                let html = '';
+                if (storedPlayers.length === 0) {
+                    html = '<div class="text-gray-500 p-4">No players found in database</div>';
+                } else {
+                    html = \`<div class="bg-blue-50 border border-blue-200 text-blue-700 p-3 rounded mb-3">
+                        📊 Found \${storedPlayers.length} players in database
+                    </div>\`;
+                    
+                    storedPlayers.forEach(player => {
+                        html += \`
+                            <div class="bg-gray-50 border rounded p-3 mb-2">
+                                <div class="flex justify-between items-center">
+                                    <div>
+                                        <strong>\${player.name}</strong>
+                                        <span class="text-gray-600">(\${player.team || 'No team'})</span>
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        \${player.position || 'Unknown'} | €\${player.value || 0}
+                                    </div>
+                                </div>
+                            </div>
+                        \`;
+                    });
+                }
+                
+                document.getElementById('storedPlayersResults').innerHTML = html;
+                window.currentStoredPlayers = storedPlayers;
+                
+                // Update stats
+                document.getElementById('storedPlayersStats').innerHTML = \`
+                    <div>Total Players: <strong>\${storedPlayers.length}</strong></div>
+                    <div>Status: <span class="text-green-600">Loaded</span></div>
+                \`;
+                
+            } catch (error) {
+                console.error('❌ Error loading stored players:', error.message);
+                document.getElementById('storedPlayersResults').innerHTML = \`
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        ❌ Error: \${error.message}
+                    </div>
+                \`;
+            }
+        };
+
+        window.processStoredPlayersWithSofifa = async function() {
+            if (!window.currentStoredPlayers || window.currentStoredPlayers.length === 0) {
+                console.warn('⚠️ No stored players loaded. Please load players first.');
+                return;
+            }
+
+            console.log('🌐 Processing stored players with SoFIFA integration...');
+            showLoading('storedPlayersResults');
+            
+            try {
+                const startTime = Date.now();
+                const results = await FIFADataService.processAllStoredPlayers({
+                    useLiveData: true,
+                    batchSize: 2,
+                    includeStatistics: true
+                });
+                const endTime = Date.now();
+                
+                console.log(\`✅ Processing complete: \${results.totalCount} players in \${endTime - startTime}ms\`);
+                
+                // Display enhanced players
+                let html = \`<div class="bg-green-50 border border-green-200 text-green-700 p-3 rounded mb-3">
+                    ✅ Processed \${results.totalCount} players in \${results.processingTime}
+                </div>\`;
+                
+                results.players.forEach(player => {
+                    const fifaData = player.fifaData;
+                    const overall = fifaData?.overall || 'N/A';
+                    const source = fifaData?.source || 'unknown';
+                    const positions = fifaData?.positions?.join(', ') || 'Unknown';
+                    
+                    const cardColor = overall !== 'N/A' ? 
+                        (overall >= 85 ? 'border-yellow-400 bg-yellow-50' : 
+                         overall >= 75 ? 'border-gray-400 bg-gray-50' : 
+                         'border-orange-400 bg-orange-50') : 'border-gray-300 bg-gray-50';
+                    
+                    html += \`
+                        <div class="border rounded p-3 mb-2 \${cardColor}">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <strong>\${player.name}</strong>
+                                        <span class="text-gray-600">(\${player.team || 'No team'})</span>
+                                        \${player.enhanced ? '✅' : '❌'}
+                                    </div>
+                                    <div class="text-sm text-gray-600 mt-1">
+                                        Positions: \${positions}
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <div class="text-lg font-bold">\${overall}</div>
+                                    <div class="text-xs text-gray-500">\${source}</div>
+                                </div>
+                            </div>
+                        </div>
+                    \`;
+                });
+                
+                document.getElementById('storedPlayersResults').innerHTML = html;
+                
+                // Update statistics
+                if (results.statistics) {
+                    const stats = results.statistics;
+                    document.getElementById('storedPlayersStats').innerHTML = \`
+                        <div class="space-y-1">
+                            <div>Total: <strong>\${stats.total}</strong></div>
+                            <div>Enhanced: <strong class="text-green-600">\${stats.enhanced}</strong></div>
+                            <div>Failed: <strong class="text-red-600">\${stats.failed}</strong></div>
+                            <div>Success Rate: <strong>\${stats.successRate}</strong></div>
+                            <hr class="my-2">
+                            <div class="text-xs">
+                                <div>Live Data: \${stats.withLiveData}</div>
+                                <div>Mock Data: \${stats.withMockData}</div>
+                                <div>Generated: \${stats.withGeneratedData}</div>
+                            </div>
+                        </div>
+                    \`;
+                }
+                
+            } catch (error) {
+                console.error('❌ Error processing with SoFIFA:', error.message);
+                document.getElementById('storedPlayersResults').innerHTML = \`
+                    <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+                        ❌ Error: \${error.message}
+                    </div>
+                \`;
+            }
+        };
+
+        window.clearStoredResults = function() {
+            document.getElementById('storedPlayersResults').innerHTML = '<p class="text-gray-500">Results cleared</p>';
+            document.getElementById('storedPlayersStats').innerHTML = '<p class="text-gray-500">Keine Statistiken</p>';
+            window.currentStoredPlayers = null;
+            console.log('🗑️ Stored players results cleared');
+        };
+
+        // Expose for global access
+        window.FIFADataService = FIFADataService;
+        window.SofifaIntegration = SofifaIntegration;
+    </script>
+</body>
+</html>

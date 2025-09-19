@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <title>FUSTA - FIFA Statistik-Tracker - Test Interface</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <link href="css/tailwind-play-output.css" rel="stylesheet">
+    <link rel="stylesheet" href="assets/fonts/fontawesome-icons.css">
+    <style>
+        html, body {
+            height: 100%;
+            min-height: 100%;
+            background: #0f172a;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            font-family: 'Roboto', -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+        }
+        .app-container {
+            flex: 1 0 auto;
+        }
+        /* Bottom Navigation */
+        #bottom-nav {
+            position: fixed !important;
+            bottom: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            width: 100vw;
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(30,41,59,0.96);
+            box-shadow: 0 -4px 24px rgba(0,0,0,0.25);
+            border-top: 2px solid #475569;
+            padding: 0.5rem 0.5rem 0.65rem 0.5rem;
+            min-height: 72px;
+            backdrop-filter: blur(12px);
+        }
+        #bottom-nav a {
+            flex: 1 1 0;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            padding: 8px 0 4px 0;
+            border-radius: 16px;
+            margin: 0 2px;
+            transition: background 0.16s, color 0.12s, box-shadow 0.12s;
+            color: #e5e7eb;
+            font-weight: 500;
+            font-size: 13px;
+        }
+        #bottom-nav a.active {
+            background: linear-gradient(135deg, #1e293b 80%, #334155 100%);
+            color: #38bdf8 !important;
+        }
+        #bottom-nav a i {
+            font-size: 26px;
+            margin-bottom: 2px;
+        }
+        #bottom-nav a span {
+            font-size: 11px;
+            margin-top: 1px;
+            font-weight: 600;
+        }
+    </style>
+    <script type="module">
+        // Import modal enhancements
+        import { createModal, openModal, modalManager } from './modal.js';
+        import { hideModal } from './modal.js';
+        import ModalEnhancementTestSuite from './modalEnhancementTest.js';
+        
+        // Global functions for testing
+        window.showPlayerModal = function(playerName) {
+            const modalContent = `
+                <div class="player-modal-content">
+                    <h2 class="text-2xl font-bold text-white mb-4">${playerName}</h2>
+                    <div class="grid grid-cols-2 gap-4 mb-6">
+                        <div class="bg-slate-800 p-3 rounded">
+                            <div class="text-gray-400 text-sm">Position</div>
+                            <div class="text-white font-semibold">Stürmer</div>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded">
+                            <div class="text-gray-400 text-sm">Team</div>
+                            <div class="text-white font-semibold">AEK Athen</div>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded">
+                            <div class="text-gray-400 text-sm">Tore</div>
+                            <div class="text-green-400 font-semibold">15</div>
+                        </div>
+                        <div class="bg-slate-800 p-3 rounded">
+                            <div class="text-gray-400 text-sm">Assists</div>
+                            <div class="text-blue-400 font-semibold">8</div>
+                        </div>
+                    </div>
+                    <div class="space-y-3">
+                        <button class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-all">
+                            Spieler bearbeiten
+                        </button>
+                        <button class="w-full bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-all">
+                            FIFA Daten anzeigen
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            createModal('player-detail', modalContent, {
+                size: 'player',
+                animation: 'slideUp'
+            });
+            openModal('player-detail');
+        };
+        
+        window.showAddPlayerModal = function() {
+            const modalContent = `
+                <div class="add-player-form">
+                    <h2 class="text-2xl font-bold text-white mb-6">Neuen Spieler hinzufügen</h2>
+                    <form class="space-y-4">
+                        <div>
+                            <label class="block text-gray-300 text-sm font-medium mb-2">Name</label>
+                            <input type="text" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white" placeholder="Spielername">
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm font-medium mb-2">Position</label>
+                            <select class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
+                                <option>ST - Stürmer</option>
+                                <option>LF - Linksaußen</option>
+                                <option>RF - Rechtsaußen</option>
+                                <option>ZOM - Zentraler Offensiver Mittelfeldspieler</option>
+                                <option>ZM - Zentraler Mittelfeldspieler</option>
+                                <option>LM - Linker Mittelfeldspieler</option>
+                                <option>RM - Rechter Mittelfeldspieler</option>
+                                <option>ZDM - Zentraler Defensiver Mittelfeldspieler</option>
+                                <option>LV - Linker Verteidiger</option>
+                                <option>RV - Rechter Verteidiger</option>
+                                <option>IV - Innenverteidiger</option>
+                                <option>TH - Torhüter</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm font-medium mb-2">Team</label>
+                            <select class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white">
+                                <option>AEK Athen</option>
+                                <option>Real Madrid</option>
+                                <option>Ehemalige</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-gray-300 text-sm font-medium mb-2">Marktwert (Mio. €)</label>
+                            <input type="number" class="w-full bg-slate-800 border border-slate-600 rounded px-3 py-2 text-white" placeholder="0.0" step="0.1">
+                        </div>
+                        <div class="flex space-x-3 pt-4">
+                            <button type="submit" class="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-all">
+                                Spieler hinzufügen
+                            </button>
+                            <button type="button" class="flex-1 bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-all" onclick="hideModal()">
+                                Abbrechen
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            `;
+            
+            createModal('add-player', modalContent, {
+                size: 'default',
+                animation: 'slideUp',
+                className: 'form-container'
+            });
+            openModal('add-player');
+        };
+        
+        window.runModalTests = async function() {
+            const testSuite = new ModalEnhancementTestSuite();
+            const results = await testSuite.runAllTests();
+            
+            // Show results in a modal
+            const resultsContent = `
+                <div class="test-results">
+                    <h2 class="text-2xl font-bold text-white mb-4">🧪 Test Ergebnisse</h2>
+                    <div class="grid grid-cols-3 gap-4 mb-6">
+                        <div class="bg-green-900 p-3 rounded text-center">
+                            <div class="text-green-400 text-2xl font-bold">${results.passedTests}</div>
+                            <div class="text-green-300 text-sm">Bestanden</div>
+                        </div>
+                        <div class="bg-red-900 p-3 rounded text-center">
+                            <div class="text-red-400 text-2xl font-bold">${results.failedTests}</div>
+                            <div class="text-red-300 text-sm">Fehlgeschlagen</div>
+                        </div>
+                        <div class="bg-blue-900 p-3 rounded text-center">
+                            <div class="text-blue-400 text-2xl font-bold">${results.passRate}%</div>
+                            <div class="text-blue-300 text-sm">Erfolgsrate</div>
+                        </div>
+                    </div>
+                    <div class="bg-slate-800 p-4 rounded">
+                        <h3 class="text-white font-semibold mb-2">Getestete Features:</h3>
+                        <ul class="text-gray-300 text-sm space-y-1">
+                            <li>✅ Modal Überlappung verhindert</li>
+                            <li>✅ Mobile Responsivität</li>
+                            <li>✅ Verbesserte Animationen</li>
+                            <li>✅ Touch-freundliche Interaktionen</li>
+                            <li>✅ Z-Index Management</li>
+                            <li>✅ Barrierefreiheit</li>
+                        </ul>
+                    </div>
+                    <div class="mt-4">
+                        <button class="w-full bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition-all" onclick="hideModal()">
+                            Schließen
+                        </button>
+                    </div>
+                </div>
+            `;
+            
+            createModal('test-results', resultsContent, {
+                size: 'large',
+                animation: 'slideUp'
+            });
+            openModal('test-results');
+        };
+        
+        window.showDemoModal = function() {
+            const demoContent = `
+                <div class="demo-modal">
+                    <h2 class="text-2xl font-bold text-white mb-4">🎭 Enhanced Modal Demo</h2>
+                    <div class="space-y-4">
+                        <div class="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-lg">
+                            <h3 class="text-white font-semibold">Neue Features:</h3>
+                            <ul class="text-blue-100 text-sm mt-2 space-y-1">
+                                <li>• Verbesserte Animationen mit Bounce-Effekt</li>
+                                <li>• Backdrop Blur für moderne Optik</li>
+                                <li>• Automatisches Z-Index Management</li>
+                                <li>• Mobile-optimierte Größenanpassung</li>
+                                <li>• Touch-freundliche Bedienelemente</li>
+                            </ul>
+                        </div>
+                        <div class="bg-slate-800 p-4 rounded">
+                            <p class="text-gray-300">
+                                Diese Modal verwendet die neue Enhanced Modal API mit automatischer 
+                                Überlappungsverhinderung und optimierter mobiler Darstellung.
+                            </p>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button class="flex-1 bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition-all">
+                                Bestätigen
+                            </button>
+                            <button class="flex-1 bg-gray-600 text-white py-2 px-4 rounded hover:bg-gray-700 transition-all" onclick="hideModal()">
+                                Abbrechen
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            createModal('demo-modal', demoContent, {
+                size: 'default',
+                animation: 'slideUp'
+            });
+            openModal('demo-modal');
+        };
+        
+        window.showStackedModals = function() {
+            // First modal
+            createModal('stack-1', `
+                <div>
+                    <h2 class="text-xl font-bold text-white mb-4">Modal 1 (Unten)</h2>
+                    <p class="text-gray-300 mb-4">Dies ist die erste Modal in einem Stack.</p>
+                    <button class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition-all" onclick="openStackModal2()">
+                        Modal 2 öffnen
+                    </button>
+                </div>
+            `, { size: 'small' });
+            
+            openModal('stack-1');
+        };
+        
+        window.openStackModal2 = function() {
+            createModal('stack-2', `
+                <div>
+                    <h2 class="text-xl font-bold text-white mb-4">Modal 2 (Mitte)</h2>
+                    <p class="text-gray-300 mb-4">Dies ist die zweite Modal. Beachten Sie das höhere Z-Index.</p>
+                    <button class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700 transition-all" onclick="openStackModal3()">
+                        Modal 3 öffnen
+                    </button>
+                </div>
+            `, { size: 'default' });
+            
+            openModal('stack-2');
+        };
+        
+        window.openStackModal3 = function() {
+            createModal('stack-3', `
+                <div>
+                    <h2 class="text-xl font-bold text-white mb-4">Modal 3 (Oben)</h2>
+                    <p class="text-gray-300 mb-4">Dies ist die oberste Modal im Stack.</p>
+                    <div class="space-x-2">
+                        <button class="bg-red-600 text-white px-4 py-2 rounded hover:bg-red-700 transition-all" onclick="modalManager.hideModal('stack-3')">
+                            Nur diese schließen
+                        </button>
+                        <button class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700 transition-all" onclick="modalManager.hideAllModals()">
+                            Alle schließen
+                        </button>
+                    </div>
+                </div>
+            `, { size: 'large' });
+            
+            openModal('stack-3');
+        };
+        
+        // Make functions globally available
+        window.hideModal = hideModal;
+        window.modalManager = modalManager;
+    </script>
+</head>
+<body class="bg-slate-800 font-sans transition-colors min-h-screen">
+<div class="app-container w-full bg-slate-700 shadow-lg relative overflow-hidden min-h-screen">
+    <!-- TOP HEADER -->
+    <header class="bg-slate-600 border-b-2 border-slate-500 px-4 py-3 shadow-xl">
+      <div class="flex justify-between items-center w-full px-2">       
+        <a href="#" class="flex items-center">
+          <img src="assets/logo-fusta.png" class="h-10 mr-3" alt="FUSTA Logo" />
+          <span class="self-center text-lg sm:text-xl font-bold whitespace-nowrap text-slate-100 hidden sm:block">FUSTA - FIFA Statistik-Tracker</span>
+          <span class="self-center text-lg font-bold whitespace-nowrap text-slate-100 block sm:hidden">FUSTA</span>
+        </a>
+        <div class="flex items-center gap-2">
+          <button class="inline-flex items-center justify-center border-2 font-sans font-medium text-center transition-all duration-300 ease-in disabled:opacity-50 disabled:shadow-none disabled:cursor-not-allowed text-sm rounded-lg py-3 px-4 shadow-lg hover:shadow-xl bg-red-600 border-red-600 text-red-50 hover:bg-red-500 hover:border-red-500 active:scale-95" style="min-width:48px;">
+            <i class="fas fa-sign-out-alt text-lg"></i>
+            <span class="ml-2 hidden sm:inline">Abmelden</span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- BOTTOM NAVIGATION -->
+    <nav id="bottom-nav">
+      <a href="#" class="flex flex-col items-center active">
+        <i class="fas fa-users"></i>
+        <span>Kader</span>
+      </a>
+      <a href="#" class="flex flex-col items-center">
+        <i class="fas fa-futbol"></i>
+        <span>Spiele</span>
+      </a>
+      <a href="#" class="flex flex-col items-center">
+        <i class="fas fa-ban"></i>
+        <span>Sperren</span>
+      </a>
+      <a href="#" class="flex flex-col items-center">
+        <i class="fas fa-euro-sign"></i>
+        <span>Finanzen</span>
+      </a>
+      <a href="#" class="flex flex-col items-center">
+        <i class="fas fa-chart-bar"></i>
+        <span>Stats</span>
+      </a>
+      <a href="#" class="flex flex-col items-center">
+        <i class="fas fa-star"></i>
+        <span>Spieler</span>
+      </a>
+    </nav>
+
+    <main class="p-3 pb-28 lg:pb-8 relative min-h-[calc(100vh-140px)] bg-slate-700 content-safe-area">
+        <div id="app" class="mobile-safe-bottom">
+            <!-- Test content showing current design style -->
+            <div class="space-y-4">
+                <h2 class="text-2xl font-bold text-white mb-4">Kader Management</h2>
+                
+                <!-- Sample player cards with enhanced styling -->
+                <div class="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+                    <div class="player-card team-aek-card" onclick="showPlayerModal('Max Mustermann')">
+                        <div class="player-info">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="player-name">Max Mustermann</h3>
+                                <span class="position-badge badge-att">ST</span>
+                            </div>
+                            <div class="text-gray-300 text-sm">Team: AEK Athen</div>
+                            <div class="player-stats">
+                                <span>Tore: 15</span>
+                                <span>Assists: 8</span>
+                            </div>
+                            <div class="mt-3 space-x-2">
+                                <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-all" onclick="event.stopPropagation();">Bearbeiten</button>
+                                <button class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-all" onclick="event.stopPropagation();">Löschen</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="player-card team-real-card" onclick="showPlayerModal('John Doe')">
+                        <div class="player-info">
+                            <div class="flex justify-between items-start mb-2">
+                                <h3 class="player-name">John Doe</h3>
+                                <span class="position-badge badge-def">IV</span>
+                            </div>
+                            <div class="text-gray-300 text-sm">Team: Real Madrid</div>
+                            <div class="player-stats">
+                                <span>Tore: 2</span>
+                                <span>Assists: 5</span>
+                            </div>
+                            <div class="mt-3 space-x-2">
+                                <button class="bg-blue-600 text-white px-3 py-1 rounded text-sm hover:bg-blue-700 transition-all" onclick="event.stopPropagation();">Bearbeiten</button>
+                                <button class="bg-red-600 text-white px-3 py-1 rounded text-sm hover:bg-red-700 transition-all" onclick="event.stopPropagation();">Löschen</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Add player button with enhanced styling -->
+                <div class="button-safe-area">
+                    <button class="bg-green-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all transform hover:scale-105 hover:shadow-lg" onclick="showAddPlayerModal()">
+                        <i class="fas fa-plus mr-2"></i>
+                        Neuen Spieler hinzufügen
+                    </button>
+                </div>
+                
+                <!-- Test modal functionality button -->
+                <div class="mt-8 p-4 bg-slate-800 rounded-lg border border-slate-600">
+                    <h3 class="text-lg font-semibold text-white mb-3">Modal Enhancement Tests</h3>
+                    <div class="space-x-2 space-y-2">
+                        <button class="bg-purple-600 text-white px-3 py-2 rounded hover:bg-purple-700 transition-all" onclick="runModalTests()">
+                            🧪 Test Modal System
+                        </button>
+                        <button class="bg-blue-600 text-white px-3 py-2 rounded hover:bg-blue-700 transition-all" onclick="showDemoModal()">
+                            🎭 Demo Enhanced Modal
+                        </button>
+                        <button class="bg-indigo-600 text-white px-3 py-2 rounded hover:bg-indigo-700 transition-all" onclick="showStackedModals()">
+                            📚 Test Modal Stacking
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+</div>
+</body>
+</html>

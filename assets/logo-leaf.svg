@@ -1,0 +1,23 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Leaf/Nature Icon -->
+  <rect width="64" height="64" rx="16" fill="url(#gradient)"/>
+  
+  <!-- Main Leaf Shape -->
+  <path d="M32 16c-8 0-16 8-16 16 0 4 2 8 4 10 2 2 6 4 10 4s8-2 10-4c2-2 4-6 4-10 0-8-8-16-12-16z" fill="white" opacity="0.9"/>
+  
+  <!-- Leaf Vein -->
+  <path d="M32 16c0 6-2 12-4 16 2 4 4 10 4 16" stroke="#8E44AD" stroke-width="2" fill="none" opacity="0.7"/>
+  
+  <!-- Secondary Veins -->
+  <path d="M28 24c4 2 8 4 12 6" stroke="#8E44AD" stroke-width="1" opacity="0.5"/>
+  <path d="M28 32c4 2 8 4 12 6" stroke="#8E44AD" stroke-width="1" opacity="0.5"/>
+  <path d="M28 40c4 2 8 4 12 6" stroke="#8E44AD" stroke-width="1" opacity="0.5"/>
+  
+  <!-- Gradient Definition -->
+  <defs>
+    <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#9B59B6;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#8E44AD;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+</svg>
