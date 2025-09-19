@@ -13,9 +13,9 @@ export default function TeamLogo({ team, size = 'md', className = '' }) {
   const getLogoSrc = (teamName) => {
     switch (teamName?.toLowerCase()) {
       case 'aek':
-        return '/tr_lite/aek_logo_transparent.png';
+        return '/tr_new/aek_logo_transparent.png';
       case 'real':
-        return '/tr_lite/real_logo_transparent.png';
+        return '/tr_new/real_logo_transparent.png';
       default:
         return null;
     }

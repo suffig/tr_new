@@ -30,8 +30,8 @@ export default function NotificationSystem({ onNavigate }) {
         // iOS Safari has different behavior, so we use a more compatible approach
         const notificationOptions = {
           body: notification.message,
-          icon: '/tr_lite/assets/icon-180.png', // Updated path for subdir
-          badge: '/tr_lite/assets/icon-180.png',
+          icon: '/tr_new/assets/icon-180.png', // Updated path for subdir
+          badge: '/tr_new/assets/icon-180.png',
           tag: `fifa-tracker-${type}-${id}`,
           requireInteraction: type === 'match-result' || type === 'match-created', // Keep match notifications visible
           silent: false,
@@ -107,15 +107,15 @@ export default function NotificationSystem({ onNavigate }) {
     switch (type) {
       case 'match-created':
       case 'match-result':
-        return `/tr_lite/#matches${data?.matchId ? `?match=${data.matchId}` : ''}`;
+        return `/tr_new/#matches${data?.matchId ? `?match=${data.matchId}` : ''}`;
       case 'player-ban':
-        return `/tr_lite/#bans${data?.banId ? `?ban=${data.banId}` : ''}`;
+        return `/tr_new/#bans${data?.banId ? `?ban=${data.banId}` : ''}`;
       case 'financial-milestone':
-        return `/tr_lite/#finances${data?.team ? `?team=${data.team}` : ''}`;
+        return `/tr_new/#finances${data?.team ? `?team=${data.team}` : ''}`;
       case 'achievement-unlocked':
-        return `/tr_lite/#stats${data?.achievementId ? `?achievement=${data.achievementId}` : ''}`;
+        return `/tr_new/#stats${data?.achievementId ? `?achievement=${data.achievementId}` : ''}`;
       default:
-        return '/tr_lite/#matches';
+        return '/tr_new/#matches';
     }
   };
 

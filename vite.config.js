@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 export default defineConfig({
-  base: '/tr_lite/', // <-- Für GitHub Pages im Unterverzeichnis!
+  base: '/tr_new/', // <-- Für GitHub Pages im Unterverzeichnis!
   plugins: [
     react(),
     VitePWA({
