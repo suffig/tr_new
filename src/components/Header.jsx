@@ -1,5 +1,6 @@
 import React from 'react';
 import logoFusta from '/assets/logo-fusta.png';
+import SeasonSelector from './SeasonSelector';
 
 export default function Header() {
   return (
@@ -17,10 +18,13 @@ export default function Header() {
           <h1 className="text-title3 font-bold text-text-primary">FUSTA</h1>
         </div>
         
-        {/* Status indicator */}
-        <div className="flex items-center gap-2">
-          <div className="w-2 h-2 bg-system-green rounded-full animate-pulse-gentle"></div>
-          <span className="text-caption1 text-text-secondary">Online</span>
+        {/* Season selector and status */}
+        <div className="flex items-center gap-4">
+          <SeasonSelector showInHeader={true} />
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 bg-system-green rounded-full animate-pulse-gentle"></div>
+            <span className="text-caption1 text-text-secondary">Online</span>
+          </div>
         </div>
       </div>
     </header>
