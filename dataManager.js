@@ -76,8 +76,9 @@ class DataManager {
                 count: { required: false, type: 'number', min: 0 }
             },
             managers: {
-                name: { required: true, type: 'string', minLength: 1 },
-                gewicht: { required: true, type: 'number', min: 40, max: 200 }
+                name: { required: false, type: 'string', minLength: 1 },
+                gewicht: { required: false, type: 'number', min: 40, max: 200 },
+                age: { required: false, type: 'number', min: 18, max: 80 }
             }
         };
     }
@@ -437,7 +438,27 @@ class DataManager {
     }
 
     async getManagers() {
-        return this.select('managers', '*', { order: { column: 'id', ascending: true } });
+        return this.select('manager', '*', { order: { column: 'id', ascending: true } });
+    }
+
+    async updateManager(id, data) {
+        // Validate manager data
+        if (!this.validateData('managers', data)) {
+            throw new Error('Invalid manager data');
+        }
+        return this.update('manager', data, id);
+    }
+
+    async insertManager(data) {
+        // Validate manager data
+        if (!this.validateData('managers', data)) {
+            throw new Error('Invalid manager data');
+        }
+        return this.insert('manager', data);
+    }
+
+    async deleteManager(id) {
+        return this.delete('manager', id);
     }
 
     // Batch operations for better performance
@@ -449,7 +470,7 @@ class DataManager {
             { key: 'finances', table: 'finances', query: '*', options: {} },
             { key: 'transactions', table: 'transactions', query: '*', options: { order: { column: 'id', ascending: false } } },
             { key: 'spieler_des_spiels', table: 'spieler_des_spiels', query: '*', options: {} },
-            { key: 'managers', table: 'managers', query: '*', options: { order: { column: 'id', ascending: true } } }
+            { key: 'managers', table: 'manager', query: '*', options: { order: { column: 'id', ascending: true } } }
         ];
 
         const results = await this.batchedSelect(requests);
