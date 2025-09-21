@@ -2,16 +2,35 @@
  * Season Manager Utility
  * Handles data versioning and migration between FIFA seasons (Legacy vs FC26)
  * Provides data isolation while preserving access to historical data
+ * Now integrated with FIFA version database management
  */
 
-// Season definitions
+import { 
+  getCurrentFifaVersion, 
+  setCurrentFifaVersion, 
+  FIFA_VERSIONS,
+  getFifaVersionDisplayName 
+} from './fifaVersionManager.js';
+
+// Season definitions (keeping legacy compatibility)
 export const SEASONS = {
   LEGACY: 'legacy',
   FC26: 'fc26'
 };
 
+// Map seasons to FIFA versions
+const SEASON_TO_FIFA_VERSION = {
+  [SEASONS.LEGACY]: FIFA_VERSIONS.FC25,
+  [SEASONS.FC26]: FIFA_VERSIONS.FC26
+};
+
+const FIFA_VERSION_TO_SEASON = {
+  [FIFA_VERSIONS.FC25]: SEASONS.LEGACY,
+  [FIFA_VERSIONS.FC26]: SEASONS.FC26
+};
+
 export const SEASON_NAMES = {
-  [SEASONS.LEGACY]: 'Legacy FIFA',
+  [SEASONS.LEGACY]: 'Legacy FIFA (FC25)',
   [SEASONS.FC26]: 'FIFA Club 26'
 };
 
@@ -46,16 +65,25 @@ const SEASON_METADATA = {
  */
 export const getCurrentSeason = () => {
   try {
-    const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_SEASON);
-    // Default to Legacy for existing users, FC26 for new users
-    if (!stored) {
-      // Check if user has any existing data (check common storage keys)
-      const hasExistingData = localStorage.getItem('alcoholCalculatorValues') ||
-                              localStorage.getItem('fifa_matches') ||
-                              localStorage.getItem('fifa_players');
-      return hasExistingData ? SEASONS.LEGACY : SEASONS.FC26;
+    // Use FIFA version as the primary source of truth
+    const currentFifaVersion = getCurrentFifaVersion();
+    const season = FIFA_VERSION_TO_SEASON[currentFifaVersion];
+    
+    if (season) {
+      return season;
     }
-    return stored;
+    
+    // Fallback to localStorage
+    const stored = localStorage.getItem(STORAGE_KEYS.CURRENT_SEASON);
+    if (stored) {
+      return stored;
+    }
+    
+    // Default to Legacy for existing users, FC26 for new users
+    const hasExistingData = localStorage.getItem('alcoholCalculatorValues') ||
+                            localStorage.getItem('fifa_matches') ||
+                            localStorage.getItem('fifa_players');
+    return hasExistingData ? SEASONS.LEGACY : SEASONS.FC26;
   } catch (error) {
     console.error('Error getting current season:', error);
     return SEASONS.LEGACY;
@@ -71,17 +99,24 @@ export const setCurrentSeason = (season) => {
     if (!Object.values(SEASONS).includes(season)) {
       throw new Error(`Invalid season: ${season}`);
     }
+    
+    // Update both season and FIFA version
     localStorage.setItem(STORAGE_KEYS.CURRENT_SEASON, season);
+    const fifaVersion = SEASON_TO_FIFA_VERSION[season];
+    if (fifaVersion) {
+      setCurrentFifaVersion(fifaVersion);
+    }
     
     // Dispatch event to notify components
     window.dispatchEvent(new CustomEvent('seasonChanged', {
       detail: { 
         newSeason: season, 
+        fifaVersion: fifaVersion,
         metadata: SEASON_METADATA[season] 
       }
     }));
     
-    console.log(`Season switched to: ${SEASON_NAMES[season]}`);
+    console.log(`Season switched to: ${SEASON_NAMES[season]} (FIFA Version: ${fifaVersion})`);
     return true;
   } catch (error) {
     console.error('Error setting current season:', error);

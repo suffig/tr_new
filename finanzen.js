@@ -3,6 +3,11 @@ import { dataManager } from './dataManager.js';
 import { matches } from './matches.js';
 import { ErrorHandler } from './utils.js';
 import { getPlayersByTeam } from './data.js';
+import { 
+    getCurrentFifaVersion, 
+    addFifaVersionToData, 
+    createFifaVersionFilter
+} from './src/utils/fifaVersionManager.js';
 
 let finances = {
     AEK: { balance: 0, debt: 0 },
