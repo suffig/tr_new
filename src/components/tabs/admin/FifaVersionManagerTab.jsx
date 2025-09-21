@@ -177,9 +177,14 @@ const FifaVersionManagerTab = () => {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-gray-800">Aktuelle FIFA Version</h3>
-            <p className="text-2xl font-bold text-purple-600 mt-1">
-              {getFifaVersionDisplayName(currentVersion)}
-            </p>
+            <div className="flex items-center gap-3 mt-1">
+              <p className="text-3xl font-bold text-purple-600">
+                {currentVersion}
+              </p>
+              <p className="text-lg text-gray-600">
+                ({getFifaVersionDisplayName(currentVersion)})
+              </p>
+            </div>
             <p className="text-gray-600 text-sm mt-1">
               Alle neuen Daten werden in dieser Version gespeichert
             </p>
@@ -283,7 +288,10 @@ const FifaVersionManagerTab = () => {
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col">
-                    <h4 className="font-semibold text-gray-800">{version.name}</h4>
+                    <div className="flex items-center gap-2">
+                      <h4 className="text-xl font-bold text-gray-800">{version.id}</h4>
+                      <span className="text-sm text-gray-600">({version.name})</span>
+                    </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVersionTypeColor(version)}`}>
                         {getVersionTypeLabel(version)}
