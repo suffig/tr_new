@@ -437,7 +437,7 @@ class DataManager {
     }
 
     async getManagers() {
-        return this.select('managers', '*', { order: { column: 'id', ascending: true } });
+        return this.select('manager', '*', { order: { column: 'id', ascending: true } });
     }
 
     // Batch operations for better performance
@@ -449,7 +449,7 @@ class DataManager {
             { key: 'finances', table: 'finances', query: '*', options: {} },
             { key: 'transactions', table: 'transactions', query: '*', options: { order: { column: 'id', ascending: false } } },
             { key: 'spieler_des_spiels', table: 'spieler_des_spiels', query: '*', options: {} },
-            { key: 'managers', table: 'managers', query: '*', options: { order: { column: 'id', ascending: true } } }
+            { key: 'managers', table: 'manager', query: '*', options: { order: { column: 'id', ascending: true } } }
         ];
 
         const results = await this.batchedSelect(requests);

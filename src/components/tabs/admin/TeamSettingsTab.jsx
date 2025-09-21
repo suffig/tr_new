@@ -59,12 +59,12 @@ export default function TeamSettingsTab() {
       
       // Create AEK manager (id=1)
       const aekData = { name: 'Alexander', gewicht: 110 };
-      const aekResult = await dataManager.insert('managers', aekData);
+      const aekResult = await dataManager.insert('manager', aekData);
       console.log('✅ [AdminTab] AEK manager created:', aekResult);
       
       // Create Real manager (id=2)  
       const realData = { name: 'Philip', gewicht: 105 };
-      const realResult = await dataManager.insert('managers', realData);
+      const realResult = await dataManager.insert('manager', realData);
       console.log('✅ [AdminTab] Real manager created:', realResult);
       
       // Set defaults in state
@@ -109,11 +109,11 @@ export default function TeamSettingsTab() {
       console.log('💾 [TeamSettings] Real Data:', realData);
       
       // Update AEK manager (id=1)
-      const aekResult = await dataManager.update('managers', aekData, 1);
+      const aekResult = await dataManager.update('manager', aekData, 1);
       console.log('💾 [TeamSettings] AEK Update Result:', aekResult);
       
       // Update Real manager (id=2)
-      const realResult = await dataManager.update('managers', realData, 2);
+      const realResult = await dataManager.update('manager', realData, 2);
       console.log('💾 [TeamSettings] Real Update Result:', realResult);
       
       setHasChanges(false);

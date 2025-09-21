@@ -76,12 +76,12 @@ CREATE TABLE IF NOT EXISTS spieler_des_spiels (
   CONSTRAINT spieler_des_spiels_pkey PRIMARY KEY (id)
 );
 
--- 7. Managers table for alcohol tracker
-CREATE TABLE IF NOT EXISTS managers (
+-- 7. Manager table for alcohol tracker
+CREATE TABLE IF NOT EXISTS manager (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   name text NOT NULL,
   gewicht int2 NOT NULL,
-  CONSTRAINT managers_pkey PRIMARY KEY (id)
+  CONSTRAINT manager_pkey PRIMARY KEY (id)
 );
 
 -- Insert default finance records if they don't exist
@@ -92,7 +92,7 @@ VALUES
 ON CONFLICT (team) DO NOTHING;
 
 -- Insert default manager records if they don't exist
-INSERT INTO managers (id, name, gewicht) 
+INSERT INTO manager (id, name, gewicht) 
 VALUES 
   (1, 'Alexander', 110),
   (2, 'Philip', 105)
