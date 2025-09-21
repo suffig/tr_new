@@ -7,16 +7,13 @@ import DeleteTab from './admin/DeleteTab';
 import SearchTab from './admin/SearchTab';
 import TeamSettingsTab from './admin/TeamSettingsTab';
 import EventsSettingsTab from './admin/EventsSettingsTab';
-import SeasonManagerTab from './admin/SeasonManagerTab';
-import FifaVersionManagerTab from './admin/FifaVersionManagerTab';
+import ManagerTab from './admin/ManagerTab';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('search');
 
   const subTabs = [
-    { id: 'search', label: 'Globale Suche', icon: 'fas fa-search' },
-    { id: 'season', label: 'Saison-Manager', icon: 'fas fa-calendar-alt' },
-    { id: 'fifa-versions', label: 'FIFA Versionen', icon: 'fas fa-gamepad' },
+    { id: 'search', label: '', icon: 'fas fa-search' }, // Removed label as per requirement #3
     { id: 'matches', label: 'Spiele hinzufügen', icon: 'fas fa-futbol' },
     { id: 'bans', label: 'Sperren hinzufügen', icon: 'fas fa-ban' },
     { id: 'players', label: 'Spieler hinzufügen', icon: 'fas fa-users' },
@@ -24,16 +21,13 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false }) { 
     { id: 'settings', label: 'Team-Einstellungen', icon: 'fas fa-cog' },
     { id: 'events', label: 'Events & Benachrichtigungen', icon: 'fas fa-bell' },
     { id: 'delete', label: 'Daten löschen', icon: 'fas fa-trash' },
+    { id: 'manager', label: 'System-Manager', icon: 'fas fa-tools' }, // Combined Season & FIFA manager at the end
   ];
 
   const renderSubTabContent = () => {
     switch (activeSubTab) {
       case 'search':
         return <SearchTab onNavigate={onNavigate} />;
-      case 'season':
-        return <SeasonManagerTab />;
-      case 'fifa-versions':
-        return <FifaVersionManagerTab />;
       case 'matches':
         return <AddMatchTab />;
       case 'bans':
@@ -48,6 +42,8 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false }) { 
         return <EventsSettingsTab />;
       case 'delete':
         return <DeleteTab />;
+      case 'manager':
+        return <ManagerTab />;
       default:
         return <SearchTab onNavigate={onNavigate} />;
     }
@@ -87,8 +83,10 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false }) { 
                   ? 'text-primary-green border-b-2 border-primary-green bg-bg-primary'
                   : 'text-text-secondary hover:text-text-primary hover:bg-bg-hover'
               }`}
+              title={tab.id === 'search' ? 'Globale Suche' : tab.label} // Add tooltip for search icon
+              aria-label={tab.id === 'search' ? 'Globale Suche' : tab.label}
             >
-              <i className={`${tab.icon} mr-2`}></i>
+              <i className={`${tab.icon} ${tab.label ? 'mr-2' : ''}`}></i>
               {tab.label}
             </button>
           ))}

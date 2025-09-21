@@ -133,16 +133,124 @@ class StatsCalculator {
     const totalMatches = this.matches.length;
     const totalGoals = this.matches.reduce((sum, m) => sum + (m.goalsa || 0) + (m.goalsb || 0), 0);
     
+    // Goal-related statistics
+    const aekTotalGoals = this.matches.reduce((sum, m) => sum + (m.goalsa || 0), 0);
+    const realTotalGoals = this.matches.reduce((sum, m) => sum + (m.goalsb || 0), 0);
+    const highScoringGames = this.matches.filter(m => (m.goalsa || 0) + (m.goalsb || 0) >= 5).length;
+    
+    // Win margins and streaks
+    const winMargins = this.matches.map(m => Math.abs((m.goalsa || 0) - (m.goalsb || 0))).filter(diff => diff > 0);
+    const biggestWinMargin = winMargins.length > 0 ? Math.max(...winMargins) : 0;
+    
+    // Calculate current winning/losing streaks
+    const recentMatches = [...this.matches].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 10);
+    let currentStreak = { type: 'none', count: 0, team: '' };
+    
+    if (recentMatches.length > 0) {
+      const lastMatch = recentMatches[0];
+      const aekGoals = lastMatch.goalsa || 0;
+      const realGoals = lastMatch.goalsb || 0;
+      
+      if (aekGoals > realGoals) {
+        currentStreak.type = 'win';
+        currentStreak.team = 'AEK';
+      } else if (realGoals > aekGoals) {
+        currentStreak.type = 'win';
+        currentStreak.team = 'Real';
+      }
+      
+      // Count streak length
+      for (const match of recentMatches) {
+        const aekG = match.goalsa || 0;
+        const realG = match.goalsb || 0;
+        
+        if (currentStreak.type === 'win' && currentStreak.team === 'AEK' && aekG > realG) {
+          currentStreak.count++;
+        } else if (currentStreak.type === 'win' && currentStreak.team === 'Real' && realG > aekG) {
+          currentStreak.count++;
+        } else {
+          break;
+        }
+      }
+    }
+    
+    // Goal time analysis (if available in match data) - placeholder for future enhancement
+    // const goalsByHalf = {
+    //   firstHalf: 0,
+    //   secondHalf: 0
+    // };
+    
+    // Enhanced scoring patterns
+    const scoringPatterns = {
+      bothTeamsScore: this.matches.filter(m => (m.goalsa || 0) > 0 && (m.goalsb || 0) > 0).length,
+      oneNilWins: this.matches.filter(m => 
+        ((m.goalsa === 1 && m.goalsb === 0) || (m.goalsa === 0 && m.goalsb === 1))
+      ).length,
+      highScoringWins: this.matches.filter(m => 
+        Math.max(m.goalsa || 0, m.goalsb || 0) >= 4
+      ).length
+    };
+    
+    // Home/Away analysis (if team data indicates home/away)
+    const homeAwayStats = {
+      aekHome: this.matches.filter(m => m.teama === 'AEK').length,
+      aekAway: this.matches.filter(m => m.teamb === 'AEK').length,
+      aekHomeWins: this.matches.filter(m => m.teama === 'AEK' && (m.goalsa || 0) > (m.goalsb || 0)).length,
+      aekAwayWins: this.matches.filter(m => m.teamb === 'AEK' && (m.goalsb || 0) > (m.goalsa || 0)).length
+    };
+    
+    // Most productive player analysis
+    const playerGoalCounts = {};
+    this.matches.forEach(match => {
+      if (match.goalscorers && typeof match.goalscorers === 'string') {
+        const scorers = match.goalscorers.split(',').map(s => s.trim()).filter(s => s);
+        scorers.forEach(scorer => {
+          playerGoalCounts[scorer] = (playerGoalCounts[scorer] || 0) + 1;
+        });
+      }
+    });
+    
+    const topScorer = Object.entries(playerGoalCounts).reduce((top, [player, goals]) => 
+      goals > (top.goals || 0) ? { player, goals } : top, { player: 'N/A', goals: 0 });
+    
     return {
+      // Basic stats
       avgGoalsPerMatch: totalMatches > 0 ? (totalGoals / totalMatches).toFixed(2) : '0.00',
       totalMatches,
       totalGoals,
-      aekTotalGoals: this.matches.reduce((sum, m) => sum + (m.goalsa || 0), 0),
-      realTotalGoals: this.matches.reduce((sum, m) => sum + (m.goalsb || 0), 0),
-      highestScoringMatch: totalMatches > 0 ? Math.max(...this.matches.map(m => (m.goalsa || 0) + (m.goalsb || 0))) : 0,
+      aekTotalGoals,
+      realTotalGoals,
+      
+      // Enhanced stats
+      highScoringGames,
+      biggestWinMargin,
+      currentStreak,
+      
+      // Clean sheets and defensive stats
       cleanSheets: {
         aek: this.matches.filter(m => m.goalsb === 0).length,
         real: this.matches.filter(m => m.goalsa === 0).length
+      },
+      
+      // Scoring patterns
+      scoringPatterns,
+      
+      // Home/Away performance
+      homeAwayStats,
+      
+      // Top scorer
+      topScorer,
+      
+      // Goal efficiency
+      goalEfficiency: {
+        aekAvg: totalMatches > 0 ? (aekTotalGoals / totalMatches).toFixed(2) : '0.00',
+        realAvg: totalMatches > 0 ? (realTotalGoals / totalMatches).toFixed(2) : '0.00'
+      },
+      
+      // Match competitiveness
+      competitiveness: {
+        closeGames: this.matches.filter(m => Math.abs((m.goalsa || 0) - (m.goalsb || 0)) <= 1).length,
+        blowouts: this.matches.filter(m => Math.abs((m.goalsa || 0) - (m.goalsb || 0)) >= 3).length
       }
     };
   }
@@ -461,19 +569,18 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               </div>
               <div className="mobile-metric-value text-title2">
                 {(() => {
-                  const totalDays = bans?.reduce((sum, ban) => {
-                    const start = new Date(ban.start_date);
-                    const end = new Date(ban.end_date);
-                    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                    return sum + (days > 0 ? days : 0);
+                  // Calculate average ban length using totalgames instead of dates
+                  const totalBanGames = bans?.reduce((sum, ban) => {
+                    const banLength = ban.totalgames || 0;
+                    return sum + banLength;
                   }, 0) || 0;
                   
-                  const avgDays = bans?.length > 0 ? (totalDays / bans.length).toFixed(1) : '0.0';
-                  return `${avgDays}`;
+                  const avgBanLength = bans?.length > 0 ? (totalBanGames / bans.length).toFixed(1) : '0.0';
+                  return `${avgBanLength}`;
                 })()}
               </div>
               <div className="mobile-metric-label">⌀ Sperrenlänge</div>
-              <div className="mobile-metric-sublabel">Tage</div>
+              <div className="mobile-metric-sublabel">Spiele</div>
             </div>
 
             <div className="mobile-metric-card">
@@ -868,25 +975,107 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-bg-secondary rounded-lg">
-            <div className="text-2xl font-bold text-primary-green">{advancedStats.highestScoringMatch}</div>
-            <div className="text-sm text-text-muted">Höchste Toranzahl</div>
-            <div className="text-xs text-text-muted mt-1">in einem einzelnen Spiel</div>
+            <div className="text-2xl font-bold text-primary-green">{advancedStats.highScoringGames}</div>
+            <div className="text-sm text-text-muted">Torspektakel</div>
+            <div className="text-xs text-text-muted mt-1">Spiele mit 5+ Toren</div>
           </div>
           <div className="text-center p-4 bg-bg-secondary rounded-lg">
-            <div className="text-2xl font-bold text-accent-orange">{Math.abs(aekWins - realWins)}</div>
-            <div className="text-sm text-text-muted">Siegesdifferenz</div>
-            <div className="text-xs text-text-muted mt-1">zwischen den Teams</div>
+            <div className="text-2xl font-bold text-accent-orange">{advancedStats.biggestWinMargin}</div>
+            <div className="text-sm text-text-muted">Größter Sieg</div>
+            <div className="text-xs text-text-muted mt-1">Höchste Tordifferenz</div>
           </div>
           <div className="text-center p-4 bg-bg-secondary rounded-lg">
             <div className="text-2xl font-bold text-accent-blue">
-              {(() => {
-                // Calculate average goals per match
-                const avgGoals = totalMatches > 0 ? (advancedStats.totalGoals / totalMatches).toFixed(1) : '0.0';
-                return avgGoals;
-              })()}
+              {advancedStats.avgGoalsPerMatch}
             </div>
             <div className="text-sm text-text-muted">⌀ Tore pro Spiel</div>
             <div className="text-xs text-text-muted mt-1">Durchschnittswert</div>
+          </div>
+          <div className="text-center p-4 bg-bg-secondary rounded-lg">
+            <div className="text-2xl font-bold text-purple-600">
+              {advancedStats.currentStreak.count > 0 ? 
+                `${advancedStats.currentStreak.count}` : '0'}
+            </div>
+            <div className="text-sm text-text-muted">Siegesserie</div>
+            <div className="text-xs text-text-muted mt-1">
+              {advancedStats.currentStreak.count > 0 ? 
+                advancedStats.currentStreak.team : 'Keine aktuelle Serie'}
+            </div>
+          </div>
+        </div>
+
+        {/* New Enhanced Statistics Section */}
+        <div className="mt-6 grid md:grid-cols-3 gap-6">
+          <div className="space-y-3">
+            <h4 className="font-semibold text-blue-600">🏠 Home/Away Analyse</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>AEK Heimspiele:</span>
+                <span className="font-medium">{advancedStats.homeAwayStats.aekHome}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>AEK Heimsiege:</span>
+                <span className="font-medium">{advancedStats.homeAwayStats.aekHomeWins}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>AEK Auswärtssiege:</span>
+                <span className="font-medium">{advancedStats.homeAwayStats.aekAwayWins}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Heimstärke AEK:</span>
+                <span className="font-medium">
+                  {advancedStats.homeAwayStats.aekHome > 0 ? 
+                    `${((advancedStats.homeAwayStats.aekHomeWins / advancedStats.homeAwayStats.aekHome) * 100).toFixed(0)}%` : 
+                    '0%'}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-semibold text-green-600">⚽ Torstatistiken</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Beide Teams treffen:</span>
+                <span className="font-medium">{advancedStats.scoringPatterns.bothTeamsScore}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>1:0 Siege:</span>
+                <span className="font-medium">{advancedStats.scoringPatterns.oneNilWins}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>4+ Tore Siege:</span>
+                <span className="font-medium">{advancedStats.scoringPatterns.highScoringWins}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Top-Torschütze:</span>
+                <span className="font-medium">
+                  {advancedStats.topScorer.player} ({advancedStats.topScorer.goals})
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <h4 className="font-semibold text-purple-600">🎯 Spielqualität</h4>
+            <div className="space-y-2 text-sm">
+              <div className="flex justify-between">
+                <span>Enge Spiele (≤1 Tor):</span>
+                <span className="font-medium">{advancedStats.competitiveness.closeGames}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Deutliche Siege (≥3 Tore):</span>
+                <span className="font-medium">{advancedStats.competitiveness.blowouts}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>AEK Tor-Schnitt:</span>
+                <span className="font-medium">{advancedStats.goalEfficiency.aekAvg}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Real Tor-Schnitt:</span>
+                <span className="font-medium">{advancedStats.goalEfficiency.realAvg}</span>
+              </div>
+            </div>
           </div>
         </div>
         
