@@ -1,5 +1,11 @@
 // Enhanced Supabase client with fallback support for React
 import { createClient } from '@supabase/supabase-js';
+import { 
+    getCurrentFifaVersion, 
+    addFifaVersionToData, 
+    createFifaVersionFilter,
+    shouldFilterByFifaVersion 
+} from './fifaVersionManager.js';
 
 // Supabase configuration
 const supabaseUrl = 'https://buduldeczjwnjvsckqat.supabase.co';
@@ -9,7 +15,7 @@ const supabaseKey = 'sb_publishable_wcOHaKNEW9rQ3anrRNlEpA_r1_wGda3';
 let usingFallback = false;
 let authSession = null;
 
-// Sample data for fallback mode (enhanced with proper schema)
+// Sample data for fallback mode (enhanced with proper schema including fifa_version)
 const fallbackData = {
   matches: [
     { 
@@ -28,7 +34,8 @@ const fallbackData = {
       manofthematch: 'Max Müller',
       manofthematch_player_id: 1,
       prizeaek: 5000,
-      prizereal: 3000
+      prizereal: 3000,
+      fifa_version: 'FC25'
     },
     { 
       id: 2, 
@@ -46,7 +53,8 @@ const fallbackData = {
       manofthematch: 'Jan Becker',
       manofthematch_player_id: 4,
       prizeaek: 2000,
-      prizereal: 5000
+      prizereal: 5000,
+      fifa_version: 'FC25'
     },
     { 
       id: 3, 
@@ -64,33 +72,34 @@ const fallbackData = {
       manofthematch: null,
       manofthematch_player_id: null,
       prizeaek: 2500,
-      prizereal: 2500
+      prizereal: 2500,
+      fifa_version: 'FC25'
     }
   ],
   players: [
-    { id: 1, name: 'Max Müller', team: 'AEK', position: 'ST', goals: 5, value: 15.5, created_at: '2024-01-01T10:00:00Z' },
-    { id: 2, name: 'Tom Schmidt', team: 'AEK', position: 'TH', goals: 0, value: 8.2, created_at: '2024-01-01T10:00:00Z' },
-    { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 1, value: 12.0, created_at: '2024-01-01T10:00:00Z' },
-    { id: 4, name: 'Jan Becker', team: 'Real', position: 'ST', goals: 7, value: 18.3, created_at: '2024-01-01T10:00:00Z' },
-    { id: 5, name: 'Paul Klein', team: 'Real', position: 'TH', goals: 0, value: 9.1, created_at: '2024-01-01T10:00:00Z' },
-    { id: 6, name: 'Ben Richter', team: 'Real', position: 'ZM', goals: 2, value: 14.7, created_at: '2024-01-01T10:00:00Z' }
+    { id: 1, name: 'Max Müller', team: 'AEK', position: 'ST', goals: 5, value: 15.5, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
+    { id: 2, name: 'Tom Schmidt', team: 'AEK', position: 'TH', goals: 0, value: 8.2, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
+    { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 1, value: 12.0, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
+    { id: 4, name: 'Jan Becker', team: 'Real', position: 'ST', goals: 7, value: 18.3, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
+    { id: 5, name: 'Paul Klein', team: 'Real', position: 'TH', goals: 0, value: 9.1, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
+    { id: 6, name: 'Ben Richter', team: 'Real', position: 'ZM', goals: 2, value: 14.7, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' }
   ],
   bans: [
-    { id: 1, player_id: 1, team: 'AEK', type: 'Gelb-Rote Karte', totalgames: 1, matchesserved: 0, reason: 'Gelb-Rot' },
-    { id: 2, player_id: 4, team: 'Real', type: 'Unsportlichkeit', totalgames: 2, matchesserved: 0, reason: 'Unsportlichkeit' }
+    { id: 1, player_id: 1, team: 'AEK', type: 'Gelb-Rote Karte', totalgames: 1, matchesserved: 0, reason: 'Gelb-Rot', fifa_version: 'FC25' },
+    { id: 2, player_id: 4, team: 'Real', type: 'Unsportlichkeit', totalgames: 2, matchesserved: 0, reason: 'Unsportlichkeit', fifa_version: 'FC25' }
   ],
   transactions: [
-    { id: 1, amount: 5000, info: 'Siegprämie', team: 'AEK', date: '2024-01-15', type: 'Preisgeld', match_id: 1 },
-    { id: 2, amount: -2000, info: 'Kartenstrafe', team: 'Real', date: '2024-01-10', type: 'Strafe', match_id: 2 },
-    { id: 3, amount: 3000, info: 'Sponsoring', team: 'Real', date: '2024-01-08', type: 'Sonstiges', match_id: null },
-    { id: 4, amount: 1000, info: 'Spieler des Spiels Bonus', team: 'AEK', date: '2024-01-15', type: 'SdS Bonus', match_id: 1 },
-    { id: 5, amount: -500, info: 'Gelb-Rot Strafe', team: 'AEK', date: '2024-01-10', type: 'Strafe', match_id: 2 },
-    { id: 6, amount: 2500, info: 'Unentschieden Prämie', team: 'AEK', date: '2024-01-05', type: 'Preisgeld', match_id: 3 },
-    { id: 7, amount: 2500, info: 'Unentschieden Prämie', team: 'Real', date: '2024-01-05', type: 'Preisgeld', match_id: 3 }
+    { id: 1, amount: 5000, info: 'Siegprämie', team: 'AEK', date: '2024-01-15', type: 'Preisgeld', match_id: 1, fifa_version: 'FC25' },
+    { id: 2, amount: -2000, info: 'Kartenstrafe', team: 'Real', date: '2024-01-10', type: 'Strafe', match_id: 2, fifa_version: 'FC25' },
+    { id: 3, amount: 3000, info: 'Sponsoring', team: 'Real', date: '2024-01-08', type: 'Sonstiges', match_id: null, fifa_version: 'FC25' },
+    { id: 4, amount: 1000, info: 'Spieler des Spiels Bonus', team: 'AEK', date: '2024-01-15', type: 'SdS Bonus', match_id: 1, fifa_version: 'FC25' },
+    { id: 5, amount: -500, info: 'Gelb-Rot Strafe', team: 'AEK', date: '2024-01-10', type: 'Strafe', match_id: 2, fifa_version: 'FC25' },
+    { id: 6, amount: 2500, info: 'Unentschieden Prämie', team: 'AEK', date: '2024-01-05', type: 'Preisgeld', match_id: 3, fifa_version: 'FC25' },
+    { id: 7, amount: 2500, info: 'Unentschieden Prämie', team: 'Real', date: '2024-01-05', type: 'Preisgeld', match_id: 3, fifa_version: 'FC25' }
   ],
   finances: [
-    { id: 1, team: 'AEK', balance: 25000, debt: 0 },
-    { id: 2, team: 'Real', balance: 18000, debt: 2000 }
+    { id: 1, team: 'AEK', balance: 25000, debt: 0, fifa_version: 'FC25' },
+    { id: 2, team: 'Real', balance: 18000, debt: 2000, fifa_version: 'FC25' }
   ],
   spieler_des_spiels: [
     // This would normally be populated by matches, but adding demo data for testing
@@ -356,6 +365,13 @@ testConnection();
 const createDatabaseOperations = (client) => {
   return {
     async select(table, query = '*', options = {}) {
+      // Add FIFA version filtering for versioned tables  
+      const enhancedOptions = { ...options };
+      if (shouldFilterByFifaVersion(table) && !enhancedOptions.skipFifaFilter) {
+        const fifaFilter = createFifaVersionFilter();
+        enhancedOptions.eq = { ...enhancedOptions.eq, ...fifaFilter };
+      }
+      
       // Try to get session first
       try {
         const { data: { session } } = await client.auth.getSession();
@@ -367,20 +383,20 @@ const createDatabaseOperations = (client) => {
           try {
             let queryBuilder = client.from(table).select(query);
             
-            if (options.eq) {
-              Object.entries(options.eq).forEach(([key, value]) => {
+            if (enhancedOptions.eq) {
+              Object.entries(enhancedOptions.eq).forEach(([key, value]) => {
                 queryBuilder = queryBuilder.eq(key, value);
               });
             }
             
-            if (options.order) {
-              queryBuilder = queryBuilder.order(options.order.column, { 
-                ascending: options.order.ascending !== false 
+            if (enhancedOptions.order) {
+              queryBuilder = queryBuilder.order(enhancedOptions.order.column, { 
+                ascending: enhancedOptions.order.ascending !== false 
               });
             }
             
-            if (options.limit) {
-              queryBuilder = queryBuilder.limit(options.limit);
+            if (enhancedOptions.limit) {
+              queryBuilder = queryBuilder.limit(enhancedOptions.limit);
             }
             
             const result = await queryBuilder;
@@ -410,25 +426,25 @@ const createDatabaseOperations = (client) => {
         let data = fallbackData[table] || [];
         
         // Apply basic filtering for options
-        if (options.eq) {
-          Object.entries(options.eq).forEach(([key, value]) => {
+        if (enhancedOptions.eq) {
+          Object.entries(enhancedOptions.eq).forEach(([key, value]) => {
             data = data.filter(item => item[key] === value);
           });
         }
         
-        if (options.order) {
+        if (enhancedOptions.order) {
           data = [...data].sort((a, b) => {
-            const aVal = a[options.order.column];
-            const bVal = b[options.order.column];
-            if (options.order.ascending === false) {
+            const aVal = a[enhancedOptions.order.column];
+            const bVal = b[enhancedOptions.order.column];
+            if (enhancedOptions.order.ascending === false) {
               return bVal > aVal ? 1 : -1;
             }
             return aVal > bVal ? 1 : -1;
           });
         }
         
-        if (options.limit) {
-          data = data.slice(0, options.limit);
+        if (enhancedOptions.limit) {
+          data = data.slice(0, enhancedOptions.limit);
         }
         
         return Promise.resolve({ data, error: null });
@@ -440,13 +456,19 @@ const createDatabaseOperations = (client) => {
     },
 
     async insert(table, data) {
+      // Add FIFA version for versioned tables
+      let enhancedData = data;
+      if (shouldFilterByFifaVersion(table)) {
+        enhancedData = addFifaVersionToData(data);
+      }
+      
       try {
         const { data: { session } } = await client.auth.getSession();
         authSession = session || fallbackSession;
         
         if (authSession && !usingFallback) {
           try {
-            const result = await client.from(table).insert(data).select().single();
+            const result = await client.from(table).insert(enhancedData).select().single();
             console.log(`✅ Real database insert successful for ${table}`);
             return result;
           } catch (dbError) {
@@ -462,7 +484,7 @@ const createDatabaseOperations = (client) => {
       // Simulate insert when authenticated
       if (authSession || fallbackSession) {
         console.log(`🔑 Authenticated fallback: simulating insert for ${table}`);
-        const newItem = { ...data, id: Date.now() + Math.floor(Math.random() * 1000), created_at: new Date().toISOString() };
+        const newItem = { ...enhancedData, id: Date.now() + Math.floor(Math.random() * 1000), created_at: new Date().toISOString() };
         
         // Add to fallback data
         if (!fallbackData[table]) {

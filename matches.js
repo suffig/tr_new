@@ -3,6 +3,11 @@ import { decrementBansAfterMatch } from './bans.js';
 import { dataManager } from './dataManager.js';
 import { loadingManager, ErrorHandler, Performance, DOM } from './utils.js';
 import { supabase } from './supabaseClient.js';
+import { 
+    getCurrentFifaVersion, 
+    addFifaVersionToData, 
+    createFifaVersionFilter
+} from './src/utils/fifaVersionManager.js';
 
 // Match Analytics and Prediction System
 class MatchAnalytics {
@@ -1383,7 +1388,12 @@ async function updatePlayersGoals(goalslist, team) {
     // Update each player's goal count - using safe array access
     for (const [playerName, count] of Object.entries(goalCounts)) {
         // Spieler laden, aktueller Stand
-        const { data: players, error: playerError } = await supabase.from('players').select('goals').eq('name', playerName).eq('team', team);
+        const fifaFilter = createFifaVersionFilter();
+        const { data: players, error: playerError } = await supabase.from('players')
+            .select('goals')
+            .eq('name', playerName)
+            .eq('team', team)
+            .eq('fifa_version', fifaFilter.fifa_version);
         
         if (playerError) {
             console.error(`Error fetching player ${playerName} for goal addition:`, playerError);
@@ -1398,7 +1408,11 @@ async function updatePlayersGoals(goalslist, team) {
             }
         }
         
-        const { error: updateError } = await supabase.from('players').update({ goals: newGoals }).eq('name', playerName).eq('team', team);
+        const { error: updateError } = await supabase.from('players')
+            .update({ goals: newGoals })
+            .eq('name', playerName)
+            .eq('team', team)
+            .eq('fifa_version', fifaFilter.fifa_version);
         if (updateError) {
             console.error(`Error updating goals for player ${playerName}:`, updateError);
         }
@@ -1589,11 +1603,20 @@ async function submitMatchForm(event, id) {
     // Spieler des Spiels-Statistik (Tabelle spieler_des_spiels)
     if (manofthematch) {
         let t = matchesData.aek.find(p => p.name === manofthematch) ? "AEK" : "Real";
-        const { data: existing } = await supabase.from('spieler_des_spiels').select('*').eq('name', manofthematch).eq('team', t);
+        const fifaFilter = createFifaVersionFilter();
+        const { data: existing } = await supabase.from('spieler_des_spiels')
+            .select('*')
+            .eq('name', manofthematch)
+            .eq('team', t)
+            .eq('fifa_version', fifaFilter.fifa_version);
         if (existing && existing.length > 0) {
-            await supabase.from('spieler_des_spiels').update({ count: existing[0].count + 1 }).eq('id', existing[0].id);
+            await supabase.from('spieler_des_spiels')
+                .update({ count: existing[0].count + 1 })
+                .eq('id', existing[0].id)
+                .eq('fifa_version', fifaFilter.fifa_version);
         } else {
-            await supabase.from('spieler_des_spiels').insert([{ name: manofthematch, team: t, count: 1 }]);
+            const sdsData = addFifaVersionToData({ name: manofthematch, team: t, count: 1 });
+            await supabase.from('spieler_des_spiels').insert([sdsData]);
         }
     }
 
@@ -1680,7 +1703,11 @@ async function submitMatchForm(event, id) {
     const now = new Date().toISOString().slice(0,10);
 
     async function getTeamFinance(team) {
-        const { data: teamFinances, error: financeError } = await supabase.from('finances').select('balance').eq('team', team);
+        const fifaFilter = createFifaVersionFilter();
+        const { data: teamFinances, error: financeError } = await supabase.from('finances')
+            .select('balance')
+            .eq('team', team)
+            .eq('fifa_version', fifaFilter.fifa_version);
         
         if (financeError) {
             console.error(`Error fetching finances for team ${team}:`, financeError);
@@ -1704,27 +1731,39 @@ async function submitMatchForm(event, id) {
     // 1. SdS Bonus
     if (sdsBonusAek) {
         aekOldBalance += sdsBonusAek;
-        await supabase.from('transactions').insert([{
+        const transactionData = addFifaVersionToData({
             date: now,
             type: "Bonus SdS",
             team: "AEK",
             amount: sdsBonusAek,
             match_id: matchId,
             info: `SdS Bonus`
-        }]);
-        await supabase.from('finances').update({ balance: aekOldBalance }).eq('team', "AEK");
+        });
+        await supabase.from('transactions').insert([transactionData]);
+        
+        const fifaFilter = createFifaVersionFilter();
+        await supabase.from('finances')
+            .update({ balance: aekOldBalance })
+            .eq('team', "AEK")
+            .eq('fifa_version', fifaFilter.fifa_version);
     }
     if (sdsBonusReal) {
         realOldBalance += sdsBonusReal;
-        await supabase.from('transactions').insert([{
+        const transactionData = addFifaVersionToData({
             date: now,
             type: "Bonus SdS",
             team: "Real",
             amount: sdsBonusReal,
             match_id: matchId,
             info: `SdS Bonus`
-        }]);
-        await supabase.from('finances').update({ balance: realOldBalance }).eq('team', "Real");
+        });
+        await supabase.from('transactions').insert([transactionData]);
+        
+        const fifaFilter = createFifaVersionFilter();
+        await supabase.from('finances')
+            .update({ balance: realOldBalance })
+            .eq('team', "Real")
+            .eq('fifa_version', fifaFilter.fifa_version);
     }
 
     // 2. Preisgeld
