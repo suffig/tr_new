@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import SeasonManagerTab from './SeasonManagerTab';
 import FifaVersionManagerTab from './FifaVersionManagerTab';
+import VersionTeamSettingsTab from './VersionTeamSettingsTab';
+import DataExportImportTab from './DataExportImportTab';
 
 const ManagerTab = () => {
   const [activeManagerTab, setActiveManagerTab] = useState('season');
@@ -17,6 +19,18 @@ const ManagerTab = () => {
       label: 'FIFA Versionen', 
       icon: 'fas fa-gamepad',
       description: 'Verwalten und erstellen Sie FIFA Versionen'
+    },
+    { 
+      id: 'version-teams', 
+      label: 'Versions-Teams', 
+      icon: 'fas fa-users-cog',
+      description: 'Konfigurieren Sie Team-Namen und Icons pro Version'
+    },
+    { 
+      id: 'data-export', 
+      label: 'Daten-Export', 
+      icon: 'fas fa-download',
+      description: 'Legacy-Daten exportieren und Finanzen kopieren'
     }
   ];
 
@@ -26,6 +40,10 @@ const ManagerTab = () => {
         return <SeasonManagerTab />;
       case 'fifa-versions':
         return <FifaVersionManagerTab />;
+      case 'version-teams':
+        return <VersionTeamSettingsTab />;
+      case 'data-export':
+        return <DataExportImportTab />;
       default:
         return <SeasonManagerTab />;
     }
@@ -42,17 +60,17 @@ const ManagerTab = () => {
           </div>
           <div>
             <h2 className="text-2xl font-bold text-gray-800">System-Manager</h2>
-            <p className="text-gray-600">Zentrale Verwaltung für Saisons und FIFA Versionen</p>
+            <p className="text-gray-600">Zentrale Verwaltung für Saisons, FIFA Versionen und Teams</p>
           </div>
         </div>
 
         {/* Manager sub-navigation */}
-        <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm">
+        <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm overflow-x-auto">
           {managerTabs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveManagerTab(tab.id)}
-              className={`flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-md text-sm font-medium transition-all duration-200 ${
+              className={`flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
                 activeManagerTab === tab.id
                   ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
@@ -60,7 +78,7 @@ const ManagerTab = () => {
               title={tab.description}
             >
               <i className={tab.icon}></i>
-              <span className="hidden sm:inline">{tab.label}</span>
+              <span className="hidden sm:inline whitespace-nowrap">{tab.label}</span>
             </button>
           ))}
         </div>
