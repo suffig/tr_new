@@ -42,8 +42,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
         console.log('👤 Real Manager:', realManager);
         
         setManagers({
-          aek: { name: aekManager.name, age: 30, weight: aekManager.gewicht },
-          real: { name: realManager.name, age: 30, weight: realManager.gewicht }
+          aek: { name: aekManager.name, age: aekManager.age || 30, weight: aekManager.gewicht },
+          real: { name: realManager.name, age: realManager.age || 30, weight: realManager.gewicht }
         });
       } else {
         console.warn('⚠️ No manager data found, using defaults. Result:', result);
