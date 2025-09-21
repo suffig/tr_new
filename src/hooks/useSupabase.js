@@ -1,6 +1,12 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabaseDb } from '../utils/supabase';
 import { ErrorHandler } from '../utils/errorHandling';
+import { 
+    getCurrentFifaVersion, 
+    addFifaVersionToData, 
+    createFifaVersionFilter,
+    shouldFilterByFifaVersion 
+} from '../utils/fifaVersionManager';
 
 export function useSupabaseQuery(table, query = '*', options = {}, dependencies = []) {
   const [data, setData] = useState(null);

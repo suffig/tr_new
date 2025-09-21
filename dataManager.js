@@ -1,9 +1,16 @@
 /**
  * Centralized Data Manager
  * Handles all database operations with caching, batching, and enhanced error handling
+ * Now includes FIFA version filtering and automatic injection
  */
 import { supabase, supabaseDb } from './supabaseClient.js';
 import { isDatabaseAvailable } from './connectionMonitor.js';
+import { 
+    getCurrentFifaVersion, 
+    addFifaVersionToData, 
+    createFifaVersionFilter,
+    shouldFilterByFifaVersion 
+} from './src/utils/fifaVersionManager.js';
 
 class DataManager {
     constructor() {
@@ -238,7 +245,14 @@ class DataManager {
     }
 
     async select(table, query = '*', options = {}) {
-        const cacheKey = this.getCacheKey(table, { query, options });
+        // Add FIFA version filtering for versioned tables
+        const enhancedOptions = { ...options };
+        if (shouldFilterByFifaVersion(table) && !enhancedOptions.skipFifaFilter) {
+            const fifaFilter = createFifaVersionFilter();
+            enhancedOptions.eq = { ...enhancedOptions.eq, ...fifaFilter };
+        }
+        
+        const cacheKey = this.getCacheKey(table, { query, options: enhancedOptions });
         
         // Check cache first
         const cached = this.getCache(cacheKey);
@@ -254,24 +268,24 @@ class DataManager {
         const request = this.executeWithRetry(async () => {
             let queryBuilder = supabase.from(table).select(query);
             
-            if (options.eq) {
-                Object.entries(options.eq).forEach(([column, value]) => {
+            if (enhancedOptions.eq) {
+                Object.entries(enhancedOptions.eq).forEach(([column, value]) => {
                     queryBuilder = queryBuilder.eq(column, value);
                 });
             }
             
-            if (options.order) {
-                queryBuilder = queryBuilder.order(options.order.column, { 
-                    ascending: options.order.ascending ?? true 
+            if (enhancedOptions.order) {
+                queryBuilder = queryBuilder.order(enhancedOptions.order.column, { 
+                    ascending: enhancedOptions.order.ascending ?? true 
                 });
             }
             
-            if (options.limit) {
-                queryBuilder = queryBuilder.limit(options.limit);
+            if (enhancedOptions.limit) {
+                queryBuilder = queryBuilder.limit(enhancedOptions.limit);
             }
 
-            if (options.range) {
-                queryBuilder = queryBuilder.range(options.range.from, options.range.to);
+            if (enhancedOptions.range) {
+                queryBuilder = queryBuilder.range(enhancedOptions.range.from, enhancedOptions.range.to);
             }
             
             return await queryBuilder;
@@ -291,7 +305,13 @@ class DataManager {
     }
 
     async insert(table, data) {
-        const sanitized = this.sanitizeData(data);
+        let sanitized = this.sanitizeData(data);
+        
+        // Add FIFA version for versioned tables
+        if (shouldFilterByFifaVersion(table)) {
+            sanitized = addFifaVersionToData(sanitized);
+        }
+        
         const validation = this.validateData(table, sanitized);
         
         if (!validation.valid) {
@@ -309,7 +329,13 @@ class DataManager {
     }
 
     async update(table, data, id) {
-        const sanitized = this.sanitizeData(data);
+        let sanitized = this.sanitizeData(data);
+        
+        // Add FIFA version for versioned tables (but don't overwrite if explicitly set)
+        if (shouldFilterByFifaVersion(table) && !sanitized.fifa_version) {
+            sanitized = addFifaVersionToData(sanitized);
+        }
+        
         const validation = this.validateData(table, sanitized);
         
         if (!validation.valid) {
@@ -317,7 +343,15 @@ class DataManager {
         }
 
         const result = await this.executeWithRetry(async () => {
-            return await supabase.from(table).update(sanitized).eq('id', id).select();
+            let updateBuilder = supabase.from(table).update(sanitized).eq('id', id);
+            
+            // Also filter by FIFA version for versioned tables to ensure we only update records in current version
+            if (shouldFilterByFifaVersion(table)) {
+                const fifaFilter = createFifaVersionFilter();
+                updateBuilder = updateBuilder.eq('fifa_version', fifaFilter.fifa_version);
+            }
+            
+            return await updateBuilder.select();
         });
 
         // Invalidate relevant cache
@@ -332,7 +366,15 @@ class DataManager {
         }
 
         const result = await this.executeWithRetry(async () => {
-            return await supabase.from(table).delete().eq('id', id);
+            let deleteBuilder = supabase.from(table).delete().eq('id', id);
+            
+            // Also filter by FIFA version for versioned tables to ensure we only delete records in current version
+            if (shouldFilterByFifaVersion(table)) {
+                const fifaFilter = createFifaVersionFilter();
+                deleteBuilder = deleteBuilder.eq('fifa_version', fifaFilter.fifa_version);
+            }
+            
+            return await deleteBuilder;
         });
 
         // Invalidate relevant cache
@@ -342,7 +384,13 @@ class DataManager {
     }
 
     async upsert(table, data) {
-        const sanitized = this.sanitizeData(data);
+        let sanitized = this.sanitizeData(data);
+        
+        // Add FIFA version for versioned tables
+        if (shouldFilterByFifaVersion(table)) {
+            sanitized = addFifaVersionToData(sanitized);
+        }
+        
         const validation = this.validateData(table, sanitized);
         
         if (!validation.valid) {

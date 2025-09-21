@@ -1,10 +1,19 @@
 import { showModal, hideModal, showSuccessAndCloseModal } from './modal.js';
 import { supabase } from './supabaseClient.js';
 import { ErrorHandler } from './utils.js';
+import { 
+    getCurrentFifaVersion, 
+    addFifaVersionToData, 
+    createFifaVersionFilter
+} from './src/utils/fifaVersionManager.js';
 
 // --- Helper-Funktion: Spieler für Team laden ---
 async function getPlayersByTeam(team) {
-    const { data, error } = await supabase.from('players').select('*').eq('team', team);
+    const fifaFilter = createFifaVersionFilter();
+    const { data, error } = await supabase.from('players')
+        .select('*')
+        .eq('team', team)
+        .eq('fifa_version', fifaFilter.fifa_version);
     if (error) {
         console.warn('Fehler beim Laden der Spieler:', error.message);
         return [];
@@ -23,9 +32,10 @@ const BAN_TYPES = [
 const ALLOWED_BAN_COUNTS = [1, 2, 3, 4, 5, 6];
 
 export async function loadBansAndRender(renderFn = renderBansLists) {
+    const fifaFilter = createFifaVersionFilter();
     const [{ data: bansData, error: errorBans }, { data: playersData, error: errorPlayers }] = await Promise.all([
-        supabase.from('bans').select('*'),
-        supabase.from('players').select('*')
+        supabase.from('bans').select('*').eq('fifa_version', fifaFilter.fifa_version),
+        supabase.from('players').select('*').eq('fifa_version', fifaFilter.fifa_version)
     ]);
     if (errorBans) {
         ErrorHandler.showUserError(`Fehler beim Laden der Sperren: ${errorBans.message}`, "error");
@@ -139,6 +149,7 @@ function renderBanList(list, containerId, active) {
 async function saveBan(ban) {
     if (ban.id) {
         // Update
+        const fifaFilter = createFifaVersionFilter();
         const { error } = await supabase
             .from('bans')
             .update({
@@ -149,20 +160,22 @@ async function saveBan(ban) {
                 matchesserved: ban.matchesserved,
                 reason: ban.reason
             })
-            .eq('id', ban.id);
+            .eq('id', ban.id)
+            .eq('fifa_version', fifaFilter.fifa_version);
         if (error) ErrorHandler.showUserError(`Fehler beim Speichern: ${error.message}`, "error");
     } else {
         // Insert
+        const banData = addFifaVersionToData({
+            player_id: ban.player_id,
+            team: ban.team,
+            type: ban.type,
+            totalgames: ban.totalgames,
+            matchesserved: ban.matchesserved || 0,
+            reason: ban.reason
+        });
         const { error } = await supabase
             .from('bans')
-            .insert([{
-                player_id: ban.player_id,
-                team: ban.team,
-                type: ban.type,
-                totalgames: ban.totalgames,
-                matchesserved: ban.matchesserved || 0,
-                reason: ban.reason
-            }]);
+            .insert([banData]);
         if (error) ErrorHandler.showUserError(`Fehler beim Anlegen: ${error.message}`, "error");
     }
 }
@@ -310,13 +323,19 @@ async function openBanForm(ban = null) {
 
 // Hilfsfunktion für andere Module:
 export async function decrementBansAfterMatch() {
-    const { data: bansData, error } = await supabase.from('bans').select('*');
+    const fifaFilter = createFifaVersionFilter();
+    const { data: bansData, error } = await supabase.from('bans')
+        .select('*')
+        .eq('fifa_version', fifaFilter.fifa_version);
     if (error) return;
     const updates = [];
     bansData.forEach(ban => {
         if (getRestGames(ban) > 0) {
             updates.push(
-                supabase.from('bans').update({ matchesserved: (ban.matchesserved || 0) + 1 }).eq('id', ban.id)
+                supabase.from('bans')
+                    .update({ matchesserved: (ban.matchesserved || 0) + 1 })
+                    .eq('id', ban.id)
+                    .eq('fifa_version', fifaFilter.fifa_version)
             );
         }
     });
