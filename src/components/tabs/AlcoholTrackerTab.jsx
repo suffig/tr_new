@@ -86,6 +86,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     }
   });
 
+  // Custom amount inputs for each player
+  const [customAmounts, setCustomAmounts] = useState({
+    alexander: '',
+    philip: ''
+  });
+
   // Load saved values on component mount
   useEffect(() => {
     // Load manager settings from database
@@ -457,6 +463,26 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       }
     };
     saveBjTrackingData(resetData);
+  };
+
+  // Handle custom amount input and submission
+  const handleCustomAmountChange = (player, value) => {
+    setCustomAmounts(prev => ({
+      ...prev,
+      [player]: value
+    }));
+  };
+
+  const addCustomAmount = (player) => {
+    const amount = parseFloat(customAmounts[player]);
+    if (amount && amount > 0) {
+      addToPlayerAccount(player, amount);
+      // Clear the input after adding
+      setCustomAmounts(prev => ({
+        ...prev,
+        [player]: ''
+      }));
+    }
   };
 
   return (
@@ -1065,7 +1091,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => addToPlayerAccount('alexander', 2.50)}
                     className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
                   >
-                    🤝 Push<br/>+2.50€
+                    🤝 BJ-Push<br/>+2.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 10.00)}
@@ -1086,6 +1112,29 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       +{amount.toFixed(2)}€
                     </button>
                   ))}
+                </div>
+
+                {/* Custom Amount Input */}
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <h6 className="text-xs font-medium text-blue-700 mb-2">💰 Eigener Betrag:</h6>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={customAmounts.alexander}
+                      onChange={(e) => handleCustomAmountChange('alexander', e.target.value)}
+                      placeholder="0.00"
+                      className="flex-1 px-2 py-2 border border-blue-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                    <button
+                      onClick={() => addCustomAmount('alexander')}
+                      disabled={!customAmounts.alexander || parseFloat(customAmounts.alexander) <= 0}
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-2 rounded-md text-xs font-medium transition-all"
+                    >
+                      +€
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1111,7 +1160,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => addToPlayerAccount('philip', 2.50)}
                     className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
                   >
-                    🤝 Push<br/>+2.50€
+                    🤝 BJ-Push<br/>+2.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 10.00)}
@@ -1132,6 +1181,29 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       +{amount.toFixed(2)}€
                     </button>
                   ))}
+                </div>
+
+                {/* Custom Amount Input */}
+                <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
+                  <h6 className="text-xs font-medium text-green-700 mb-2">💰 Eigener Betrag:</h6>
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={customAmounts.philip}
+                      onChange={(e) => handleCustomAmountChange('philip', e.target.value)}
+                      placeholder="0.00"
+                      className="flex-1 px-2 py-2 border border-green-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500"
+                    />
+                    <button
+                      onClick={() => addCustomAmount('philip')}
+                      disabled={!customAmounts.philip || parseFloat(customAmounts.philip) <= 0}
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-2 rounded-md text-xs font-medium transition-all"
+                    >
+                      +€
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>
