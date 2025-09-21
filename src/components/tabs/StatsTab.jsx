@@ -569,19 +569,18 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               </div>
               <div className="mobile-metric-value text-title2">
                 {(() => {
-                  const totalDays = bans?.reduce((sum, ban) => {
-                    const start = new Date(ban.start_date);
-                    const end = new Date(ban.end_date);
-                    const days = Math.ceil((end - start) / (1000 * 60 * 60 * 24));
-                    return sum + (days > 0 ? days : 0);
+                  // Calculate average ban length using totalgames instead of dates
+                  const totalBanGames = bans?.reduce((sum, ban) => {
+                    const banLength = ban.totalgames || 0;
+                    return sum + banLength;
                   }, 0) || 0;
                   
-                  const avgDays = bans?.length > 0 ? (totalDays / bans.length).toFixed(1) : '0.0';
-                  return `${avgDays}`;
+                  const avgBanLength = bans?.length > 0 ? (totalBanGames / bans.length).toFixed(1) : '0.0';
+                  return `${avgBanLength}`;
                 })()}
               </div>
               <div className="mobile-metric-label">⌀ Sperrenlänge</div>
-              <div className="mobile-metric-sublabel">Tage</div>
+              <div className="mobile-metric-sublabel">Spiele</div>
             </div>
 
             <div className="mobile-metric-card">
