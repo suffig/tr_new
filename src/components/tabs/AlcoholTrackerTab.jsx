@@ -92,6 +92,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     philip: ''
   });
 
+  // State for collapsible buttons (mobile optimization)
+  const [showAdvancedButtons, setShowAdvancedButtons] = useState({
+    alexander: false,
+    philip: false
+  });
+
   // Load saved values on component mount
   useEffect(() => {
     // Load manager settings from database
@@ -360,19 +366,27 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       gameCounter: bjTracking.gameCounter + 1
     };
 
-    // Add game to current round if active
-    if (bjTracking.currentRound.active) {
-      const game = {
-        id: Date.now(),
-        gameNumber: bjTracking.gameCounter + 1,
-        player: player,
-        amount: amount,
-        timestamp: new Date().toISOString(),
-        description: `${player === 'alexander' ? managers.aek.name : managers.real.name}: +${amount.toFixed(2)}€`
+    // Auto-start round if none is active (requirement 3)
+    if (!bjTracking.currentRound.active) {
+      newData.currentRound = {
+        active: true,
+        roundNumber: bjTracking.rounds.length + 1,
+        games: [],
+        startTime: new Date().toISOString()
       };
-
-      newData.currentRound.games = [...bjTracking.currentRound.games, game];
     }
+
+    // Add game to current round
+    const game = {
+      id: Date.now(),
+      gameNumber: bjTracking.gameCounter + 1,
+      player: player,
+      amount: amount,
+      timestamp: new Date().toISOString(),
+      description: `${player === 'alexander' ? managers.aek.name : managers.real.name}: +${amount.toFixed(2)}€`
+    };
+
+    newData.currentRound.games = [...bjTracking.currentRound.games, game];
 
     saveBjTrackingData(newData);
   };
@@ -384,19 +398,27 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       gameCounter: bjTracking.gameCounter + 1
     };
 
-    // Add tie game to current round if active
-    if (bjTracking.currentRound.active) {
-      const game = {
-        id: Date.now(),
-        gameNumber: bjTracking.gameCounter + 1,
-        player: null,
-        amount: 0,
-        timestamp: new Date().toISOString(),
-        description: 'Unentschieden (0€)'
+    // Auto-start round if none is active (requirement 3)
+    if (!bjTracking.currentRound.active) {
+      newData.currentRound = {
+        active: true,
+        roundNumber: bjTracking.rounds.length + 1,
+        games: [],
+        startTime: new Date().toISOString()
       };
-
-      newData.currentRound.games = [...bjTracking.currentRound.games, game];
     }
+
+    // Add tie game to current round
+    const game = {
+      id: Date.now(),
+      gameNumber: bjTracking.gameCounter + 1,
+      player: null,
+      amount: 0,
+      timestamp: new Date().toISOString(),
+      description: 'Unentschieden (0€)'
+    };
+
+    newData.currentRound.games = [...bjTracking.currentRound.games, game];
 
     saveBjTrackingData(newData);
   };
@@ -483,6 +505,51 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
         [player]: ''
       }));
     }
+  };
+
+  // Progress bar component for games (requirement 1)
+  const GameProgressBar = ({ currentGames, maxGames = 10 }) => {
+    const progress = Math.min((currentGames / maxGames) * 100, 100);
+    const isComplete = currentGames >= maxGames;
+    
+    return (
+      <div className="w-full">
+        <div className="flex justify-between text-sm font-medium mb-2">
+          <span className="text-purple-700">Spiele-Fortschritt</span>
+          <span className={`${isComplete ? 'text-green-600' : 'text-purple-600'}`}>
+            {currentGames}/{maxGames} Spiele
+          </span>
+        </div>
+        <div className="w-full bg-gray-200 rounded-full h-3 relative overflow-hidden">
+          <div 
+            className={`h-full rounded-full transition-all duration-500 ${
+              isComplete ? 'bg-gradient-to-r from-green-500 to-green-600' : 'bg-gradient-to-r from-purple-500 to-purple-600'
+            }`}
+            style={{ width: `${progress}%` }}
+          />
+          {isComplete && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <span className="text-white text-xs font-bold">✓ Abgeschlossen</span>
+            </div>
+          )}
+        </div>
+        {isComplete && (
+          <div className="text-center mt-2">
+            <span className="text-xs text-green-600 font-medium">
+              🎉 10 Spiele erreicht! Zeit für eine neue Runde?
+            </span>
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  // Toggle advanced buttons for mobile optimization (requirement 2)
+  const toggleAdvancedButtons = (player) => {
+    setShowAdvancedButtons(prev => ({
+      ...prev,
+      [player]: !prev[player]
+    }));
   };
 
   return (
@@ -1030,12 +1097,22 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* Game Counter */}
+              {/* Game Counter with Progress Bar */}
               <div className="p-4 bg-white rounded-lg border border-purple-200 text-center">
                 <div className="text-3xl font-bold text-purple-700 mb-1">
                   {bjTracking.gameCounter}
                 </div>
-                <div className="text-sm text-purple-600">Gespielte Spiele</div>
+                <div className="text-sm text-purple-600 mb-3">Gespielte Spiele</div>
+                
+                {/* Progress Bar for Current Round Games */}
+                {bjTracking.currentRound.active && (
+                  <div className="mt-3">
+                    <GameProgressBar 
+                      currentGames={bjTracking.currentRound.games.length} 
+                      maxGames={10} 
+                    />
+                  </div>
+                )}
               </div>
 
               {/* Alexander Balance */}
@@ -1073,48 +1150,60 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               <div className="space-y-3">
                 <h5 className="font-medium text-blue-700 text-center mb-3">🔵 {managers.aek.name}</h5>
                 
-                {/* Main action buttons */}
+                {/* Main action buttons - Always visible for mobile */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => addToPlayerAccount('alexander', 5.00)}
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                   >
                     🏆 Win<br/>+5.00€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 7.50)}
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                   >
                     🃏 BJ<br/>+7.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 2.50)}
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                   >
                     🤝 BJ-Push<br/>+2.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 10.00)}
-                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                   >
                     🎲 Double<br/>+10.00€
                   </button>
                 </div>
 
-                {/* Step buttons */}
-                <div className="grid grid-cols-3 gap-1 mt-3">
-                  {[2.50, 5.00, 7.50, 10.00, 12.50, 15.00, 17.50, 20.00, 22.50, 25.00, 27.50, 30.00].map(amount => (
-                    <button
-                      key={amount}
-                      onClick={() => addToPlayerAccount('alexander', amount)}
-                      className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-2 py-2 rounded-md text-xs font-medium transition-all border border-blue-300 hover:border-blue-400"
-                    >
-                      +{amount.toFixed(2)}€
-                    </button>
-                  ))}
+                {/* Collapsible Secondary Buttons - Mobile Optimized */}
+                <div className="text-center">
+                  <button
+                    onClick={() => toggleAdvancedButtons('alexander')}
+                    className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-blue-300 hover:border-blue-400 min-h-[44px]"
+                  >
+                    {showAdvancedButtons.alexander ? '🔼 Weniger Optionen' : '🔽 Mehr Beträge'}
+                  </button>
                 </div>
 
-                {/* Custom Amount Input */}
+                {/* Collapsible Step buttons */}
+                {showAdvancedButtons.alexander && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3 animate-fade-in">
+                    {[2.50, 5.00, 7.50, 10.00, 12.50, 15.00, 17.50, 20.00, 22.50, 25.00, 27.50, 30.00].map(amount => (
+                      <button
+                        key={amount}
+                        onClick={() => addToPlayerAccount('alexander', amount)}
+                        className="bg-blue-100 hover:bg-blue-200 text-blue-700 px-3 py-3 rounded-md text-sm font-medium transition-all border border-blue-300 hover:border-blue-400 min-h-[44px]"
+                      >
+                        +{amount.toFixed(2)}€
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Custom Amount Input - Always visible */}
                 <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
                   <h6 className="text-xs font-medium text-blue-700 mb-2">💰 Eigener Betrag:</h6>
                   <div className="flex gap-2">
@@ -1125,12 +1214,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       value={customAmounts.alexander}
                       onChange={(e) => handleCustomAmountChange('alexander', e.target.value)}
                       placeholder="0.00"
-                      className="flex-1 px-2 py-2 border border-blue-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="flex-1 px-3 py-3 border border-blue-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
                     />
                     <button
                       onClick={() => addCustomAmount('alexander')}
                       disabled={!customAmounts.alexander || parseFloat(customAmounts.alexander) <= 0}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-3 py-2 rounded-md text-xs font-medium transition-all"
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-md text-sm font-medium transition-all min-h-[44px] min-w-[44px]"
                     >
                       +€
                     </button>
@@ -1142,48 +1231,60 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               <div className="space-y-3">
                 <h5 className="font-medium text-green-700 text-center mb-3">🟢 {managers.real.name}</h5>
                 
-                {/* Main action buttons */}
+                {/* Main action buttons - Always visible for mobile */}
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => addToPlayerAccount('philip', 5.00)}
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                   >
                     🏆 Win<br/>+5.00€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 7.50)}
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                   >
                     🃏 BJ<br/>+7.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 2.50)}
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                   >
                     🤝 BJ-Push<br/>+2.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 10.00)}
-                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-4 py-3 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105"
+                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                   >
                     🎲 Double<br/>+10.00€
                   </button>
                 </div>
 
-                {/* Step buttons */}
-                <div className="grid grid-cols-3 gap-1 mt-3">
-                  {[2.50, 5.00, 7.50, 10.00, 12.50, 15.00, 17.50, 20.00, 22.50, 25.00, 27.50, 30.00].map(amount => (
-                    <button
-                      key={amount}
-                      onClick={() => addToPlayerAccount('philip', amount)}
-                      className="bg-green-100 hover:bg-green-200 text-green-700 px-2 py-2 rounded-md text-xs font-medium transition-all border border-green-300 hover:border-green-400"
-                    >
-                      +{amount.toFixed(2)}€
-                    </button>
-                  ))}
+                {/* Collapsible Secondary Buttons - Mobile Optimized */}
+                <div className="text-center">
+                  <button
+                    onClick={() => toggleAdvancedButtons('philip')}
+                    className="bg-green-100 hover:bg-green-200 text-green-700 px-4 py-2 rounded-lg text-sm font-medium transition-all border border-green-300 hover:border-green-400 min-h-[44px]"
+                  >
+                    {showAdvancedButtons.philip ? '🔼 Weniger Optionen' : '🔽 Mehr Beträge'}
+                  </button>
                 </div>
 
-                {/* Custom Amount Input */}
+                {/* Collapsible Step buttons */}
+                {showAdvancedButtons.philip && (
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-3 animate-fade-in">
+                    {[2.50, 5.00, 7.50, 10.00, 12.50, 15.00, 17.50, 20.00, 22.50, 25.00, 27.50, 30.00].map(amount => (
+                      <button
+                        key={amount}
+                        onClick={() => addToPlayerAccount('philip', amount)}
+                        className="bg-green-100 hover:bg-green-200 text-green-700 px-3 py-3 rounded-md text-sm font-medium transition-all border border-green-300 hover:border-green-400 min-h-[44px]"
+                      >
+                        +{amount.toFixed(2)}€
+                      </button>
+                    ))}
+                  </div>
+                )}
+
+                {/* Custom Amount Input - Always visible */}
                 <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
                   <h6 className="text-xs font-medium text-green-700 mb-2">💰 Eigener Betrag:</h6>
                   <div className="flex gap-2">
@@ -1194,12 +1295,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       value={customAmounts.philip}
                       onChange={(e) => handleCustomAmountChange('philip', e.target.value)}
                       placeholder="0.00"
-                      className="flex-1 px-2 py-2 border border-green-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500"
+                      className="flex-1 px-3 py-3 border border-green-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
                     />
                     <button
                       onClick={() => addCustomAmount('philip')}
                       disabled={!customAmounts.philip || parseFloat(customAmounts.philip) <= 0}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-3 py-2 rounded-md text-xs font-medium transition-all"
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-md text-sm font-medium transition-all min-h-[44px] min-w-[44px]"
                     >
                       +€
                     </button>
@@ -1212,7 +1313,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             <div className="mt-6 text-center">
               <button
                 onClick={addTieGame}
-                className="bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-8 py-3 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105"
+                className="bg-gradient-to-r from-gray-400 to-gray-500 hover:from-gray-500 hover:to-gray-600 text-white px-8 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
               >
                 🤝 Unentschieden (0€)
               </button>
@@ -1227,16 +1328,21 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
               {!bjTracking.currentRound.active ? (
-                <button
-                  onClick={startNewRound}
-                  className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-3 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105"
-                >
-                  ▶️ Neue Runde starten
-                </button>
+                <div className="text-center">
+                  <button
+                    onClick={startNewRound}
+                    className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                  >
+                    ▶️ Neue Runde starten
+                  </button>
+                  <p className="text-xs text-indigo-600 mt-2">
+                    💡 Oder klicke einfach einen Spiel-Button - die Runde startet automatisch!
+                  </p>
+                </div>
               ) : (
                 <button
                   onClick={finishCurrentRound}
-                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-3 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105"
+                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
                 >
                   ✅ Runde abschließen
                 </button>
@@ -1244,21 +1350,29 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               
               <button
                 onClick={resetBjTracking}
-                className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-3 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg"
+                className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg min-h-[56px]"
               >
                 🔄 Alles zurücksetzen
               </button>
             </div>
 
             {bjTracking.currentRound.active && (
-              <div className="mt-4 p-3 bg-white rounded-lg border border-indigo-200">
+              <div className="mt-4 p-4 bg-white rounded-lg border border-indigo-200">
                 <div className="text-center">
-                  <div className="text-sm font-medium text-indigo-700 mb-1">
+                  <div className="text-sm font-medium text-indigo-700 mb-2">
                     📍 Aktuelle Runde {bjTracking.currentRound.roundNumber}
                   </div>
-                  <div className="text-xs text-indigo-600">
+                  <div className="text-xs text-indigo-600 mb-3">
                     {bjTracking.currentRound.games.length} Spiele in dieser Runde
                   </div>
+                  {/* Progress indicator in round info */}
+                  {bjTracking.currentRound.games.length >= 10 && (
+                    <div className="bg-green-100 border border-green-300 rounded-lg p-2">
+                      <span className="text-green-700 text-xs font-medium">
+                        🎉 10 Spiele erreicht! Klicke "Runde abschließen" für die nächste Runde.
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
