@@ -1,6 +1,8 @@
 import React from 'react';
+import { getVersionTeamDisplay } from '../utils/versionTeamManager.js';
+import { getCurrentFifaVersion } from '../utils/fifaVersionManager.js';
 
-export default function TeamLogo({ team, size = 'md', className = '' }) {
+export default function TeamLogo({ team, size = 'md', className = '', version = null }) {
   const sizes = {
     xs: 'w-4 h-4',
     sm: 'w-6 h-6', 
@@ -11,6 +13,16 @@ export default function TeamLogo({ team, size = 'md', className = '' }) {
   };
 
   const getLogoSrc = (teamName) => {
+    // First check for version-specific custom icon
+    const fifaVersion = version || getCurrentFifaVersion();
+    const teamDisplay = getVersionTeamDisplay(teamName, fifaVersion);
+    
+    // If there's a custom icon (base64 data), use it
+    if (teamDisplay.icon && teamDisplay.icon.startsWith('data:')) {
+      return teamDisplay.icon;
+    }
+    
+    // Otherwise use default logos
     switch (teamName?.toLowerCase()) {
       case 'aek':
         return '/tr_new/aek_logo_transparent.png';
@@ -25,7 +37,10 @@ export default function TeamLogo({ team, size = 'md', className = '' }) {
   
   if (!logoSrc) {
     // Fallback to emoji if no logo found
-    const emoji = team?.toLowerCase() === 'aek' ? '🔵' : team?.toLowerCase() === 'real' ? '🔴' : '⚽';
+    const teamDisplay = getVersionTeamDisplay(team, version || getCurrentFifaVersion());
+    const emoji = typeof teamDisplay.icon === 'string' && !teamDisplay.icon.startsWith('data:') 
+      ? teamDisplay.icon 
+      : team?.toLowerCase() === 'aek' ? '🔵' : team?.toLowerCase() === 'real' ? '🔴' : '⚽';
     return <span className={className}>{emoji}</span>;
   }
 
@@ -36,7 +51,10 @@ export default function TeamLogo({ team, size = 'md', className = '' }) {
       className={`${sizes[size]} object-contain ${className}`}
       onError={(e) => {
         // Fallback to emoji if image fails to load
-        const emoji = team?.toLowerCase() === 'aek' ? '🔵' : team?.toLowerCase() === 'real' ? '🔴' : '⚽';
+        const teamDisplay = getVersionTeamDisplay(team, version || getCurrentFifaVersion());
+        const emoji = typeof teamDisplay.icon === 'string' && !teamDisplay.icon.startsWith('data:') 
+          ? teamDisplay.icon 
+          : team?.toLowerCase() === 'aek' ? '🔵' : team?.toLowerCase() === 'real' ? '🔴' : '⚽';
         e.target.outerHTML = `<span class="${className}">${emoji}</span>`;
       }}
     />
