@@ -28,15 +28,15 @@ export default function TeamSettingsTab() {
         console.log('✅ [AdminTab] Manager data loaded successfully:', result.data);
         // Convert database format to component format
         // Assuming id=1 is AEK manager, id=2 is Real manager
-        const aekManager = result.data.find(m => m.id === 1) || { name: 'Alexander', gewicht: 110, age: 30 };
-        const realManager = result.data.find(m => m.id === 2) || { name: 'Philip', gewicht: 105, age: 30 };
+        const aekManager = result.data.find(m => m.id === 1) || { name: 'Alexander', gewicht: 110 };
+        const realManager = result.data.find(m => m.id === 2) || { name: 'Philip', gewicht: 105 };
         
         console.log('👤 [AdminTab] AEK Manager:', aekManager);
         console.log('👤 [AdminTab] Real Manager:', realManager);
         
         setManagers({
-          aek: { name: aekManager.name, age: aekManager.age || 30, weight: aekManager.gewicht },
-          real: { name: realManager.name, age: realManager.age || 30, weight: realManager.gewicht }
+          aek: { name: aekManager.name, age: 30, weight: aekManager.gewicht },
+          real: { name: realManager.name, age: 30, weight: realManager.gewicht }
         });
       } else {
         console.warn('⚠️ [AdminTab] No manager data found, using defaults. Result:', result);
@@ -58,12 +58,12 @@ export default function TeamSettingsTab() {
       console.log('🔧 [AdminTab] Initializing default managers...');
       
       // Create AEK manager (id=1)
-      const aekData = { name: 'Alexander', gewicht: 110, age: 30 };
+      const aekData = { name: 'Alexander', gewicht: 110 };
       const aekResult = await dataManager.insertManager(aekData);
       console.log('✅ [AdminTab] AEK manager created:', aekResult);
       
       // Create Real manager (id=2)  
-      const realData = { name: 'Philip', gewicht: 105, age: 30 };
+      const realData = { name: 'Philip', gewicht: 105 };
       const realResult = await dataManager.insertManager(realData);
       console.log('✅ [AdminTab] Real manager created:', realResult);
       
@@ -102,8 +102,8 @@ export default function TeamSettingsTab() {
       console.log('💾 [TeamSettings] Saving manager settings:', managers);
       
       // Update both managers in the database
-      const aekData = { name: managers.aek.name, gewicht: managers.aek.weight, age: managers.aek.age };
-      const realData = { name: managers.real.name, gewicht: managers.real.weight, age: managers.real.age };
+      const aekData = { name: managers.aek.name, gewicht: managers.aek.weight };
+      const realData = { name: managers.real.name, gewicht: managers.real.weight };
       
       console.log('💾 [TeamSettings] AEK Data:', aekData);
       console.log('💾 [TeamSettings] Real Data:', realData);

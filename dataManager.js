@@ -76,9 +76,8 @@ class DataManager {
                 count: { required: false, type: 'number', min: 0 }
             },
             managers: {
-                name: { required: true, type: 'string', minLength: 1 },
-                gewicht: { required: true, type: 'number', min: 40, max: 200 },
-                age: { required: false, type: 'number', min: 18, max: 80 }
+                name: { required: false, type: 'string', minLength: 1 },
+                gewicht: { required: false, type: 'number', min: 40, max: 200 }
             }
         };
     }

@@ -79,9 +79,8 @@ CREATE TABLE IF NOT EXISTS spieler_des_spiels (
 -- 7. Manager table for alcohol tracker
 CREATE TABLE IF NOT EXISTS manager (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
-  name text NOT NULL,
-  gewicht smallint NOT NULL,
-  age smallint,
+  name text,
+  gewicht smallint,
   CONSTRAINT manager_pkey PRIMARY KEY (id)
 );
 
@@ -93,10 +92,10 @@ VALUES
 ON CONFLICT (team) DO NOTHING;
 
 -- Insert default manager records if they don't exist
-INSERT INTO manager (id, name, gewicht, age) 
+INSERT INTO manager (id, name, gewicht) 
 VALUES 
-  (1, 'Alexander', 110, 30),
-  (2, 'Philip', 105, 30)
+  (1, 'Alexander', 110),
+  (2, 'Philip', 105)
 ON CONFLICT (id) DO NOTHING;
 
 -- Create indexes for better performance
