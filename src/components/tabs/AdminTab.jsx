@@ -8,6 +8,7 @@ import SearchTab from './admin/SearchTab';
 import TeamSettingsTab from './admin/TeamSettingsTab';
 import EventsSettingsTab from './admin/EventsSettingsTab';
 import SeasonManagerTab from './admin/SeasonManagerTab';
+import FifaVersionManagerTab from './admin/FifaVersionManagerTab';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('search');
@@ -15,6 +16,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false }) { 
   const subTabs = [
     { id: 'search', label: 'Globale Suche', icon: 'fas fa-search' },
     { id: 'season', label: 'Saison-Manager', icon: 'fas fa-calendar-alt' },
+    { id: 'fifa-versions', label: 'FIFA Versionen', icon: 'fas fa-gamepad' },
     { id: 'matches', label: 'Spiele hinzufügen', icon: 'fas fa-futbol' },
     { id: 'bans', label: 'Sperren hinzufügen', icon: 'fas fa-ban' },
     { id: 'players', label: 'Spieler hinzufügen', icon: 'fas fa-users' },
@@ -30,6 +32,8 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false }) { 
         return <SearchTab onNavigate={onNavigate} />;
       case 'season':
         return <SeasonManagerTab />;
+      case 'fifa-versions':
+        return <FifaVersionManagerTab />;
       case 'matches':
         return <AddMatchTab />;
       case 'bans':
