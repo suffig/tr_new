@@ -1529,7 +1529,7 @@ button:focus {
   animation: zoomOut 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.animate-fadeIn {
+.animate-fade-in {
   animation: fadeIn 0.3s ease-out forwards;
 }
 
