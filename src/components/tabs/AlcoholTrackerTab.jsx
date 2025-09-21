@@ -388,6 +388,32 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
     newData.currentRound.games = [...bjTracking.currentRound.games, game];
 
+    // Auto-close round after 10 games (requirement 2)
+    if (newData.currentRound.games.length >= 10) {
+      const finishedRound = {
+        id: Date.now(),
+        roundNumber: newData.currentRound.roundNumber,
+        games: [...newData.currentRound.games],
+        startTime: newData.currentRound.startTime,
+        endTime: new Date().toISOString(),
+        gamesCount: newData.currentRound.games.length,
+        alexanderTotal: newData.currentRound.games
+          .filter(g => g.player === 'alexander')
+          .reduce((sum, g) => sum + g.amount, 0),
+        philipTotal: newData.currentRound.games
+          .filter(g => g.player === 'philip')
+          .reduce((sum, g) => sum + g.amount, 0)
+      };
+
+      newData.rounds = [...bjTracking.rounds, finishedRound];
+      newData.currentRound = {
+        active: false,
+        roundNumber: bjTracking.rounds.length + 2,
+        games: [],
+        startTime: null
+      };
+    }
+
     saveBjTrackingData(newData);
   };
 
@@ -419,6 +445,32 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     };
 
     newData.currentRound.games = [...bjTracking.currentRound.games, game];
+
+    // Auto-close round after 10 games (requirement 2)
+    if (newData.currentRound.games.length >= 10) {
+      const finishedRound = {
+        id: Date.now(),
+        roundNumber: newData.currentRound.roundNumber,
+        games: [...newData.currentRound.games],
+        startTime: newData.currentRound.startTime,
+        endTime: new Date().toISOString(),
+        gamesCount: newData.currentRound.games.length,
+        alexanderTotal: newData.currentRound.games
+          .filter(g => g.player === 'alexander')
+          .reduce((sum, g) => sum + g.amount, 0),
+        philipTotal: newData.currentRound.games
+          .filter(g => g.player === 'philip')
+          .reduce((sum, g) => sum + g.amount, 0)
+      };
+
+      newData.rounds = [...bjTracking.rounds, finishedRound];
+      newData.currentRound = {
+        active: false,
+        roundNumber: bjTracking.rounds.length + 2,
+        games: [],
+        startTime: null
+      };
+    }
 
     saveBjTrackingData(newData);
   };
@@ -485,6 +537,39 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       }
     };
     saveBjTrackingData(resetData);
+  };
+
+  // End BJ session with final accounting (requirement 3)
+  const endBjSession = () => {
+    // If there's an active round, finish it first
+    if (bjTracking.currentRound.active && bjTracking.currentRound.games.length > 0) {
+      finishCurrentRound();
+    }
+
+    // Show final accounting summary
+    const alexanderTotal = bjTracking.alexander.balance;
+    const philipTotal = bjTracking.philip.balance;
+    const totalGames = bjTracking.gameCounter;
+    const totalRounds = bjTracking.rounds.length + (bjTracking.currentRound.active ? 1 : 0);
+    
+    const winner = alexanderTotal > philipTotal ? managers.aek.name : 
+                   philipTotal > alexanderTotal ? managers.real.name : 'Unentschieden';
+    const difference = Math.abs(alexanderTotal - philipTotal);
+
+    let summaryMessage = `🃏 BJ-Session Beendet!\n\n`;
+    summaryMessage += `📊 Finale Abrechnung:\n`;
+    summaryMessage += `🔵 ${managers.aek.name}: +${alexanderTotal.toFixed(2)}€\n`;
+    summaryMessage += `🟢 ${managers.real.name}: +${philipTotal.toFixed(2)}€\n\n`;
+    summaryMessage += `🏆 Gewinner: ${winner}\n`;
+    if (difference > 0) {
+      summaryMessage += `💰 Differenz: ${difference.toFixed(2)}€\n\n`;
+    }
+    summaryMessage += `🎮 Gespielt: ${totalGames} Spiele in ${totalRounds} Runden\n\n`;
+    summaryMessage += `Möchten Sie die Session zurücksetzen?`;
+
+    if (window.confirm(summaryMessage)) {
+      resetBjTracking();
+    }
   };
 
   // Handle custom amount input and submission
@@ -1204,9 +1289,9 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 )}
 
                 {/* Custom Amount Input - Always visible */}
-                <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                  <h6 className="text-xs font-medium text-blue-700 mb-2">💰 Eigener Betrag:</h6>
-                  <div className="flex gap-2">
+                <div className="mt-3 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                  <h6 className="text-xs font-medium text-blue-700 mb-1">💰 Eigener Betrag:</h6>
+                  <div className="flex gap-1">
                     <input
                       type="number"
                       min="0"
@@ -1214,12 +1299,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       value={customAmounts.alexander}
                       onChange={(e) => handleCustomAmountChange('alexander', e.target.value)}
                       placeholder="0.00"
-                      className="flex-1 px-3 py-3 border border-blue-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[44px]"
+                      className="flex-1 px-2 py-2 border border-blue-300 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-blue-500 min-h-[36px] max-w-[80px]"
                     />
                     <button
                       onClick={() => addCustomAmount('alexander')}
                       disabled={!customAmounts.alexander || parseFloat(customAmounts.alexander) <= 0}
-                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-md text-sm font-medium transition-all min-h-[44px] min-w-[44px]"
+                      className="bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white px-2 py-2 rounded-md text-xs font-medium transition-all min-h-[36px] min-w-[36px]"
                     >
                       +€
                     </button>
@@ -1285,9 +1370,9 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 )}
 
                 {/* Custom Amount Input - Always visible */}
-                <div className="mt-3 p-3 bg-green-50 rounded-lg border border-green-200">
-                  <h6 className="text-xs font-medium text-green-700 mb-2">💰 Eigener Betrag:</h6>
-                  <div className="flex gap-2">
+                <div className="mt-3 p-2 bg-green-50 rounded-lg border border-green-200">
+                  <h6 className="text-xs font-medium text-green-700 mb-1">💰 Eigener Betrag:</h6>
+                  <div className="flex gap-1">
                     <input
                       type="number"
                       min="0"
@@ -1295,12 +1380,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       value={customAmounts.philip}
                       onChange={(e) => handleCustomAmountChange('philip', e.target.value)}
                       placeholder="0.00"
-                      className="flex-1 px-3 py-3 border border-green-300 rounded-md text-sm text-center focus:outline-none focus:ring-2 focus:ring-green-500 min-h-[44px]"
+                      className="flex-1 px-2 py-2 border border-green-300 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-green-500 min-h-[36px] max-w-[80px]"
                     />
                     <button
                       onClick={() => addCustomAmount('philip')}
                       disabled={!customAmounts.philip || parseFloat(customAmounts.philip) <= 0}
-                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-4 py-3 rounded-md text-sm font-medium transition-all min-h-[44px] min-w-[44px]"
+                      className="bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white px-2 py-2 rounded-md text-xs font-medium transition-all min-h-[36px] min-w-[36px]"
                     >
                       +€
                     </button>
@@ -1349,6 +1434,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               )}
               
               <button
+                onClick={endBjSession}
+                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+              >
+                🏁 BJ-Beenden
+              </button>
+              
+              <button
                 onClick={resetBjTracking}
                 className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg min-h-[56px]"
               >
@@ -1369,7 +1461,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   {bjTracking.currentRound.games.length >= 10 && (
                     <div className="bg-green-100 border border-green-300 rounded-lg p-2">
                       <span className="text-green-700 text-xs font-medium">
-                        🎉 10 Spiele erreicht! Klicke "Runde abschließen" für die nächste Runde.
+                        🎉 10 Spiele erreicht! Klicke &quot;Runde abschließen&quot; für die nächste Runde.
                       </span>
                     </div>
                   )}
