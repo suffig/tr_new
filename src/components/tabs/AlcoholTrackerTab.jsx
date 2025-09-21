@@ -423,8 +423,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
         
         if (hand === 'blackjack') {
           if (otherHand === 'blackjack') {
-            // Both have blackjack = +2.50€ each
-            playerResult = 2.5;
+            // Both have blackjack = nothing for anyone (0€)
+            playerResult = 0;
           } else if (otherHand === 'win') {
             // Blackjack vs normal win = +2.50€ 
             playerResult = 2.5;
@@ -1683,7 +1683,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <li>• Alle Beträge in 5€ oder 2,50€ Schritten</li>
                 <li>• Normaler Gewinn = 5€ für den Gewinner</li>
                 <li>• Blackjack = 1,5x = 7,50€ (außer Sonderfall)</li>
-                <li>• Beide gewinnen Blackjack = nur 2,50€ jeder</li>
+                <li>• Beide gewinnen Blackjack = 0€ für beide (nichts)</li>
                 <li>• Blackjack + anderer normal gewinnt = 2,50€</li>
                 <li>• Double/Split bei Blackjack = -2,50€</li>
                 <li>• Double/Split verdoppelt Gewinn/Verlust</li>
