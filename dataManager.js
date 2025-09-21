@@ -77,7 +77,8 @@ class DataManager {
             },
             managers: {
                 name: { required: true, type: 'string', minLength: 1 },
-                gewicht: { required: true, type: 'number', min: 40, max: 200 }
+                gewicht: { required: true, type: 'number', min: 40, max: 200 },
+                age: { required: false, type: 'number', min: 18, max: 80 }
             }
         };
     }
@@ -438,6 +439,26 @@ class DataManager {
 
     async getManagers() {
         return this.select('manager', '*', { order: { column: 'id', ascending: true } });
+    }
+
+    async updateManager(id, data) {
+        // Validate manager data
+        if (!this.validateData('managers', data)) {
+            throw new Error('Invalid manager data');
+        }
+        return this.update('manager', data, id);
+    }
+
+    async insertManager(data) {
+        // Validate manager data
+        if (!this.validateData('managers', data)) {
+            throw new Error('Invalid manager data');
+        }
+        return this.insert('manager', data);
+    }
+
+    async deleteManager(id) {
+        return this.delete('manager', id);
     }
 
     // Batch operations for better performance

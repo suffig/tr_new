@@ -80,7 +80,8 @@ CREATE TABLE IF NOT EXISTS spieler_des_spiels (
 CREATE TABLE IF NOT EXISTS manager (
   id bigint GENERATED ALWAYS AS IDENTITY NOT NULL,
   name text NOT NULL,
-  gewicht int2 NOT NULL,
+  gewicht smallint NOT NULL,
+  age smallint,
   CONSTRAINT manager_pkey PRIMARY KEY (id)
 );
 
@@ -92,10 +93,10 @@ VALUES
 ON CONFLICT (team) DO NOTHING;
 
 -- Insert default manager records if they don't exist
-INSERT INTO manager (id, name, gewicht) 
+INSERT INTO manager (id, name, gewicht, age) 
 VALUES 
-  (1, 'Alexander', 110),
-  (2, 'Philip', 105)
+  (1, 'Alexander', 110, 30),
+  (2, 'Philip', 105, 30)
 ON CONFLICT (id) DO NOTHING;
 
 -- Create indexes for better performance
