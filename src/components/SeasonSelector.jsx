@@ -7,6 +7,7 @@ import {
   SEASONS,
   SEASON_NAMES
 } from '../utils/seasonManager.js';
+import { getCurrentFifaVersion } from '../utils/fifaVersionManager.js';
 
 const SeasonSelector = ({ className = '', showInHeader = false }) => {
   const [currentSeason, setCurrentSeason] = useState(getCurrentSeason());
@@ -51,8 +52,17 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
   };
 
   const currentSeasonMeta = getSeasonMetadata(currentSeason);
+  const currentFifaVersion = getCurrentFifaVersion();
 
-  // Header version - compact indicator
+  // Get the short version name (FC25, FC26, etc.) for prominent display
+  const getShortVersionName = () => {
+    if (currentFifaVersion === 'FC25') return 'FC25';
+    if (currentFifaVersion === 'FC26') return 'FC26';
+    // For custom versions, return the version ID directly
+    return currentFifaVersion;
+  };
+
+  // Header version - compact indicator with prominent version number
   if (showInHeader) {
     return (
       <div className={`relative ${className}`}>
@@ -63,7 +73,10 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
           style={{ color: currentSeasonMeta?.color || '#6B7280' }}
         >
           <span className="text-base">{currentSeasonMeta?.icon || '📅'}</span>
-          <span className="font-medium text-slate-200">{currentSeasonMeta?.name || 'Legacy'}</span>
+          <div className="flex flex-col items-start">
+            <span className="font-bold text-slate-100 text-sm leading-none">{getShortVersionName()}</span>
+            <span className="font-medium text-slate-300 text-xs leading-none">{currentSeasonMeta?.name || 'Legacy'}</span>
+          </div>
           <span className="text-slate-400 text-xs">▼</span>
         </button>
 
@@ -91,7 +104,12 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
                       <div className="flex items-center gap-3">
                         <span className="text-xl">{season.icon}</span>
                         <div>
-                          <div className="font-medium">{season.name}</div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-lg">
+                              {season.id === SEASONS.LEGACY ? 'FC25' : 'FC26'}
+                            </span>
+                            <span className="font-medium text-gray-700">{season.name}</span>
+                          </div>
                           <div className="text-sm text-gray-600">{season.description}</div>
                         </div>
                       </div>
