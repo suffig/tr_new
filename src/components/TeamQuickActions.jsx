@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 export default function TeamQuickActions({ onNavigate }) {
-  const [favoriteTeam, setFavoriteTeam] = useState(
+  const [favoriteTeam] = useState(
     localStorage.getItem('userFavoriteTeam') || 'AEK'
   );
 
@@ -20,13 +20,6 @@ export default function TeamQuickActions({ onNavigate }) {
       color: 'bg-system-blue/10 text-system-blue'
     },
     {
-      id: 'stats',
-      label: 'Statistiken',
-      icon: '📊',
-      description: 'Team-Stats',
-      color: 'bg-system-green/10 text-system-green'
-    },
-    {
       id: 'finanzen',
       label: 'Finanzen',
       icon: '€',
@@ -42,40 +35,18 @@ export default function TeamQuickActions({ onNavigate }) {
     }
   ];
 
-  const handleTeamChange = (teamValue) => {
-    setFavoriteTeam(teamValue);
-    localStorage.setItem('userFavoriteTeam', teamValue);
-    
-    // Dispatch event for other components
-    window.dispatchEvent(new CustomEvent('userPreferencesChanged', {
-      detail: { favoriteTeam: teamValue }
-    }));
-  };
-
   const currentTeam = teams.find(t => t.value === favoriteTeam) || teams[0];
 
   return (
     <div className="modern-card p-4 mb-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-2">
-          <span className="text-lg">{currentTeam.emoji}</span>
-          <h3 className="text-lg font-bold text-text-primary">
-            Team {currentTeam.label}
-          </h3>
+      <div className="flex items-center gap-2 mb-4">
+        <span className="text-lg">{currentTeam.emoji}</span>
+        <h3 className="text-lg font-bold text-text-primary">
+          Team {currentTeam.label}
+        </h3>
+        <div className="ml-auto text-xs text-text-muted">
+          (Team-Auswahl im Profil)
         </div>
-        
-        {/* Team Selector */}
-        <select
-          value={favoriteTeam}
-          onChange={(e) => handleTeamChange(e.target.value)}
-          className="text-sm border border-border-light rounded-lg px-2 py-1 bg-bg-secondary text-text-primary"
-        >
-          {teams.map(team => (
-            <option key={team.value} value={team.value}>
-              {team.emoji} {team.label}
-            </option>
-          ))}
-        </select>
       </div>
 
       {/* Quick Actions Grid */}
