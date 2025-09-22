@@ -3,10 +3,9 @@ import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
-import TeamQuickActions from '../TeamQuickActions';
 import '../../styles/match-animations.css';
 
-export default function MatchesTab({ onNavigate, showHints = false }) {
+export default function MatchesTab({ showHints = false }) {
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
   const [timeFilter, setTimeFilter] = useState('4weeks'); // '1week', '4weeks', '3months', 'all'
@@ -311,11 +310,6 @@ export default function MatchesTab({ onNavigate, showHints = false }) {
         <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
-      </div>
-
-      {/* Team Quick Actions (without team selection) */}
-      <div className="mb-6">
-        <TeamQuickActions onNavigate={onNavigate} />
       </div>
 
       {/* Horizontal Navigation */}
