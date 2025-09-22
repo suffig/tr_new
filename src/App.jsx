@@ -183,7 +183,7 @@ function App() {
     <ThemeProvider>
       <div className="flex flex-col min-h-screen bg-bg-primary transition-colors duration-ios safe-area-all">
         {/* Header */}
-        <Header />
+        <Header onNavigate={handleTabChange} />
         
         {/* Offline Status Indicator - Only show on admin page for authorized users */}
         {activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && <OfflineIndicator />}

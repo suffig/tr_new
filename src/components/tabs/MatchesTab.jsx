@@ -3,9 +3,11 @@ import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
+import QuickStatsWidget from '../QuickStatsWidget';
+import TeamQuickActions from '../TeamQuickActions';
 import '../../styles/match-animations.css';
 
-export default function MatchesTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
+export default function MatchesTab({ onNavigate, showHints = false }) {
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
   const [timeFilter, setTimeFilter] = useState('4weeks'); // '1week', '4weeks', '3months', 'all'
@@ -311,6 +313,15 @@ export default function MatchesTab({ onNavigate, showHints = false }) { // eslin
         <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
+      </div>
+
+      {/* Enhanced User Experience Widgets */}
+      <div className="mb-6 space-y-4">
+        {/* Team Quick Actions */}
+        <TeamQuickActions onNavigate={onNavigate} />
+        
+        {/* Quick Stats Widget */}
+        <QuickStatsWidget />
       </div>
 
       {/* Horizontal Navigation */}
