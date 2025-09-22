@@ -20,7 +20,7 @@ export default function UserProfile({ onClose, onNavigate }) {
       if (!defaultFavorite) {
         if (user.email === 'philip-melchert@live.de') {
           defaultFavorite = 'Real';
-        } else if (user.email === 'alexander-lueckmann@web.de') {
+        } else if (user.email === 'alexander.lueckmann@web.de') {
           defaultFavorite = 'AEK';
         }
         
