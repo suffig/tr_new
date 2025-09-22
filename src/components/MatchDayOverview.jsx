@@ -57,30 +57,42 @@ export default function MatchDayOverview({ matches }) {
     // Find most productive player of the day
     const playerGoals = {};
     dateMatches.forEach(match => {
-      // Process AEK goals
+      // Process AEK goals with error handling
       if (match.goalslista) {
-        const aekGoalsList = typeof match.goalslista === 'string' 
-          ? JSON.parse(match.goalslista) 
-          : match.goalslista;
-        
-        aekGoalsList.forEach(goal => {
-          const playerName = typeof goal === 'string' ? goal : goal.player;
-          const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
-          playerGoals[playerName] = (playerGoals[playerName] || 0) + goalCount;
-        });
+        try {
+          const aekGoalsList = typeof match.goalslista === 'string' 
+            ? JSON.parse(match.goalslista) 
+            : match.goalslista;
+          
+          if (Array.isArray(aekGoalsList)) {
+            aekGoalsList.forEach(goal => {
+              const playerName = typeof goal === 'string' ? goal : goal.player;
+              const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
+              playerGoals[playerName] = (playerGoals[playerName] || 0) + goalCount;
+            });
+          }
+        } catch (error) {
+          console.warn('Error parsing AEK goals list for match:', match.id, error);
+        }
       }
 
-      // Process Real goals
+      // Process Real goals with error handling
       if (match.goalslistb) {
-        const realGoalsList = typeof match.goalslistb === 'string' 
-          ? JSON.parse(match.goalslistb) 
-          : match.goalslistb;
-        
-        realGoalsList.forEach(goal => {
-          const playerName = typeof goal === 'string' ? goal : goal.player;
-          const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
-          playerGoals[playerName] = (playerGoals[playerName] || 0) + goalCount;
-        });
+        try {
+          const realGoalsList = typeof match.goalslistb === 'string' 
+            ? JSON.parse(match.goalslistb) 
+            : match.goalslistb;
+          
+          if (Array.isArray(realGoalsList)) {
+            realGoalsList.forEach(goal => {
+              const playerName = typeof goal === 'string' ? goal : goal.player;
+              const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
+              playerGoals[playerName] = (playerGoals[playerName] || 0) + goalCount;
+            });
+          }
+        } catch (error) {
+          console.warn('Error parsing Real goals list for match:', match.id, error);
+        }
       }
     });
 
@@ -374,33 +386,71 @@ export default function MatchDayOverview({ matches }) {
                   {/* Goal Scorers */}
                   {(match.goalslista || match.goalslistb) && (
                     <div className="space-y-2">
-                      {match.goalslista && JSON.parse(match.goalslista).length > 0 && (
+                      {match.goalslista && (() => {
+                        try {
+                          const aekGoals = typeof match.goalslista === 'string' 
+                            ? JSON.parse(match.goalslista) 
+                            : match.goalslista;
+                          return Array.isArray(aekGoals) && aekGoals.length > 0;
+                        } catch {
+                          return false;
+                        }
+                      })() && (
                         <div className="text-sm">
                           <span className="text-primary-blue font-medium">AEK Torschützen: </span>
-                          {JSON.parse(match.goalslista).map((goal, goalIndex) => {
-                            const player = typeof goal === 'string' ? goal : goal.player;
-                            const count = typeof goal === 'string' ? 1 : (goal.count || 1);
-                            return (
-                              <span key={goalIndex} className="mr-2">
-                                {player} {count > 1 ? `(${count})` : ''}
-                              </span>
-                            );
-                          })}
+                          {(() => {
+                            try {
+                              const aekGoals = typeof match.goalslista === 'string' 
+                                ? JSON.parse(match.goalslista) 
+                                : match.goalslista;
+                              return Array.isArray(aekGoals) ? aekGoals.map((goal, goalIndex) => {
+                                const player = typeof goal === 'string' ? goal : goal.player;
+                                const count = typeof goal === 'string' ? 1 : (goal.count || 1);
+                                return (
+                                  <span key={goalIndex} className="mr-2">
+                                    {player} {count > 1 ? `(${count})` : ''}
+                                  </span>
+                                );
+                              }) : [];
+                            } catch (error) {
+                              console.warn('Error parsing AEK goals for display:', error);
+                              return <span className="text-red-500 text-xs">Fehler beim Laden der Torschützen</span>;
+                            }
+                          })()}
                         </div>
                       )}
                       
-                      {match.goalslistb && JSON.parse(match.goalslistb).length > 0 && (
+                      {match.goalslistb && (() => {
+                        try {
+                          const realGoals = typeof match.goalslistb === 'string' 
+                            ? JSON.parse(match.goalslistb) 
+                            : match.goalslistb;
+                          return Array.isArray(realGoals) && realGoals.length > 0;
+                        } catch {
+                          return false;
+                        }
+                      })() && (
                         <div className="text-sm">
                           <span className="text-primary-red font-medium">Real Torschützen: </span>
-                          {JSON.parse(match.goalslistb).map((goal, goalIndex) => {
-                            const player = typeof goal === 'string' ? goal : goal.player;
-                            const count = typeof goal === 'string' ? 1 : (goal.count || 1);
-                            return (
-                              <span key={goalIndex} className="mr-2">
-                                {player} {count > 1 ? `(${count})` : ''}
-                              </span>
-                            );
-                          })}
+                          {(() => {
+                            try {
+                              const realGoals = typeof match.goalslistb === 'string' 
+                                ? JSON.parse(match.goalslistb) 
+                                : match.goalslistb;
+                              return Array.isArray(realGoals) ? realGoals.map((goal, goalIndex) => {
+                                const player = typeof goal === 'string' ? goal : goal.player;
+                                const count = typeof goal === 'string' ? 1 : (goal.count || 1);
+                                return (
+                                  <span key={goalIndex} className="mr-2">
+                                    {player} {count > 1 ? `(${count})` : ''}
+                                  </span>
+                                );
+                              }) : [];
+                            } catch (error) {
+                              console.warn('Error parsing Real goals for display:', error);
+                              return <span className="text-red-500 text-xs">Fehler beim Laden der Torschützen</span>;
+                            }
+                          })()}
                         </div>
                       )}
                     </div>

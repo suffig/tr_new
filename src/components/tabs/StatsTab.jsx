@@ -1691,31 +1691,269 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     </div>
   );
 
-  const renderTrends = () => (
-    <div className="modern-card">
-      <h3 className="font-bold text-lg mb-4">📈 Performance-Trends</h3>
-      <div className="space-y-4">
-        {Object.values(performanceTrends).reverse().map((trend) => (
-          <div key={trend.month} className="flex items-center justify-between py-3 border-b border-border-light last:border-b-0">
-            <div className="font-medium">{trend.month}</div>
-            <div className="flex items-center space-x-4">
-              <div className="text-sm">
-                <span className="text-blue-600 font-medium">AEK: {trend.aekWins}</span>
-                <span className="mx-2">vs</span>
-                <span className="text-red-600 font-medium">Real: {trend.realWins}</span>
+  const renderTrends = () => {
+    // Enhanced trends calculation with better organization
+    const calculateEnhancedTrends = () => {
+      if (!filteredMatches || filteredMatches.length === 0) return [];
+      
+      const monthlyStats = {};
+      
+      filteredMatches.forEach(match => {
+        const date = new Date(match.date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
+        
+        if (!monthlyStats[monthKey]) {
+          monthlyStats[monthKey] = {
+            month: monthName,
+            key: monthKey,
+            aekWins: 0,
+            realWins: 0,
+            aekGoals: 0,
+            realGoals: 0,
+            matchCount: 0,
+            matches: []
+          };
+        }
+        
+        const aekGoals = match.goalsa || 0;
+        const realGoals = match.goalsb || 0;
+        
+        monthlyStats[monthKey].aekGoals += aekGoals;
+        monthlyStats[monthKey].realGoals += realGoals;
+        monthlyStats[monthKey].matchCount++;
+        monthlyStats[monthKey].matches.push(match);
+        
+        if (aekGoals > realGoals) {
+          monthlyStats[monthKey].aekWins++;
+        } else if (realGoals > aekGoals) {
+          monthlyStats[monthKey].realWins++;
+        }
+      });
+      
+      return Object.values(monthlyStats).sort((a, b) => b.key.localeCompare(a.key));
+    };
+
+    const enhancedTrends = calculateEnhancedTrends();
+
+    if (enhancedTrends.length === 0) {
+      return (
+        <div className="text-center py-8 text-text-muted">
+          <div className="text-4xl mb-2">📈</div>
+          <p>Keine Spiele für Trends-Analyse im gewählten Zeitraum</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Trends Overview Header */}
+        <div className="modern-card p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-2xl">📈</span>
+            <div>
+              <h3 className="text-lg font-bold text-text-primary">Performance-Trends</h3>
+              <p className="text-sm text-text-muted">Monatliche Entwicklung der Teams</p>
+            </div>
+          </div>
+          
+          {/* Overall Trend Summary */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-xl font-bold text-blue-600">
+                {enhancedTrends.reduce((sum, trend) => sum + trend.aekWins, 0)}
               </div>
-              <div className="text-sm text-text-muted">
-                {trend.matchCount} Spiele, {trend.totalGoals} Tore
+              <div className="text-sm text-blue-700">AEK Siege gesamt</div>
+            </div>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <div className="text-xl font-bold text-red-600">
+                {enhancedTrends.reduce((sum, trend) => sum + trend.realWins, 0)}
               </div>
-              <div className="text-sm font-medium">
-                ⌀ {(trend.totalGoals / trend.matchCount).toFixed(1)} Tore/Spiel
+              <div className="text-sm text-red-700">Real Siege gesamt</div>
+            </div>
+            <div className="text-center p-4 bg-green-50 rounded-lg">
+              <div className="text-xl font-bold text-green-600">
+                {enhancedTrends.reduce((sum, trend) => sum + trend.matchCount, 0)}
+              </div>
+              <div className="text-sm text-green-700">Spiele gesamt</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Monthly Breakdown */}
+        <div className="space-y-4">
+          {enhancedTrends.map((trend, index) => {
+            const totalGoals = trend.aekGoals + trend.realGoals;
+            const aekWinRate = trend.matchCount > 0 ? (trend.aekWins / trend.matchCount * 100).toFixed(0) : 0;
+            const realWinRate = trend.matchCount > 0 ? (trend.realWins / trend.matchCount * 100).toFixed(0) : 0;
+            const avgGoalsPerMatch = trend.matchCount > 0 ? (totalGoals / trend.matchCount).toFixed(1) : '0.0';
+            
+            return (
+              <div key={trend.key} className="modern-card p-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 bg-gradient-info rounded-full flex items-center justify-center">
+                      <span className="text-white text-sm font-bold">{index + 1}</span>
+                    </div>
+                    <div>
+                      <h4 className="font-bold text-text-primary">{trend.month}</h4>
+                      <p className="text-sm text-text-muted">{trend.matchCount} Spiele gespielt</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-lg font-bold text-text-primary">⌀ {avgGoalsPerMatch}</div>
+                    <div className="text-xs text-text-muted">Tore/Spiel</div>
+                  </div>
+                </div>
+
+                {/* Team Performance Comparison */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                  <div className="p-4 bg-blue-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-blue-700">AEK Athens</span>
+                      <span className="text-sm text-blue-600">{aekWinRate}% Siege</span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Siege:</span>
+                        <span className="font-medium">{trend.aekWins}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Tore:</span>
+                        <span className="font-medium">{trend.aekGoals}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>⌀ Tore/Spiel:</span>
+                        <span className="font-medium">
+                          {trend.matchCount > 0 ? (trend.aekGoals / trend.matchCount).toFixed(1) : '0.0'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 bg-red-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="font-medium text-red-700">Real Madrid</span>
+                      <span className="text-sm text-red-600">{realWinRate}% Siege</span>
+                    </div>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span>Siege:</span>
+                        <span className="font-medium">{trend.realWins}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Tore:</span>
+                        <span className="font-medium">{trend.realGoals}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>⌀ Tore/Spiel:</span>
+                        <span className="font-medium">
+                          {trend.matchCount > 0 ? (trend.realGoals / trend.matchCount).toFixed(1) : '0.0'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Visual Progress Bar */}
+                <div className="space-y-2">
+                  <div className="flex justify-between text-xs text-text-muted">
+                    <span>AEK Dominanz</span>
+                    <span>Real Dominanz</span>
+                  </div>
+                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                    <div className="h-full flex">
+                      <div 
+                        className="bg-blue-500" 
+                        style={{ width: `${aekWinRate}%` }}
+                      ></div>
+                      <div 
+                        className="bg-red-500" 
+                        style={{ width: `${realWinRate}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Month Highlights */}
+                {trend.matchCount > 0 && (
+                  <div className="mt-4 pt-4 border-t border-border-light">
+                    <div className="flex items-center gap-4 text-xs text-text-muted">
+                      <span>📊 {totalGoals} Tore insgesamt</span>
+                      <span>⚽ Bestes Team: {trend.aekWins > trend.realWins ? 'AEK' : trend.realWins > trend.aekWins ? 'Real' : 'Ausgeglichen'}</span>
+                      <span>🔥 Intensität: {avgGoalsPerMatch >= 3 ? 'Hoch' : avgGoalsPerMatch >= 2 ? 'Mittel' : 'Niedrig'}</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Trend Analysis Summary */}
+        <div className="modern-card p-6">
+          <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <span className="text-xl">🎯</span>
+            Trend-Analyse
+          </h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <h5 className="font-medium text-text-primary mb-3">📈 Aufwärtstrends</h5>
+              <div className="space-y-2 text-sm">
+                {enhancedTrends.length >= 2 && (
+                  <>
+                    <div className="flex justify-between">
+                      <span>Letzter Monat AEK:</span>
+                      <span className={`font-medium ${
+                        enhancedTrends[0].aekWins >= enhancedTrends[1].aekWins ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {enhancedTrends[0].aekWins >= enhancedTrends[1].aekWins ? '↗️ Besser' : '↘️ Schlechter'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Letzter Monat Real:</span>
+                      <span className={`font-medium ${
+                        enhancedTrends[0].realWins >= enhancedTrends[1].realWins ? 'text-green-600' : 'text-red-600'
+                      }`}>
+                        {enhancedTrends[0].realWins >= enhancedTrends[1].realWins ? '↗️ Besser' : '↘️ Schlechter'}
+                      </span>
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+            
+            <div>
+              <h5 className="font-medium text-text-primary mb-3">🏆 Beste Performance</h5>
+              <div className="space-y-2 text-sm">
+                {(() => {
+                  const bestMonth = enhancedTrends.reduce((best, current) => {
+                    const currentTotal = current.aekGoals + current.realGoals;
+                    const bestTotal = best.aekGoals + best.realGoals;
+                    return currentTotal > bestTotal ? current : best;
+                  }, enhancedTrends[0]);
+                  
+                  return (
+                    <>
+                      <div className="flex justify-between">
+                        <span>Torreichster Monat:</span>
+                        <span className="font-medium text-green-600">{bestMonth?.month}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Tore in diesem Monat:</span>
+                        <span className="font-medium">{bestMonth ? bestMonth.aekGoals + bestMonth.realGoals : 0}</span>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </div>
           </div>
-        ))}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   const renderAdvancedStats = () => {
     // Calculate advanced performance metrics
