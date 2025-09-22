@@ -443,16 +443,18 @@ class DataManager {
 
     async updateManager(id, data) {
         // Validate manager data
-        if (!this.validateData('managers', data)) {
-            throw new Error('Invalid manager data');
+        const validation = this.validateData('managers', data);
+        if (!validation.valid) {
+            throw new Error(`Validierungsfehler: ${validation.errors.join(', ')}`);
         }
         return this.update('manager', data, id);
     }
 
     async insertManager(data) {
         // Validate manager data
-        if (!this.validateData('managers', data)) {
-            throw new Error('Invalid manager data');
+        const validation = this.validateData('managers', data);
+        if (!validation.valid) {
+            throw new Error(`Validierungsfehler: ${validation.errors.join(', ')}`);
         }
         return this.insert('manager', data);
     }

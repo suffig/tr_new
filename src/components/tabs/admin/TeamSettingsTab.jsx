@@ -3,6 +3,7 @@ import { dataManager } from '../../../../dataManager.js';
 import ThemeSettings from '../../ThemeSettings';
 import ColorCustomization from '../../ColorCustomization';
 import NotificationSettings from '../../NotificationSettings';
+import toast from 'react-hot-toast';
 
 export default function TeamSettingsTab() {
   const [managers, setManagers] = useState({
@@ -122,30 +123,20 @@ export default function TeamSettingsTab() {
       window.dispatchEvent(new CustomEvent('managerSettingsChanged'));
       
       // Show success message
-      const toast = document.createElement('div');
-      toast.className = 'fixed top-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      toast.textContent = 'Manager-Einstellungen gespeichert!';
-      document.body.appendChild(toast);
+      toast.success('Manager-Einstellungen erfolgreich gespeichert!', {
+        duration: 3000,
+        position: 'top-center'
+      });
       
-      setTimeout(() => {
-        if (document.body.contains(toast)) {
-          document.body.removeChild(toast);
-        }
-      }, 3000);
     } catch (error) {
       console.error('Error saving manager settings:', error);
       
-      // Show error message
-      const toast = document.createElement('div');
-      toast.className = 'fixed top-4 right-4 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg z-50';
-      toast.textContent = 'Fehler beim Speichern!';
-      document.body.appendChild(toast);
+      // Show error message with details
+      toast.error(`Fehler beim Speichern: ${error.message || 'Unbekannter Fehler'}`, {
+        duration: 5000,
+        position: 'top-center'
+      });
       
-      setTimeout(() => {
-        if (document.body.contains(toast)) {
-          document.body.removeChild(toast);
-        }
-      }, 3000);
     } finally {
       setLoading(false);
     }
