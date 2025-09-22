@@ -610,7 +610,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const views = [
     { id: 'dashboard', label: 'Dashboard', icon: '🎯' },
     { id: 'overview', label: 'Übersicht', icon: '📊' },
-    { id: 'analytics', label: 'Analytics', icon: '🔮' },
+    { id: 'advanced', label: 'Erweitert', icon: '⚡' },
     { id: 'matchdays', label: 'Spieltage', icon: '📅' },
     { id: 'players', label: 'Spieler', icon: '👥' },
     { id: 'teams', label: 'Teams', icon: '🏆' },
@@ -620,6 +620,85 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   if (loading) {
     return <LoadingSpinner message="Lade Statistiken..." />;
   }
+
+  // Calculate longest winning streaks for both teams
+  const calculateWinningStreaks = () => {
+    if (!filteredMatches || filteredMatches.length === 0) {
+      return {
+        aek: { streak: 0, startDate: null, endDate: null },
+        real: { streak: 0, startDate: null, endDate: null }
+      };
+    }
+
+    const streaks = {
+      aek: { longest: 0, current: 0, start: null, end: null, currentStart: null },
+      real: { longest: 0, current: 0, start: null, end: null, currentStart: null }
+    };
+
+    // Sort matches by date to analyze chronologically
+    const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    sortedMatches.forEach((match, index) => {
+      const aekGoals = match.goalsa || 0;
+      const realGoals = match.goalsb || 0;
+      const matchDate = match.date;
+
+      if (aekGoals > realGoals) {
+        // AEK wins
+        streaks.aek.current++;
+        if (streaks.aek.current === 1) {
+          streaks.aek.currentStart = matchDate;
+        }
+        
+        if (streaks.aek.current > streaks.aek.longest) {
+          streaks.aek.longest = streaks.aek.current;
+          streaks.aek.start = streaks.aek.currentStart;
+          streaks.aek.end = matchDate;
+        }
+        
+        // Reset Real streak
+        streaks.real.current = 0;
+        streaks.real.currentStart = null;
+      } else if (realGoals > aekGoals) {
+        // Real wins
+        streaks.real.current++;
+        if (streaks.real.current === 1) {
+          streaks.real.currentStart = matchDate;
+        }
+        
+        if (streaks.real.current > streaks.real.longest) {
+          streaks.real.longest = streaks.real.current;
+          streaks.real.start = streaks.real.currentStart;
+          streaks.real.end = matchDate;
+        }
+        
+        // Reset AEK streak
+        streaks.aek.current = 0;
+        streaks.aek.currentStart = null;
+      } else {
+        // Draw (shouldn't happen in FIFA but just in case)
+        streaks.aek.current = 0;
+        streaks.real.current = 0;
+        streaks.aek.currentStart = null;
+        streaks.real.currentStart = null;
+      }
+    });
+
+    return {
+      aek: {
+        streak: streaks.aek.longest,
+        startDate: streaks.aek.start,
+        endDate: streaks.aek.end
+      },
+      real: {
+        streak: streaks.real.longest,
+        startDate: streaks.real.start,
+        endDate: streaks.real.end
+      }
+    };
+  };
+
+  const winningStreaks = calculateWinningStreaks();
 
   const renderOverview = () => {
     // Calculate enhanced statistics for the selected time period
@@ -834,99 +913,99 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
         </div>
 
-        {/* New Interesting Statistics */}
+        {/* Longest Winning Streaks */}
+        <div className="modern-card">
+          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+            <span className="text-xl">🔥</span>
+            Längste Siegesserien
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* AEK Winning Streak */}
+            <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">AEK</span>
+                </div>
+                <div className="text-lg font-bold text-blue-600">
+                  {winningStreaks.aek.streak} Siege
+                </div>
+              </div>
+              {winningStreaks.aek.startDate && winningStreaks.aek.endDate ? (
+                <div className="space-y-1 text-sm text-blue-700">
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-500">📅</span>
+                    <span>Von: {new Date(winningStreaks.aek.startDate).toLocaleDateString('de-DE')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-blue-500">🏁</span>
+                    <span>Bis: {new Date(winningStreaks.aek.endDate).toLocaleDateString('de-DE')}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-blue-600">
+                  {winningStreaks.aek.streak === 0 ? 'Keine Siegesserie im Zeitraum' : 'Kein Datumsbereich verfügbar'}
+                </div>
+              )}
+            </div>
+
+            {/* Real Winning Streak */}
+            <div className="p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg border border-red-200">
+              <div className="flex items-center gap-3 mb-3">
+                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                  <span className="text-white font-bold text-sm">RM</span>
+                </div>
+                <div className="text-lg font-bold text-red-600">
+                  {winningStreaks.real.streak} Siege
+                </div>
+              </div>
+              {winningStreaks.real.startDate && winningStreaks.real.endDate ? (
+                <div className="space-y-1 text-sm text-red-700">
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-500">📅</span>
+                    <span>Von: {new Date(winningStreaks.real.startDate).toLocaleDateString('de-DE')}</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-red-500">🏁</span>
+                    <span>Bis: {new Date(winningStreaks.real.endDate).toLocaleDateString('de-DE')}</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-sm text-red-600">
+                  {winningStreaks.real.streak === 0 ? 'Keine Siegesserie im Zeitraum' : 'Kein Datumsbereich verfügbar'}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Overall best streak indicator */}
+          <div className="mt-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
+            <div className="flex items-center justify-center gap-3">
+              <span className="text-2xl">🏆</span>
+              <div className="text-center">
+                <div className="text-sm font-medium text-orange-800">Beste Siegesserie im Zeitraum</div>
+                <div className="text-lg font-bold text-orange-600">
+                  {winningStreaks.aek.streak > winningStreaks.real.streak ? 
+                    `AEK: ${winningStreaks.aek.streak} Siege` : 
+                    winningStreaks.real.streak > winningStreaks.aek.streak ?
+                    `Real: ${winningStreaks.real.streak} Siege` :
+                    `Unentschieden: ${winningStreaks.aek.streak} Siege`
+                  }
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Other Interesting Statistics */}
         <div className="modern-card">
           <h3 className="font-bold text-lg mb-4">💡 Besondere Statistiken</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="text-center p-3 bg-gradient-to-br from-green-50 to-emerald-50 rounded-lg border border-green-200">
-              <div className="text-xl font-bold text-green-600">
-                {(() => {
-                  // Calculate longest winning streak
-                  let maxStreak = 0;
-                  let currentAekStreak = 0;
-                  let currentRealStreak = 0;
-                  
-                  matches?.forEach(match => {
-                    const aekGoals = match.goalsa || 0;
-                    const realGoals = match.goalsb || 0;
-                    
-                    if (aekGoals > realGoals) {
-                      currentAekStreak++;
-                      currentRealStreak = 0;
-                      if (currentAekStreak > maxStreak) {
-                        maxStreak = currentAekStreak;
-                      }
-                    } else if (realGoals > aekGoals) {
-                      currentRealStreak++;
-                      currentAekStreak = 0;
-                      if (currentRealStreak > maxStreak) {
-                        maxStreak = currentRealStreak;
-                      }
-                    }
-                    // Note: FIFA games cannot end in draws
-                  });
-                  
-                  return maxStreak;
-                })()}
-              </div>
-              <div className="text-sm text-green-700">🔥 Längste Siegesserie</div>
-              <div className="text-xs text-green-600 mt-1">
-                {(() => {
-                  let maxStreak = 0;
-                  let currentAekStreak = 0;
-                  let currentRealStreak = 0;
-                  let maxTeam = '';
-                  
-                  matches?.forEach(match => {
-                    const aekGoals = match.goalsa || 0;
-                    const realGoals = match.goalsb || 0;
-                    
-                    if (aekGoals > realGoals) {
-                      currentAekStreak++;
-                      currentRealStreak = 0;
-                      if (currentAekStreak > maxStreak) {
-                        maxStreak = currentAekStreak;
-                        maxTeam = 'AEK';
-                      }
-                    } else if (realGoals > aekGoals) {
-                      currentRealStreak++;
-                      currentAekStreak = 0;
-                      if (currentRealStreak > maxStreak) {
-                        maxStreak = currentRealStreak;
-                        maxTeam = 'Real';
-                      }
-                    }
-                    // Note: FIFA games cannot end in draws
-                  });
-                  
-                  return maxTeam || 'Keine';
-                })()}
-              </div>
-            </div>
-
             <div className="text-center p-3 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
               <div className="text-xl font-bold text-yellow-600">
                 {(() => {
                   // Calculate most productive player (goals per match played)
                   let bestRatio = 0;
-                  
-                  playerStats.forEach(player => {
-                    if (player.matchesPlayed > 0) {
-                      const ratio = player.goals / player.matchesPlayed;
-                      if (ratio > bestRatio) {
-                        bestRatio = ratio;
-                      }
-                    }
-                  });
-                  
-                  return bestRatio.toFixed(2);
-                })()}
-              </div>
-              <div className="text-sm text-yellow-700">⚡ Höchste Effizienz</div>
-              <div className="text-xs text-yellow-600 mt-1">
-                {(() => {
-                  let bestRatio = 0;
-                  let bestPlayer = null;
+                  let bestPlayer = 'Keine Daten';
                   
                   playerStats.forEach(player => {
                     if (player.matchesPlayed > 0) {
@@ -938,7 +1017,24 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     }
                   });
                   
-                  return bestPlayer || 'Keine Daten';
+                  return bestPlayer;
+                })()}
+              </div>
+              <div className="text-sm text-yellow-700">🎯 Effizientester Spieler</div>
+              <div className="text-xs text-yellow-600 mt-1">
+                {(() => {
+                  let bestRatio = 0;
+                  
+                  playerStats.forEach(player => {
+                    if (player.matchesPlayed > 0) {
+                      const ratio = player.goals / player.matchesPlayed;
+                      if (ratio > bestRatio) {
+                        bestRatio = ratio;
+                      }
+                    }
+                  });
+                  
+                  return bestRatio > 0 ? `${bestRatio.toFixed(2)} Tore/Spiel` : 'Keine Daten';
                 })()}
               </div>
             </div>
@@ -1621,107 +1717,233 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     </div>
   );
 
-  const renderAnalytics = () => {
-    const analytics = stats.calculateMatchAnalytics();
-    const matchStats = stats.getMatchStatsAnalytics();
+  const renderAdvancedStats = () => {
+    // Calculate advanced performance metrics
+    const calculateAdvancedMetrics = () => {
+      if (!filteredMatches || filteredMatches.length === 0) return null;
+
+      // Goal timing analysis
+      const goalTimingAnalysis = {
+        firstHalfGoals: 0,
+        secondHalfGoals: 0,
+        overtimeGoals: 0
+      };
+
+      // Score margin analysis
+      const scoreMargins = {
+        oneGoal: 0,
+        twoGoals: 0,
+        threeOrMore: 0,
+        blowouts: 0 // 5+ goal difference
+      };
+
+      // Player efficiency metrics
+      const playerEfficiency = playerStats.slice(0, 10).map(player => ({
+        name: player.name,
+        team: player.team,
+        goals: player.goals || 0,
+        matches: player.matchesPlayed || 0,
+        efficiency: player.matchesPlayed > 0 ? (player.goals / player.matchesPlayed * 100).toFixed(1) : 0,
+        value: player.value || 0,
+        valuePerGoal: player.goals > 0 ? ((player.value || 0) / player.goals).toFixed(2) : 'N/A'
+      }));
+
+      // Recent form analysis (last 10 matches)
+      const recentMatches = filteredMatches.slice(-10);
+      const recentForm = {
+        aekWins: 0,
+        realWins: 0,
+        aekGoals: 0,
+        realGoals: 0,
+        totalMatches: recentMatches.length
+      };
+
+      filteredMatches.forEach(match => {
+        const aekGoals = match.goalsa || 0;
+        const realGoals = match.goalsb || 0;
+        const difference = Math.abs(aekGoals - realGoals);
+
+        // Score margin analysis
+        if (difference === 1) scoreMargins.oneGoal++;
+        else if (difference === 2) scoreMargins.twoGoals++;
+        else if (difference >= 3 && difference < 5) scoreMargins.threeOrMore++;
+        else if (difference >= 5) scoreMargins.blowouts++;
+      });
+
+      recentMatches.forEach(match => {
+        const aekGoals = match.goalsa || 0;
+        const realGoals = match.goalsb || 0;
+        
+        recentForm.aekGoals += aekGoals;
+        recentForm.realGoals += realGoals;
+        
+        if (aekGoals > realGoals) recentForm.aekWins++;
+        else if (realGoals > aekGoals) recentForm.realWins++;
+      });
+
+      return {
+        goalTimingAnalysis,
+        scoreMargins,
+        playerEfficiency,
+        recentForm
+      };
+    };
+
+    const metrics = calculateAdvancedMetrics();
+
+    if (!metrics) {
+      return (
+        <div className="text-center py-8 text-text-muted">
+          <div className="text-4xl mb-2">📊</div>
+          <p>Keine Daten für den gewählten Zeitraum verfügbar</p>
+        </div>
+      );
+    }
 
     return (
       <div className="space-y-6">
-        {/* Match Prediction */}
+        {/* Score Margin Analysis */}
         <div className="modern-card p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span className="text-xl">🔮</span>
-            Nächstes Match - Vorhersage
+            <span className="text-xl">🎯</span>
+            Spielintensität & Tordifferenzen
           </h3>
           
-          {analytics.prediction === "Ungenügend Daten" ? (
-            <div className="text-center py-8 text-text-muted">
-              <div className="text-4xl mb-2">📊</div>
-              <p>{analytics.reasoning}</p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="text-center p-3 bg-green-50 rounded-lg">
+              <div className="text-xl font-bold text-green-600">{metrics.scoreMargins.oneGoal}</div>
+              <div className="text-xs text-text-secondary">1-Tor-Spiele</div>
+              <div className="text-xs text-text-muted">Spannend</div>
             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-primary-blue mb-2">
-                  {analytics.prediction}
-                </div>
-                <div className="text-sm text-text-muted">
-                  Vorhersage: {analytics.predictedScore} | Wahrscheinlichkeit: {analytics.confidence}%
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center p-3 bg-blue-50 rounded-lg">
-                  <div className="text-lg font-bold text-blue-600">AEK</div>
-                  <div className="text-2xl font-bold">{analytics.aekWinProbability}%</div>
-                </div>
-                <div className="text-center p-3 bg-red-50 rounded-lg">
-                  <div className="text-lg font-bold text-red-600">Real</div>
-                  <div className="text-2xl font-bold">{analytics.realWinProbability}%</div>
-                </div>
-              </div>
-              
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="font-medium mb-2">📋 Begründung:</h4>
-                <p className="text-sm text-text-muted">{analytics.reasoning}</p>
-              </div>
+            <div className="text-center p-3 bg-blue-50 rounded-lg">
+              <div className="text-xl font-bold text-blue-600">{metrics.scoreMargins.twoGoals}</div>
+              <div className="text-xs text-text-secondary">2-Tor-Spiele</div>
+              <div className="text-xs text-text-muted">Umkämpft</div>
             </div>
-          )}
+            <div className="text-center p-3 bg-orange-50 rounded-lg">
+              <div className="text-xl font-bold text-orange-600">{metrics.scoreMargins.threeOrMore}</div>
+              <div className="text-xs text-text-secondary">3-4 Tore Diff.</div>
+              <div className="text-xs text-text-muted">Deutlich</div>
+            </div>
+            <div className="text-center p-3 bg-red-50 rounded-lg">
+              <div className="text-xl font-bold text-red-600">{metrics.scoreMargins.blowouts}</div>
+              <div className="text-xs text-text-secondary">5+ Tore Diff.</div>
+              <div className="text-xs text-text-muted">Dominant</div>
+            </div>
+          </div>
         </div>
 
-        {/* Match Statistics */}
+        {/* Player Efficiency Rankings */}
         <div className="modern-card p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span className="text-xl">📈</span>
-            Match-Statistiken
+            <span className="text-xl">⚡</span>
+            Spieler-Effizienz Rankings
           </h3>
           
-          {matchStats ? (
-            <div className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
-                <div className="text-center p-3 bg-bg-secondary rounded-lg">
-                  <div className="text-xl font-bold">{matchStats.totalMatches}</div>
-                  <div className="text-xs text-text-secondary">Gesamt Spiele</div>
+          <div className="space-y-3">
+            {metrics.playerEfficiency.slice(0, 8).map((player, index) => (
+              <div key={player.name} className="flex items-center justify-between p-3 bg-bg-secondary rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                    index === 0 ? 'bg-yellow-400 text-white' :
+                    index === 1 ? 'bg-gray-400 text-white' :
+                    index === 2 ? 'bg-orange-400 text-white' :
+                    'bg-bg-tertiary text-text-primary'
+                  }`}>
+                    {index + 1}
+                  </div>
+                  <div>
+                    <div className="font-medium text-text-primary">{player.name}</div>
+                    <div className="text-xs text-text-muted">{player.team}</div>
+                  </div>
                 </div>
-                <div className="text-center p-3 bg-green-50 rounded-lg">
-                  <div className="text-xl font-bold text-green-600">{matchStats.aekWins}</div>
-                  <div className="text-xs text-text-secondary">AEK Siege</div>
-                </div>
-                <div className="text-center p-3 bg-red-50 rounded-lg">
-                  <div className="text-xl font-bold text-red-600">{matchStats.realWins}</div>
-                  <div className="text-xs text-text-secondary">Real Siege</div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span>AEK Siegquote:</span>
-                  <span className="font-medium">{matchStats.aekWinPercentage}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Real Siegquote:</span>
-                  <span className="font-medium">{matchStats.realWinPercentage}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Unentschieden:</span>
-                  <span className="font-medium">{matchStats.drawPercentage}%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Ø Tore/Spiel:</span>
-                  <span className="font-medium">{matchStats.avgGoalsPerMatch}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Letztes Spiel:</span>
-                  <span className="font-medium text-sm">{matchStats.lastMatchResult}</span>
+                <div className="text-right">
+                  <div className="font-bold text-text-primary">{player.efficiency}%</div>
+                  <div className="text-xs text-text-muted">{player.goals}G / {player.matches}S</div>
                 </div>
               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Recent Form Analysis */}
+        <div className="modern-card p-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <span className="text-xl">🔥</span>
+            Aktuelle Form (Letzte {metrics.recentForm.totalMatches} Spiele)
+          </h3>
+          
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="text-center p-4 bg-blue-50 rounded-lg">
+              <div className="text-2xl font-bold text-blue-600">{metrics.recentForm.aekWins}</div>
+              <div className="text-sm text-text-secondary mb-2">AEK Siege</div>
+              <div className="text-xs text-text-muted">{metrics.recentForm.aekGoals} Tore geschossen</div>
             </div>
-          ) : (
-            <div className="text-center py-8 text-text-muted">
-              <div className="text-4xl mb-2">📊</div>
-              <p>Keine Spiele vorhanden für Statistiken</p>
+            <div className="text-center p-4 bg-red-50 rounded-lg">
+              <div className="text-2xl font-bold text-red-600">{metrics.recentForm.realWins}</div>
+              <div className="text-sm text-text-secondary mb-2">Real Siege</div>
+              <div className="text-xs text-text-muted">{metrics.recentForm.realGoals} Tore geschossen</div>
             </div>
-          )}
+          </div>
+          
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span>Siegesquote AEK:</span>
+              <span className="font-medium">
+                {metrics.recentForm.totalMatches > 0 ? 
+                  `${((metrics.recentForm.aekWins / metrics.recentForm.totalMatches) * 100).toFixed(0)}%` : 
+                  '0%'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Siegesquote Real:</span>
+              <span className="font-medium">
+                {metrics.recentForm.totalMatches > 0 ? 
+                  `${((metrics.recentForm.realWins / metrics.recentForm.totalMatches) * 100).toFixed(0)}%` : 
+                  '0%'}
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span>Durchschnitt Tore/Spiel:</span>
+              <span className="font-medium">
+                {metrics.recentForm.totalMatches > 0 ? 
+                  ((metrics.recentForm.aekGoals + metrics.recentForm.realGoals) / metrics.recentForm.totalMatches).toFixed(1) : 
+                  '0.0'}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Value for Money Analysis */}
+        <div className="modern-card p-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <span className="text-xl">💰</span>
+            Preis-Leistungs-Verhältnis
+          </h3>
+          
+          <div className="space-y-3">
+            {metrics.playerEfficiency
+              .filter(p => p.value > 0 && p.goals > 0)
+              .sort((a, b) => parseFloat(a.valuePerGoal) - parseFloat(b.valuePerGoal))
+              .slice(0, 5)
+              .map((player, index) => (
+                <div key={player.name} className="flex items-center justify-between p-3 bg-bg-secondary rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-green-600">{index + 1}</span>
+                    </div>
+                    <div>
+                      <div className="font-medium text-text-primary">{player.name}</div>
+                      <div className="text-xs text-text-muted">{player.team} • {player.goals} Tore</div>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <div className="font-bold text-green-600">{player.valuePerGoal}M €</div>
+                    <div className="text-xs text-text-muted">pro Tor</div>
+                  </div>
+                </div>
+              ))}
+          </div>
         </div>
       </div>
     );
@@ -1735,7 +1957,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           <EnhancedDashboard onNavigate={onNavigate} />
         </div>
       );
-      case 'analytics': return renderAnalytics();
+      case 'advanced': return renderAdvancedStats();
       case 'matchdays': return <MatchDayOverview matches={matches} />;
       case 'players': return renderPlayers();
       case 'teams': return renderTeams();

@@ -5,7 +5,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
 import '../../styles/match-animations.css';
 
-export default function MatchesTab({ onNavigate, showHints = false }) {
+export default function MatchesTab({ showHints = false }) {
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
   const [timeFilter, setTimeFilter] = useState('4weeks'); // '1week', '4weeks', '3months', 'all'
