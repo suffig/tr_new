@@ -119,18 +119,18 @@ export default function QuickActions({ activeTab, onNavigate, onAction }) {
       ],
       admin: [
         {
-          id: 'backup',
-          icon: '💾',
-          label: 'Backup',
-          description: 'Datensicherung erstellen',
-          action: () => onAction('create-backup')
+          id: 'system-status',
+          icon: '🔧',
+          label: 'System Status',
+          description: 'System-Manager Status anzeigen',
+          action: () => onAction('system-status')
         },
         {
-          id: 'settings',
-          icon: '⚙️',
-          label: 'Einstellungen',
-          description: 'App-Einstellungen',
-          action: () => onAction('app-settings')
+          id: 'quick-export',
+          icon: '📥',
+          label: 'Quick Export',
+          description: 'Schnell-Export aller Daten',
+          action: () => onAction('quick-export')
         }
       ]
     };
