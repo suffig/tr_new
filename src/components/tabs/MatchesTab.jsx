@@ -3,7 +3,6 @@ import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
-import QuickStatsWidget from '../QuickStatsWidget';
 import TeamQuickActions from '../TeamQuickActions';
 import '../../styles/match-animations.css';
 
@@ -131,13 +130,12 @@ export default function MatchesTab({ onNavigate, showHints = false }) {
   
   const isLoading = loading || playersLoading;
 
-  // Define views for horizontal navigation
+  // Define views for horizontal navigation (removed stats view)
   const views = [
     { id: 'overview', label: 'Übersicht', icon: '⚽' },
     { id: 'recent', label: 'Letzte', icon: '📅' },
     { id: 'aek-wins', label: 'AEK Siege', logoComponent: <TeamLogo team="aek" size="sm" /> },
     { id: 'real-wins', label: 'Real Siege', logoComponent: <TeamLogo team="real" size="sm" /> },
-    { id: 'stats', label: 'Statistiken', icon: '📊' },
   ];
 
   // Sync horizontal navigation with dropdown filters
@@ -315,13 +313,9 @@ export default function MatchesTab({ onNavigate, showHints = false }) {
         </div>
       </div>
 
-      {/* Enhanced User Experience Widgets */}
-      <div className="mb-6 space-y-4">
-        {/* Team Quick Actions */}
+      {/* Team Quick Actions (without team selection) */}
+      <div className="mb-6">
         <TeamQuickActions onNavigate={onNavigate} />
-        
-        {/* Quick Stats Widget */}
-        <QuickStatsWidget />
       </div>
 
       {/* Horizontal Navigation */}
@@ -586,7 +580,7 @@ export default function MatchesTab({ onNavigate, showHints = false }) {
                               {/* Enhanced match statistics header */}
                               <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
                                 <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                  📊 Match Details & Statistiken
+                                  ⚽ Match Details
                                 </h3>
                                 <div className="flex items-center gap-2 text-sm text-gray-600">
                                   <span>Match #{match.id}</span>
@@ -880,7 +874,7 @@ export default function MatchesTab({ onNavigate, showHints = false }) {
             <div>
               <h4 className="font-semibold text-blue-800 mb-1">Hinweis</h4>
               <p className="text-blue-700 text-sm">
-                Klicken Sie auf ein Spiel, um detaillierte Statistiken wie Torschützen, Karten und Preisgelder anzuzeigen. Neue Spiele können im Verwaltungsbereich hinzugefügt werden.
+                Klicken Sie auf ein Spiel, um detaillierte Informationen wie Torschützen, Karten und Preisgelder anzuzeigen. Neue Spiele können im Verwaltungsbereich hinzugefügt werden.
               </p>
             </div>
           </div>

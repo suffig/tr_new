@@ -4,6 +4,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import EnhancedDashboard from '../EnhancedDashboard';
 import HorizontalNavigation from '../HorizontalNavigation';
 import MatchDayOverview from '../MatchDayOverview';
+import QuickStatsWidget from '../QuickStatsWidget';
 
 // Enhanced Statistics Calculator Class (ported from vanilla JS)
 class StatsCalculator {
@@ -59,9 +60,12 @@ class StatsCalculator {
   }
 
   calculatePlayerStats() {
+    // For SdS calculation, assume all players played all games
+    const totalMatches = this.matches.length;
+    
     return this.players.map(player => {
-      // Count actual matches played for this player by checking goal lists
-      const matchesPlayed = this.countPlayerMatches(player.name, player.team);
+      // Count actual matches played for goal calculation
+      const actualMatchesPlayed = this.countPlayerMatches(player.name, player.team);
       const playerBans = this.bans.filter(b => b.player_id === player.id);
       
       const sdsRecord = this.spielerDesSpiels.find(sds => 
@@ -79,14 +83,15 @@ class StatsCalculator {
       return {
         ...player,
         goals: actualGoals,
-        matchesPlayed,
+        matchesPlayed: actualMatchesPlayed, // Actual matches for goal calculations
+        totalMatches: totalMatches, // Total matches for SdS calculations
         sdsCount,
-        goalsPerGame: matchesPlayed > 0 ? (actualGoals / matchesPlayed).toFixed(2) : '0.00',
+        goalsPerGame: actualMatchesPlayed > 0 ? (actualGoals / actualMatchesPlayed).toFixed(2) : '0.00',
         totalBans: playerBans.length,
         disciplinaryScore: this.calculateDisciplinaryScore(playerBans),
-        // Add efficiency metrics
-        goalsPerMatchWhenPlaying: matchesPlayed > 0 ? (actualGoals / matchesPlayed) : 0,
-        sdsPercentage: matchesPlayed > 0 ? ((sdsCount / matchesPlayed) * 100).toFixed(1) : '0.0'
+        // Add efficiency metrics - SdS percentage based on total matches
+        goalsPerMatchWhenPlaying: actualMatchesPlayed > 0 ? (actualGoals / actualMatchesPlayed) : 0,
+        sdsPercentage: totalMatches > 0 ? ((sdsCount / totalMatches) * 100).toFixed(1) : '0.0'
       };
     }).sort((a, b) => (b.goals || 0) - (a.goals || 0));
   }
@@ -197,6 +202,123 @@ class StatsCalculator {
       }
     });
     return score;
+  }
+
+  // Add analytics capability
+  calculateMatchAnalytics() {
+    if (this.matches.length < 3) {
+      return {
+        prediction: "Ungenügend Daten",
+        confidence: 0,
+        reasoning: "Mindestens 3 Spiele benötigt für Vorhersage"
+      };
+    }
+
+    const recentMatches = this.matches.slice(-5); // Last 5 matches
+    let aekFormScore = 0;
+    let realFormScore = 0;
+
+    recentMatches.forEach((match, index) => {
+      const weight = (index + 1) / recentMatches.length; // More recent = higher weight
+      const aekGoals = match.goalsa || 0;
+      const realGoals = match.goalsb || 0;
+
+      if (aekGoals > realGoals) {
+        aekFormScore += 3 * weight;
+      } else if (realGoals > aekGoals) {
+        realFormScore += 3 * weight;
+      } else {
+        aekFormScore += 1 * weight;
+        realFormScore += 1 * weight;
+      }
+
+      // Factor in goal difference
+      aekFormScore += (aekGoals - realGoals) * 0.1 * weight;
+      realFormScore += (realGoals - aekGoals) * 0.1 * weight;
+    });
+
+    // Calculate average goals
+    const aekAvgGoals = this.matches.reduce((sum, m) => sum + (m.goalsa || 0), 0) / this.matches.length;
+    const realAvgGoals = this.matches.reduce((sum, m) => sum + (m.goalsb || 0), 0) / this.matches.length;
+
+    // Factor in current bans (negative impact)
+    const activeBans = this.bans.filter(ban => ban.status === 'active' || !ban.status);
+    const aekBans = activeBans.filter(ban => ban.team === 'AEK').length;
+    const realBans = activeBans.filter(ban => ban.team === 'Real').length;
+
+    aekFormScore -= aekBans * 0.5;
+    realFormScore -= realBans * 0.5;
+
+    const totalScore = aekFormScore + realFormScore;
+    const aekWinProbability = Math.max(0.1, Math.min(0.9, aekFormScore / totalScore));
+    const realWinProbability = Math.max(0.1, Math.min(0.9, realFormScore / totalScore));
+
+    let prediction, confidence;
+    if (aekWinProbability > realWinProbability) {
+      prediction = "AEK Sieg";
+      confidence = Math.round(aekWinProbability * 100);
+    } else {
+      prediction = "Real Sieg";
+      confidence = Math.round(realWinProbability * 100);
+    }
+
+    const predictedScore = `${Math.round(aekAvgGoals)}:${Math.round(realAvgGoals)}`;
+
+    return {
+      prediction,
+      confidence,
+      predictedScore,
+      aekWinProbability: Math.round(aekWinProbability * 100),
+      realWinProbability: Math.round(realWinProbability * 100),
+      reasoning: this.generateAnalyticsReasoning(aekFormScore, realFormScore, aekBans, realBans)
+    };
+  }
+
+  generateAnalyticsReasoning(aekForm, realForm, aekBans, realBans) {
+    const reasons = [];
+    
+    if (aekForm > realForm) {
+      reasons.push("AEK zeigt bessere Form in den letzten Spielen");
+    } else if (realForm > aekForm) {
+      reasons.push("Real zeigt bessere Form in den letzten Spielen");
+    }
+
+    if (aekBans > realBans) {
+      reasons.push(`AEK hat mehr gesperrte Spieler (${aekBans} vs ${realBans})`);
+    } else if (realBans > aekBans) {
+      reasons.push(`Real hat mehr gesperrte Spieler (${realBans} vs ${aekBans})`);
+    }
+
+    return reasons.join('. ') || "Ausgeglichene Teams";
+  }
+
+  getMatchStatsAnalytics() {
+    const totalMatches = this.matches.length;
+    if (totalMatches === 0) return null;
+
+    const aekWins = this.matches.filter(m => (m.goalsa || 0) > (m.goalsb || 0)).length;
+    const realWins = this.matches.filter(m => (m.goalsb || 0) > (m.goalsa || 0)).length;
+    const draws = this.matches.filter(m => (m.goalsa || 0) === (m.goalsb || 0)).length;
+
+    const totalGoals = this.matches.reduce((sum, m) => sum + (m.goalsa || 0) + (m.goalsb || 0), 0);
+    const avgGoalsPerMatch = (totalGoals / totalMatches).toFixed(2);
+
+    const lastMatch = this.matches[this.matches.length - 1];
+    const lastMatchResult = lastMatch ? 
+        `${lastMatch.goalsa || 0}:${lastMatch.goalsb || 0} (${lastMatch.date})` : 
+        'Keine Spiele';
+
+    return {
+      totalMatches,
+      aekWins,
+      realWins,
+      draws,
+      avgGoalsPerMatch,
+      lastMatchResult,
+      aekWinPercentage: Math.round((aekWins / totalMatches) * 100),
+      realWinPercentage: Math.round((realWins / totalMatches) * 100),
+      drawPercentage: Math.round((draws / totalMatches) * 100)
+    };
   }
 
   calculateAdvancedStats() {
@@ -455,6 +577,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const views = [
     { id: 'dashboard', label: 'Dashboard', icon: '🎯' },
     { id: 'overview', label: 'Übersicht', icon: '📊' },
+    { id: 'analytics', label: 'Analytics', icon: '🔮' },
     { id: 'matchdays', label: 'Spieltage', icon: '📅' },
     { id: 'players', label: 'Spieler', icon: '👥' },
     { id: 'teams', label: 'Teams', icon: '🏆' },
@@ -1015,7 +1138,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     parseFloat(player.sdsPercentage) >= 25 ? 'bg-yellow-100 text-yellow-800' :
                     'bg-gray-100 text-gray-600'
                   }`}>
-                    {player.sdsPercentage}%
+                    {player.sdsPercentage}% ({player.sdsCount}/{player.totalMatches})
                   </span>
                 </td>
                 <td className="py-2 text-center">
@@ -1465,9 +1588,121 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     </div>
   );
 
+  const renderAnalytics = () => {
+    const analytics = stats.calculateMatchAnalytics();
+    const matchStats = stats.getMatchStatsAnalytics();
+
+    return (
+      <div className="space-y-6">
+        {/* Match Prediction */}
+        <div className="modern-card p-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <span className="text-xl">🔮</span>
+            Nächstes Match - Vorhersage
+          </h3>
+          
+          {analytics.prediction === "Ungenügend Daten" ? (
+            <div className="text-center py-8 text-text-muted">
+              <div className="text-4xl mb-2">📊</div>
+              <p>{analytics.reasoning}</p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary-blue mb-2">
+                  {analytics.prediction}
+                </div>
+                <div className="text-sm text-text-muted">
+                  Vorhersage: {analytics.predictedScore} | Wahrscheinlichkeit: {analytics.confidence}%
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-3 bg-blue-50 rounded-lg">
+                  <div className="text-lg font-bold text-blue-600">AEK</div>
+                  <div className="text-2xl font-bold">{analytics.aekWinProbability}%</div>
+                </div>
+                <div className="text-center p-3 bg-red-50 rounded-lg">
+                  <div className="text-lg font-bold text-red-600">Real</div>
+                  <div className="text-2xl font-bold">{analytics.realWinProbability}%</div>
+                </div>
+              </div>
+              
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h4 className="font-medium mb-2">📋 Begründung:</h4>
+                <p className="text-sm text-text-muted">{analytics.reasoning}</p>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Match Statistics */}
+        <div className="modern-card p-6">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <span className="text-xl">📈</span>
+            Match-Statistiken
+          </h3>
+          
+          {matchStats ? (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4">
+                <div className="text-center p-3 bg-bg-secondary rounded-lg">
+                  <div className="text-xl font-bold">{matchStats.totalMatches}</div>
+                  <div className="text-xs text-text-secondary">Gesamt Spiele</div>
+                </div>
+                <div className="text-center p-3 bg-green-50 rounded-lg">
+                  <div className="text-xl font-bold text-green-600">{matchStats.aekWins}</div>
+                  <div className="text-xs text-text-secondary">AEK Siege</div>
+                </div>
+                <div className="text-center p-3 bg-red-50 rounded-lg">
+                  <div className="text-xl font-bold text-red-600">{matchStats.realWins}</div>
+                  <div className="text-xs text-text-secondary">Real Siege</div>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span>AEK Siegquote:</span>
+                  <span className="font-medium">{matchStats.aekWinPercentage}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Real Siegquote:</span>
+                  <span className="font-medium">{matchStats.realWinPercentage}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Unentschieden:</span>
+                  <span className="font-medium">{matchStats.drawPercentage}%</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Ø Tore/Spiel:</span>
+                  <span className="font-medium">{matchStats.avgGoalsPerMatch}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Letztes Spiel:</span>
+                  <span className="font-medium text-sm">{matchStats.lastMatchResult}</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-8 text-text-muted">
+              <div className="text-4xl mb-2">📊</div>
+              <p>Keine Spiele vorhanden für Statistiken</p>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   const renderCurrentView = () => {
     switch (selectedView) {
-      case 'dashboard': return <EnhancedDashboard onNavigate={onNavigate} />;
+      case 'dashboard': return (
+        <div className="space-y-6">
+          <QuickStatsWidget />
+          <EnhancedDashboard onNavigate={onNavigate} />
+        </div>
+      );
+      case 'analytics': return renderAnalytics();
       case 'matchdays': return <MatchDayOverview matches={matches} />;
       case 'players': return renderPlayers();
       case 'teams': return renderTeams();
