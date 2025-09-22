@@ -69,17 +69,19 @@ function App() {
     }
   };
 
-  // Global search shortcut and event listener - only work on admin page
+  // Global search shortcut and event listener - only work on admin page for authorized users
   useEffect(() => {
+    const isAdminUser = user?.email === 'philip-melchert@live.de';
+    
     const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === 'k' && activeTab === 'admin') {
+      if (e.ctrlKey && e.key === 'k' && activeTab === 'admin' && isAdminUser) {
         e.preventDefault();
         setShowGlobalSearch(true);
       }
     };
 
     const handleGlobalSearchToggle = () => {
-      if (activeTab === 'admin') {
+      if (activeTab === 'admin' && isAdminUser) {
         setShowGlobalSearch(true);
       }
     };
@@ -91,7 +93,7 @@ function App() {
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('global-search-toggle', handleGlobalSearchToggle);
     };
-  }, [activeTab]);
+  }, [activeTab, user]);
 
   const handleLogout = async () => {
     try {
@@ -108,7 +110,14 @@ function App() {
 
   const renderTabContent = () => {
     const showHints = activeTab === 'admin';
-    const props = { onNavigate: handleTabChange, showHints };
+    const props = { onNavigate: handleTabChange, showHints, user };
+    
+    // Security check: redirect unauthorized users away from admin tab
+    if (activeTab === 'admin' && (!user || user.email !== 'philip-melchert@live.de')) {
+      // Redirect to matches tab
+      setTimeout(() => setActiveTab('matches'), 0);
+      return <MatchesTab {...props} />;
+    }
     
     switch (activeTab) {
       case 'matches':
@@ -174,13 +183,13 @@ function App() {
     <ThemeProvider>
       <div className="flex flex-col min-h-screen bg-bg-primary transition-colors duration-ios safe-area-all">
         {/* Header */}
-        <Header />
+        <Header onNavigate={handleTabChange} />
         
-        {/* Offline Status Indicator - Only show on admin page */}
-        {activeTab === 'admin' && <OfflineIndicator />}
+        {/* Offline Status Indicator - Only show on admin page for authorized users */}
+        {activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && <OfflineIndicator />}
         
-        {/* Connection Status Indicator - Only show on admin page */}
-        {isDemoMode && activeTab === 'admin' && (
+        {/* Connection Status Indicator - Only show on admin page for authorized users */}
+        {isDemoMode && activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && (
           <div className="bg-system-yellow/20 border-system-yellow/40 text-system-yellow px-4 py-3 text-center" role="alert">
             <div className="flex items-center justify-center gap-2">
               <span className="text-lg">⚠️</span>
@@ -208,6 +217,7 @@ function App() {
         <BottomNavigation 
           activeTab={activeTab}
           onTabChange={handleTabChange}
+          user={user}
         />
 
         {/* Toast Notifications */}
@@ -249,16 +259,16 @@ function App() {
           }}
         />
 
-        {/* Global Search Modal - Only available on admin page */}
-        {showGlobalSearch && activeTab === 'admin' && (
+        {/* Global Search Modal - Only available on admin page for authorized users */}
+        {showGlobalSearch && activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && (
           <GlobalSearch 
             onNavigate={handleGlobalSearchNavigate}
             onClose={() => setShowGlobalSearch(false)}
           />
         )}
 
-        {/* Performance Monitor - Only show on admin page */}
-        {activeTab === 'admin' && <PerformanceMonitor />}
+        {/* Performance Monitor - Only show on admin page for authorized users */}
+        {activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && <PerformanceMonitor />}
 
         {/* Global Notification System */}
         <NotificationSystem onNavigate={(tab) => {

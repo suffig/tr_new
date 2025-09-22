@@ -11,7 +11,7 @@ const baseTabs = [
   { id: 'admin', icon: '⚙️', label: 'Admin', ariaLabel: 'Zu Verwaltung wechseln' },
 ];
 
-export default function BottomNavigation({ activeTab, onTabChange }) {
+export default function BottomNavigation({ activeTab, onTabChange, user }) {
   const [tabs, setTabs] = useState(baseTabs);
 
   useEffect(() => {
@@ -19,13 +19,23 @@ export default function BottomNavigation({ activeTab, onTabChange }) {
     const eventsEnabled = localStorage.getItem('eventsTabEnabled');
     const showEvents = eventsEnabled !== null ? JSON.parse(eventsEnabled) : false;
     
-    if (showEvents) {
-      setTabs(baseTabs);
-    } else {
-      // Filter out the events tab
-      setTabs(baseTabs.filter(tab => tab.id !== 'events'));
+    // Check if admin tab should be shown (only for specific user)
+    const isAdminUser = user?.email === 'philip-melchert@live.de';
+    
+    let filteredTabs = baseTabs;
+    
+    // Filter out events tab if not enabled
+    if (!showEvents) {
+      filteredTabs = filteredTabs.filter(tab => tab.id !== 'events');
     }
-  }, []);
+    
+    // Filter out admin tab if user is not authorized
+    if (!isAdminUser) {
+      filteredTabs = filteredTabs.filter(tab => tab.id !== 'admin');
+    }
+    
+    setTabs(filteredTabs);
+  }, [user]);
 
   return (
     <nav 

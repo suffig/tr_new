@@ -3,6 +3,7 @@ import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import EnhancedDashboard from '../EnhancedDashboard';
 import HorizontalNavigation from '../HorizontalNavigation';
+import MatchDayOverview from '../MatchDayOverview';
 
 // Enhanced Statistics Calculator Class (ported from vanilla JS)
 class StatsCalculator {
@@ -59,7 +60,8 @@ class StatsCalculator {
 
   calculatePlayerStats() {
     return this.players.map(player => {
-      const matchesPlayed = this.countPlayerMatches();
+      // Count actual matches played for this player by checking goal lists
+      const matchesPlayed = this.countPlayerMatches(player.name, player.team);
       const playerBans = this.bans.filter(b => b.player_id === player.id);
       
       const sdsRecord = this.spielerDesSpiels.find(sds => 
@@ -67,15 +69,24 @@ class StatsCalculator {
       );
       const sdsCount = sdsRecord ? (sdsRecord.count || 0) : 0;
       
+      // Use database goals as primary source, but also calculate from matches for verification
+      const matchGoals = this.countPlayerGoalsFromMatches(player.name, player.team);
+      const dbGoals = player.goals || 0;
+      
+      // Use the higher value or database value if available
+      const actualGoals = Math.max(dbGoals, matchGoals);
+      
       return {
         ...player,
-        // Use database goals instead of calculated match goals
-        goals: player.goals || 0,
+        goals: actualGoals,
         matchesPlayed,
         sdsCount,
-        goalsPerGame: matchesPlayed > 0 ? ((player.goals || 0) / matchesPlayed).toFixed(2) : '0.00',
+        goalsPerGame: matchesPlayed > 0 ? (actualGoals / matchesPlayed).toFixed(2) : '0.00',
         totalBans: playerBans.length,
-        disciplinaryScore: this.calculateDisciplinaryScore(playerBans)
+        disciplinaryScore: this.calculateDisciplinaryScore(playerBans),
+        // Add efficiency metrics
+        goalsPerMatchWhenPlaying: matchesPlayed > 0 ? (actualGoals / matchesPlayed) : 0,
+        sdsPercentage: matchesPlayed > 0 ? ((sdsCount / matchesPlayed) * 100).toFixed(1) : '0.0'
       };
     }).sort((a, b) => (b.goals || 0) - (a.goals || 0));
   }
@@ -85,35 +96,94 @@ class StatsCalculator {
     
     this.matches.forEach(match => {
       if (playerTeam === 'AEK' && match.goalslista) {
-        const goals = Array.isArray(match.goalslista) ? match.goalslista : 
-                     (typeof match.goalslista === 'string' ? JSON.parse(match.goalslista) : []);
-        
-        goals.forEach(goal => {
-          const goalPlayer = typeof goal === 'string' ? goal : goal.player;
-          const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
-          if (goalPlayer === playerName) totalGoals += goalCount;
-        });
+        try {
+          const goals = Array.isArray(match.goalslista) ? match.goalslista : 
+                       (typeof match.goalslista === 'string' ? JSON.parse(match.goalslista) : []);
+          
+          goals.forEach(goal => {
+            const goalPlayer = typeof goal === 'string' ? goal : goal.player;
+            const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
+            if (goalPlayer === playerName) totalGoals += goalCount;
+          });
+        } catch (e) {
+          console.warn('Error parsing AEK goals list:', e);
+        }
       }
       
       if (playerTeam === 'Real' && match.goalslistb) {
-        const goals = Array.isArray(match.goalslistb) ? match.goalslistb : 
-                     (typeof match.goalslistb === 'string' ? JSON.parse(match.goalslistb) : []);
-        
-        goals.forEach(goal => {
-          const goalPlayer = typeof goal === 'string' ? goal : goal.player;
-          const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
-          if (goalPlayer === playerName) totalGoals += goalCount;
-        });
+        try {
+          const goals = Array.isArray(match.goalslistb) ? match.goalslistb : 
+                       (typeof match.goalslistb === 'string' ? JSON.parse(match.goalslistb) : []);
+          
+          goals.forEach(goal => {
+            const goalPlayer = typeof goal === 'string' ? goal : goal.player;
+            const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
+            if (goalPlayer === playerName) totalGoals += goalCount;
+          });
+        } catch (e) {
+          console.warn('Error parsing Real goals list:', e);
+        }
       }
     });
     
     return totalGoals;
   }
 
-  countPlayerMatches() {
-    // For now, assume all players participated in all matches
-    // In a real implementation, you'd track participation per match
-    return this.matches.length;
+  countPlayerMatches(playerName, playerTeam) {
+    if (!playerName || !playerTeam) return this.matches.length;
+    
+    let matchesWithGoals = 0;
+    let matchesAsSds = 0;
+    
+    // Count matches where player scored
+    this.matches.forEach(match => {
+      if (playerTeam === 'AEK' && match.goalslista) {
+        try {
+          const goals = Array.isArray(match.goalslista) ? match.goalslista : 
+                       (typeof match.goalslista === 'string' ? JSON.parse(match.goalslista) : []);
+          
+          const playerScored = goals.some(goal => {
+            const goalPlayer = typeof goal === 'string' ? goal : goal.player;
+            return goalPlayer === playerName;
+          });
+          
+          if (playerScored) matchesWithGoals++;
+        } catch (e) {
+          // Handle parsing errors gracefully
+        }
+      }
+      
+      if (playerTeam === 'Real' && match.goalslistb) {
+        try {
+          const goals = Array.isArray(match.goalslistb) ? match.goalslistb : 
+                       (typeof match.goalslistb === 'string' ? JSON.parse(match.goalslistb) : []);
+          
+          const playerScored = goals.some(goal => {
+            const goalPlayer = typeof goal === 'string' ? goal : goal.player;
+            return goalPlayer === playerName;
+          });
+          
+          if (playerScored) matchesWithGoals++;
+        } catch (e) {
+          // Handle parsing errors gracefully
+        }
+      }
+      
+      // Count matches where player was man of the match
+      if (match.manofthematch === playerName) {
+        matchesAsSds++;
+      }
+    });
+    
+    // Estimate matches played: assume player played in all team matches unless we have better data
+    // This is a simplified approach - in reality you'd track participation per match
+    const teamMatches = this.matches.filter(match => 
+      (playerTeam === 'AEK' && (match.teama === 'AEK' || match.teamb === 'AEK')) ||
+      (playerTeam === 'Real' && (match.teama === 'Real' || match.teamb === 'Real'))
+    ).length;
+    
+    // Return the maximum of: matches with goals, matches as SdS, or estimated team matches
+    return Math.max(matchesWithGoals, matchesAsSds, teamMatches);
   }
 
   calculateDisciplinaryScore(bans) {
@@ -385,6 +455,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const views = [
     { id: 'dashboard', label: 'Dashboard', icon: '🎯' },
     { id: 'overview', label: 'Übersicht', icon: '📊' },
+    { id: 'matchdays', label: 'Spieltage', icon: '📅' },
     { id: 'players', label: 'Spieler', icon: '👥' },
     { id: 'teams', label: 'Teams', icon: '🏆' },
     { id: 'trends', label: 'Trends', icon: '📈' },
@@ -877,6 +948,35 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const renderPlayers = () => (
     <div className="modern-card">
       <h3 className="font-bold text-lg mb-4">📊 Spielerstatistiken</h3>
+      
+      {/* Statistics Summary */}
+      <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="text-center p-3 bg-bg-secondary rounded-lg">
+          <div className="text-xl font-bold text-primary-green">
+            {playerStats.filter(p => p.goals > 0).length}
+          </div>
+          <div className="text-sm text-text-secondary">Aktive Torschützen</div>
+        </div>
+        <div className="text-center p-3 bg-bg-secondary rounded-lg">
+          <div className="text-xl font-bold text-primary-blue">
+            {playerStats.reduce((sum, p) => sum + p.goals, 0)}
+          </div>
+          <div className="text-sm text-text-secondary">Tore insgesamt</div>
+        </div>
+        <div className="text-center p-3 bg-bg-secondary rounded-lg">
+          <div className="text-xl font-bold text-primary-orange">
+            {playerStats.filter(p => p.sdsCount > 0).length}
+          </div>
+          <div className="text-sm text-text-secondary">SdS Träger</div>
+        </div>
+        <div className="text-center p-3 bg-bg-secondary rounded-lg">
+          <div className="text-xl font-bold text-primary-red">
+            {playerStats.reduce((sum, p) => sum + p.totalBans, 0)}
+          </div>
+          <div className="text-sm text-text-secondary">Gesamt Sperren</div>
+        </div>
+      </div>
+
       <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead>
@@ -885,7 +985,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               <th className="text-left py-2">Team</th>
               <th className="text-center py-2">Tore</th>
               <th className="text-center py-2">⌀/Spiel</th>
+              <th className="text-center py-2">Spiele</th>
               <th className="text-center py-2">SdS</th>
+              <th className="text-center py-2">SdS %</th>
               <th className="text-center py-2">Sperren</th>
               <th className="text-right py-2">Marktwert</th>
             </tr>
@@ -905,13 +1007,94 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 </td>
                 <td className="py-2 text-center font-bold">{player.goals}</td>
                 <td className="py-2 text-center">{player.goalsPerGame}</td>
+                <td className="py-2 text-center">{player.matchesPlayed}</td>
                 <td className="py-2 text-center">{player.sdsCount}</td>
-                <td className="py-2 text-center">{player.totalBans}</td>
+                <td className="py-2 text-center">
+                  <span className={`px-1 py-0.5 rounded text-xs ${
+                    parseFloat(player.sdsPercentage) >= 50 ? 'bg-green-100 text-green-800' :
+                    parseFloat(player.sdsPercentage) >= 25 ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-gray-100 text-gray-600'
+                  }`}>
+                    {player.sdsPercentage}%
+                  </span>
+                </td>
+                <td className="py-2 text-center">
+                  <span className={`px-1 py-0.5 rounded text-xs ${
+                    player.totalBans === 0 ? 'bg-green-100 text-green-800' :
+                    player.totalBans <= 2 ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-red-100 text-red-800'
+                  }`}>
+                    {player.totalBans}
+                  </span>
+                </td>
                 <td className="py-2 text-right">{formatPlayerValue(player.value)}</td>
               </tr>
             ))}
           </tbody>
         </table>
+      </div>
+
+      {/* Player Insights */}
+      <div className="mt-6 grid md:grid-cols-3 gap-4">
+        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+          <h4 className="font-semibold text-green-800 mb-2">🏆 Effizienz-Spitze</h4>
+          {(() => {
+            const mostEfficient = playerStats
+              .filter(p => p.matchesPlayed >= 3) // Minimum 3 games
+              .sort((a, b) => b.goalsPerMatchWhenPlaying - a.goalsPerMatchWhenPlaying)[0];
+            
+            return mostEfficient ? (
+              <div>
+                <div className="font-medium text-green-700">{mostEfficient.name}</div>
+                <div className="text-sm text-green-600">
+                  {mostEfficient.goalsPerGame} Tore/Spiel ({mostEfficient.goals} Tore in {mostEfficient.matchesPlayed} Spielen)
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">Nicht genügend Daten</div>
+            );
+          })()}
+        </div>
+
+        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+          <h4 className="font-semibold text-yellow-800 mb-2">⭐ SdS-König</h4>
+          {(() => {
+            const mostSds = playerStats
+              .filter(p => p.sdsCount > 0)
+              .sort((a, b) => parseFloat(b.sdsPercentage) - parseFloat(a.sdsPercentage))[0];
+            
+            return mostSds ? (
+              <div>
+                <div className="font-medium text-yellow-700">{mostSds.name}</div>
+                <div className="text-sm text-yellow-600">
+                  {mostSds.sdsPercentage}% Quote ({mostSds.sdsCount}x SdS)
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">Noch keine SdS vergeben</div>
+            );
+          })()}
+        </div>
+
+        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
+          <h4 className="font-semibold text-red-800 mb-2">🚫 Disziplin-Problem</h4>
+          {(() => {
+            const mostBans = playerStats
+              .filter(p => p.totalBans > 0)
+              .sort((a, b) => b.totalBans - a.totalBans)[0];
+            
+            return mostBans ? (
+              <div>
+                <div className="font-medium text-red-700">{mostBans.name}</div>
+                <div className="text-sm text-red-600">
+                  {mostBans.totalBans} Sperren (Score: {mostBans.disciplinaryScore})
+                </div>
+              </div>
+            ) : (
+              <div className="text-gray-500">Keine Sperren verzeichnet</div>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );
@@ -1285,6 +1468,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const renderCurrentView = () => {
     switch (selectedView) {
       case 'dashboard': return <EnhancedDashboard onNavigate={onNavigate} />;
+      case 'matchdays': return <MatchDayOverview matches={matches} />;
       case 'players': return renderPlayers();
       case 'teams': return renderTeams();
       case 'trends': return renderTrends();

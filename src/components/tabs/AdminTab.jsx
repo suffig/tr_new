@@ -9,8 +9,30 @@ import TeamSettingsTab from './admin/TeamSettingsTab';
 import EventsSettingsTab from './admin/EventsSettingsTab';
 import ManagerTab from './admin/ManagerTab';
 
-export default function AdminTab({ onLogout, onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
+export default function AdminTab({ onLogout, onNavigate, showHints = false, user }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('search');
+
+  // Security check - only allow access for authorized user
+  if (!user || user.email !== 'philip-melchert@live.de') {
+    return (
+      <div className="flex items-center justify-center min-h-[50vh] p-4">
+        <div className="modern-card p-8 text-center max-w-md">
+          <div className="text-6xl mb-4" aria-hidden="true">🔒</div>
+          <h3 className="text-xl font-bold mb-2 text-text-primary">Zugriff verweigert</h3>
+          <p className="text-text-secondary mb-4">
+            Sie haben keine Berechtigung, auf den Admin-Bereich zuzugreifen.
+          </p>
+          <button 
+            onClick={() => onNavigate('matches')}
+            className="btn-primary"
+            aria-label="Zur Übersicht zurückkehren"
+          >
+            Zur Übersicht
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   // Organized admin tabs in logical groups
   const subTabs = [
