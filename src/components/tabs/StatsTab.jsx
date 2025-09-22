@@ -526,6 +526,7 @@ class StatsCalculator {
 
 export default function StatsTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   const [selectedView, setSelectedView] = useState('dashboard');
+  const [timePeriod, setTimePeriod] = useState('all'); // New time period filter
   
   const { data: matches, loading: matchesLoading } = useSupabaseQuery('matches', '*');
   const { data: players, loading: playersLoading } = useSupabaseQuery('players', '*');
@@ -534,8 +535,40 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   
   const loading = matchesLoading || playersLoading || sdsLoading || bansLoading;
 
-  // Initialize statistics calculator
-  const stats = new StatsCalculator(matches, players, bans, sdsData);
+  // Filter matches based on time period
+  const getFilteredMatches = () => {
+    if (!matches || timePeriod === 'all') return matches || [];
+    
+    const now = new Date();
+    let cutoffDate;
+    
+    switch (timePeriod) {
+      case '1week':
+        cutoffDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+        break;
+      case '1month':
+        cutoffDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
+        break;
+      case '3months':
+        cutoffDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+        break;
+      case '6months':
+        cutoffDate = new Date(now.getTime() - 180 * 24 * 60 * 60 * 1000);
+        break;
+      default:
+        return matches;
+    }
+    
+    return matches.filter(match => {
+      const matchDate = new Date(match.date);
+      return matchDate >= cutoffDate;
+    });
+  };
+
+  const filteredMatches = getFilteredMatches();
+
+  // Initialize statistics calculator with filtered matches
+  const stats = new StatsCalculator(filteredMatches, players, bans, sdsData);
   
   // Calculate all statistics
   const teamRecords = stats.calculateTeamRecords();
@@ -545,8 +578,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const performanceTrends = stats.calculatePerformanceTrends();
   const headToHead = stats.calculateHeadToHead();
 
-  // Basic data calculations
-  const totalMatches = matches?.length || 0;
+  // Basic data calculations using filtered matches
+  const totalMatches = filteredMatches?.length || 0;
   const aekPlayers = players?.filter(p => p.team === 'AEK') || [];
   const realPlayers = players?.filter(p => p.team === 'Real') || [];
 
@@ -596,7 +629,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       .sort((a, b) => b.sdsCount - a.sdsCount)[0];
     
     // Calculate player with most goals in a single match
-    const mostGoalsInMatch = matches?.reduce((max, match) => {
+    const mostGoalsInMatch = filteredMatches?.reduce((max, match) => {
       const processGoalsList = (goalsList) => {
         if (!goalsList) return [];
         try {
@@ -1727,6 +1760,28 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
+      </div>
+
+      {/* Time Period Selector */}
+      <div className="mb-4 bg-bg-secondary rounded-lg p-4">
+        <div className="flex items-center gap-3 mb-3">
+          <span className="text-lg">📅</span>
+          <h3 className="font-semibold text-text-primary">Zeitraum</h3>
+        </div>
+        <select
+          value={timePeriod}
+          onChange={(e) => setTimePeriod(e.target.value)}
+          className="w-full px-3 py-2 bg-bg-primary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
+        >
+          <option value="all">Alle Spiele</option>
+          <option value="1week">Letzte Woche</option>
+          <option value="1month">Letzter Monat</option>
+          <option value="3months">Letzte 3 Monate</option>
+          <option value="6months">Letzte 6 Monate</option>
+        </select>
+        <p className="text-xs text-text-muted mt-2">
+          Statistiken werden für den gewählten Zeitraum berechnet
+        </p>
       </div>
 
       {/* Enhanced View Navigation with iOS 26 Design - Horizontal Layout */}
