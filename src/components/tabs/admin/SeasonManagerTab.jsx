@@ -95,31 +95,36 @@ const SeasonManagerTab = () => {
 
   return (
     <div className="p-6 space-y-6">
-      {/* Header */}
-      <div className="flex items-center gap-4">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl 
-                        flex items-center justify-center text-white text-xl font-bold">
-          📅
+      {/* Enhanced Header */}
+      <div className="flex items-center gap-6 mb-6">
+        <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl 
+                        flex items-center justify-center text-white shadow-lg border border-emerald-300">
+          <i className="fas fa-calendar-alt text-2xl"></i>
         </div>
         <div>
-          <h2 className="text-2xl font-bold text-gray-800">Saison-Manager</h2>
-          <p className="text-gray-600">Verwalten Sie Legacy- und FC26-Daten</p>
+          <h2 className="text-3xl font-bold text-gray-800 mb-1">Saison-Manager</h2>
+          <p className="text-gray-600 text-lg">Verwalten Sie Legacy- und FC26-Daten</p>
         </div>
       </div>
 
       {/* Current Season Status */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border">
+      <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 rounded-2xl p-6 border border-emerald-200 shadow-lg">
         <div className="flex items-center justify-between">
-          <div>
-            <h3 className="text-lg font-semibold text-gray-800">Aktuelle Saison</h3>
-            <p className="text-2xl font-bold text-blue-600 mt-1">
-              {SEASON_NAMES[currentSeason]}
-            </p>
-            <p className="text-gray-600 text-sm mt-1">
-              Alle Aktionen werden in dieser Saison gespeichert
-            </p>
+          <div className="flex items-center gap-4">
+            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg">
+              <i className="fas fa-calendar-check text-white text-xl"></i>
+            </div>
+            <div>
+              <h3 className="text-xl font-bold text-gray-800 mb-1">Aktuelle Saison</h3>
+              <p className="text-2xl font-bold text-emerald-600">
+                {SEASON_NAMES[currentSeason]}
+              </p>
+              <p className="text-gray-600 text-sm mt-1">
+                Alle Aktionen werden in dieser Saison gespeichert
+              </p>
+            </div>
           </div>
-          <div className="text-4xl">
+          <div className="text-6xl opacity-20">
             {currentSeason === SEASONS.FC26 ? '⚡' : '📚'}
           </div>
         </div>

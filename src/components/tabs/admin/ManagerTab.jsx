@@ -51,41 +51,67 @@ const ManagerTab = () => {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Combined Manager Header */}
-      <div className="p-6 bg-gradient-to-r from-blue-50 to-purple-50 border-b border-gray-200">
-        <div className="flex items-center gap-4 mb-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl 
-                          flex items-center justify-center text-white text-xl font-bold">
-            ⚙️
+      {/* Enhanced Manager Header */}
+      <div className="bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-700 text-white shadow-xl">
+        <div className="p-8">
+          <div className="flex items-center gap-6 mb-6">
+            <div className="w-16 h-16 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg border border-white/10">
+              <i className="fas fa-cogs text-2xl text-white"></i>
+            </div>
+            <div>
+              <h2 className="text-3xl font-bold mb-2">System-Manager</h2>
+              <p className="text-white/90 text-lg">Zentrale Verwaltung für Saisons, FIFA Versionen und Teams</p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-2xl font-bold text-gray-800">System-Manager</h2>
-            <p className="text-gray-600">Zentrale Verwaltung für Saisons, FIFA Versionen und Teams</p>
-          </div>
-        </div>
 
-        {/* Manager sub-navigation */}
-        <div className="flex space-x-1 bg-white rounded-lg p-1 shadow-sm overflow-x-auto">
-          {managerTabs.map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveManagerTab(tab.id)}
-              className={`flex-shrink-0 flex items-center justify-center gap-2 px-3 py-2 rounded-md text-xs sm:text-sm font-medium transition-all duration-200 ${
-                activeManagerTab === tab.id
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-md'
-                  : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
-              }`}
-              title={tab.description}
-            >
-              <i className={tab.icon}></i>
-              <span className="hidden sm:inline whitespace-nowrap">{tab.label}</span>
-            </button>
-          ))}
+          {/* Enhanced Manager sub-navigation */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {managerTabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveManagerTab(tab.id)}
+                className={`group relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300 transform hover:scale-105 ${
+                  activeManagerTab === tab.id
+                    ? 'bg-white text-indigo-600 shadow-2xl'
+                    : 'bg-white/10 backdrop-blur-sm text-white hover:bg-white/20 border border-white/20'
+                }`}
+                title={tab.description}
+              >
+                <div className="relative z-10">
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                    activeManagerTab === tab.id 
+                      ? 'bg-indigo-100 text-indigo-600' 
+                      : 'bg-white/20 text-white'
+                  }`}>
+                    <i className={`${tab.icon} text-lg`}></i>
+                  </div>
+                  <div className={`font-bold text-lg mb-2 ${
+                    activeManagerTab === tab.id ? 'text-indigo-600' : 'text-white'
+                  }`}>
+                    {tab.label}
+                  </div>
+                  <div className={`text-sm ${
+                    activeManagerTab === tab.id ? 'text-indigo-500' : 'text-white/80'
+                  }`}>
+                    {tab.description}
+                  </div>
+                </div>
+                
+                {/* Hover effect background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-white/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                
+                {/* Active indicator */}
+                {activeManagerTab === tab.id && (
+                  <div className="absolute top-4 right-4 w-3 h-3 bg-emerald-400 rounded-full shadow-lg"></div>
+                )}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Manager content */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto bg-gray-50">
         {renderManagerTabContent()}
       </div>
     </div>
