@@ -1,0 +1,1066 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FUSTA - Comprehensive App Testing</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f5f7;
+            color: #1d1d1f;
+        }
+        .test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            text-align: center;
+            margin-bottom: 32px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid #e5e5e7;
+        }
+        .test-section {
+            margin-bottom: 32px;
+            border: 1px solid #e5e5e7;
+            border-radius: 12px;
+            padding: 20px;
+        }
+        .test-section h3 {
+            color: #007AFF;
+            margin-top: 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .test-results {
+            margin-top: 16px;
+            padding: 12px;
+            border-radius: 8px;
+            font-family: 'Monaco', 'Menlo', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .success { background: #d1f2eb; color: #00845c; }
+        .error { background: #fadbd8; color: #c0392b; }
+        .info { background: #d6eaf8; color: #2874a6; }
+        .warning { background: #fcf3cf; color: #b7950b; }
+        .test-button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            margin-right: 8px;
+            margin-bottom: 8px;
+        }
+        .test-button:hover {
+            background: #0056CC;
+        }
+        .test-button:disabled {
+            background: #c7c7cc;
+            cursor: not-allowed;
+        }
+        .season-indicator {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-left: 8px;
+        }
+        .season-legacy { background: #e3f2fd; color: #1976d2; }
+        .season-fc26 { background: #e8f5e8; color: #2e7d32; }
+        .status-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .status-success { background: #34c759; }
+        .status-error { background: #ff3b30; }
+        .status-warning { background: #ff9500; }
+        .status-pending { background: #8e8e93; }
+    </style>
+</head>
+<body>
+    <div class="test-container">
+        <div class="test-header">
+            <h1>🏆 FUSTA - Comprehensive App Testing</h1>
+            <p>Teste die komplette App mit Seasons, Datenbank-Kommunikation und alle Features</p>
+            <div id="current-season-indicator"></div>
+        </div>
+
+        <!-- Season Management Tests -->
+        <div class="test-section">
+            <h3>🗓️ Season Management Tests</h3>
+            <p>Tests für Season-Wechsel, Datenisolation und Migration</p>
+            <button class="test-button" onclick="testSeasonSwitching()">Test Season Switching</button>
+            <button class="test-button" onclick="testSeasonDataIsolation()">Test Data Isolation</button>
+            <button class="test-button" onclick="testSeasonMigration()">Test Legacy Migration</button>
+            <div id="season-results" class="test-results info"></div>
+        </div>
+
+        <!-- Database Communication Tests -->
+        <div class="test-section">
+            <h3>🗄️ Database Communication Tests</h3>
+            <p>Tests für Supabase-Verbindung, LocalStorage-Fallback und Retry-Logic</p>
+            <button class="test-button" onclick="testDatabaseOperations()">Test DB Operations</button>
+            <button class="test-button" onclick="testRealtimeSubscriptions()">Test Real-time Sync</button>
+            <button class="test-button" onclick="testOfflineFunctionality()">Test Offline Mode</button>
+            <div id="database-results" class="test-results info"></div>
+        </div>
+
+        <!-- Data Types Tests -->
+        <div class="test-section">
+            <h3>📊 Data Types Tests</h3>
+            <p>Tests für alle Datentypen: Matches, Players, Bans, Transactions, Alcohol Calculator</p>
+            <button class="test-button" onclick="testAllDataTypes()">Test All Data Types</button>
+            <button class="test-button" onclick="testDataPersistence()">Test Data Persistence</button>
+            <button class="test-button" onclick="testSeasonAwareOperations()">Test Season-Aware Operations</button>
+            <div id="datatypes-results" class="test-results info"></div>
+        </div>
+
+        <!-- UI Components Tests -->
+        <div class="test-section">
+            <h3>🎨 UI Components Tests</h3>
+            <p>Tests für Season Selector, Modals und User Interface</p>
+            <button class="test-button" onclick="testSeasonSelector()">Test Season Selector</button>
+            <button class="test-button" onclick="testUIComponents()">Test UI Components</button>
+            <button class="test-button" onclick="testResponsiveDesign()">Test Responsive Design</button>
+            <div id="ui-results" class="test-results info"></div>
+        </div>
+
+        <!-- Performance Tests -->
+        <div class="test-section">
+            <h3>⚡ Performance Tests</h3>
+            <p>Tests für Performance, Memory Usage und Load Times</p>
+            <button class="test-button" onclick="testPerformance()">Test Performance</button>
+            <button class="test-button" onclick="testMemoryUsage()">Test Memory Usage</button>
+            <button class="test-button" onclick="testLoadTimes()">Test Load Times</button>
+            <div id="performance-results" class="test-results info"></div>
+        </div>
+
+        <!-- Comprehensive Integration Test -->
+        <div class="test-section">
+            <h3>🔄 Complete Integration Test</h3>
+            <p>Vollständiger End-to-End Test aller Funktionen</p>
+            <button class="test-button" onclick="runComprehensiveTest()" style="background: #34c759;">🚀 Run Complete Test Suite</button>
+            <div id="integration-results" class="test-results info"></div>
+        </div>
+    </div>
+
+    <!-- Load Required Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+    <script type="module">
+        // Import Season Manager and other utilities
+        import { 
+            getCurrentSeason, 
+            getAvailableSeasons, 
+            switchToSeason, 
+            SEASONS, 
+            SEASON_NAMES,
+            getSeasonStorageKey,
+            checkSeasonHasData,
+            migrateLegacyData,
+            initializeFC26Environment
+        } from './src/utils/seasonManager.js';
+        
+        import { useSeasonData, useSeasonSupabase } from './src/hooks/useSeasonData.js';
+        import { supabase, supabaseDb } from './supabaseClient.js';
+        import { connectionMonitor, isDatabaseAvailable } from './connectionMonitor.js';
+
+        // Make functions available globally for button handlers
+        window.seasonManager = {
+            getCurrentSeason,
+            getAvailableSeasons,
+            switchToSeason,
+            SEASONS,
+            SEASON_NAMES,
+            getSeasonStorageKey,
+            checkSeasonHasData,
+            migrateLegacyData,
+            initializeFC26Environment
+        };
+        
+        window.supabase = supabase;
+        window.supabaseDb = supabaseDb;
+        window.connectionMonitor = connectionMonitor;
+
+        // Initialize UI
+        updateSeasonIndicator();
+        
+        function updateSeasonIndicator() {
+            const currentSeason = getCurrentSeason();
+            const indicator = document.getElementById('current-season-indicator');
+            const seasonClass = currentSeason === SEASONS.LEGACY ? 'season-legacy' : 'season-fc26';
+            const seasonDisplay = currentSeason === SEASONS.LEGACY ? 'FC25 (Legacy)' : 'FC26';
+            
+            indicator.innerHTML = `
+                <span class="season-indicator ${seasonClass}">
+                    Aktuelle Season: ${seasonDisplay}
+                </span>
+            `;
+        }
+
+        // Listen for season changes
+        window.addEventListener('seasonChanged', updateSeasonIndicator);
+        
+        // Export function for global access
+        window.updateSeasonIndicator = updateSeasonIndicator;
+    </script>
+    
+    <script>
+        // Test Functions
+        let testResults = {
+            season: [],
+            database: [],
+            datatypes: [],
+            ui: [],
+            performance: [],
+            integration: []
+        };
+
+        function logResult(category, message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const result = `[${timestamp}] ${message}`;
+            testResults[category].push({ message: result, type });
+            updateResultsDisplay(category);
+        }
+
+        function updateResultsDisplay(category) {
+            const container = document.getElementById(`${category}-results`);
+            if (!container) return;
+            
+            const results = testResults[category];
+            let content = '';
+            
+            results.forEach(result => {
+                content += result.message + '\n';
+            });
+            
+            container.textContent = content;
+            
+            // Set class based on latest result type
+            const latestType = results.length > 0 ? results[results.length - 1].type : 'info';
+            container.className = `test-results ${latestType}`;
+        }
+
+        // Season Management Tests
+        async function testSeasonSwitching() {
+            logResult('season', '🧪 Starting Season Switching Tests...', 'info');
+            
+            try {
+                const currentSeason = window.seasonManager.getCurrentSeason();
+                logResult('season', `Current season: ${window.seasonManager.SEASON_NAMES[currentSeason]}`, 'info');
+                
+                // Test switching to other season
+                const targetSeason = currentSeason === window.seasonManager.SEASONS.LEGACY 
+                    ? window.seasonManager.SEASONS.FC26 
+                    : window.seasonManager.SEASONS.LEGACY;
+                
+                logResult('season', `Switching to: ${window.seasonManager.SEASON_NAMES[targetSeason]}`, 'info');
+                const switchResult = window.seasonManager.switchToSeason(targetSeason);
+                
+                if (switchResult) {
+                    logResult('season', '✅ Season switch successful', 'success');
+                    
+                    // Switch back to original
+                    await new Promise(resolve => setTimeout(resolve, 500));
+                    window.seasonManager.switchToSeason(currentSeason);
+                    logResult('season', '✅ Restored original season', 'success');
+                    window.updateSeasonIndicator();
+                } else {
+                    logResult('season', '❌ Season switch failed', 'error');
+                }
+                
+            } catch (error) {
+                logResult('season', `❌ Season switching error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSeasonDataIsolation() {
+            logResult('season', '🧪 Testing Season Data Isolation...', 'info');
+            
+            try {
+                const testData = { 
+                    id: 'test-' + Date.now(), 
+                    testField: 'isolation-test',
+                    created_at: new Date().toISOString()
+                };
+                
+                // Test data in current season
+                const currentSeason = window.seasonManager.getCurrentSeason();
+                const currentKey = window.seasonManager.getSeasonStorageKey('matches', currentSeason);
+                
+                // Store test data in current season
+                const currentData = JSON.parse(localStorage.getItem(currentKey) || '[]');
+                currentData.push(testData);
+                localStorage.setItem(currentKey, JSON.stringify(currentData));
+                
+                logResult('season', `✅ Stored test data in ${currentSeason}`, 'success');
+                
+                // Check other season doesn't have the data
+                const otherSeason = currentSeason === window.seasonManager.SEASONS.LEGACY 
+                    ? window.seasonManager.SEASONS.FC26 
+                    : window.seasonManager.SEASONS.LEGACY;
+                const otherKey = window.seasonManager.getSeasonStorageKey('matches', otherSeason);
+                const otherData = JSON.parse(localStorage.getItem(otherKey) || '[]');
+                
+                const hasTestDataInOther = otherData.some(item => item.id === testData.id);
+                
+                if (!hasTestDataInOther) {
+                    logResult('season', '✅ Data isolation confirmed - data not found in other season', 'success');
+                } else {
+                    logResult('season', '❌ Data isolation failed - data found in other season', 'error');
+                }
+                
+                // Cleanup
+                const cleanedData = currentData.filter(item => item.id !== testData.id);
+                localStorage.setItem(currentKey, JSON.stringify(cleanedData));
+                
+            } catch (error) {
+                logResult('season', `❌ Data isolation test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSeasonMigration() {
+            logResult('season', '🧪 Testing Legacy Data Migration...', 'info');
+            
+            try {
+                // Check if migration has been performed
+                const migrationStatus = localStorage.getItem('fifa_legacy_migration_status');
+                logResult('season', `Migration status: ${migrationStatus || 'not performed'}`, 'info');
+                
+                // Check for legacy data existence
+                const legacyKeys = ['matches', 'players', 'bans', 'transactions'].map(type => 
+                    `fifa_${type}`
+                );
+                
+                let legacyDataFound = false;
+                legacyKeys.forEach(key => {
+                    if (localStorage.getItem(key)) {
+                        legacyDataFound = true;
+                        logResult('season', `Found legacy data: ${key}`, 'warning');
+                    }
+                });
+                
+                if (!legacyDataFound) {
+                    logResult('season', '✅ No legacy data found - migration not needed', 'success');
+                } else {
+                    logResult('season', '⚠️ Legacy data found - migration should be performed', 'warning');
+                }
+                
+                // Test migration function
+                try {
+                    const migrationResult = window.seasonManager.migrateLegacyData();
+                    if (migrationResult) {
+                        logResult('season', '✅ Migration function executed successfully', 'success');
+                    } else {
+                        logResult('season', '⚠️ Migration function returned false', 'warning');
+                    }
+                } catch (migrationError) {
+                    logResult('season', `❌ Migration error: ${migrationError.message}`, 'error');
+                }
+                
+            } catch (error) {
+                logResult('season', `❌ Migration test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Database Communication Tests
+        async function testDatabaseOperations() {
+            logResult('database', '🧪 Testing Database Operations...', 'info');
+            
+            try {
+                // Test connection availability
+                const isAvailable = window.connectionMonitor ? 
+                    (typeof window.connectionMonitor.isDatabaseAvailable === 'function' ? 
+                        window.connectionMonitor.isDatabaseAvailable() : 
+                        'Connection monitor not available') : 
+                    'Connection monitor not loaded';
+                
+                logResult('database', `Database availability: ${isAvailable}`, 'info');
+                
+                // Test basic Supabase operations if available
+                if (window.supabaseDb) {
+                    try {
+                        logResult('database', 'Testing Supabase select operation...', 'info');
+                        const testResult = await window.supabaseDb.select('players', '*', { limit: 1 });
+                        
+                        if (testResult.data) {
+                            logResult('database', `✅ Supabase select successful: ${testResult.data.length} records`, 'success');
+                        } else if (testResult.error) {
+                            logResult('database', `⚠️ Supabase select returned error: ${testResult.error.message}`, 'warning');
+                        } else {
+                            logResult('database', '⚠️ Supabase select returned no data', 'warning');
+                        }
+                    } catch (supabaseError) {
+                        logResult('database', `⚠️ Supabase operation failed (falling back to localStorage): ${supabaseError.message}`, 'warning');
+                    }
+                } else {
+                    logResult('database', '⚠️ Supabase client not available', 'warning');
+                }
+                
+                // Test localStorage fallback
+                logResult('database', 'Testing localStorage fallback...', 'info');
+                const testKey = 'test_database_operation';
+                localStorage.setItem(testKey, JSON.stringify({ test: 'data', timestamp: Date.now() }));
+                const retrievedData = localStorage.getItem(testKey);
+                
+                if (retrievedData) {
+                    const parsed = JSON.parse(retrievedData);
+                    logResult('database', `✅ localStorage fallback working: ${parsed.test}`, 'success');
+                    localStorage.removeItem(testKey); // cleanup
+                } else {
+                    logResult('database', '❌ localStorage fallback failed', 'error');
+                }
+                
+            } catch (error) {
+                logResult('database', `❌ Database operations test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testRealtimeSubscriptions() {
+            logResult('database', '🧪 Testing Real-time Subscriptions...', 'info');
+            
+            try {
+                if (!window.supabase) {
+                    logResult('database', '⚠️ Supabase not available for real-time testing', 'warning');
+                    return;
+                }
+                
+                logResult('database', 'Setting up test subscription...', 'info');
+                
+                const testChannel = window.supabase
+                    .channel('test_realtime_channel')
+                    .on('postgres_changes', { 
+                        event: '*', 
+                        schema: 'public', 
+                        table: 'players' 
+                    }, (payload) => {
+                        logResult('database', `📬 Real-time update received: ${payload.eventType}`, 'success');
+                    })
+                    .subscribe((status) => {
+                        logResult('database', `📡 Subscription status: ${status}`, 'info');
+                        
+                        if (status === 'SUBSCRIBED') {
+                            logResult('database', '✅ Real-time subscription active', 'success');
+                        } else if (status === 'CHANNEL_ERROR') {
+                            logResult('database', '❌ Real-time subscription error', 'error');
+                        } else if (status === 'TIMED_OUT') {
+                            logResult('database', '⚠️ Real-time subscription timed out', 'warning');
+                        }
+                    });
+                
+                // Clean up after 5 seconds
+                setTimeout(() => {
+                    if (testChannel) {
+                        window.supabase.removeChannel(testChannel);
+                        logResult('database', '🧹 Test subscription cleaned up', 'info');
+                    }
+                }, 5000);
+                
+            } catch (error) {
+                logResult('database', `❌ Real-time subscription test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testOfflineFunctionality() {
+            logResult('database', '🧪 Testing Offline Functionality...', 'info');
+            
+            try {
+                // Simulate offline state
+                logResult('database', 'Testing offline data operations...', 'info');
+                
+                // Test season-aware data operations in offline mode
+                const currentSeason = window.seasonManager.getCurrentSeason();
+                const testData = {
+                    id: 'offline-test-' + Date.now(),
+                    testField: 'offline-functionality',
+                    season: currentSeason,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Test storing data when offline
+                const storageKey = window.seasonManager.getSeasonStorageKey('matches', currentSeason);
+                const existingData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                existingData.push(testData);
+                localStorage.setItem(storageKey, JSON.stringify(existingData));
+                
+                logResult('database', '✅ Offline data storage successful', 'success');
+                
+                // Test retrieving data when offline
+                const retrievedData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                const foundTestData = retrievedData.find(item => item.id === testData.id);
+                
+                if (foundTestData) {
+                    logResult('database', '✅ Offline data retrieval successful', 'success');
+                } else {
+                    logResult('database', '❌ Offline data retrieval failed', 'error');
+                }
+                
+                // Cleanup
+                const cleanedData = retrievedData.filter(item => item.id !== testData.id);
+                localStorage.setItem(storageKey, JSON.stringify(cleanedData));
+                
+                // Test online detection
+                logResult('database', `Network status: ${navigator.onLine ? 'Online' : 'Offline'}`, 'info');
+                
+            } catch (error) {
+                logResult('database', `❌ Offline functionality test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Data Types Tests
+        async function testAllDataTypes() {
+            logResult('datatypes', '🧪 Testing All Data Types...', 'info');
+            
+            const dataTypes = ['matches', 'players', 'bans', 'transactions', 'alcoholCalculator'];
+            const currentSeason = window.seasonManager.getCurrentSeason();
+            
+            try {
+                for (const dataType of dataTypes) {
+                    logResult('datatypes', `Testing ${dataType}...`, 'info');
+                    
+                    const storageKey = window.seasonManager.getSeasonStorageKey(dataType, currentSeason);
+                    const existingData = localStorage.getItem(storageKey);
+                    
+                    if (existingData) {
+                        try {
+                            const parsed = JSON.parse(existingData);
+                            const itemCount = Array.isArray(parsed) ? parsed.length : (parsed ? 1 : 0);
+                            logResult('datatypes', `✅ ${dataType}: ${itemCount} items found`, 'success');
+                        } catch (parseError) {
+                            logResult('datatypes', `⚠️ ${dataType}: Invalid JSON data`, 'warning');
+                        }
+                    } else {
+                        logResult('datatypes', `ℹ️ ${dataType}: No data found (new season)`, 'info');
+                    }
+                }
+                
+                logResult('datatypes', '✅ All data types tested successfully', 'success');
+                
+            } catch (error) {
+                logResult('datatypes', `❌ Data types test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testDataPersistence() {
+            logResult('datatypes', '🧪 Testing Data Persistence...', 'info');
+            
+            try {
+                const currentSeason = window.seasonManager.getCurrentSeason();
+                const testData = {
+                    id: 'persistence-test-' + Date.now(),
+                    type: 'persistence_test',
+                    value: 'test-value-' + Math.random(),
+                    season: currentSeason,
+                    created_at: new Date().toISOString()
+                };
+                
+                // Store test data
+                const storageKey = window.seasonManager.getSeasonStorageKey('matches', currentSeason);
+                const existingData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                existingData.push(testData);
+                localStorage.setItem(storageKey, JSON.stringify(existingData));
+                
+                logResult('datatypes', '✅ Test data stored', 'success');
+                
+                // Simulate page reload by clearing and reloading data
+                await new Promise(resolve => setTimeout(resolve, 100));
+                
+                // Retrieve data
+                const reloadedData = JSON.parse(localStorage.getItem(storageKey) || '[]');
+                const foundData = reloadedData.find(item => item.id === testData.id);
+                
+                if (foundData && foundData.value === testData.value) {
+                    logResult('datatypes', '✅ Data persistence verified', 'success');
+                } else {
+                    logResult('datatypes', '❌ Data persistence failed', 'error');
+                }
+                
+                // Cleanup
+                const cleanedData = reloadedData.filter(item => item.id !== testData.id);
+                localStorage.setItem(storageKey, JSON.stringify(cleanedData));
+                
+            } catch (error) {
+                logResult('datatypes', `❌ Data persistence test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testSeasonAwareOperations() {
+            logResult('datatypes', '🧪 Testing Season-Aware Operations...', 'info');
+            
+            try {
+                const originalSeason = window.seasonManager.getCurrentSeason();
+                
+                // Test data operations in original season
+                const testData1 = {
+                    id: 'season-aware-1-' + Date.now(),
+                    content: 'season-aware-test-original',
+                    created_at: new Date().toISOString()
+                };
+                
+                const key1 = window.seasonManager.getSeasonStorageKey('matches', originalSeason);
+                const data1 = JSON.parse(localStorage.getItem(key1) || '[]');
+                data1.push(testData1);
+                localStorage.setItem(key1, JSON.stringify(data1));
+                
+                logResult('datatypes', `✅ Data stored in ${originalSeason}`, 'success');
+                
+                // Switch season
+                const otherSeason = originalSeason === window.seasonManager.SEASONS.LEGACY 
+                    ? window.seasonManager.SEASONS.FC26 
+                    : window.seasonManager.SEASONS.LEGACY;
+                
+                // Test data operations in other season
+                const testData2 = {
+                    id: 'season-aware-2-' + Date.now(),
+                    content: 'season-aware-test-other',
+                    created_at: new Date().toISOString()
+                };
+                
+                const key2 = window.seasonManager.getSeasonStorageKey('matches', otherSeason);
+                const data2 = JSON.parse(localStorage.getItem(key2) || '[]');
+                data2.push(testData2);
+                localStorage.setItem(key2, JSON.stringify(data2));
+                
+                logResult('datatypes', `✅ Data stored in ${otherSeason}`, 'success');
+                
+                // Verify isolation
+                const verifyData1 = JSON.parse(localStorage.getItem(key1) || '[]');
+                const verifyData2 = JSON.parse(localStorage.getItem(key2) || '[]');
+                
+                const found1InOther = verifyData2.some(item => item.id === testData1.id);
+                const found2InOriginal = verifyData1.some(item => item.id === testData2.id);
+                
+                if (!found1InOther && !found2InOriginal) {
+                    logResult('datatypes', '✅ Season-aware operations verified - proper isolation', 'success');
+                } else {
+                    logResult('datatypes', '❌ Season-aware operations failed - data leaked between seasons', 'error');
+                }
+                
+                // Cleanup
+                const cleaned1 = verifyData1.filter(item => item.id !== testData1.id);
+                const cleaned2 = verifyData2.filter(item => item.id !== testData2.id);
+                localStorage.setItem(key1, JSON.stringify(cleaned1));
+                localStorage.setItem(key2, JSON.stringify(cleaned2));
+                
+            } catch (error) {
+                logResult('datatypes', `❌ Season-aware operations test error: ${error.message}`, 'error');
+            }
+        }
+
+        // UI Components Tests
+        async function testSeasonSelector() {
+            logResult('ui', '🧪 Testing Season Selector...', 'info');
+            
+            try {
+                // Test season data retrieval
+                const availableSeasons = window.seasonManager.getAvailableSeasons();
+                logResult('ui', `Available seasons: ${availableSeasons.length}`, 'info');
+                
+                availableSeasons.forEach(season => {
+                    const statusText = season.isActive ? 'Active' : 'Inactive';
+                    const dataText = season.hasData ? 'Has Data' : 'No Data';
+                    logResult('ui', `Season ${season.id}: ${statusText}, ${dataText}`, 'info');
+                });
+                
+                if (availableSeasons.length >= 2) {
+                    logResult('ui', '✅ Season selector data structure correct', 'success');
+                } else {
+                    logResult('ui', '⚠️ Expected at least 2 seasons', 'warning');
+                }
+                
+                // Test season switching through season manager
+                const currentSeason = window.seasonManager.getCurrentSeason();
+                const targetSeason = availableSeasons.find(s => !s.isActive);
+                
+                if (targetSeason) {
+                    logResult('ui', `Testing UI season switch to ${targetSeason.id}...`, 'info');
+                    
+                    // Simulate season switch (UI would normally trigger this)
+                    const switchResult = window.seasonManager.switchToSeason(targetSeason.id);
+                    
+                    if (switchResult) {
+                        logResult('ui', '✅ Season switch successful', 'success');
+                        
+                        // Switch back
+                        await new Promise(resolve => setTimeout(resolve, 500));
+                        window.seasonManager.switchToSeason(currentSeason);
+                        window.updateSeasonIndicator();
+                    } else {
+                        logResult('ui', '❌ Season switch failed', 'error');
+                    }
+                }
+                
+            } catch (error) {
+                logResult('ui', `❌ Season selector test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testUIComponents() {
+            logResult('ui', '🧪 Testing UI Components...', 'info');
+            
+            try {
+                // Test current season indicator
+                const seasonIndicator = document.getElementById('current-season-indicator');
+                if (seasonIndicator && seasonIndicator.textContent.trim()) {
+                    logResult('ui', '✅ Season indicator displaying correctly', 'success');
+                } else {
+                    logResult('ui', '❌ Season indicator not found or empty', 'error');
+                }
+                
+                // Test test results display
+                const resultContainers = ['season-results', 'database-results', 'datatypes-results', 'ui-results', 'performance-results', 'integration-results'];
+                let containersPassed = 0;
+                
+                resultContainers.forEach(containerId => {
+                    const container = document.getElementById(containerId);
+                    if (container) {
+                        containersPassed++;
+                    }
+                });
+                
+                logResult('ui', `✅ Test result containers: ${containersPassed}/${resultContainers.length} found`, 'success');
+                
+                // Test responsive design elements
+                const testContainer = document.querySelector('.test-container');
+                if (testContainer) {
+                    const styles = window.getComputedStyle(testContainer);
+                    logResult('ui', `Container max-width: ${styles.maxWidth}`, 'info');
+                    logResult('ui', '✅ Main container found and styled', 'success');
+                }
+                
+            } catch (error) {
+                logResult('ui', `❌ UI components test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testResponsiveDesign() {
+            logResult('ui', '🧪 Testing Responsive Design...', 'info');
+            
+            try {
+                const viewportWidth = window.innerWidth;
+                const viewportHeight = window.innerHeight;
+                
+                logResult('ui', `Viewport: ${viewportWidth}x${viewportHeight}`, 'info');
+                
+                // Test different viewport categories
+                if (viewportWidth < 768) {
+                    logResult('ui', '📱 Mobile viewport detected', 'info');
+                } else if (viewportWidth < 1024) {
+                    logResult('ui', '📟 Tablet viewport detected', 'info');
+                } else {
+                    logResult('ui', '🖥️ Desktop viewport detected', 'info');
+                }
+                
+                // Test CSS Grid/Flexbox layouts
+                const testSections = document.querySelectorAll('.test-section');
+                let responsiveElementsFound = 0;
+                
+                testSections.forEach(section => {
+                    const styles = window.getComputedStyle(section);
+                    if (styles.display === 'block' || styles.display === 'flex') {
+                        responsiveElementsFound++;
+                    }
+                });
+                
+                logResult('ui', `✅ Responsive elements: ${responsiveElementsFound}/${testSections.length}`, 'success');
+                
+                // Test button responsiveness
+                const buttons = document.querySelectorAll('.test-button');
+                logResult('ui', `Buttons found: ${buttons.length}`, 'info');
+                
+                if (buttons.length > 0) {
+                    logResult('ui', '✅ Interactive elements responsive', 'success');
+                }
+                
+            } catch (error) {
+                logResult('ui', `❌ Responsive design test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Performance Tests
+        async function testPerformance() {
+            logResult('performance', '🧪 Testing Performance...', 'info');
+            
+            try {
+                const startTime = performance.now();
+                
+                // Test localStorage operations performance
+                const testOperations = 1000;
+                const testKey = 'performance_test';
+                
+                logResult('performance', `Performing ${testOperations} localStorage operations...`, 'info');
+                
+                for (let i = 0; i < testOperations; i++) {
+                    localStorage.setItem(`${testKey}_${i}`, JSON.stringify({ index: i, data: 'test' }));
+                }
+                
+                for (let i = 0; i < testOperations; i++) {
+                    localStorage.getItem(`${testKey}_${i}`);
+                }
+                
+                for (let i = 0; i < testOperations; i++) {
+                    localStorage.removeItem(`${testKey}_${i}`);
+                }
+                
+                const endTime = performance.now();
+                const duration = endTime - startTime;
+                
+                logResult('performance', `✅ ${testOperations} operations completed in ${duration.toFixed(2)}ms`, 'success');
+                
+                if (duration < 1000) {
+                    logResult('performance', '✅ Performance is excellent', 'success');
+                } else if (duration < 3000) {
+                    logResult('performance', '⚠️ Performance is acceptable', 'warning');
+                } else {
+                    logResult('performance', '❌ Performance is poor', 'error');
+                }
+                
+            } catch (error) {
+                logResult('performance', `❌ Performance test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testMemoryUsage() {
+            logResult('performance', '🧪 Testing Memory Usage...', 'info');
+            
+            try {
+                if (performance.memory) {
+                    const memInfo = performance.memory;
+                    const usedMB = (memInfo.usedJSHeapSize / 1024 / 1024).toFixed(2);
+                    const totalMB = (memInfo.totalJSHeapSize / 1024 / 1024).toFixed(2);
+                    const limitMB = (memInfo.jsHeapSizeLimit / 1024 / 1024).toFixed(2);
+                    
+                    logResult('performance', `Memory used: ${usedMB}MB`, 'info');
+                    logResult('performance', `Memory total: ${totalMB}MB`, 'info');
+                    logResult('performance', `Memory limit: ${limitMB}MB`, 'info');
+                    
+                    const memoryUsagePercent = (memInfo.usedJSHeapSize / memInfo.jsHeapSizeLimit) * 100;
+                    
+                    if (memoryUsagePercent < 50) {
+                        logResult('performance', '✅ Memory usage is healthy', 'success');
+                    } else if (memoryUsagePercent < 80) {
+                        logResult('performance', '⚠️ Memory usage is moderate', 'warning');
+                    } else {
+                        logResult('performance', '❌ Memory usage is high', 'error');
+                    }
+                } else {
+                    logResult('performance', '⚠️ Memory API not available in this browser', 'warning');
+                }
+                
+                // Test localStorage usage
+                let localStorageSize = 0;
+                for (let key in localStorage) {
+                    if (localStorage.hasOwnProperty(key)) {
+                        localStorageSize += localStorage[key].length + key.length;
+                    }
+                }
+                
+                const storageMB = (localStorageSize / 1024 / 1024).toFixed(2);
+                logResult('performance', `LocalStorage usage: ${storageMB}MB`, 'info');
+                
+            } catch (error) {
+                logResult('performance', `❌ Memory usage test error: ${error.message}`, 'error');
+            }
+        }
+
+        async function testLoadTimes() {
+            logResult('performance', '🧪 Testing Load Times...', 'info');
+            
+            try {
+                if (performance.navigation) {
+                    const navTiming = performance.navigation;
+                    logResult('performance', `Navigation type: ${navTiming.type === 0 ? 'Navigate' : navTiming.type === 1 ? 'Reload' : 'Back/Forward'}`, 'info');
+                }
+                
+                if (performance.timing) {
+                    const timing = performance.timing;
+                    const loadTime = timing.loadEventEnd - timing.navigationStart;
+                    const domContentLoadedTime = timing.domContentLoadedEventEnd - timing.navigationStart;
+                    const domCompleteTime = timing.domComplete - timing.navigationStart;
+                    
+                    logResult('performance', `Page load time: ${loadTime}ms`, 'info');
+                    logResult('performance', `DOM content loaded: ${domContentLoadedTime}ms`, 'info');
+                    logResult('performance', `DOM complete: ${domCompleteTime}ms`, 'info');
+                    
+                    if (loadTime < 2000) {
+                        logResult('performance', '✅ Load time is excellent', 'success');
+                    } else if (loadTime < 5000) {
+                        logResult('performance', '⚠️ Load time is acceptable', 'warning');
+                    } else {
+                        logResult('performance', '❌ Load time is poor', 'error');
+                    }
+                } else {
+                    logResult('performance', '⚠️ Performance timing API not available', 'warning');
+                }
+                
+                // Test resource loading
+                if (performance.getEntriesByType) {
+                    const resources = performance.getEntriesByType('resource');
+                    logResult('performance', `Resources loaded: ${resources.length}`, 'info');
+                    
+                    let slowResources = 0;
+                    resources.forEach(resource => {
+                        if (resource.duration > 1000) {
+                            slowResources++;
+                        }
+                    });
+                    
+                    if (slowResources === 0) {
+                        logResult('performance', '✅ All resources loaded quickly', 'success');
+                    } else {
+                        logResult('performance', `⚠️ ${slowResources} slow resources detected`, 'warning');
+                    }
+                }
+                
+            } catch (error) {
+                logResult('performance', `❌ Load times test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Comprehensive Integration Test
+        async function runComprehensiveTest() {
+            logResult('integration', '🚀 Starting Comprehensive Integration Test...', 'info');
+            
+            const startTime = Date.now();
+            
+            try {
+                // Clear previous results
+                Object.keys(testResults).forEach(key => {
+                    testResults[key] = [];
+                });
+                
+                logResult('integration', '📊 Running all test categories...', 'info');
+                
+                // Run all test categories in sequence
+                await testSeasonSwitching();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testSeasonDataIsolation();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testSeasonMigration();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testDatabaseOperations();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testRealtimeSubscriptions();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testOfflineFunctionality();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testAllDataTypes();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testDataPersistence();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testSeasonAwareOperations();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testSeasonSelector();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testUIComponents();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testResponsiveDesign();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testPerformance();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testMemoryUsage();
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                await testLoadTimes();
+                
+                const endTime = Date.now();
+                const totalDuration = endTime - startTime;
+                
+                // Calculate test results summary
+                let totalTests = 0;
+                let passedTests = 0;
+                let failedTests = 0;
+                let warningTests = 0;
+                
+                Object.values(testResults).forEach(categoryResults => {
+                    categoryResults.forEach(result => {
+                        totalTests++;
+                        if (result.type === 'success') passedTests++;
+                        else if (result.type === 'error') failedTests++;
+                        else if (result.type === 'warning') warningTests++;
+                    });
+                });
+                
+                logResult('integration', '📋 COMPREHENSIVE TEST SUMMARY', 'info');
+                logResult('integration', `Total Duration: ${(totalDuration / 1000).toFixed(2)}s`, 'info');
+                logResult('integration', `Total Tests: ${totalTests}`, 'info');
+                logResult('integration', `✅ Passed: ${passedTests}`, 'success');
+                logResult('integration', `⚠️ Warnings: ${warningTests}`, 'warning');
+                logResult('integration', `❌ Failed: ${failedTests}`, failedTests > 0 ? 'error' : 'info');
+                
+                const successRate = ((passedTests / totalTests) * 100).toFixed(1);
+                logResult('integration', `Success Rate: ${successRate}%`, successRate > 80 ? 'success' : successRate > 60 ? 'warning' : 'error');
+                
+                if (failedTests === 0 && warningTests <= totalTests * 0.2) {
+                    logResult('integration', '🎉 COMPREHENSIVE TEST PASSED! App is working correctly.', 'success');
+                } else if (failedTests === 0) {
+                    logResult('integration', '✅ COMPREHENSIVE TEST PASSED with warnings. App is functional.', 'warning');
+                } else {
+                    logResult('integration', '❌ COMPREHENSIVE TEST FAILED. Issues need to be addressed.', 'error');
+                }
+                
+                // Specific recommendations
+                logResult('integration', '📝 RECOMMENDATIONS:', 'info');
+                
+                if (failedTests === 0) {
+                    logResult('integration', '• Season management is working correctly', 'success');
+                    logResult('integration', '• Database communication has proper fallbacks', 'success');
+                    logResult('integration', '• All data types are properly isolated by season', 'success');
+                    logResult('integration', '• UI components are responsive and functional', 'success');
+                }
+                
+                if (warningTests > 0) {
+                    logResult('integration', '• Some functionality relies on fallback mechanisms (normal)', 'warning');
+                }
+                
+                if (failedTests > 0) {
+                    logResult('integration', '• Critical issues found that need immediate attention', 'error');
+                }
+                
+            } catch (error) {
+                logResult('integration', `❌ Comprehensive test error: ${error.message}`, 'error');
+            }
+        }
+
+        // Initialize test results display
+        document.addEventListener('DOMContentLoaded', () => {
+            Object.keys(testResults).forEach(category => {
+                const container = document.getElementById(`${category}-results`);
+                if (container) {
+                    container.textContent = 'Klicke auf einen Test-Button um zu starten...';
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -575,7 +575,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const recentForm = stats.calculateRecentForm(5);
   const playerStats = stats.calculatePlayerStats();
   const advancedStats = stats.calculateAdvancedStats();
-  const performanceTrends = stats.calculatePerformanceTrends();
   const headToHead = stats.calculateHeadToHead();
 
   // Basic data calculations using filtered matches
@@ -638,7 +637,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     // Sort matches by date to analyze chronologically
     const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    sortedMatches.forEach((match, index) => {
+    sortedMatches.forEach((match) => {
       const aekGoals = match.goalsa || 0;
       const realGoals = match.goalsb || 0;
       const matchDate = match.date;
