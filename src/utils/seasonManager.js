@@ -340,7 +340,9 @@ export const switchToSeason = (targetSeason) => {
       
       // Reload page to ensure all components use new season data
       setTimeout(() => {
-        window.location.reload();
+        if (typeof window !== 'undefined' && window.location) {
+          window.location.reload();
+        }
       }, 100);
     }
 

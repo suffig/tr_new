@@ -11,8 +11,6 @@ import ManagerTab from './admin/ManagerTab';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false, user }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('search');
-  const [collapsedCategories, setCollapsedCategories] = useState({});
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Security check - only allow access for authorized user
   if (!user || user.email !== 'philip-melchert@live.de') {
@@ -152,17 +150,6 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
   };
 
   const categorizedTabs = getCategorizedTabs();
-
-  const toggleCategory = (category) => {
-    setCollapsedCategories(prev => ({
-      ...prev,
-      [category]: !prev[category]
-    }));
-  };
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(prev => !prev);
-  };
 
   return (
     <div className="flex flex-col h-full">
