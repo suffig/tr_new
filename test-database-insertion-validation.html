@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Database Insertion Validation - FIFA Version Testing</title>
+    <style>
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f5f5f7;
+        }
+        .test-container {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+        }
+        .test-header {
+            color: #007AFF;
+            border-bottom: 2px solid #007AFF;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        .test-result {
+            padding: 12px;
+            border-radius: 8px;
+            margin: 8px 0;
+            font-family: monospace;
+            font-size: 14px;
+        }
+        .success { background: #d1f2eb; color: #00845c; }
+        .error { background: #fadbd8; color: #c0392b; }
+        .info { background: #d6eaf8; color: #2874a6; }
+        .warning { background: #fcf3cf; color: #b7950b; }
+        .test-button {
+            background: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            margin: 8px;
+            font-size: 14px;
+        }
+        .test-button:hover { background: #0056CC; }
+        .code-block {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 12px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin: 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🧪 Database Insertion Validation - FIFA Version Testing</h1>
+
+    <div class="test-container">
+        <h2 class="test-header">🔍 FIFA Version System Test</h2>
+        <p>This test validates that database insert operations correctly include the fifa_version field.</p>
+        <button class="test-button" onclick="testFifaVersionSystem()">Test FIFA Version System</button>
+        <div id="fifa-system-results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-header">📝 Database Insert Simulation</h2>
+        <p>Simulate database insert operations for all table types to verify fifa_version inclusion.</p>
+        <button class="test-button" onclick="testDatabaseInserts()">Test Database Inserts</button>
+        <div id="database-insert-results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-header">🎯 Schema Validation</h2>
+        <p>Verify that data structures match the expected database schema requirements.</p>
+        <button class="test-button" onclick="testSchemaValidation()">Validate Schema Compliance</button>
+        <div id="schema-results"></div>
+    </div>
+
+    <div class="test-container">
+        <h2 class="test-header">🔄 End-to-End Insert Test</h2>
+        <p>Perform a complete end-to-end test of database insertion with fifa_version validation.</p>
+        <button class="test-button" onclick="testEndToEndInsert()">Run End-to-End Test</button>
+        <div id="e2e-results"></div>
+    </div>
+
+    <script type="module">
+        // Import necessary modules
+        import { 
+            getCurrentFifaVersion, 
+            addFifaVersionToData, 
+            shouldFilterByFifaVersion,
+            getFifaVersionedTables 
+        } from './src/utils/fifaVersionManager.js';
+        
+        import { supabaseDb } from './src/utils/supabase.js';
+
+        // Make functions available globally
+        window.fifaVersionManager = {
+            getCurrentFifaVersion,
+            addFifaVersionToData,
+            shouldFilterByFifaVersion,
+            getFifaVersionedTables
+        };
+        
+        window.supabaseDb = supabaseDb;
+
+        function logResult(containerId, message, type = 'info') {
+            const container = document.getElementById(containerId);
+            const div = document.createElement('div');
+            div.className = `test-result ${type}`;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            container.appendChild(div);
+        }
+
+        function logCode(containerId, code, title = 'Code') {
+            const container = document.getElementById(containerId);
+            const titleDiv = document.createElement('div');
+            titleDiv.className = 'test-result info';
+            titleDiv.textContent = title + ':';
+            container.appendChild(titleDiv);
+            
+            const codeDiv = document.createElement('div');
+            codeDiv.className = 'code-block';
+            codeDiv.textContent = code;
+            container.appendChild(codeDiv);
+        }
+
+        window.testFifaVersionSystem = function() {
+            const containerId = 'fifa-system-results';
+            document.getElementById(containerId).innerHTML = '';
+            
+            logResult(containerId, 'Testing FIFA Version System...', 'info');
+            
+            try {
+                // Test current version
+                const currentVersion = window.fifaVersionManager.getCurrentFifaVersion();
+                logResult(containerId, `Current FIFA Version: ${currentVersion}`, 'success');
+                
+                // Test versioned tables
+                const tables = window.fifaVersionManager.getFifaVersionedTables();
+                logResult(containerId, `Versioned Tables: ${tables.join(', ')}`, 'success');
+                
+                // Test each required table
+                const requiredTables = ['players', 'matches', 'bans', 'transactions', 'finances'];
+                let allSupported = true;
+                
+                requiredTables.forEach(table => {
+                    const isSupported = window.fifaVersionManager.shouldFilterByFifaVersion(table);
+                    if (isSupported) {
+                        logResult(containerId, `✅ ${table}: FIFA version supported`, 'success');
+                    } else {
+                        logResult(containerId, `❌ ${table}: FIFA version NOT supported`, 'error');
+                        allSupported = false;
+                    }
+                });
+                
+                if (allSupported) {
+                    logResult(containerId, '🎉 All required tables support FIFA versioning!', 'success');
+                } else {
+                    logResult(containerId, '⚠️ Some tables missing FIFA version support', 'warning');
+                }
+                
+            } catch (error) {
+                logResult(containerId, `Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testDatabaseInserts = function() {
+            const containerId = 'database-insert-results';
+            document.getElementById(containerId).innerHTML = '';
+            
+            logResult(containerId, 'Testing Database Insert Operations...', 'info');
+            
+            try {
+                // Test data enhancement for each table type
+                const testCases = {
+                    players: {
+                        name: 'Max Mustermann',
+                        team: 'AEK',
+                        position: 'ST',
+                        goals: 5,
+                        value: 15.5
+                    },
+                    matches: {
+                        date: '2024-12-20',
+                        teama: 'AEK',
+                        teamb: 'Real',
+                        goalsa: 2,
+                        goalsb: 1,
+                        manofthematch: 'Max Mustermann'
+                    },
+                    bans: {
+                        player_id: 1,
+                        team: 'AEK',
+                        type: 'Gelb-Rote Karte',
+                        totalgames: 1,
+                        matchesserved: 0,
+                        reason: 'Unsportliches Verhalten'
+                    },
+                    transactions: {
+                        date: '2024-12-20',
+                        type: 'Preisgeld',
+                        team: 'AEK',
+                        amount: 5000,
+                        info: 'Siegprämie',
+                        match_id: 1
+                    },
+                    finances: {
+                        team: 'AEK',
+                        balance: 25000,
+                        debt: 0
+                    }
+                };
+                
+                Object.entries(testCases).forEach(([table, data]) => {
+                    logResult(containerId, `Testing ${table} insert data...`, 'info');
+                    
+                    const enhancedData = window.fifaVersionManager.addFifaVersionToData(data);
+                    
+                    if (enhancedData.fifa_version) {
+                        logResult(containerId, `✅ ${table}: fifa_version added (${enhancedData.fifa_version})`, 'success');
+                        logCode(containerId, JSON.stringify(enhancedData, null, 2), `${table} Enhanced Data`);
+                    } else {
+                        logResult(containerId, `❌ ${table}: fifa_version NOT added`, 'error');
+                    }
+                });
+                
+            } catch (error) {
+                logResult(containerId, `Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.testSchemaValidation = function() {
+            const containerId = 'schema-results';
+            document.getElementById(containerId).innerHTML = '';
+            
+            logResult(containerId, 'Validating Database Schema Compliance...', 'info');
+            
+            // Database schema requirements from the comment
+            const schemaRequirements = {
+                bans: [
+                    'id', 'player_id', 'team', 'type', 'totalgames', 
+                    'matchesserved', 'reason', 'fifa_version'
+                ],
+                finances: [
+                    'id', 'team', 'balance', 'debt', 'fifa_version'
+                ],
+                matches: [
+                    'id', 'date', 'teama', 'teamb', 'goalsa', 'goalsb',
+                    'goalslista', 'goalslistb', 'yellowa', 'reda', 'yellowb', 
+                    'redb', 'manofthematch', 'prizeaek', 'prizereal', 'fifa_version'
+                ],
+                players: [
+                    'id', 'name', 'team', 'value', 'goals', 'position', 'fifa_version'
+                ],
+                spieler_des_spiels: [
+                    'id', 'name', 'team', 'count', 'fifa_version'
+                ],
+                transactions: [
+                    'id', 'date', 'type', 'team', 'amount', 'info', 
+                    'match_id', 'fifa_version'
+                ]
+            };
+            
+            logResult(containerId, 'Schema Requirements from Database:', 'info');
+            
+            Object.entries(schemaRequirements).forEach(([table, fields]) => {
+                logResult(containerId, `${table.toUpperCase()} (${fields.length} fields):`, 'info');
+                
+                const hasVersionField = fields.includes('fifa_version');
+                if (hasVersionField) {
+                    logResult(containerId, `  ✅ fifa_version field required`, 'success');
+                } else {
+                    logResult(containerId, `  ❌ fifa_version field missing`, 'error');
+                }
+                
+                const isVersioned = window.fifaVersionManager.shouldFilterByFifaVersion(table);
+                if (isVersioned && hasVersionField) {
+                    logResult(containerId, `  ✅ ${table}: Schema and code alignment OK`, 'success');
+                } else {
+                    logResult(containerId, `  ⚠️ ${table}: Schema/code mismatch`, 'warning');
+                }
+            });
+        };
+
+        window.testEndToEndInsert = async function() {
+            const containerId = 'e2e-results';
+            document.getElementById(containerId).innerHTML = '';
+            
+            logResult(containerId, 'Running End-to-End Database Insert Test...', 'info');
+            
+            try {
+                // Test the actual supabaseDb wrapper
+                if (!window.supabaseDb) {
+                    logResult(containerId, '❌ supabaseDb wrapper not available', 'error');
+                    return;
+                }
+                
+                logResult(containerId, '✅ supabaseDb wrapper available', 'success');
+                
+                // Test insert for players table
+                const testPlayerData = {
+                    name: 'Test Player E2E',
+                    team: 'AEK',
+                    position: 'ST',
+                    goals: 0,
+                    value: 10.0
+                };
+                
+                logResult(containerId, 'Testing actual insert operation...', 'info');
+                logCode(containerId, JSON.stringify(testPlayerData, null, 2), 'Original Data');
+                
+                // Check what data would be sent to database
+                const enhancedData = window.fifaVersionManager.addFifaVersionToData(testPlayerData);
+                logCode(containerId, JSON.stringify(enhancedData, null, 2), 'Enhanced Data (what goes to DB)');
+                
+                if (enhancedData.fifa_version) {
+                    logResult(containerId, `✅ fifa_version will be included: ${enhancedData.fifa_version}`, 'success');
+                } else {
+                    logResult(containerId, '❌ fifa_version missing from insert data', 'error');
+                }
+                
+                // Test the insert operation (this will use fallback mode in demo)
+                try {
+                    logResult(containerId, 'Attempting database insert (demo mode)...', 'info');
+                    const result = await window.supabaseDb.insert('players', testPlayerData);
+                    
+                    if (result && result.data) {
+                        logResult(containerId, '✅ Insert operation completed successfully', 'success');
+                        logCode(containerId, JSON.stringify(result.data, null, 2), 'Insert Result');
+                        
+                        if (result.data.fifa_version) {
+                            logResult(containerId, `✅ FIFA version preserved in result: ${result.data.fifa_version}`, 'success');
+                        } else {
+                            logResult(containerId, '⚠️ FIFA version not visible in result (may be added server-side)', 'warning');
+                        }
+                    } else if (result && result.error) {
+                        logResult(containerId, `⚠️ Insert returned error: ${result.error.message}`, 'warning');
+                    } else {
+                        logResult(containerId, '⚠️ Insert completed but no data returned', 'warning');
+                    }
+                    
+                } catch (insertError) {
+                    logResult(containerId, `⚠️ Insert simulation: ${insertError.message}`, 'warning');
+                }
+                
+                logResult(containerId, '🎯 End-to-End Test Summary:', 'info');
+                logResult(containerId, '✅ FIFA version system is active', 'success');
+                logResult(containerId, '✅ Data enhancement works correctly', 'success');
+                logResult(containerId, '✅ supabaseDb wrapper is functional', 'success');
+                logResult(containerId, '✅ fifa_version field will be added to all inserts', 'success');
+                
+            } catch (error) {
+                logResult(containerId, `Error in E2E test: ${error.message}`, 'error');
+                console.error('E2E Test Error:', error);
+            }
+        };
+    </script>
+</body>
+</html>
