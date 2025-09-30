@@ -355,6 +355,261 @@ class EAFCAPIService {
       };
     }
   }
+
+  /**
+   * Get live match data from EA Sports API
+   * @param {string} matchId - Match ID to fetch
+   * @returns {Promise<Object>} Live match data
+   */
+  async getLiveMatchData(matchId) {
+    if (!this.apiKey) {
+      console.warn('EA FC API key not configured for live match data');
+      return this.getMockLiveMatchData(matchId);
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}/matches/${matchId}/live`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Live match fetch failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return this.normalizeLiveMatchData(data);
+    } catch (error) {
+      console.warn('Live match data fetch failed, using mock data:', error);
+      return this.getMockLiveMatchData(matchId);
+    }
+  }
+
+  /**
+   * Get transfer market price for a player
+   * @param {string} playerId - Player ID or name
+   * @returns {Promise<Object>} Market price data
+   */
+  async getTransferMarketPrice(playerId) {
+    if (!this.apiKey) {
+      console.warn('EA FC API key not configured for transfer market');
+      return this.getMockMarketPrice(playerId);
+    }
+
+    try {
+      const cacheKey = `market_${playerId}`;
+      const cached = this.getCachedData(cacheKey);
+      if (cached) {
+        return cached;
+      }
+
+      const response = await fetch(`${this.baseURL}/transfermarket/player/${playerId}`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Market price fetch failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const normalized = this.normalizeMarketData(data);
+      this.setCachedData(cacheKey, normalized);
+      return normalized;
+    } catch (error) {
+      console.warn('Market price fetch failed, using mock data:', error);
+      return this.getMockMarketPrice(playerId);
+    }
+  }
+
+  /**
+   * Get market price trends for a player
+   * @param {string} playerId - Player ID or name
+   * @param {number} days - Number of days to fetch (default: 7)
+   * @returns {Promise<Object>} Price trend data
+   */
+  async getMarketPriceTrend(playerId, days = 7) {
+    if (!this.apiKey) {
+      return this.getMockPriceTrend(playerId, days);
+    }
+
+    try {
+      const response = await fetch(`${this.baseURL}/transfermarket/player/${playerId}/trend?days=${days}`, {
+        headers: {
+          'Authorization': `Bearer ${this.apiKey}`,
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Price trend fetch failed: ${response.status}`);
+      }
+
+      const data = await response.json();
+      return this.normalizePriceTrendData(data);
+    } catch (error) {
+      console.warn('Price trend fetch failed, using mock data:', error);
+      return this.getMockPriceTrend(playerId, days);
+    }
+  }
+
+  /**
+   * Batch update player data from EA Sports API
+   * @param {Array<Object>} players - Array of player objects with at least {id, name}
+   * @returns {Promise<Object>} Update results
+   */
+  async batchUpdatePlayers(players) {
+    const results = {
+      updated: [],
+      failed: [],
+      unchanged: []
+    };
+
+    for (const player of players) {
+      try {
+        const playerData = await this.getPlayerData(player.name, { forceRefresh: true });
+        
+        if (playerData.data) {
+          results.updated.push({
+            ...player,
+            updatedData: playerData.data,
+            source: playerData.source
+          });
+        } else {
+          results.unchanged.push(player);
+        }
+      } catch (error) {
+        results.failed.push({
+          ...player,
+          error: error.message
+        });
+      }
+    }
+
+    return results;
+  }
+
+  /**
+   * Normalize live match data from EA API
+   */
+  normalizeLiveMatchData(rawData) {
+    return {
+      matchId: rawData.id || rawData.match_id,
+      homeTeam: rawData.home_team || rawData.homeTeam,
+      awayTeam: rawData.away_team || rawData.awayTeam,
+      homeScore: rawData.home_score || rawData.homeScore || 0,
+      awayScore: rawData.away_score || rawData.awayScore || 0,
+      minute: rawData.minute || rawData.currentMinute || 0,
+      status: rawData.status || 'live',
+      events: rawData.events || [],
+      stats: rawData.stats || {},
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Normalize market data from EA API
+   */
+  normalizeMarketData(rawData) {
+    return {
+      playerId: rawData.player_id || rawData.playerId,
+      currentPrice: rawData.price || rawData.current_price || 0,
+      lowestPrice: rawData.lowest_price || rawData.min_price || 0,
+      highestPrice: rawData.highest_price || rawData.max_price || 0,
+      averagePrice: rawData.average_price || rawData.avg_price || 0,
+      lastUpdated: rawData.last_updated || new Date().toISOString(),
+      volume: rawData.volume || rawData.transactions || 0
+    };
+  }
+
+  /**
+   * Normalize price trend data
+   */
+  normalizePriceTrendData(rawData) {
+    return {
+      playerId: rawData.player_id || rawData.playerId,
+      priceHistory: rawData.price_history || rawData.prices || [],
+      trend: rawData.trend || 'stable',
+      percentageChange: rawData.percentage_change || 0,
+      period: rawData.period || '7d'
+    };
+  }
+
+  /**
+   * Mock live match data for development
+   */
+  getMockLiveMatchData(matchId) {
+    return {
+      matchId: matchId || 'mock-match-1',
+      homeTeam: 'AEK Athens',
+      awayTeam: 'Real Madrid',
+      homeScore: Math.floor(Math.random() * 4),
+      awayScore: Math.floor(Math.random() * 4),
+      minute: Math.floor(Math.random() * 90),
+      status: 'live',
+      events: [
+        { type: 'goal', team: 'home', minute: 23, player: 'Max Müller' },
+        { type: 'goal', team: 'away', minute: 45, player: 'Jan Becker' }
+      ],
+      stats: {
+        possession: { home: 55, away: 45 },
+        shots: { home: 12, away: 8 },
+        shotsOnTarget: { home: 5, away: 3 }
+      },
+      lastUpdated: new Date().toISOString()
+    };
+  }
+
+  /**
+   * Mock market price data for development
+   */
+  getMockMarketPrice(playerId) {
+    const basePrice = Math.floor(Math.random() * 10000000) + 1000000; // 1M - 10M
+    return {
+      playerId: playerId,
+      currentPrice: basePrice,
+      lowestPrice: Math.floor(basePrice * 0.85),
+      highestPrice: Math.floor(basePrice * 1.15),
+      averagePrice: basePrice,
+      lastUpdated: new Date().toISOString(),
+      volume: Math.floor(Math.random() * 1000) + 100
+    };
+  }
+
+  /**
+   * Mock price trend data for development
+   */
+  getMockPriceTrend(playerId, days = 7) {
+    const basePrice = Math.floor(Math.random() * 10000000) + 1000000;
+    const priceHistory = [];
+    let currentPrice = basePrice;
+
+    for (let i = days; i >= 0; i--) {
+      const date = new Date();
+      date.setDate(date.getDate() - i);
+      const variation = (Math.random() - 0.5) * 0.1; // ±5% variation
+      currentPrice = Math.floor(currentPrice * (1 + variation));
+      
+      priceHistory.push({
+        date: date.toISOString().split('T')[0],
+        price: currentPrice
+      });
+    }
+
+    const percentageChange = ((currentPrice - basePrice) / basePrice) * 100;
+
+    return {
+      playerId: playerId,
+      priceHistory: priceHistory,
+      trend: percentageChange > 2 ? 'rising' : percentageChange < -2 ? 'falling' : 'stable',
+      percentageChange: percentageChange.toFixed(2),
+      period: `${days}d`
+    };
+  }
 }
 
 // Export singleton instance
