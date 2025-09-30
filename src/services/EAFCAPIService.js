@@ -61,7 +61,8 @@ class EAFCAPIService {
    */
   async fetchFromEAFC(playerName) {
     if (!this.apiKey) {
-      console.warn('EA FC API key not configured');
+      // API key not configured - gracefully use fallback sources
+      console.log('ℹ️ EA FC API key not configured - using fallback data sources (SoFIFA, Mock Data)');
       return null;
     }
 
@@ -332,8 +333,9 @@ class EAFCAPIService {
       if (!this.apiKey) {
         return { 
           connected: false, 
-          message: 'EA FC API key not configured. Using fallback sources.',
-          fallbackAvailable: true
+          message: 'EA Sports im Demo-Modus (SoFIFA & Mock-Daten aktiv)',
+          fallbackAvailable: true,
+          mode: 'demo'
         };
       }
 

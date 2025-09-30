@@ -138,17 +138,28 @@ export default function EASportsTab() {
             <div className={`p-4 rounded-lg ${
               diagnosticsResult.connectivity?.connected 
                 ? 'bg-green-50 border border-green-200' 
+                : diagnosticsResult.connectivity?.mode === 'demo'
+                ? 'bg-blue-50 border border-blue-200'
                 : 'bg-red-50 border border-red-200'
             }`}>
               <div className="flex items-center gap-2 mb-2">
                 <span className="text-2xl">
-                  {diagnosticsResult.connectivity?.connected ? '✅' : '❌'}
+                  {diagnosticsResult.connectivity?.connected 
+                    ? '✅' 
+                    : diagnosticsResult.connectivity?.mode === 'demo'
+                    ? 'ℹ️'
+                    : '❌'}
                 </span>
                 <h4 className="font-semibold">API Verbindung</h4>
               </div>
               <p className="text-sm">
                 {diagnosticsResult.connectivity?.message || 'Keine Informationen verfügbar'}
               </p>
+              {diagnosticsResult.connectivity?.mode === 'demo' && (
+                <p className="text-xs mt-2 text-blue-600">
+                  💡 Das System funktioniert voll funktionsfähig mit Alternativ-Datenquellen. Für Live EA Sports Daten, konfigurieren Sie einen API-Schlüssel in den Einstellungen.
+                </p>
+              )}
             </div>
 
             {/* Sample Player */}
@@ -244,20 +255,50 @@ export default function EASportsTab() {
       )}
 
       {/* Info Box */}
-      <div className="modern-card bg-gray-50">
-        <h3 className="text-lg font-semibold text-gray-900 mb-3">ℹ️ Information</h3>
-        <div className="space-y-2 text-sm text-gray-700">
-          <p>
-            <strong>EA Sports API Integration</strong> ermöglicht Live-Daten, automatische Spieler-Updates 
-            und Transfermarkt-Funktionalität.
-          </p>
-          <ul className="list-disc list-inside space-y-1 ml-2">
-            <li>Automatische tägliche Spieler-Synchronisation</li>
-            <li>Stündliche Marktpreis-Updates</li>
-            <li>15-minütige Preis-Alert Überprüfungen</li>
-            <li>Wöchentliche Daten-Bereinigung</li>
-          </ul>
-          <p className="text-xs text-gray-500 mt-3">
+      <div className="modern-card bg-gradient-to-br from-blue-50 to-purple-50 border-blue-200">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+            <span className="text-2xl">ℹ️</span>
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-gray-900">EA Sports API Integration</h3>
+            <p className="text-sm text-gray-600">Demo-Modus aktiv</p>
+          </div>
+        </div>
+        
+        <div className="space-y-3 text-sm text-gray-700">
+          <div className="bg-white/60 rounded-lg p-3 border border-blue-200">
+            <p className="font-medium text-blue-900 mb-2">🎮 Aktueller Status:</p>
+            <p>
+              Die EA Sports API Integration läuft im <strong>Demo-Modus</strong> mit vollständiger Funktionalität durch Alternativ-Datenquellen (SoFIFA & Mock-Daten).
+            </p>
+          </div>
+
+          <div className="bg-white/60 rounded-lg p-3 border border-purple-200">
+            <p className="font-medium text-purple-900 mb-2">✨ Verfügbare Features:</p>
+            <ul className="list-disc list-inside space-y-1 ml-2">
+              <li>Automatische tägliche Spieler-Synchronisation</li>
+              <li>Stündliche Marktpreis-Updates</li>
+              <li>15-minütige Preis-Alert Überprüfungen</li>
+              <li>Wöchentliche Daten-Bereinigung</li>
+              <li>Live-Daten Fallback-System</li>
+            </ul>
+          </div>
+
+          <div className="bg-white/60 rounded-lg p-3 border border-green-200">
+            <p className="font-medium text-green-900 mb-2">🔑 Vollzugriff aktivieren:</p>
+            <p>
+              Für direkten Zugriff auf EA Sports Live-Daten, konfigurieren Sie einen API-Schlüssel:
+            </p>
+            <ol className="list-decimal list-inside space-y-1 ml-2 mt-2 text-xs">
+              <li>Erstellen Sie einen EA Developer Account</li>
+              <li>Generieren Sie einen API-Schlüssel</li>
+              <li>Setzen Sie <code className="bg-gray-200 px-1 rounded">REACT_APP_EA_FC_API_KEY</code> in Ihrer <code className="bg-gray-200 px-1 rounded">.env</code> Datei</li>
+              <li>Starten Sie die Anwendung neu</li>
+            </ol>
+          </div>
+
+          <p className="text-xs text-gray-500 mt-3 text-center">
             Version 1.0.0 • Weitere Informationen in der Dokumentation (EA_SPORTS_API_INTEGRATION.md)
           </p>
         </div>
