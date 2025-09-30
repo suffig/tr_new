@@ -7,11 +7,13 @@
 import { eaFCAPIService } from './EAFCAPIService.js';
 import { transferMarketService } from './TransferMarketService.js';
 import { backgroundJobService } from './BackgroundJobService.js';
+import { eaSportsOfflineManager } from './EASportsOfflineManager.js';
 
 class EASportsIntegrationManager {
   constructor() {
     this.initialized = false;
     this.apiConnected = false;
+    this.offlineManager = eaSportsOfflineManager;
     this.syncStatus = {
       lastPlayerSync: null,
       lastMarketSync: null,
@@ -57,6 +59,12 @@ class EASportsIntegrationManager {
         await backgroundJobService.requestNotificationPermission();
       }
 
+      // Initialize offline manager
+      if (options.enableOfflineCache !== false) {
+        this.offlineManager.scheduleCleanup();
+        console.log('💾 Offline cache manager initialized');
+      }
+
       this.initialized = true;
       console.log('✅ EA Sports Integration initialized successfully');
 
@@ -81,12 +89,24 @@ class EASportsIntegrationManager {
   async getPlayerData(playerName, options = {}) {
     try {
       this.stats.totalApiCalls++;
+      
+      // Check offline cache first if offline
+      if (!navigator.onLine && !options.forceRefresh) {
+        const cachedData = this.offlineManager.getCachedPlayerData(playerName);
+        if (cachedData) {
+          this.stats.cachedCalls++;
+          return { data: cachedData, source: 'offline_cache' };
+        }
+      }
+      
       const result = await eaFCAPIService.getPlayerData(playerName, options);
       
       if (result.source === 'cache') {
         this.stats.cachedCalls++;
       } else if (result.data) {
         this.stats.successfulCalls++;
+        // Cache for offline access
+        this.offlineManager.cachePlayerData(playerName, result.data);
       } else {
         this.stats.failedCalls++;
       }
@@ -95,6 +115,13 @@ class EASportsIntegrationManager {
     } catch (error) {
       this.stats.failedCalls++;
       console.error('Error fetching player data:', error);
+      
+      // Try offline fallback
+      const fallbackData = this.offlineManager.getOfflineFallbackData(playerName);
+      if (fallbackData) {
+        return { data: fallbackData, source: 'offline_fallback' };
+      }
+      
       return { data: null, error: error.message };
     }
   }
@@ -172,18 +199,39 @@ class EASportsIntegrationManager {
   async getMarketPrice(playerIdOrName) {
     try {
       this.stats.totalApiCalls++;
+      
+      // Check offline cache first if offline
+      if (!navigator.onLine) {
+        const cachedData = this.offlineManager.getCachedMarketData(playerIdOrName);
+        if (cachedData) {
+          this.stats.cachedCalls++;
+          return { data: cachedData, source: 'offline_cache' };
+        }
+      }
+      
       const result = await transferMarketService.getMarketPrice(playerIdOrName);
       
       if (result.source === 'cache') {
         this.stats.cachedCalls++;
-      } else {
+      } else if (result.data) {
         this.stats.successfulCalls++;
+        // Cache for offline access
+        this.offlineManager.cacheMarketData(playerIdOrName, result.data);
+      } else {
+        this.stats.failedCalls++;
       }
 
       return result;
     } catch (error) {
       this.stats.failedCalls++;
       console.error('Error fetching market price:', error);
+      
+      // Try offline cache as fallback
+      const cachedData = this.offlineManager.getCachedMarketData(playerIdOrName);
+      if (cachedData) {
+        return { data: { ...cachedData, offline: true }, source: 'offline_fallback' };
+      }
+      
       return { data: null, error: error.message };
     }
   }
@@ -349,7 +397,22 @@ class EASportsIntegrationManager {
   clearAllCaches() {
     eaFCAPIService.clearCache();
     transferMarketService.clearCache();
+    this.offlineManager.clearAllCaches();
     console.log('✅ All caches cleared');
+  }
+
+  /**
+   * Get offline status
+   */
+  getOfflineStatus() {
+    return this.offlineManager.getOfflineStatus();
+  }
+
+  /**
+   * Pre-cache players for offline access
+   */
+  async preCachePlayers(playerNames) {
+    return await this.offlineManager.preCachePlayers(playerNames);
   }
 
   /**
