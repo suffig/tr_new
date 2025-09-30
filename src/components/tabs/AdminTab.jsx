@@ -8,6 +8,7 @@ import SearchTab from './admin/SearchTab';
 import TeamSettingsTab from './admin/TeamSettingsTab';
 import EventsSettingsTab from './admin/EventsSettingsTab';
 import ManagerTab from './admin/ManagerTab';
+import EASportsTab from './admin/EASportsTab';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false, user }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('search');
@@ -95,6 +96,13 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
     
     // System Administration
     { 
+      id: 'ea-sports', 
+      label: 'EA Sports', 
+      icon: 'fas fa-gamepad', 
+      category: 'system',
+      description: 'EA Sports API Integration verwalten'
+    },
+    { 
       id: 'manager', 
       label: 'System', 
       icon: 'fas fa-tools', 
@@ -142,6 +150,8 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
         return <TeamSettingsTab />;
       case 'events':
         return <EventsSettingsTab />;
+      case 'ea-sports':
+        return <EASportsTab />;
       case 'delete':
         return <DeleteTab />;
       case 'manager':
