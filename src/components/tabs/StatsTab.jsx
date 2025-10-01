@@ -5,6 +5,12 @@ import EnhancedDashboard from '../EnhancedDashboard';
 import HorizontalNavigation from '../HorizontalNavigation';
 import MatchDayOverview from '../MatchDayOverview';
 import QuickStatsWidget from '../QuickStatsWidget';
+import { 
+  TrendLineChart, 
+  PlayerBarChart, 
+  WinDistributionChart, 
+  GoalTrendAreaChart 
+} from '../charts';
 
 // Enhanced Statistics Calculator Class (ported from vanilla JS)
 class StatsCalculator {
@@ -575,7 +581,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const recentForm = stats.calculateRecentForm(5);
   const playerStats = stats.calculatePlayerStats();
   const advancedStats = stats.calculateAdvancedStats();
-  const performanceTrends = stats.calculatePerformanceTrends();
+  // const performanceTrends = stats.calculatePerformanceTrends(); // Currently unused
   const headToHead = stats.calculateHeadToHead();
 
   // Basic data calculations using filtered matches
@@ -611,6 +617,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     { id: 'dashboard', label: 'Dashboard', icon: '🎯' },
     { id: 'overview', label: 'Übersicht', icon: '📊' },
     { id: 'advanced', label: 'Erweitert', icon: '⚡' },
+    { id: 'visualizations', label: 'Visualisierungen', icon: '📉' },
     { id: 'matchdays', label: 'Spieltage', icon: '📅' },
     { id: 'players', label: 'Spieler', icon: '👥' },
     { id: 'teams', label: 'Teams', icon: '🏆' },
@@ -638,7 +645,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     // Sort matches by date to analyze chronologically
     const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
 
-    sortedMatches.forEach((match, index) => {
+    sortedMatches.forEach((match) => {
       const aekGoals = match.goalsa || 0;
       const realGoals = match.goalsb || 0;
       const matchDate = match.date;
@@ -2187,6 +2194,167 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     );
   };
 
+  // D3.js Interactive Visualizations View
+  const renderVisualizations = () => {
+    // Calculate totalGoals for all filtered matches
+    const totalGoals = filteredMatches.reduce((sum, m) => sum + (m.goalsa || 0) + (m.goalsb || 0), 0);
+
+    // Prepare data for monthly trends line chart
+    const monthlyTrendsData = (() => {
+      if (!filteredMatches || filteredMatches.length === 0) return [];
+      
+      const monthlyStats = {};
+      
+      filteredMatches.forEach(match => {
+        const date = new Date(match.date);
+        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+        const monthName = date.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
+        
+        if (!monthlyStats[monthKey]) {
+          monthlyStats[monthKey] = {
+            label: monthName,
+            key: monthKey,
+            aek: 0,
+            real: 0
+          };
+        }
+        
+        const aekGoals = match.goalsa || 0;
+        const realGoals = match.goalsb || 0;
+        
+        monthlyStats[monthKey].aek += aekGoals;
+        monthlyStats[monthKey].real += realGoals;
+      });
+      
+      return Object.values(monthlyStats).sort((a, b) => a.key.localeCompare(b.key));
+    })();
+
+    // Prepare data for player bar chart (top 10 scorers)
+    const topScorersData = playerStats
+      .slice(0, 10)
+      .map(player => ({
+        name: player.name,
+        value: player.goals || 0,
+        team: player.team,
+        goalsPerGame: player.goalsPerGame
+      }));
+
+    // Prepare data for win distribution donut chart
+    const winDistributionData = [
+      { label: 'AEK Siege', value: aekWins },
+      { label: 'Real Siege', value: realWins }
+    ];
+
+    // Prepare data for goal trends area chart (last 12 periods)
+    const goalTrendsData = monthlyTrendsData.slice(-12);
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="modern-card p-6">
+          <div className="flex items-center gap-3 mb-3">
+            <span className="text-3xl">📉</span>
+            <div>
+              <h3 className="text-xl font-bold text-text-primary">Interaktive Visualisierungen</h3>
+              <p className="text-sm text-text-secondary">
+                Dynamische D3.js-Charts für detaillierte Datenanalyse
+              </p>
+            </div>
+          </div>
+          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+            <p className="text-sm text-text-secondary">
+              💡 <strong>Tipp:</strong> Bewege die Maus über die Charts für detaillierte Informationen. 
+              Alle Visualisierungen sind animiert und interaktiv.
+            </p>
+          </div>
+        </div>
+
+        {/* Win Distribution & Top Scorers Row */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <WinDistributionChart 
+            data={winDistributionData}
+            title="Siegesverteilung"
+            height={350}
+          />
+          <PlayerBarChart 
+            data={topScorersData}
+            title="Top 10 Torschützen"
+            height={350}
+          />
+        </div>
+
+        {/* Goal Trends Area Chart */}
+        {goalTrendsData.length > 0 && (
+          <GoalTrendAreaChart 
+            data={goalTrendsData}
+            title="Tor-Entwicklung (Letzte 12 Monate)"
+            height={320}
+          />
+        )}
+
+        {/* Monthly Performance Line Chart */}
+        {monthlyTrendsData.length > 0 && (
+          <TrendLineChart 
+            data={monthlyTrendsData}
+            title="Monatliche Leistungsentwicklung"
+            height={320}
+          />
+        )}
+
+        {/* Additional Statistics Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="modern-card p-6 text-center">
+            <div className="text-4xl mb-2">⚡</div>
+            <div className="text-2xl font-bold text-text-primary">
+              {filteredMatches.length > 0 
+                ? ((totalGoals / filteredMatches.length).toFixed(1)) 
+                : '0'}
+            </div>
+            <div className="text-sm text-text-secondary">Durchschn. Tore/Spiel</div>
+          </div>
+          
+          <div className="modern-card p-6 text-center">
+            <div className="text-4xl mb-2">🎯</div>
+            <div className="text-2xl font-bold text-text-primary">
+              {playerStats.filter(p => p.goals > 0).length}
+            </div>
+            <div className="text-sm text-text-secondary">Aktive Torschützen</div>
+          </div>
+          
+          <div className="modern-card p-6 text-center">
+            <div className="text-4xl mb-2">📊</div>
+            <div className="text-2xl font-bold text-text-primary">
+              {totalMatches}
+            </div>
+            <div className="text-sm text-text-secondary">Gespielte Matches</div>
+          </div>
+        </div>
+
+        {/* Performance Info */}
+        <div className="modern-card p-6">
+          <h4 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
+            <span>ℹ️</span>
+            Über die Visualisierungen
+          </h4>
+          <div className="space-y-2 text-sm text-text-secondary">
+            <p>
+              • <strong>Liniendiagramm:</strong> Zeigt die monatliche Entwicklung der Toranzahl beider Teams
+            </p>
+            <p>
+              • <strong>Balkendiagramm:</strong> Vergleicht die Top-Torschützen mit farblicher Team-Zuordnung
+            </p>
+            <p>
+              • <strong>Donut-Diagramm:</strong> Visualisiert die Verteilung der Siege zwischen den Teams
+            </p>
+            <p>
+              • <strong>Flächendiagramm:</strong> Stellt Tor-Trends über die Zeit mit Verlaufsdarstellung dar
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   const renderCurrentView = () => {
     switch (selectedView) {
       case 'dashboard': return (
@@ -2196,6 +2364,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         </div>
       );
       case 'advanced': return renderAdvancedStats();
+      case 'visualizations': return renderVisualizations();
       case 'matchdays': return <MatchDayOverview matches={matches} />;
       case 'players': return renderPlayers();
       case 'teams': return renderTeams();
