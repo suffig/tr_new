@@ -498,18 +498,15 @@ export default function MatchesTab({ showHints = false }) {
                           <div className="flex items-center space-x-6">
                             {/* Match result with enhanced styling */}
                             <div className="text-center relative">
-                              {/* Winner indicator */}
-                              {winner !== 'draw' && (
-                                <div className={`absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white ${
-                                  winner === 'aek' ? 'bg-blue-500' : 'bg-red-500'
-                                }`}>
-                                  👑
-                                </div>
-                              )}
-                              
                               <div className="flex items-center gap-4">
                                 {/* Team A */}
-                                <div className="text-right flex flex-col items-center">
+                                <div className="text-right flex flex-col items-center relative">
+                                  {/* Winner crown for Team A */}
+                                  {winner === 'aek' && (
+                                    <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold bg-blue-500 text-white shadow-lg z-10">
+                                      👑
+                                    </div>
+                                  )}
                                   <TeamLogo team={match.teama || 'AEK'} size="lg" />
                                   <div className="text-sm font-medium text-blue-700 mt-1">
                                     {match.teama || 'AEK'}
@@ -526,7 +523,13 @@ export default function MatchesTab({ showHints = false }) {
                                 </div>
                                 
                                 {/* Team B */}
-                                <div className="text-left flex flex-col items-center">
+                                <div className="text-left flex flex-col items-center relative">
+                                  {/* Winner crown for Team B */}
+                                  {winner === 'real' && (
+                                    <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold bg-red-500 text-white shadow-lg z-10">
+                                      👑
+                                    </div>
+                                  )}
                                   <TeamLogo team={match.teamb || 'Real'} size="lg" />
                                   <div className="text-sm font-medium text-red-700 mt-1">
                                     {match.teamb || 'Real'}
@@ -572,24 +575,31 @@ export default function MatchesTab({ showHints = false }) {
                           `}>
                             <div className="mt-6">
                               {/* Enhanced match statistics header */}
-                              <div className="flex items-center justify-between mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border border-blue-100">
-                                <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                              <div className="flex items-center justify-between mb-6 p-5 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-xl border-2 border-blue-200 shadow-sm">
+                                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
                                   ⚽ Match Details
+                                  <span className="text-sm font-normal text-gray-600 bg-white px-3 py-1 rounded-full">
+                                    {(match.goalsa || 0) + (match.goalsb || 0)} Tore gesamt
+                                  </span>
                                 </h3>
-                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                  <span>Match #{match.id}</span>
-                                  <span>•</span>
-                                  <span>{new Date(match.date).toLocaleDateString('de-DE')}</span>
+                                <div className="flex items-center gap-3 text-sm">
+                                  <span className="bg-white px-3 py-1.5 rounded-lg font-semibold text-gray-700 shadow-sm">
+                                    Match #{match.id}
+                                  </span>
+                                  <span className="text-gray-400">•</span>
+                                  <span className="bg-white px-3 py-1.5 rounded-lg font-medium text-gray-600 shadow-sm">
+                                    {new Date(match.date).toLocaleDateString('de-DE')}
+                                  </span>
                                 </div>
                               </div>
                               
                               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
                                 
                                 {/* Enhanced Goal Scorers Section */}
-                                <div className="space-y-3 bg-white/80 rounded-lg p-4 border border-gray-100 hover:shadow-md transition-shadow">
-                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
+                                <div className="space-y-3 bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border-2 border-gray-200 hover:shadow-lg transition-all duration-300">
+                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg border-b-2 border-blue-300 pb-2">
                                     ⚽ Torschützen
-                                    <span className="text-xs bg-gray-200 px-2 py-1 rounded-full">
+                                    <span className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-full font-bold shadow-sm">
                                       {(match.goalsa || 0) + (match.goalsb || 0)} Tore
                                     </span>
                                   </h4>
@@ -619,20 +629,21 @@ export default function MatchesTab({ showHints = false }) {
                                               ? getPlayerInfo(goal.player_id, goal.player)
                                               : getPlayerInfo(null, goal);
                                             return (
-                                              <div key={idx} className="group p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border-l-4 border-blue-400 hover:shadow-sm transition-all">
+                                              <div key={idx} className="group p-3 bg-gradient-to-r from-blue-50 via-blue-100 to-blue-50 rounded-lg border-l-4 border-blue-500 hover:shadow-md hover:scale-[1.02] transition-all duration-200">
                                                 <div className="flex items-center justify-between">
                                                   <div>
                                                     <div className="font-semibold text-blue-800 flex items-center gap-2">
-                                                      ⚽ {playerInfo.name}
+                                                      <span className="text-lg">⚽</span> 
+                                                      <span className="font-bold">{playerInfo.name}</span>
                                                       {isObject && goal.count > 1 && (
-                                                        <span className="text-xs bg-blue-200 text-blue-800 px-2 py-1 rounded-full font-bold">
+                                                        <span className="text-xs bg-blue-500 text-white px-2.5 py-1 rounded-full font-bold shadow-sm">
                                                           {goal.count}x Treffer
                                                         </span>
                                                       )}
                                                     </div>
-                                                    <div className="text-xs text-blue-600 flex items-center gap-3 mt-1">
-                                                      <span>💰 {playerInfo.value}M €</span>
-                                                      <span>👕 {playerInfo.team}</span>
+                                                    <div className="text-xs text-blue-700 flex items-center gap-3 mt-1.5 font-medium">
+                                                      <span className="bg-blue-200 px-2 py-0.5 rounded">💰 {playerInfo.value}M €</span>
+                                                      <span className="bg-blue-200 px-2 py-0.5 rounded">👕 {playerInfo.team}</span>
                                                     </div>
                                                   </div>
 
@@ -673,20 +684,21 @@ export default function MatchesTab({ showHints = false }) {
                                               ? getPlayerInfo(goal.player_id, goal.player)
                                               : getPlayerInfo(null, goal);
                                             return (
-                                              <div key={idx} className="group p-3 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border-l-4 border-red-400 hover:shadow-sm transition-all">
+                                              <div key={idx} className="group p-3 bg-gradient-to-r from-red-50 via-red-100 to-red-50 rounded-lg border-l-4 border-red-500 hover:shadow-md hover:scale-[1.02] transition-all duration-200">
                                                 <div className="flex items-center justify-between">
                                                   <div>
                                                     <div className="font-semibold text-red-800 flex items-center gap-2">
-                                                      ⚽ {playerInfo.name}
+                                                      <span className="text-lg">⚽</span> 
+                                                      <span className="font-bold">{playerInfo.name}</span>
                                                       {isObject && goal.count > 1 && (
-                                                        <span className="text-xs bg-red-200 text-red-800 px-2 py-1 rounded-full font-bold">
+                                                        <span className="text-xs bg-red-500 text-white px-2.5 py-1 rounded-full font-bold shadow-sm">
                                                           {goal.count}x Treffer
                                                         </span>
                                                       )}
                                                     </div>
-                                                    <div className="text-xs text-red-600 flex items-center gap-3 mt-1">
-                                                      <span>💰 {playerInfo.value}M €</span>
-                                                      <span>👕 {playerInfo.team}</span>
+                                                    <div className="text-xs text-red-700 flex items-center gap-3 mt-1.5 font-medium">
+                                                      <span className="bg-red-200 px-2 py-0.5 rounded">💰 {playerInfo.value}M €</span>
+                                                      <span className="bg-red-200 px-2 py-0.5 rounded">👕 {playerInfo.team}</span>
                                                     </div>
                                                   </div>
 
@@ -705,42 +717,43 @@ export default function MatchesTab({ showHints = false }) {
                                 </div>
                                 
                                 {/* Enhanced Player of the Match Section */}
-                                <div className="space-y-3 bg-white/80 rounded-lg p-4 border border-gray-100 hover:shadow-md transition-shadow">
-                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
+                                <div className="space-y-3 bg-gradient-to-br from-white to-yellow-50 rounded-xl p-5 border-2 border-yellow-300 hover:shadow-lg transition-all duration-300">
+                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg border-b-2 border-yellow-300 pb-2">
                                     ⭐ Spieler des Spiels
                                   </h4>
                                   <div className="space-y-2">
                                     {match.manofthematch ? (
-                                      <div className="p-4 bg-gradient-to-r from-yellow-50 to-amber-50 rounded-lg border-l-4 border-yellow-400 relative overflow-hidden">
+                                      <div className="p-4 bg-gradient-to-r from-yellow-100 to-amber-100 rounded-lg border-2 border-yellow-400 relative overflow-hidden shadow-md">
                                         {/* Sparkle animation background */}
-                                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-100/30 to-amber-100/30 animate-pulse"></div>
+                                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-200/20 to-amber-200/20 animate-pulse"></div>
                                         <div className="relative">
                                           <div className="flex items-center justify-between">
                                             <div>
-                                              <div className="font-bold text-yellow-800 text-lg flex items-center gap-2">
-                                                🏆 {match.manofthematch}
-                                                <span className="text-xs bg-yellow-200 text-yellow-800 px-2 py-1 rounded-full">
+                                              <div className="font-bold text-yellow-900 text-lg flex items-center gap-2">
+                                                <span className="text-2xl">🏆</span> 
+                                                <span>{match.manofthematch}</span>
+                                                <span className="text-xs bg-yellow-500 text-white px-2.5 py-1 rounded-full shadow-sm font-bold">
                                                   MVP
                                                 </span>
                                               </div>
                                               {(() => {
                                                 const playerInfo = getPlayerInfo(match.manofthematch_player_id, match.manofthematch);
                                                 return (
-                                                  <div className="text-sm text-yellow-700 flex items-center gap-3 mt-2">
-                                                    <span>👕 Team: {playerInfo.team}</span>
-                                                    <span>💰 Marktwert: {playerInfo.value}M €</span>
+                                                  <div className="text-sm text-yellow-800 flex items-center gap-3 mt-2 font-medium">
+                                                    <span className="bg-yellow-200 px-2 py-0.5 rounded">👕 {playerInfo.team}</span>
+                                                    <span className="bg-yellow-200 px-2 py-0.5 rounded">💰 {playerInfo.value}M €</span>
                                                   </div>
                                                 );
                                               })()}
                                             </div>
-                                            <div className="text-4xl animate-bounce">
+                                            <div className="text-5xl animate-bounce">
                                               ⭐
                                             </div>
                                           </div>
                                         </div>
                                       </div>
                                     ) : (
-                                      <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                                      <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
                                         <p className="text-sm text-gray-500 text-center">⭐ Kein Spieler des Spiels ausgewählt</p>
                                       </div>
                                     )}
@@ -748,83 +761,95 @@ export default function MatchesTab({ showHints = false }) {
                                 </div>
                                 
                                 {/* Enhanced Cards Section */}
-                                <div className="space-y-3 bg-white/80 rounded-lg p-4 border border-gray-100 hover:shadow-md transition-shadow">
-                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
+                                <div className="space-y-3 bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border-2 border-gray-200 hover:shadow-lg transition-all duration-300">
+                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg border-b-2 border-gray-300 pb-2">
                                     🟨🟥 Karten & Disziplin
                                   </h4>
                                   <div className="space-y-3">
                                     <div className="grid grid-cols-2 gap-3">
                                       {/* AEK Cards */}
-                                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                                        <div className="text-sm font-medium text-blue-700 mb-2 flex items-center gap-2">
+                                      <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300 hover:shadow-md transition-all">
+                                        <div className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
                                           <TeamLogo team="aek" size="xs" /> AEK
                                         </div>
-                                        <div className="space-y-1">
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">🟨 Gelbe Karten</span>
-                                            <span className="font-bold text-yellow-600">{match.yellowa || 0}</span>
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
+                                            <span className="text-sm text-gray-700 font-medium">🟨 Gelb</span>
+                                            <span className="font-bold text-yellow-600 text-lg">{match.yellowa || 0}</span>
                                           </div>
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">🟥 Rote Karten</span>
-                                            <span className="font-bold text-red-600">{match.reda || 0}</span>
+                                          <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
+                                            <span className="text-sm text-gray-700 font-medium">🟥 Rot</span>
+                                            <span className="font-bold text-red-600 text-lg">{match.reda || 0}</span>
                                           </div>
                                         </div>
                                       </div>
                                       
                                       {/* Real Cards */}
-                                      <div className="p-3 bg-red-50 rounded-lg border border-red-200">
-                                        <div className="text-sm font-medium text-red-700 mb-2 flex items-center gap-2">
+                                      <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border-2 border-red-300 hover:shadow-md transition-all">
+                                        <div className="text-sm font-bold text-red-800 mb-3 flex items-center gap-2">
                                           <TeamLogo team="real" size="xs" /> Real
                                         </div>
-                                        <div className="space-y-1">
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">🟨 Gelbe Karten</span>
-                                            <span className="font-bold text-yellow-600">{match.yellowb || 0}</span>
+                                        <div className="space-y-2">
+                                          <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
+                                            <span className="text-sm text-gray-700 font-medium">🟨 Gelb</span>
+                                            <span className="font-bold text-yellow-600 text-lg">{match.yellowb || 0}</span>
                                           </div>
-                                          <div className="flex items-center justify-between">
-                                            <span className="text-sm text-gray-600">🟥 Rote Karten</span>
-                                            <span className="font-bold text-red-600">{match.redb || 0}</span>
+                                          <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
+                                            <span className="text-sm text-gray-700 font-medium">🟥 Rot</span>
+                                            <span className="font-bold text-red-600 text-lg">{match.redb || 0}</span>
                                           </div>
                                         </div>
                                       </div>
                                     </div>
                                     
                                     {/* Total cards summary */}
-                                    <div className="p-2 bg-gray-100 rounded-lg">
-                                      <div className="text-center text-sm text-gray-600">
-                                        Gesamt: 🟨 {(match.yellowa || 0) + (match.yellowb || 0)} | 🟥 {(match.reda || 0) + (match.redb || 0)}
+                                    <div className="p-3 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg border border-gray-300 shadow-sm">
+                                      <div className="text-center text-sm font-semibold text-gray-700">
+                                        📊 Gesamt: <span className="text-yellow-600 font-bold">🟨 {(match.yellowa || 0) + (match.yellowb || 0)}</span> | <span className="text-red-600 font-bold">🟥 {(match.reda || 0) + (match.redb || 0)}</span>
                                       </div>
                                     </div>
                                   </div>
                                 </div>
                                 
                                 {/* Enhanced Prize Money Section */}
-                                <div className="space-y-3 bg-white/80 rounded-lg p-4 border border-gray-100 hover:shadow-md transition-shadow">
-                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
+                                <div className="space-y-3 bg-gradient-to-br from-white to-green-50 rounded-xl p-5 border-2 border-green-200 hover:shadow-lg transition-all duration-300">
+                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg border-b-2 border-green-300 pb-2">
                                     💰 Preisgelder & Finanzen
                                   </h4>
                                   <div className="space-y-3">
                                     <div className="grid grid-cols-1 gap-3">
                                       {/* AEK Prize */}
-                                      <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                                      <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300 hover:shadow-md transition-all">
                                         <div className="flex items-center justify-between">
-                                          <span className="text-sm font-medium text-blue-700 flex items-center gap-2">
+                                          <span className="text-sm font-bold text-blue-800 flex items-center gap-2">
                                             <TeamLogo team="aek" size="xs" /> AEK
                                           </span>
-                                          <span className={`font-bold text-lg ${(match.prizeaek || 0) > 0 ? 'text-green-600' : 'text-gray-500'}`}>
-                                            €{match.prizeaek || 0}
+                                          <span className={`font-bold text-xl px-3 py-1 rounded-lg ${
+                                            (match.prizeaek || 0) > 0 
+                                              ? 'text-green-700 bg-green-200' 
+                                              : (match.prizeaek || 0) < 0 
+                                              ? 'text-red-700 bg-red-200' 
+                                              : 'text-gray-600 bg-gray-200'
+                                          }`}>
+                                            {(match.prizeaek || 0) > 0 ? '+' : ''}€{(match.prizeaek || 0).toLocaleString('de-DE')}
                                           </span>
                                         </div>
                                       </div>
                                       
                                       {/* Real Prize */}
-                                      <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                                      <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border-2 border-red-300 hover:shadow-md transition-all">
                                         <div className="flex items-center justify-between">
-                                          <span className="text-sm font-medium text-red-700 flex items-center gap-2">
+                                          <span className="text-sm font-bold text-red-800 flex items-center gap-2">
                                             <TeamLogo team="real" size="xs" /> Real
                                           </span>
-                                          <span className={`font-bold text-lg ${(match.prizereal || 0) > 0 ? 'text-green-600' : 'text-gray-500'}`}>
-                                            €{match.prizereal || 0}
+                                          <span className={`font-bold text-xl px-3 py-1 rounded-lg ${
+                                            (match.prizereal || 0) > 0 
+                                              ? 'text-green-700 bg-green-200' 
+                                              : (match.prizereal || 0) < 0 
+                                              ? 'text-red-700 bg-red-200' 
+                                              : 'text-gray-600 bg-gray-200'
+                                          }`}>
+                                            {(match.prizereal || 0) > 0 ? '+' : ''}€{(match.prizereal || 0).toLocaleString('de-DE')}
                                           </span>
                                         </div>
                                       </div>

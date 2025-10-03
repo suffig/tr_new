@@ -107,7 +107,7 @@ CREATE INDEX IF NOT EXISTS idx_transactions_team ON transactions(team);
 CREATE INDEX IF NOT EXISTS idx_transactions_match_id ON transactions(match_id);
 CREATE INDEX IF NOT EXISTS idx_bans_player_id ON bans(player_id);
 CREATE INDEX IF NOT EXISTS idx_finances_team ON finances(team);
-CREATE INDEX IF NOT EXISTS idx_managers_name ON managers(name);
+CREATE INDEX IF NOT EXISTS idx_manager_name ON manager(name);
 
 -- Row Level Security (RLS) policies
 ALTER TABLE players ENABLE ROW LEVEL SECURITY;
@@ -116,7 +116,7 @@ ALTER TABLE transactions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE finances ENABLE ROW LEVEL SECURITY;
 ALTER TABLE bans ENABLE ROW LEVEL SECURITY;
 ALTER TABLE spieler_des_spiels ENABLE ROW LEVEL SECURITY;
-ALTER TABLE managers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE manager ENABLE ROW LEVEL SECURITY;
 
 -- Create policies for authenticated users
 CREATE POLICY IF NOT EXISTS "Enable all for authenticated users" ON players 
@@ -137,5 +137,5 @@ CREATE POLICY IF NOT EXISTS "Enable all for authenticated users" ON bans
 CREATE POLICY IF NOT EXISTS "Enable all for authenticated users" ON spieler_des_spiels 
   FOR ALL USING (auth.role() = 'authenticated');
 
-CREATE POLICY IF NOT EXISTS "Enable all for authenticated users" ON managers 
+CREATE POLICY IF NOT EXISTS "Enable all for authenticated users" ON manager 
   FOR ALL USING (auth.role() = 'authenticated');
