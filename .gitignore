@@ -1,48 +1,35 @@
-test_card_buttons*.html
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-# Dependencies
-node_modules/
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
-lerna-debug.log*
+# dependencies
+/node_modules
+/.pnp
+.pnp.js
 
-# Build outputs
-dist-ssr/
-dist/
-*.local
+# testing
+/coverage
 
-# Environment variables
-.env
+# production
+/build
+/dist
+
+# misc
+.DS_Store
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
 
-# Editor directories and files
-.vscode/*
-!.vscode/extensions.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# IDE
+.vscode/
 .idea/
-.DS_Store
-*.suo
-*.ntvs*
-*.njsproj
-*.sln
-*.sw?
 
-# OS generated files
-Thumbs.db
-ehthumbs.db
-Desktop.ini
+# Logs
+logs
+*.log
 
-# Temporary files
-*.tmp
-*.temp
-.cache/
-
-# Runtime data
-pids/
-*.pid
-*.seed
-*.pid.lock
+# Demo files
+*_demo.html
