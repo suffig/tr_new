@@ -2,10 +2,11 @@
  * FIFA Database Service for React Application
  * Provides integration with FIFA player statistics and ratings
  * Based on FIFA/SoFIFA data structure
- * Enhanced with real SoFIFA integration
+ * Enhanced with real SoFIFA integration via Supabase Edge Function
  */
 
 import SofifaIntegration from './sofifaIntegration.js';
+import SofifaService from '../services/sofifaService.js';
 // Import database access functions - using relative path from src/utils to root
 import { getAllPlayers } from '../../data.js';
 
@@ -2558,35 +2559,72 @@ export class FIFADataService {
         }
 
         // If we have player data and should attempt live fetch
-        if (playerData && options.useLiveData && playerData.sofifaUrl) {
+        if (playerData && options.useLiveData) {
             try {
-                console.log('🌐 Attempting to fetch live data from SoFIFA...');
-                const liveData = await SofifaIntegration.fetchPlayerData(playerData.sofifaUrl, playerData.sofifaId, cleanPlayerName);
-                
-                if (liveData) {
-                    // Merge live data with existing data (live data takes precedence)
-                    const enhancedData = {
-                        ...playerData,
-                        ...liveData,
-                        searchName: cleanPlayerName,
-                        found: true,
-                        source: 'sofifa_enhanced',
-                        lastUpdated: new Date().toISOString(),
-                        fallbackDataAvailable: true
-                    };
-                    
-                    console.log(`✅ Enhanced with live SoFIFA data for: ${cleanPlayerName}`);
-                    return enhancedData;
-                } else {
-                    console.log('⚠️ Live data fetch failed, using database data');
-                    if (playerData.source) {
-                        playerData.source = playerData.source + '_fallback';
-                    } else {
-                        playerData.source = 'database_fallback';
+                // PRIORITY 1: Use new Supabase Edge Function proxy if sofifaId is available
+                if (playerData.sofifaId) {
+                    console.log(`🚀 Attempting to fetch live data via Supabase Edge Function for ID: ${playerData.sofifaId}...`);
+                    try {
+                        const edgeData = await SofifaService.fetchPlayerData(playerData.sofifaId, { useCache: true });
+                        
+                        if (edgeData && edgeData.data) {
+                            // Transform edge function response to match our format
+                            const transformedData = {
+                                ...playerData,
+                                overall: edgeData.data.overall || playerData.overall,
+                                potential: edgeData.data.potential || playerData.potential,
+                                positions: edgeData.data.positions || playerData.positions,
+                                age: edgeData.data.age || playerData.age,
+                                height: edgeData.data.height_cm || playerData.height,
+                                weight: edgeData.data.weight_kg || playerData.weight,
+                                nationality: edgeData.data.nationality || playerData.nationality,
+                                searchName: cleanPlayerName,
+                                found: true,
+                                source: edgeData.source === 'cache' ? 'sofifa_edge_cached' : 'sofifa_edge_live',
+                                lastUpdated: edgeData.fetched_at || edgeData.cached_at || new Date().toISOString(),
+                                fallbackDataAvailable: true
+                            };
+                            
+                            console.log(`✅ Enhanced with SoFIFA Edge Function data (${edgeData.source}) for: ${cleanPlayerName}`);
+                            return transformedData;
+                        }
+                    } catch (edgeError) {
+                        console.warn('⚠️ Edge Function fetch failed, falling back to direct integration:', edgeError.message);
                     }
-                    playerData.sofifaAttempted = true;
-                    playerData.sofifaFetchTime = new Date().toISOString();
                 }
+                
+                // PRIORITY 2: Fallback to direct SofifaIntegration if Edge Function fails or no sofifaId
+                if (playerData.sofifaUrl) {
+                    console.log('🌐 Attempting to fetch live data from SoFIFA direct integration...');
+                    const liveData = await SofifaIntegration.fetchPlayerData(playerData.sofifaUrl, playerData.sofifaId, cleanPlayerName);
+                    
+                    if (liveData) {
+                        // Merge live data with existing data (live data takes precedence)
+                        const enhancedData = {
+                            ...playerData,
+                            ...liveData,
+                            searchName: cleanPlayerName,
+                            found: true,
+                            source: 'sofifa_direct',
+                            lastUpdated: new Date().toISOString(),
+                            fallbackDataAvailable: true
+                        };
+                        
+                        console.log(`✅ Enhanced with direct SoFIFA data for: ${cleanPlayerName}`);
+                        return enhancedData;
+                    }
+                }
+                
+                // If all live fetches failed
+                console.log('⚠️ All live data fetch attempts failed, using database data');
+                if (playerData.source) {
+                    playerData.source = playerData.source + '_fallback';
+                } else {
+                    playerData.source = 'database_fallback';
+                }
+                playerData.sofifaAttempted = true;
+                playerData.sofifaFetchTime = new Date().toISOString();
+                
             } catch (error) {
                 console.error('❌ Error fetching live data:', error.message);
                 if (playerData) {
