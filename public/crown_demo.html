@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Victory Crown Fix Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 2rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="max-w-6xl mx-auto">
+        <div class="text-center mb-8 text-white">
+            <h1 class="text-4xl font-bold mb-2">🏆 Victory Crown Position Fix</h1>
+            <p class="text-xl">Krone wird jetzt beim richtigen Team angezeigt!</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+            <!-- Before -->
+            <div class="bg-white rounded-xl p-6 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-4 text-red-600">❌ Vorher (Falsch)</h2>
+                <p class="mb-4 text-gray-600">Krone immer auf der rechten Seite (Real), unabhängig vom Gewinner</p>
+                
+                <div class="border-2 border-blue-400 bg-blue-50 rounded-xl p-4">
+                    <div class="flex items-center gap-4 justify-center">
+                        <!-- Team A - AEK Winner but no crown -->
+                        <div class="text-center relative">
+                            <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                AEK
+                            </div>
+                            <div class="text-sm font-medium text-blue-700 mt-1">AEK</div>
+                        </div>
+                        
+                        <!-- Score -->
+                        <div class="bg-white rounded-lg px-4 py-2 shadow-lg">
+                            <div class="text-2xl font-black text-gray-800">
+                                <span class="text-blue-600">3</span>
+                                <span class="mx-2 text-gray-400">:</span>
+                                <span class="text-red-600">1</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Team B - Real (loser) but has crown -->
+                        <div class="text-center relative">
+                            <!-- WRONG: Crown always here even when losing -->
+                            <div class="absolute -top-2 -right-2 w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold bg-blue-500 text-white">
+                                👑
+                            </div>
+                            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                                Real
+                            </div>
+                            <div class="text-sm font-medium text-red-700 mt-1">Real</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-red-100 text-red-700 border border-red-200">
+                            ❌ Krone falsch positioniert
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- After -->
+            <div class="bg-white rounded-xl p-6 shadow-2xl">
+                <h2 class="text-2xl font-bold mb-4 text-green-600">✅ Nachher (Richtig)</h2>
+                <p class="mb-4 text-gray-600">Krone beim Gewinner (AEK in diesem Fall)</p>
+                
+                <div class="border-2 border-blue-400 bg-blue-50 rounded-xl p-4">
+                    <div class="flex items-center gap-4 justify-center">
+                        <!-- Team A - AEK Winner WITH crown -->
+                        <div class="text-center relative">
+                            <!-- CORRECT: Crown on winner -->
+                            <div class="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold bg-blue-500 text-white shadow-lg z-10">
+                                👑
+                            </div>
+                            <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                                AEK
+                            </div>
+                            <div class="text-sm font-medium text-blue-700 mt-1">AEK</div>
+                        </div>
+                        
+                        <!-- Score -->
+                        <div class="bg-white rounded-lg px-4 py-2 shadow-lg">
+                            <div class="text-2xl font-black text-gray-800">
+                                <span class="text-blue-600">3</span>
+                                <span class="mx-2 text-gray-400">:</span>
+                                <span class="text-red-600">1</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Team B - Real (loser) no crown -->
+                        <div class="text-center relative">
+                            <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                                Real
+                            </div>
+                            <div class="text-sm font-medium text-red-700 mt-1">Real</div>
+                        </div>
+                    </div>
+                    <div class="mt-4 text-center">
+                        <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                            ✅ Krone richtig positioniert
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Example when Real wins -->
+        <div class="bg-white rounded-xl p-6 shadow-2xl mb-8">
+            <h2 class="text-2xl font-bold mb-4">🎯 Beispiel: Real gewinnt</h2>
+            <p class="mb-4 text-gray-600">Krone wird jetzt korrekt bei Real angezeigt wenn Real gewinnt</p>
+            
+            <div class="border-2 border-red-400 bg-red-50 rounded-xl p-4">
+                <div class="flex items-center gap-4 justify-center">
+                    <!-- Team A - AEK (loser) no crown -->
+                    <div class="text-center relative">
+                        <div class="w-16 h-16 bg-blue-500 rounded-full flex items-center justify-center text-white text-2xl font-bold">
+                            AEK
+                        </div>
+                        <div class="text-sm font-medium text-blue-700 mt-1">AEK</div>
+                    </div>
+                    
+                    <!-- Score -->
+                    <div class="bg-white rounded-lg px-4 py-2 shadow-lg">
+                        <div class="text-2xl font-black text-gray-800">
+                            <span class="text-blue-600">1</span>
+                            <span class="mx-2 text-gray-400">:</span>
+                            <span class="text-red-600">4</span>
+                        </div>
+                    </div>
+                    
+                    <!-- Team B - Real Winner WITH crown -->
+                    <div class="text-center relative">
+                        <!-- Crown on Real winner -->
+                        <div class="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold bg-red-500 text-white shadow-lg z-10">
+                            👑
+                        </div>
+                        <div class="w-16 h-16 bg-red-500 rounded-full flex items-center justify-center text-white text-xl font-bold">
+                            Real
+                        </div>
+                        <div class="text-sm font-medium text-red-700 mt-1">Real</div>
+                    </div>
+                </div>
+                <div class="mt-4 text-center">
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-green-100 text-green-700 border border-green-200">
+                        ✅ Krone bei Real, da Real gewonnen hat
+                    </span>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-xl p-6 shadow-2xl">
+            <h2 class="text-2xl font-bold mb-4">📝 Weitere Verbesserungen</h2>
+            <ul class="space-y-3">
+                <li class="flex items-start gap-3">
+                    <span class="text-2xl">✅</span>
+                    <div>
+                        <strong>Krone Position:</strong> Dynamisch basierend auf Gewinner
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-2xl">🎨</span>
+                    <div>
+                        <strong>UI Enhancement:</strong> Verbesserte Farbverläufe, Schatten und Hover-Effekte
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-2xl">💾</span>
+                    <div>
+                        <strong>Datenbank Fix:</strong> Manager-Tabelle Schema-Inkonsistenz behoben
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-2xl">🏆</span>
+                    <div>
+                        <strong>Torschützen Cards:</strong> Verbesserte Darstellung mit badges und hover-Effekten
+                    </div>
+                </li>
+                <li class="flex items-start gap-3">
+                    <span class="text-2xl">💰</span>
+                    <div>
+                        <strong>Preisgelder:</strong> Farbcodierung (grün für positiv, rot für negativ)
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</body>
+</html>
