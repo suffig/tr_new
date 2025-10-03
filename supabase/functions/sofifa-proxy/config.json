@@ -1,0 +1,7 @@
+{
+  "name": "sofifa-proxy",
+  "version": "1.0.0",
+  "description": "Secure proxy for fetching SoFIFA player data",
+  "verify_jwt": true,
+  "import_map": "./import_map.json"
+}
