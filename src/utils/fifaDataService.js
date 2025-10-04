@@ -2589,7 +2589,9 @@ export class FIFADataService {
                             return transformedData;
                         }
                     } catch (edgeError) {
-                        console.warn('⚠️ Edge Function fetch failed, falling back to direct integration:', edgeError.message);
+                        console.warn(`⚠️ Edge Function fetch failed for player ${cleanPlayerName} (ID: ${playerData.sofifaId}):`, edgeError.message);
+                        console.warn('   Falling back to direct integration or local data');
+                        // Continue to fallback
                     }
                 }
                 

@@ -24,17 +24,36 @@ serve(async (req) => {
 
   try {
     // Parse request body
-    const { sofifaId, useCache = true }: SofifaRequest = await req.json()
+    const requestBody = await req.json()
+    console.log('Request body:', JSON.stringify(requestBody))
+    
+    const { sofifaId, useCache = true }: SofifaRequest = requestBody
 
-    if (!sofifaId || typeof sofifaId !== 'number') {
+    if (!sofifaId) {
       return new Response(
-        JSON.stringify({ error: 'Invalid sofifaId parameter' }),
+        JSON.stringify({ error: 'Missing sofifaId parameter' }),
         { 
           status: 400,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
+
+    // Convert to number if needed
+    const numericId = typeof sofifaId === 'string' ? parseInt(sofifaId, 10) : sofifaId
+    
+    if (typeof numericId !== 'number' || isNaN(numericId) || numericId <= 0) {
+      return new Response(
+        JSON.stringify({ error: `Invalid sofifaId parameter: ${sofifaId}` }),
+        { 
+          status: 400,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    }
+    
+    // Use the numeric ID for all subsequent operations
+    const playerId = numericId
 
     // Initialize Supabase client
     const supabaseClient = createClient(
@@ -52,7 +71,7 @@ serve(async (req) => {
       const { data: cachedData, error: cacheError } = await supabaseClient
         .from('sofifa_cache')
         .select('payload, cached_at, ttl_seconds')
-        .eq('sofifa_id', sofifaId)
+        .eq('sofifa_id', playerId)
         .single()
 
       if (!cacheError && cachedData) {
@@ -62,7 +81,7 @@ serve(async (req) => {
 
         // Check if cache is still valid
         if (now - cachedAt < ttlMs) {
-          console.log(`Cache hit for SoFIFA ID ${sofifaId}`)
+          console.log(`✅ Cache hit for SoFIFA ID ${playerId}`)
           return new Response(
             JSON.stringify({ 
               data: cachedData.payload, 
@@ -73,15 +92,21 @@ serve(async (req) => {
               headers: { ...corsHeaders, 'Content-Type': 'application/json' }
             }
           )
+        } else {
+          console.log(`⏰ Cache expired for SoFIFA ID ${playerId}`)
         }
+      } else if (cacheError) {
+        console.log(`⚠️ No cache found for SoFIFA ID ${playerId}`)
       }
     }
 
     // Fetch from SoFIFA API
-    console.log(`Fetching player data from SoFIFA API for ID ${sofifaId}`)
+    console.log(`📡 Fetching player data from SoFIFA API for ID ${playerId}`)
     
     try {
-      const apiUrl = `https://api.sofifa.net/players/${sofifaId}`
+      const apiUrl = `https://api.sofifa.net/players/${playerId}`
+      console.log(`API URL: ${apiUrl}`)
+      
       const apiResponse = await fetch(apiUrl, {
         headers: {
           'Accept': 'application/json',
@@ -89,25 +114,51 @@ serve(async (req) => {
         },
       })
 
+      console.log(`API Response status: ${apiResponse.status}`)
+
       if (!apiResponse.ok) {
+        const errorText = await apiResponse.text()
+        console.error(`SoFIFA API error response: ${errorText}`)
         throw new Error(`SoFIFA API returned ${apiResponse.status}: ${apiResponse.statusText}`)
       }
 
-      const sofifaData = await apiResponse.json()
+      const responseText = await apiResponse.text()
+      console.log(`API Response (first 200 chars): ${responseText.substring(0, 200)}`)
+      
+      let sofifaData
+      try {
+        sofifaData = JSON.parse(responseText)
+      } catch (parseError) {
+        console.error('Failed to parse API response as JSON')
+        throw new Error('Invalid JSON response from SoFIFA API')
+      }
+
+      // Validate that we got valid data
+      if (!sofifaData || typeof sofifaData !== 'object') {
+        throw new Error('Invalid data structure from SoFIFA API')
+      }
       
       // Cache the response if useCache is enabled
-      if (useCache && sofifaData) {
-        await supabaseClient
-          .from('sofifa_cache')
-          .upsert({
-            sofifa_id: sofifaId,
-            payload: sofifaData,
-            cached_at: new Date().toISOString(),
-            ttl_seconds: 86400 // 24 hours
-          })
-          .select()
-        
-        console.log(`Cached data for SoFIFA ID ${sofifaId}`)
+      if (useCache) {
+        try {
+          const { error: cacheError } = await supabaseClient
+            .from('sofifa_cache')
+            .upsert({
+              sofifa_id: playerId,
+              payload: sofifaData,
+              cached_at: new Date().toISOString(),
+              ttl_seconds: 86400 // 24 hours
+            })
+          
+          if (cacheError) {
+            console.warn(`Failed to cache data: ${cacheError.message}`)
+          } else {
+            console.log(`✅ Cached data for SoFIFA ID ${playerId}`)
+          }
+        } catch (cacheError) {
+          console.warn(`Cache operation failed: ${cacheError.message}`)
+          // Continue anyway - caching failure shouldn't break the response
+        }
       }
 
       return new Response(
@@ -121,15 +172,15 @@ serve(async (req) => {
         }
       )
     } catch (apiError) {
-      console.error(`Failed to fetch from SoFIFA API: ${apiError.message}`)
+      console.error(`❌ Failed to fetch from SoFIFA API: ${apiError.message}`)
       
       // Return error with helpful message
       return new Response(
         JSON.stringify({ 
           error: 'Failed to fetch data from SoFIFA API',
-          sofifaId,
+          sofifaId: playerId,
           details: apiError.message,
-          hint: 'The player data could not be retrieved from the SoFIFA API'
+          hint: 'The player data could not be retrieved from the SoFIFA API. The API may be unavailable or the player ID may be invalid.'
         }),
         { 
           status: 503,

@@ -33,8 +33,11 @@ class SofifaService {
     const { useCache = true } = options;
 
     try {
-      if (!sofifaId || typeof sofifaId !== 'number') {
-        throw new Error('Invalid sofifaId parameter');
+      // Convert to number if string
+      const numericId = typeof sofifaId === 'string' ? parseInt(sofifaId, 10) : sofifaId;
+      
+      if (!numericId || typeof numericId !== 'number' || isNaN(numericId)) {
+        throw new Error(`Invalid sofifaId parameter: ${sofifaId}`);
       }
 
       // Initialize if not already done
@@ -42,27 +45,31 @@ class SofifaService {
         this.initialize();
       }
 
-      console.log(`🌐 Fetching SoFIFA data for ID ${sofifaId} via proxy...`);
+      console.log(`🌐 Fetching SoFIFA data for ID ${numericId} via proxy...`);
 
       // Call the edge function
       const { data, error } = await supabase.functions.invoke('sofifa-proxy', {
-        body: { sofifaId, useCache }
+        body: { sofifaId: numericId, useCache }
       });
 
       if (error) {
         console.error('Edge function error:', error);
-        throw error;
+        throw new Error(`Edge function error: ${error.message || JSON.stringify(error)}`);
       }
 
-      if (!data || data.error) {
-        throw new Error(data?.error || 'Failed to fetch player data');
+      if (!data) {
+        throw new Error('Edge function returned no data');
       }
 
-      console.log(`✅ Successfully fetched data for SoFIFA ID ${sofifaId}`);
+      if (data.error) {
+        throw new Error(`API error: ${data.error} ${data.details ? `(${data.details})` : ''}`);
+      }
+
+      console.log(`✅ Successfully fetched data for SoFIFA ID ${numericId} (source: ${data.source || 'unknown'})`);
       return data;
 
     } catch (error) {
-      console.error('Error fetching SoFIFA data:', error);
+      console.error(`❌ Error fetching SoFIFA data for ID ${sofifaId}:`, error.message);
       throw error;
     }
   }
