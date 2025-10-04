@@ -1,8 +1,7 @@
-// Supabase Edge Function - SoFIFA Cache Proxy
-// This function serves as a caching layer for SoFIFA player data
-// Data is sourced from the client-side JSON file and cached in the database
-// NOTE: SoFIFA does not provide a public REST API for direct fetching
-// Data must be pre-populated from sofifa_my_players_app.json
+// Supabase Edge Function - SoFIFA API Proxy
+// This function acts as a secure proxy to fetch player data from SoFIFA API
+// Implements intelligent caching to minimize external API calls
+// API Endpoint: https://api.sofifa.net/players/{player_id}
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -78,42 +77,66 @@ serve(async (req) => {
       }
     }
 
-    // Check watchlist to see if this player is tracked
-    const { data: watchlistEntry } = await supabaseClient
-      .from('sofifa_watchlist')
-      .select('sofifa_id, display_name')
-      .eq('sofifa_id', sofifaId)
-      .single()
+    // Fetch from SoFIFA API
+    console.log(`Fetching player data from SoFIFA API for ID ${sofifaId}`)
+    
+    try {
+      const apiUrl = `https://api.sofifa.net/players/${sofifaId}`
+      const apiResponse = await fetch(apiUrl, {
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Mozilla/5.0 (compatible; SupabaseEdgeFunction/1.0)',
+        },
+      })
 
-    if (!watchlistEntry) {
+      if (!apiResponse.ok) {
+        throw new Error(`SoFIFA API returned ${apiResponse.status}: ${apiResponse.statusText}`)
+      }
+
+      const sofifaData = await apiResponse.json()
+      
+      // Cache the response if useCache is enabled
+      if (useCache && sofifaData) {
+        await supabaseClient
+          .from('sofifa_cache')
+          .upsert({
+            sofifa_id: sofifaId,
+            payload: sofifaData,
+            cached_at: new Date().toISOString(),
+            ttl_seconds: 86400 // 24 hours
+          })
+          .select()
+        
+        console.log(`Cached data for SoFIFA ID ${sofifaId}`)
+      }
+
       return new Response(
         JSON.stringify({ 
-          error: 'Player not in watchlist. Please add player to watchlist first or use client-side JSON data.',
-          sofifaId,
-          hint: 'This player needs to be added to the sofifa_watchlist table'
+          data: sofifaData, 
+          source: 'sofifa_api',
+          fetched_at: new Date().toISOString()
         }),
         { 
-          status: 404,
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        }
+      )
+    } catch (apiError) {
+      console.error(`Failed to fetch from SoFIFA API: ${apiError.message}`)
+      
+      // Return error with helpful message
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to fetch data from SoFIFA API',
+          sofifaId,
+          details: apiError.message,
+          hint: 'The player data could not be retrieved from the SoFIFA API'
+        }),
+        { 
+          status: 503,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
-
-    // Since we can't reliably scrape SoFIFA, return a message indicating
-    // that the data should be populated from the client-side JSON file
-    // The cache should be pre-populated with data from sofifa_my_players_app.json
-    return new Response(
-      JSON.stringify({ 
-        error: 'Data not in cache. Please populate cache from client-side JSON data.',
-        sofifaId,
-        display_name: watchlistEntry.display_name,
-        hint: 'Use SofifaService.populateCacheFromJSON() to pre-populate cache with local JSON data'
-      }),
-      { 
-        status: 404,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
-    )
 
   } catch (error) {
     console.error('Edge function error:', error)

@@ -2,9 +2,9 @@
 
 ## Overview
 
-This document explains how player data is loaded through the SoFIFA caching system in the existing squad (Kader) and player detail card components.
+This document explains how player data is loaded through the SoFIFA API via a secure Supabase Edge Function in the existing squad (Kader) and player detail card components.
 
-**IMPORTANT**: SoFIFA does not provide a public REST API for real-time data fetching. Player data is sourced from the local `sofifa_my_players_app.json` file and cached in the database for performance.
+**SoFIFA API**: Player data is fetched from the official SoFIFA REST API at `https://api.sofifa.net/players/{player_id}` with intelligent caching for performance.
 
 ## Components Affected
 
@@ -27,7 +27,7 @@ The following components now automatically use the SoFIFA Edge Function proxy:
 
 ## Data Flow
 
-### Current Architecture (Cache-Based)
+### Current Architecture (API + Cache)
 ```
 Component → FIFADataService.getPlayerData()
               ↓
@@ -41,20 +41,22 @@ Component → FIFADataService.getPlayerData()
               ↓
           Check sofifa_cache table
               ↓
-          Cache HIT → Return cached data ⚡
-          Cache MISS → Return error (data must be pre-populated from JSON)
+          Cache HIT → Return cached data ⚡ (fast!)
+          Cache MISS → Fetch from SoFIFA API
               ↓
-          Fallback to local JSON via SofifaIntegration
+          GET https://api.sofifa.net/players/{id}
+              ↓
+          Parse response & cache for 24h
               ↓
           Component displays data
 ```
 
-### Cache Initialization
+### Cache Initialization (Optional)
 
-On app startup, the cache is automatically populated from the local JSON file:
+For offline support or initial population, the cache can be seeded from local JSON:
 
 ```
-App.jsx useEffect
+App.jsx useEffect (optional)
   ↓
 SofifaCacheInitializer.initialize()
   ↓
@@ -66,15 +68,15 @@ Transform each player to cache format
   ↓
 Insert into sofifa_cache table (30-day TTL)
   ↓
-Cache ready for use
+Cache ready for offline use
 ```
 
 ### Fallback Chain
 
-1. **Primary**: Supabase Edge Function (cache only)
-   - Checks `sofifa_cache` table
-   - Returns cached data if available
-   - Returns 404 if not in cache
+1. **Primary**: Supabase Edge Function with SoFIFA API
+   - Checks `sofifa_cache` table first (24h TTL)
+   - If cache miss, fetches from `https://api.sofifa.net/players/{id}`
+   - Caches response automatically
 
 2. **Secondary**: Direct SofifaIntegration
    - Loads from local JSON file (`sofifa_my_players_app.json`)
