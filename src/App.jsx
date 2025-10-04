@@ -11,7 +11,6 @@ import LoadingSpinner, { FullScreenLoader } from './components/LoadingSpinner';
 import GlobalSearch from './components/GlobalSearch';
 import PerformanceMonitor from './components/PerformanceMonitor';
 import NotificationSystem from './components/NotificationSystem';
-import SofifaCacheInitializer from './utils/sofifaCacheInitializer';
 
 // Lazy load tab components for better performance
 const MatchesTab = lazy(() => import('./components/tabs/MatchesTab'));
@@ -29,35 +28,6 @@ function App() {
   const [tabLoading, setTabLoading] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
-
-  // Control SoFIFA attribution visibility based on login state
-  useEffect(() => {
-    const attributionElement = document.getElementById('sofifa-attribution');
-    if (attributionElement) {
-      // Show attribution only when user is NOT logged in (login page)
-      attributionElement.style.display = !user ? 'flex' : 'none';
-    }
-  }, [user]);
-
-  // Initialize SoFIFA cache on app startup
-  useEffect(() => {
-    const initializeCache = async () => {
-      if (user) {
-        try {
-          const needsInit = await SofifaCacheInitializer.needsInitialization();
-          if (needsInit) {
-            console.log('🔄 Initializing SoFIFA cache...');
-            await SofifaCacheInitializer.initialize();
-          }
-        } catch (error) {
-          console.warn('⚠️ Could not initialize SoFIFA cache:', error.message);
-          // Non-critical, app can continue without cache
-        }
-      }
-    };
-
-    initializeCache();
-  }, [user]);
 
   // Check if we're in demo mode
   useEffect(() => {
