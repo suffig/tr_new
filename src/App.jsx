@@ -11,6 +11,7 @@ import LoadingSpinner, { FullScreenLoader } from './components/LoadingSpinner';
 import GlobalSearch from './components/GlobalSearch';
 import PerformanceMonitor from './components/PerformanceMonitor';
 import NotificationSystem from './components/NotificationSystem';
+import SofifaCacheInitializer from './utils/sofifaCacheInitializer';
 
 // Lazy load tab components for better performance
 const MatchesTab = lazy(() => import('./components/tabs/MatchesTab'));
@@ -28,6 +29,26 @@ function App() {
   const [tabLoading, setTabLoading] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
+
+  // Initialize SoFIFA cache on app startup
+  useEffect(() => {
+    const initializeCache = async () => {
+      if (user) {
+        try {
+          const needsInit = await SofifaCacheInitializer.needsInitialization();
+          if (needsInit) {
+            console.log('🔄 Initializing SoFIFA cache...');
+            await SofifaCacheInitializer.initialize();
+          }
+        } catch (error) {
+          console.warn('⚠️ Could not initialize SoFIFA cache:', error.message);
+          // Non-critical, app can continue without cache
+        }
+      }
+    };
+
+    initializeCache();
+  }, [user]);
 
   // Check if we're in demo mode
   useEffect(() => {

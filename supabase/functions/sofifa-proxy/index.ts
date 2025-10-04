@@ -1,6 +1,8 @@
-// Supabase Edge Function - SoFIFA Proxy
-// This function acts as a secure proxy to fetch data from SoFIFA
-// without exposing API keys or allowing direct client access
+// Supabase Edge Function - SoFIFA Cache Proxy
+// This function serves as a caching layer for SoFIFA player data
+// Data is sourced from the client-side JSON file and cached in the database
+// NOTE: SoFIFA does not provide a public REST API for direct fetching
+// Data must be pre-populated from sofifa_my_players_app.json
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
@@ -76,66 +78,39 @@ serve(async (req) => {
       }
     }
 
-    // Fetch from SoFIFA (using multiple strategies)
-    console.log(`Fetching SoFIFA data for ID ${sofifaId}`)
-    
-    // Strategy 1: Try direct fetch with proper headers
-    let sofifaData = null
-    const sofifaUrl = `https://sofifa.com/player/${sofifaId}`
-    
-    try {
-      const response = await fetch(sofifaUrl, {
-        headers: {
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5',
-          'Cache-Control': 'no-cache',
-          'Pragma': 'no-cache',
-        },
-      })
+    // Check watchlist to see if this player is tracked
+    const { data: watchlistEntry } = await supabaseClient
+      .from('sofifa_watchlist')
+      .select('sofifa_id, display_name')
+      .eq('sofifa_id', sofifaId)
+      .single()
 
-      if (response.ok) {
-        const html = await response.text()
-        sofifaData = parsePlayerDataFromHTML(html, sofifaId)
-      }
-    } catch (error) {
-      console.error(`Error fetching from SoFIFA: ${error.message}`)
-    }
-
-    // If we got data, cache it
-    if (sofifaData && useCache) {
-      await supabaseClient
-        .from('sofifa_cache')
-        .upsert({
-          sofifa_id: sofifaId,
-          payload: sofifaData,
-          cached_at: new Date().toISOString(),
-          ttl_seconds: 86400 // 24 hours
-        })
-        .select()
-    }
-
-    if (sofifaData) {
+    if (!watchlistEntry) {
       return new Response(
         JSON.stringify({ 
-          data: sofifaData, 
-          source: 'sofifa',
-          fetched_at: new Date().toISOString()
+          error: 'Player not in watchlist. Please add player to watchlist first or use client-side JSON data.',
+          sofifaId,
+          hint: 'This player needs to be added to the sofifa_watchlist table'
         }),
         { 
+          status: 404,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       )
     }
 
-    // If all strategies fail, return error
+    // Since we can't reliably scrape SoFIFA, return a message indicating
+    // that the data should be populated from the client-side JSON file
+    // The cache should be pre-populated with data from sofifa_my_players_app.json
     return new Response(
       JSON.stringify({ 
-        error: 'Failed to fetch data from SoFIFA',
-        sofifaId 
+        error: 'Data not in cache. Please populate cache from client-side JSON data.',
+        sofifaId,
+        display_name: watchlistEntry.display_name,
+        hint: 'Use SofifaService.populateCacheFromJSON() to pre-populate cache with local JSON data'
       }),
       { 
-        status: 503,
+        status: 404,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     )
@@ -151,68 +126,3 @@ serve(async (req) => {
     )
   }
 })
-
-/**
- * Parse player data from SoFIFA HTML
- * This is a basic parser - can be enhanced based on needs
- */
-function parsePlayerDataFromHTML(html: string, sofifaId: number): any {
-  // Basic extraction logic
-  // In production, this would use a more robust HTML parser
-  
-  const data: any = {
-    id: sofifaId,
-    source: 'sofifa',
-    url: `https://sofifa.com/player/${sofifaId}`
-  }
-
-  // Extract player name
-  const nameMatch = html.match(/<h1[^>]*>([^<]+)<\/h1>/)
-  if (nameMatch) {
-    data.name = nameMatch[1].trim()
-  }
-
-  // Extract overall rating
-  const overallMatch = html.match(/class="overall">(\d+)</)
-  if (overallMatch) {
-    data.overall = parseInt(overallMatch[1])
-  }
-
-  // Extract potential rating
-  const potentialMatch = html.match(/class="potential">(\d+)</)
-  if (potentialMatch) {
-    data.potential = parseInt(potentialMatch[1])
-  }
-
-  // Extract positions
-  const positionsMatch = html.match(/class="pos">([^<]+)</)
-  if (positionsMatch) {
-    data.positions = positionsMatch[1].trim()
-  }
-
-  // Extract nationality
-  const nationalityMatch = html.match(/data-tippy-content="([^"]+)"[^>]*>.*?flag.*?</)
-  if (nationalityMatch) {
-    data.nationality = nationalityMatch[1].trim()
-  }
-
-  // Extract age
-  const ageMatch = html.match(/data-tippy-content="[^"]*\((\d+)\s*y\.o/)
-  if (ageMatch) {
-    data.age = parseInt(ageMatch[1])
-  }
-
-  // Extract height
-  const heightMatch = html.match(/(\d+)cm/)
-  if (heightMatch) {
-    data.height_cm = parseInt(heightMatch[1])
-  }
-
-  // Extract weight
-  const weightMatch = html.match(/(\d+)kg/)
-  if (weightMatch) {
-    data.weight_kg = parseInt(weightMatch[1])
-  }
-
-  return data
-}

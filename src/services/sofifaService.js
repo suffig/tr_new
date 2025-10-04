@@ -266,6 +266,93 @@ class SofifaService {
       throw error;
     }
   }
+
+  /**
+   * Populate cache from local JSON file
+   * This method loads the sofifa_my_players_app.json file and populates
+   * the sofifa_cache table with the data
+   * @returns {Promise<Object>} Result with success count and errors
+   */
+  static async populateCacheFromJSON() {
+    try {
+      console.log('📥 Loading local JSON file...');
+      const response = await fetch('./sofifa_my_players_app.json');
+      
+      if (!response.ok) {
+        throw new Error(`Failed to load JSON: ${response.status}`);
+      }
+
+      const playersData = await response.json();
+      console.log(`✅ Loaded ${playersData.length} players from JSON`);
+
+      const results = {
+        success: 0,
+        errors: [],
+        total: playersData.length
+      };
+
+      // Process each player
+      for (const player of playersData) {
+        try {
+          const sofifaId = parseInt(player.id);
+          
+          if (!sofifaId) {
+            results.errors.push({ player: player.name, error: 'Invalid sofifaId' });
+            continue;
+          }
+
+          // Transform JSON data to match our format
+          const payload = {
+            id: sofifaId,
+            name: player.name,
+            overall: player.overall,
+            potential: player.potential,
+            age: player.age,
+            height_cm: player.height_cm,
+            weight_kg: player.weight_kg,
+            positions: player.positions,
+            preferred_foot: player.preferred_foot,
+            weak_foot: player.weak_foot,
+            skill_moves: player.skill_moves,
+            nationality: player.nationality,
+            work_rate: player.work_rate,
+            main_attributes: player.main_attributes,
+            detailed_skills: player.detailed_skills,
+            source: 'local_json',
+            cached_from: 'sofifa_my_players_app.json'
+          };
+
+          // Insert into cache table
+          const { error } = await supabase
+            .from('sofifa_cache')
+            .upsert({
+              sofifa_id: sofifaId,
+              payload: payload,
+              cached_at: new Date().toISOString(),
+              ttl_seconds: 2592000 // 30 days for JSON data
+            });
+
+          if (error) {
+            results.errors.push({ player: player.name, error: error.message });
+          } else {
+            results.success++;
+          }
+        } catch (error) {
+          results.errors.push({ player: player.name, error: error.message });
+        }
+      }
+
+      console.log(`✅ Cache populated: ${results.success}/${results.total} players`);
+      if (results.errors.length > 0) {
+        console.warn(`⚠️  Errors: ${results.errors.length}`, results.errors);
+      }
+
+      return results;
+    } catch (error) {
+      console.error('Error populating cache from JSON:', error);
+      throw error;
+    }
+  }
 }
 
 // Initialize on module load
