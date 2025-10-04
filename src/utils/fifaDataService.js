@@ -2563,8 +2563,8 @@ export class FIFADataService {
             try {
                 // PRIORITY 1: Use new Supabase Edge Function proxy if sofifaId is available
                 if (playerData.sofifaId) {
-                    console.log(`🚀 Attempting to fetch live data via Supabase Edge Function for ID: ${playerData.sofifaId}...`);
                     try {
+                        console.log(`🚀 Attempting to fetch live data via Supabase Edge Function for ID: ${playerData.sofifaId}...`);
                         const edgeData = await SofifaService.fetchPlayerData(playerData.sofifaId, { useCache: true });
                         
                         if (edgeData && edgeData.data) {
@@ -2589,8 +2589,10 @@ export class FIFADataService {
                             return transformedData;
                         }
                     } catch (edgeError) {
-                        console.warn(`⚠️ Edge Function fetch failed for player ${cleanPlayerName} (ID: ${playerData.sofifaId}):`, edgeError.message);
-                        console.warn('   Falling back to direct integration or local data');
+                        // Only log warning for non-expected errors
+                        if (edgeError.message !== 'EDGE_FUNCTION_UNAVAILABLE') {
+                            console.warn(`⚠️ Edge Function error for ${cleanPlayerName} (ID: ${playerData.sofifaId}):`, edgeError.message);
+                        }
                         // Continue to fallback
                     }
                 }

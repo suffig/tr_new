@@ -40,35 +40,68 @@ class SofifaService {
         throw new Error(`Invalid sofifaId parameter: ${sofifaId}`);
       }
 
-      // Initialize if not already done
-      if (!this.EDGE_FUNCTION_URL) {
-        this.initialize();
+      // Check cache first in database
+      if (useCache) {
+        try {
+          const { data: cachedData, error: cacheError } = await supabase
+            .from('sofifa_cache')
+            .select('payload, cached_at, ttl_seconds')
+            .eq('sofifa_id', numericId)
+            .maybeSingle();
+
+          if (!cacheError && cachedData) {
+            const cachedAt = new Date(cachedData.cached_at).getTime();
+            const now = Date.now();
+            const ttlMs = cachedData.ttl_seconds * 1000;
+
+            // Check if cache is still valid
+            if (now - cachedAt < ttlMs) {
+              console.log(`✅ Cache hit for SoFIFA ID ${numericId} (direct DB read)`);
+              return {
+                data: cachedData.payload,
+                source: 'cache',
+                cached_at: cachedData.cached_at
+              };
+            } else {
+              console.log(`⏰ Cache expired for SoFIFA ID ${numericId}`);
+            }
+          }
+        } catch (cacheError) {
+          console.warn(`Cache check failed, continuing to API: ${cacheError.message}`);
+        }
       }
 
-      console.log(`🌐 Fetching SoFIFA data for ID ${numericId} via proxy...`);
+      // Try Edge Function only if Supabase Functions are available
+      if (supabase && supabase.functions) {
+        try {
+          console.log(`🌐 Attempting Edge Function for ID ${numericId}...`);
+          
+          const { data, error } = await supabase.functions.invoke('sofifa-proxy', {
+            body: { sofifaId: numericId, useCache }
+          });
 
-      // Call the edge function
-      const { data, error } = await supabase.functions.invoke('sofifa-proxy', {
-        body: { sofifaId: numericId, useCache }
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(`Edge function error: ${error.message || JSON.stringify(error)}`);
+          if (error) {
+            console.warn('Edge function error, will use fallback:', error.message);
+          } else if (data && !data.error) {
+            console.log(`✅ Successfully fetched via Edge Function for ID ${numericId} (source: ${data.source || 'unknown'})`);
+            return data;
+          } else if (data && data.error) {
+            console.warn(`Edge function returned error: ${data.error}`);
+          }
+        } catch (edgeFunctionError) {
+          console.warn(`Edge function failed: ${edgeFunctionError.message}, using fallback`);
+        }
       }
 
-      if (!data) {
-        throw new Error('Edge function returned no data');
-      }
-
-      if (data.error) {
-        throw new Error(`API error: ${data.error} ${data.details ? `(${data.details})` : ''}`);
-      }
-
-      console.log(`✅ Successfully fetched data for SoFIFA ID ${numericId} (source: ${data.source || 'unknown'})`);
-      return data;
+      // Edge Function unavailable or failed - return a message indicating to use local data
+      console.log(`ℹ️ Edge Function unavailable for ID ${numericId}, using local data fallback`);
+      throw new Error('EDGE_FUNCTION_UNAVAILABLE');
 
     } catch (error) {
+      if (error.message === 'EDGE_FUNCTION_UNAVAILABLE') {
+        // Re-throw this specific error to be handled by fifaDataService
+        throw error;
+      }
       console.error(`❌ Error fetching SoFIFA data for ID ${sofifaId}:`, error.message);
       throw error;
     }
