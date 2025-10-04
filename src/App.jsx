@@ -30,6 +30,15 @@ function App() {
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
+  // Control SoFIFA attribution visibility based on login state
+  useEffect(() => {
+    const attributionElement = document.getElementById('sofifa-attribution');
+    if (attributionElement) {
+      // Show attribution only when user is NOT logged in (login page)
+      attributionElement.style.display = !user ? 'flex' : 'none';
+    }
+  }, [user]);
+
   // Initialize SoFIFA cache on app startup
   useEffect(() => {
     const initializeCache = async () => {
