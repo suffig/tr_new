@@ -1,5 +1,11 @@
 # Rangers Logo Installation Guide
 
+## ⚠️ Wichtiger Hinweis
+
+Das Rangers Logo muss manuell heruntergeladen und installiert werden. Die Datei konnte nicht automatisch ins Repository hinzugefügt werden.
+
+**Logo-URL**: https://github.com/user-attachments/assets/37a6efbc-9b03-4091-a0fd-b3664ff50508
+
 ## Schnellanleitung (Quick Guide)
 
 Das Rangers Logo kann auf **zwei Wege** hinzugefügt werden:
