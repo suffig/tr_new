@@ -5,6 +5,7 @@ import ExportImportManager from '../ExportImportManager';
 import PlayerDetailModal from '../PlayerDetailModal';
 import TeamLogo from '../TeamLogo';
 import { POSITIONS } from '../../utils/errorHandling';
+import { getTeamDisplay } from '../../constants/teams';
 import toast from 'react-hot-toast';
 
 export default function KaderTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
@@ -138,7 +139,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
     { 
       id: 'real', 
       name: 'Real', 
-      displayName: 'Real Madrid', 
+      displayName: getTeamDisplay('Real'), 
       players: realPlayers,
       squadValue: getTeamSquadValue('Real'),
       logoComponent: <TeamLogo team="real" size="md" />
@@ -146,7 +147,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
     { 
       id: 'ehemalige', 
       name: 'Ehemalige', 
-      displayName: 'Ehemalige', 
+      displayName: getTeamDisplay('Ehemalige'), 
       players: ehemaligePlayers,
       squadValue: getTeamSquadValue('Ehemalige'),
       icon: '⚪'
@@ -461,9 +462,9 @@ function PlayerForm({ player, onSave, onCancel }) {
           required
         >
           <option value="">Team wählen</option>
-          <option value="AEK">AEK Athen</option>
-          <option value="Real">Real Madrid</option>
-          <option value="Ehemalige">Ehemalige</option>
+          <option value="AEK">{getTeamDisplay('AEK')}</option>
+          <option value="Real">{getTeamDisplay('Real')}</option>
+          <option value="Ehemalige">{getTeamDisplay('Ehemalige')}</option>
         </select>
       </div>
       

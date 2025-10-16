@@ -22,11 +22,15 @@ export default function TeamLogo({ team, size = 'md', className = '', version = 
       return teamDisplay.icon;
     }
     
-    // Otherwise use default logos
+    // Otherwise use default logos with version awareness
     switch (teamName?.toLowerCase()) {
       case 'aek':
         return '/tr_new/aek_logo_transparent.png';
       case 'real':
+        // Use Rangers logo for FC26 if available, otherwise fallback to Real Madrid logo
+        if (fifaVersion === 'FC26') {
+          return '/tr_new/rangers_logo_transparent.png';
+        }
         return '/tr_new/real_logo_transparent.png';
       default:
         return null;
