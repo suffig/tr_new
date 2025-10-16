@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
+import { getTeamDisplay } from '../../constants/teams';
 import toast from 'react-hot-toast';
 
 export default function AITab({ onNavigate }) { // eslint-disable-line no-unused-vars
@@ -86,9 +87,9 @@ export default function AITab({ onNavigate }) { // eslint-disable-line no-unused
       const teamWinRate = ((teamWins / recentMatches.length) * 100).toFixed(1);
 
       const analysis = {
-        title: `🤖 KI Team-Performance Analyse für ${selectedTeam === 'AEK' ? 'AEK Athen' : 'Real Madrid'}`,
+        title: `🤖 KI Team-Performance Analyse für ${selectedTeam === 'AEK' ? getTeamDisplay('AEK') : getTeamDisplay('Real')}`,
         data: `
-📊 Analyse der letzten ${recentMatches.length} Spiele für ${selectedTeam === 'AEK' ? 'AEK Athen' : 'Real Madrid'}:
+📊 Analyse der letzten ${recentMatches.length} Spiele für ${selectedTeam === 'AEK' ? getTeamDisplay('AEK') : getTeamDisplay('Real')}:
 
 🎯 ${selectedTeam} Performance:
 • Siege: ${teamWins} (${teamWinRate}%)
@@ -148,13 +149,13 @@ ${teamWinRate >= 70 ? `Exzellente Form! ${selectedTeam} sollte die Taktik beibeh
       
       // Compare with other team
       const otherTeamValue = otherTeamPlayers.reduce((sum, p) => sum + (p.value || 0), 0);
-      const otherTeamName = selectedTeam === 'AEK' ? 'Real Madrid' : 'AEK Athen';
+      const otherTeamName = selectedTeam === 'AEK' ? getTeamDisplay('Real') : getTeamDisplay('AEK');
 
       const undervalued = teamPlayers.filter(p => (p.value || 0) < avgTeamValue * 0.7);
       const overvalued = teamPlayers.filter(p => (p.value || 0) > avgTeamValue * 1.5);
 
       const analysis = {
-        title: `🤖 KI Spieler-Bewertung für ${selectedTeam === 'AEK' ? 'AEK Athen' : 'Real Madrid'}`,
+        title: `🤖 KI Spieler-Bewertung für ${selectedTeam === 'AEK' ? getTeamDisplay('AEK') : getTeamDisplay('Real')}`,
         data: `
 💎 Top-Spieler: ${topPlayer.name} (${topPlayer.value || 0}M €)
 📊 Durchschnittswert: ${avgTeamValue.toFixed(1)}M €
@@ -393,7 +394,7 @@ Idealer Neuzugang: ${relevantSuggestions[0]?.name || 'Siehe Empfehlungen'}
       const topStriker = teamPlayers.filter(p => p.position === 'ST' || p.position === 'LF' || p.position === 'RF').sort((a, b) => (b.value || 0) - (a.value || 0))[0];
 
       const analysis = {
-        title: `⚽ KI Aufstellungs-Optimierer für ${selectedTeam === 'AEK' ? 'AEK Athen' : 'Real Madrid'}`,
+        title: `⚽ KI Aufstellungs-Optimierer für ${selectedTeam === 'AEK' ? getTeamDisplay('AEK') : getTeamDisplay('Real')}`,
         data: `
 🤖 Optimale Formation für ${selectedTeam} basierend auf ${teamPlayers.length} verfügbaren Spielern:
 
@@ -548,7 +549,7 @@ ${netResult >= 0 ?
             }`}
           >
             <span className="text-lg">🔵</span>
-            AEK Athen
+            {getTeamDisplay('AEK')}
           </button>
           <button
             onClick={() => setSelectedTeam('Real')}
@@ -559,7 +560,7 @@ ${netResult >= 0 ?
             }`}
           >
             <span className="text-lg">🔴</span>
-            Real Madrid
+            {getTeamDisplay('Real')}
           </button>
         </div>
         <p className="text-sm text-text-muted mt-2">
