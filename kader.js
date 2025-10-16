@@ -5,6 +5,7 @@ import { isDatabaseAvailable } from './connectionMonitor.js';
 import { ErrorHandler } from './utils.js';
 import PlayerDetailModal from './playerDetailModal.js';
 import FIFADataService from './fifaDataService.js';
+import { getVersionTeamDisplay } from './src/utils/versionTeamManager.js';
 
 let aekAthen = [];
 let realMadrid = [];
@@ -109,8 +110,8 @@ export function renderKaderTab(containerId = "app") {
             </div>
             
             <div class="space-y-6">
-                ${accordionPanelHtml('AEK Athen', 'aek', 'from-blue-500 to-blue-600', 'AEK')}
-                ${accordionPanelHtml('Real Madrid', 'real', 'from-red-500 to-red-600', 'Real')}
+                ${accordionPanelHtml(getVersionTeamDisplay('AEK').label, 'aek', 'from-blue-500 to-blue-600', 'AEK')}
+                ${accordionPanelHtml(getVersionTeamDisplay('Real').label, 'real', 'from-red-500 to-red-600', 'Real')}
                 ${accordionPanelHtml('Ehemalige Spieler', 'ehemalige', 'from-gray-500 to-gray-600', 'Ehemalige')}
             </div>
         </div>
@@ -257,7 +258,7 @@ async function renderPlayerAnalytics() {
             if (difference <= 1) {
                 alert('✅ Teams sind bereits ausgeglichen!');
             } else {
-                const needMore = aekCount > realCount ? 'Real Madrid' : 'AEK Athen';
+                const needMore = aekCount > realCount ? getVersionTeamDisplay('Real').label : getVersionTeamDisplay('AEK').label;
                 alert(`⚖️ Team-Balance:\n${needMore} benötigt ${difference} weitere Spieler für ausgeglichene Teams.`);
             }
         };
@@ -273,18 +274,18 @@ async function renderPlayerAnalytics() {
             const realGoals = realPlayers.reduce((sum, p) => sum + (p.goals || 0), 0);
             
             if (aekGoals > realGoals * 1.5) {
-                suggestions.push('Real Madrid könnte einen stärkeren Stürmer gebrauchen');
+                suggestions.push(`${getVersionTeamDisplay('Real').label} könnte einen stärkeren Stürmer gebrauchen`);
             } else if (realGoals > aekGoals * 1.5) {
-                suggestions.push('AEK Athen könnte einen stärkeren Stürmer gebrauchen');
+                suggestions.push(`${getVersionTeamDisplay('AEK').label} könnte einen stärkeren Stürmer gebrauchen`);
             }
             
             const aekBans = bans.filter(b => b.team === 'AEK').length;
             const realBans = bans.filter(b => b.team === 'Real').length;
             
             if (aekBans > realBans * 2) {
-                suggestions.push('AEK Athen sollte diszipliniertere Spieler verpflichten');
+                suggestions.push(`${getVersionTeamDisplay('AEK').label} sollte diszipliniertere Spieler verpflichten`);
             } else if (realBans > aekBans * 2) {
-                suggestions.push('Real Madrid sollte diszipliniertere Spieler verpflichten');
+                suggestions.push(`${getVersionTeamDisplay('Real').label} sollte diszipliniertere Spieler verpflichten`);
             }
             
             if (suggestions.length === 0) {
@@ -394,7 +395,7 @@ function renderPlayerList(containerId, arr, team) {
                 <div class="text-xl font-bold text-green-600">${marktwert}M €</div>
             </div>
             <div class="card-content">
-                <p class="text-sm text-gray-500">Team: ${team === 'AEK' ? 'AEK Athen' : team === 'Real' ? 'Real Madrid' : 'Ehemalige'}</p>
+                <p class="text-sm text-gray-500">Team: ${team === 'AEK' ? getVersionTeamDisplay('AEK').label : team === 'Real' ? getVersionTeamDisplay('Real').label : 'Ehemalige'}</p>
                 <p class="text-sm text-gray-500">Marktwert: ${marktwert}M €</p>
                 <p class="text-xs text-blue-400 fifa-hint">
                     <i class="fas fa-info-circle"></i>

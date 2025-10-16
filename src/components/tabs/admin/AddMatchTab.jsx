@@ -3,6 +3,7 @@ import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { MatchBusinessLogic } from '../../../utils/matchBusinessLogic';
 import { triggerNotification } from '../../NotificationSystem';
 import toast from 'react-hot-toast';
+import { getTeamDisplay } from '../../../constants/teams';
 
 export default function AddMatchTab() {
   const { data: players } = useSupabaseQuery('players', '*');
@@ -354,11 +355,11 @@ export default function AddMatchTab() {
                     <h4 className="text-lg font-semibold text-gray-700 mb-2">⚽ Spielpaarung</h4>
                     <div className="flex items-center justify-center space-x-4">
                       <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-medium">
-                        AEK Athen
+                        {getTeamDisplay('AEK')}
                       </div>
                       <div className="text-gray-500 font-bold text-xl">vs</div>
                       <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg font-medium">
-                        Real Madrid
+                        {getTeamDisplay('Real')}
                       </div>
                     </div>
                   </div>
@@ -391,9 +392,9 @@ export default function AddMatchTab() {
                       <span className="text-red-600">{formData.goalsb}</span>
                     </div>
                     <div className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium text-blue-700">AEK Athen</span>
+                      <span className="font-medium text-blue-700">{getTeamDisplay('AEK')}</span>
                       <span className="mx-2">vs</span>
-                      <span className="font-medium text-red-700">Real Madrid</span>
+                      <span className="font-medium text-red-700">{getTeamDisplay('Real')}</span>
                     </div>
                     {(formData.goalsa > 0 || formData.goalsb > 0) && (
                       <div className="text-xs text-gray-500 mt-2">
@@ -477,7 +478,7 @@ export default function AddMatchTab() {
                       <div className="flex items-center justify-between bg-orange-50 rounded-lg p-2 border border-orange-200">
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-700">Eigentore</div>
-                          <div className="text-xs text-gray-500">Zählen für Real Madrid</div>
+                          <div className="text-xs text-gray-500">Zählen für {getTeamDisplay('Real')}</div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
@@ -506,7 +507,7 @@ export default function AddMatchTab() {
                     {/* Real Scoring */}
                     <div className="space-y-3">
                       <div className="text-center">
-                        <h5 className="text-sm font-medium text-red-600 mb-3">⚽ Real Madrid Torschützen</h5>
+                        <h5 className="text-sm font-medium text-red-600 mb-3">⚽ {getTeamDisplay('Real')} Torschützen</h5>
                       </div>
                       
                       {/* Real Scorers List */}
@@ -666,7 +667,7 @@ export default function AddMatchTab() {
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <p className="text-xs text-red-600 font-medium">Real Madrid</p>
+                      <p className="text-xs text-red-600 font-medium">{getTeamDisplay('Real')}</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs text-text-muted mb-1">

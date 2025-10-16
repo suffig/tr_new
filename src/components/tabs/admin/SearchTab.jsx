@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import EnhancedSearch from '../../EnhancedSearch';
 import LoadingSpinner from '../../LoadingSpinner';
+import { getTeamDisplay } from '../../../constants/teams';
 
 export default function SearchTab({ onNavigate }) {
   const [activeSearchType, setActiveSearchType] = useState('players');
@@ -33,9 +34,9 @@ export default function SearchTab({ onNavigate }) {
           key: 'team',
           label: 'Team',
           options: [
-            { value: 'AEK', label: 'AEK Athen' },
-            { value: 'Real', label: 'Real Madrid' },
-            { value: 'Ehemalige', label: 'Ehemalige' }
+            { value: 'AEK', label: getTeamDisplay('AEK') },
+            { value: 'Real', label: getTeamDisplay('Real') },
+            { value: 'Ehemalige', label: getTeamDisplay('Ehemalige') }
           ]
         },
         {
@@ -169,8 +170,8 @@ export default function SearchTab({ onNavigate }) {
           key: 'team',
           label: 'Team',
           options: [
-            { value: 'AEK', label: 'AEK Athen' },
-            { value: 'Real', label: 'Real Madrid' }
+            { value: 'AEK', label: getTeamDisplay('AEK') },
+            { value: 'Real', label: getTeamDisplay('Real') }
           ]
         },
         {
