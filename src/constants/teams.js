@@ -11,7 +11,7 @@ export const TEAMS = [
 // FC26 TEAMS (with Rangers instead of Real Madrid)
 export const TEAMS_FC26 = [
   { value: 'AEK', label: 'AEK Athen', color: 'blue', icon: 'aek' },
-  { value: 'Real', label: 'Rangers', color: 'red', icon: 'rangers' },
+  { value: 'Real', label: 'Rangers', color: 'red', icon: 'real' }, // Still uses 'real' key but displays as Rangers
   { value: 'Ehemalige', label: 'Ehemalige', color: 'gray', icon: '⚫' },
 ];
 

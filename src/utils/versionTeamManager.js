@@ -42,7 +42,7 @@ const DEFAULT_TEAMS_FC26 = {
   Real: { 
     label: 'Rangers', 
     color: 'red', 
-    icon: 'rangers',
+    icon: 'real',  // Still using 'real' icon key, but custom logo can be uploaded
     customIcon: null
   },
   Ehemalige: { 
