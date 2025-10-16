@@ -24,13 +24,20 @@ Für die kommende Season "FC26" wurde das System erfolgreich erweitert, um Team-
 
 **So laden Sie das Rangers Logo hoch:**
 
-1. Öffnen Sie die Anwendung
-2. Navigieren Sie zu **Admin** → **Version Team Settings**
-3. Wählen Sie **FC26** aus der Version-Liste
-4. Beim "Real" Team (wird bereits als "Rangers" angezeigt):
+Das Rangers Logo wurde bereitgestellt! Siehe **RANGERS_LOGO_INSTALLATION.md** für detaillierte Anweisungen.
+
+**Schnellanleitung:**
+
+1. Logo herunterladen von: https://github.com/user-attachments/assets/37a6efbc-9b03-4091-a0fd-b3664ff50508
+2. Öffnen Sie die Anwendung
+3. Navigieren Sie zu **Admin** → **Version Team Settings**
+4. Wählen Sie **FC26** aus der Version-Liste
+5. Beim "Real" Team (wird bereits als "Rangers" angezeigt):
    - Klicken Sie auf "Choose File" / "Datei auswählen"
-   - Wählen Sie Ihr Rangers Logo
+   - Wählen Sie das heruntergeladene Logo
    - Logo wird automatisch hochgeladen
+
+Siehe **RANGERS_LOGO_INSTALLATION.md** für alternative Methoden und Fehlerbehebung.
 
 ### Aktualisierte Bereiche
 

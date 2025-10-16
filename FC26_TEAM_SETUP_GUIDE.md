@@ -17,6 +17,14 @@ Die Team-Keys in der Datenbank bleiben unverändert ('AEK', 'Real', 'Ehemalige')
 
 Um das Rangers Logo für FC26 hochzuladen, folgen Sie diesen Schritten:
 
+**Hinweis**: Das Rangers Logo wurde bereitgestellt! Detaillierte Anweisungen finden Sie in **RANGERS_LOGO_INSTALLATION.md**.
+
+### Schnellanleitung
+
+1. **Logo herunterladen**
+   - URL: https://github.com/user-attachments/assets/37a6efbc-9b03-4091-a0fd-b3664ff50508
+   - Rechtsklick → "Bild speichern unter..." → Speichern als PNG
+
 ### Schritt 1: Zum Admin-Bereich navigieren
 1. Öffnen Sie die Anwendung
 2. Navigieren Sie zum **Admin**-Tab
