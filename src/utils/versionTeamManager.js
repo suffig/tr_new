@@ -34,7 +34,7 @@ const DEFAULT_TEAMS_FC25 = {
 // Default team configurations for FC26 (Current)
 const DEFAULT_TEAMS_FC26 = {
   AEK: { 
-    label: 'Dynamo Dresden', 
+    label: 'Dynamo', 
     color: 'blue', 
     icon: 'dynamo',  // Use Dynamo Dresden logo for FC26
     customIcon: null
