@@ -8,10 +8,10 @@ export const TEAMS = [
   { value: 'Ehemalige', label: 'Ehemalige', color: 'gray', icon: '⚫' },
 ];
 
-// FC26 TEAMS (with Rangers instead of Real Madrid)
+// FC26 TEAMS (with Dynamo Dresden and Rangers)
 export const TEAMS_FC26 = [
-  { value: 'AEK', label: 'AEK Athen', color: 'blue', icon: 'aek' },
-  { value: 'Real', label: 'Rangers', color: 'red', icon: 'real' }, // Still uses 'real' key but displays as Rangers
+  { value: 'AEK', label: 'Dynamo Dresden', color: 'blue', icon: 'dynamo' }, // Dynamo Dresden for FC26
+  { value: 'Real', label: 'Rangers', color: 'red', icon: 'real' }, // Rangers for FC26
   { value: 'Ehemalige', label: 'Ehemalige', color: 'gray', icon: '⚫' },
 ];
 
