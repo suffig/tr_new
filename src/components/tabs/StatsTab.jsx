@@ -492,8 +492,8 @@ class StatsCalculator {
       realWins: 0,
       aekGoals: 0,
       realGoals: 0,
-      biggestAekWin: { diff: 0, score: '', date: '', opponent: 'Real Madrid' },
-      biggestRealWin: { diff: 0, score: '', date: '', opponent: 'AEK Athen' }
+      biggestAekWin: { diff: 0, score: '', date: '', opponent: getTeamDisplay('Real') },
+      biggestRealWin: { diff: 0, score: '', date: '', opponent: getTeamDisplay('AEK') }
     };
 
     this.matches.forEach(match => {
@@ -511,7 +511,7 @@ class StatsCalculator {
             diff,
             score: `${aekGoals}:${realGoals}`,
             date: match.date || '',
-            opponent: 'Real Madrid'
+            opponent: getTeamDisplay('Real')
           };
         }
       } else if (realGoals > aekGoals) {
@@ -521,7 +521,7 @@ class StatsCalculator {
             diff,
             score: `${realGoals}:${aekGoals}`,
             date: match.date || '',
-            opponent: 'AEK Athen'
+            opponent: getTeamDisplay('AEK')
           };
         }
       }
@@ -801,7 +801,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <div className="mobile-grid mobile-grid-1 md:grid-cols-3 gap-4">
           <div className="mobile-overview-card team-aek animate-mobile-slide-in hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-blue uppercase tracking-wide">🔵 AEK Athen</div>
+              <div className="text-caption1 font-semibold text-system-blue uppercase tracking-wide">🔵 {getTeamDisplay('AEK')}</div>
               <div className="w-8 h-8 bg-system-blue/10 rounded-full flex items-center justify-center">
                 <span className="text-system-blue text-sm font-bold">A</span>
               </div>
@@ -1076,7 +1076,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="w-10 h-10 bg-fifa-blue/10 rounded-full flex items-center justify-center">
               <span className="text-lg">🔵</span>
             </div>
-            <h3 className="text-title3 font-bold text-fifa-blue">AEK Athen</h3>
+            <h3 className="text-title3 font-bold text-fifa-blue">{getTeamDisplay('AEK')}</h3>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between">
@@ -1366,7 +1366,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <h3 className="font-bold text-lg mb-4">⚖️ Team-Vergleich</h3>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <h4 className="font-semibold text-blue-600">AEK Athen</h4>
+            <h4 className="font-semibold text-blue-600">{getTeamDisplay('AEK')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Aktive Spieler:</span>
@@ -1818,7 +1818,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-blue-700">AEK Athens</span>
+                      <span className="font-medium text-blue-700">{getTeamDisplay('AEK')}</span>
                       <span className="text-sm text-blue-600">{aekWinRate}% Siege</span>
                     </div>
                     <div className="space-y-1 text-sm">

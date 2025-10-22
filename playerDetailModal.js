@@ -4,6 +4,8 @@
  */
 
 import FIFADataService from './fifaDataService.js';
+import { getVersionTeamDisplay } from './src/utils/versionTeamManager.js';
+import { getCurrentFifaVersion } from './src/utils/fifaVersionManager.js';
 
 export class PlayerDetailModal {
     constructor() {
@@ -493,12 +495,9 @@ export class PlayerDetailModal {
      * Get team display name
      */
     getTeamDisplayName() {
-        switch (this.currentPlayer.team) {
-            case 'AEK': return 'AEK Athens';
-            case 'Real': return 'Real Madrid';
-            case 'Ehemalige': return 'Former Players';
-            default: return this.currentPlayer.team;
-        }
+        const currentVersion = getCurrentFifaVersion();
+        const teamDisplay = getVersionTeamDisplay(this.currentPlayer.team, currentVersion);
+        return teamDisplay.label || this.currentPlayer.team;
     }
 
     /**

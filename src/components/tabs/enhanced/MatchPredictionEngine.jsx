@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import LoadingSpinner from '../../LoadingSpinner';
+import { getTeamDisplay } from '../../../constants/teams';
 
 /**
  * Match Prediction and Insights Engine
@@ -49,8 +50,8 @@ export default function MatchPredictionEngine() {
               onChange={(e) => setSelectedMatchup(e.target.value)}
               className="modern-select"
             >
-              <option value="AEK_vs_Real">AEK vs Real Madrid</option>
-              <option value="Real_vs_AEK">Real Madrid vs AEK</option>
+              <option value="AEK_vs_Real">{getTeamDisplay('AEK')} vs {getTeamDisplay('Real')}</option>
+              <option value="Real_vs_AEK">{getTeamDisplay('Real')} vs {getTeamDisplay('AEK')}</option>
               <option value="neutral">Neutraler Platz</option>
             </select>
 
@@ -134,7 +135,7 @@ function OutcomePrediction({ data }) {
             icon="⚖️"
           />
           <ProbabilityCard 
-            team="Real Madrid"
+            team={getTeamDisplay('Real')}
             probability={outcome.realWin}
             color="bg-accent-red"
             icon="🔴"
@@ -171,7 +172,7 @@ function OutcomePrediction({ data }) {
           </h4>
           <div className="space-y-4">
             <MomentumBar team="AEK" momentum={factors.momentum.aek} />
-            <MomentumBar team="Real Madrid" momentum={factors.momentum.real} />
+            <MomentumBar team={getTeamDisplay('Real')} momentum={factors.momentum.real} />
           </div>
         </div>
       </div>
@@ -235,7 +236,7 @@ function PlayerPredictions({ data }) {
         <h3 className="text-lg font-semibold mb-4">⚽ Torschützen-Vorhersagen</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h4 className="font-medium mb-3 text-primary-blue">🔵 AEK Athen</h4>
+            <h4 className="font-medium mb-3 text-primary-blue">🔵 {getTeamDisplay('AEK')}</h4>
             <div className="space-y-2">
               {playerPredictions.goalScorers.aek.map((player, idx) => (
                 <PlayerPredictionRow key={idx} player={player} />
@@ -243,7 +244,7 @@ function PlayerPredictions({ data }) {
             </div>
           </div>
           <div>
-            <h4 className="font-medium mb-3 text-accent-red">🔴 Real Madrid</h4>
+            <h4 className="font-medium mb-3 text-accent-red">🔴 {getTeamDisplay('Real')}</h4>
             <div className="space-y-2">
               {playerPredictions.goalScorers.real.map((player, idx) => (
                 <PlayerPredictionRow key={idx} player={player} />
@@ -665,7 +666,7 @@ function calculateOutcomeProbabilities(teamStats, matchup) {
 
   const prediction = aekProb > realProb ? 
     `AEK Sieg (${Math.round(aekProb)}%)` : 
-    `Real Madrid Sieg (${Math.round(realProb)}%)`;
+    `${getTeamDisplay('Real')} Sieg (${Math.round(realProb)}%)`;
 
   return {
     aekWin: Math.round(aekProb),
@@ -783,7 +784,7 @@ function generateAdvancedInsights(matches, teamStats, depth) {
   
   return {
     strategicFocus: "AEK sollte früh Druck aufbauen und die Heimstärke nutzen",
-    riskFactors: "Real Madrid gefährlich bei Standardsituationen",
+    riskFactors: `${getTeamDisplay('Real')} gefährlich bei Standardsituationen`,
     surpriseFactors: "Wettereinfluss könnte Spielstil beeinflussen",
     statHighlight: `Letzte 5 Spiele: 3-1-1 für AEK`,
     longTermTrend: "AEK zeigt aufsteigende Tendenz in der Saison",

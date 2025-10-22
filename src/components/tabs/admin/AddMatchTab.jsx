@@ -408,7 +408,7 @@ export default function AddMatchTab() {
                     {/* AEK Scoring */}
                     <div className="space-y-3">
                       <div className="text-center">
-                        <h5 className="text-sm font-medium text-blue-600 mb-3">⚽ AEK Athen Torschützen</h5>
+                        <h5 className="text-sm font-medium text-blue-600 mb-3">⚽ {getTeamDisplay('AEK')} Torschützen</h5>
                       </div>
                       
                       {/* AEK Scorers List */}
@@ -577,7 +577,7 @@ export default function AddMatchTab() {
                       <div className="flex items-center justify-between bg-orange-50 rounded-lg p-2 border border-orange-200">
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-700">Eigentore</div>
-                          <div className="text-xs text-gray-500">Zählen für AEK Athen</div>
+                          <div className="text-xs text-gray-500">Zählen für {getTeamDisplay('AEK')}</div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
@@ -610,7 +610,7 @@ export default function AddMatchTab() {
                   <h4 className="text-sm font-medium text-text-primary mb-3">🟨🟥 Karten</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <p className="text-xs text-blue-600 font-medium">AEK Athen</p>
+                      <p className="text-xs text-blue-600 font-medium">{getTeamDisplay('AEK')}</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs text-text-muted mb-1">

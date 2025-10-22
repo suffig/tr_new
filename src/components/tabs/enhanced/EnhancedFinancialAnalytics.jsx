@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import LoadingSpinner from '../../LoadingSpinner';
 import TeamLogo from '../../TeamLogo';
+import { getTeamDisplay } from '../../../constants/teams';
 
 // Helper function to calculate financial analytics
 function calculateFinancialAnalytics(players, matches, transactions, selectedTeam, timeframe) {
@@ -237,8 +238,8 @@ export default function EnhancedFinancialAnalytics() {
               className="modern-select"
             >
               <option value="both">Beide Teams</option>
-              <option value="AEK">AEK Athen</option>
-              <option value="Real">Real Madrid</option>
+              <option value="AEK">{getTeamDisplay('AEK')}</option>
+              <option value="Real">{getTeamDisplay('Real')}</option>
             </select>
 
             {/* Analysis Type */}
@@ -341,7 +342,7 @@ function FinancialOverview({ data }) {
         <h3 className="text-lg font-semibold mb-4">🏆 Team-Vergleich</h3>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TeamFinancialCard team="AEK" data={overview.teams.aek} />
-          <TeamFinancialCard team="Real Madrid" data={overview.teams.real} />
+          <TeamFinancialCard team={getTeamDisplay('Real')} data={overview.teams.real} />
         </div>
       </div>
 
@@ -456,7 +457,7 @@ function ROIAnalysis({ data }) {
           <div>
             <h4 className="font-medium mb-3 text-primary-blue flex items-center gap-2">
               <TeamLogo team="aek" size="sm" />
-              AEK Athen
+              {getTeamDisplay('AEK')}
             </h4>
             <div className="space-y-2">
               {roi.topPlayers.aek.map((player, idx) => (
@@ -467,7 +468,7 @@ function ROIAnalysis({ data }) {
           <div>
             <h4 className="font-medium mb-3 text-accent-red flex items-center gap-2">
               <TeamLogo team="real" size="sm" />
-              Real Madrid
+              {getTeamDisplay('Real')}
             </h4>
             <div className="space-y-2">
               {roi.topPlayers.real.map((player, idx) => (
@@ -563,7 +564,7 @@ function PlayerValuations({ data }) {
           <div>
             <h4 className="font-medium mb-3 text-primary-blue flex items-center gap-2">
               <TeamLogo team="aek" size="sm" />
-              AEK Athen
+              {getTeamDisplay('AEK')}
             </h4>
             <div className="space-y-2">
               {valuations.aek.map((player, idx) => (
@@ -574,7 +575,7 @@ function PlayerValuations({ data }) {
           <div>
             <h4 className="font-medium mb-3 text-accent-red flex items-center gap-2">
               <TeamLogo team="real" size="sm" />
-              Real Madrid
+              {getTeamDisplay('Real')}
             </h4>
             <div className="space-y-2">
               {valuations.real.map((player, idx) => (

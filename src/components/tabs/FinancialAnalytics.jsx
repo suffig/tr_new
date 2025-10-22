@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
+import { getTeamDisplay } from '../../constants/teams';
 
 // Enhanced Financial Analytics Dashboard
 export default function FinancialAnalytics() {
@@ -99,8 +100,8 @@ export default function FinancialAnalytics() {
             className="px-3 py-2 border border-border-light rounded-lg bg-bg-primary text-text-primary"
           >
             <option value="both">Beide Teams</option>
-            <option value="AEK">AEK Athen</option>
-            <option value="Real">Real Madrid</option>
+            <option value="AEK">{getTeamDisplay('AEK')}</option>
+            <option value="Real">{getTeamDisplay('Real')}</option>
           </select>
         </div>
       </div>
