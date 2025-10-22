@@ -5,6 +5,7 @@ import EnhancedDashboard from '../EnhancedDashboard';
 import HorizontalNavigation from '../HorizontalNavigation';
 import MatchDayOverview from '../MatchDayOverview';
 import QuickStatsWidget from '../QuickStatsWidget';
+import { getTeamDisplay } from '../../constants/teams';
 import { 
   TrendLineChart, 
   PlayerBarChart, 
@@ -491,8 +492,8 @@ class StatsCalculator {
       realWins: 0,
       aekGoals: 0,
       realGoals: 0,
-      biggestAekWin: { diff: 0, score: '', date: '', opponent: 'Real Madrid' },
-      biggestRealWin: { diff: 0, score: '', date: '', opponent: 'AEK Athen' }
+      biggestAekWin: { diff: 0, score: '', date: '', opponent: getTeamDisplay('Real') },
+      biggestRealWin: { diff: 0, score: '', date: '', opponent: getTeamDisplay('AEK') }
     };
 
     this.matches.forEach(match => {
@@ -510,7 +511,7 @@ class StatsCalculator {
             diff,
             score: `${aekGoals}:${realGoals}`,
             date: match.date || '',
-            opponent: 'Real Madrid'
+            opponent: getTeamDisplay('Real')
           };
         }
       } else if (realGoals > aekGoals) {
@@ -520,7 +521,7 @@ class StatsCalculator {
             diff,
             score: `${realGoals}:${aekGoals}`,
             date: match.date || '',
-            opponent: 'AEK Athen'
+            opponent: getTeamDisplay('AEK')
           };
         }
       }
@@ -800,7 +801,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <div className="mobile-grid mobile-grid-1 md:grid-cols-3 gap-4">
           <div className="mobile-overview-card team-aek animate-mobile-slide-in hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-blue uppercase tracking-wide">🔵 AEK Athen</div>
+              <div className="text-caption1 font-semibold text-system-blue uppercase tracking-wide">🔵 {getTeamDisplay('AEK')}</div>
               <div className="w-8 h-8 bg-system-blue/10 rounded-full flex items-center justify-center">
                 <span className="text-system-blue text-sm font-bold">A</span>
               </div>
@@ -821,7 +822,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           
           <div className="mobile-overview-card team-real animate-mobile-slide-in hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-red uppercase tracking-wide">🔴 Real Madrid</div>
+              <div className="text-caption1 font-semibold text-system-red uppercase tracking-wide">🔴 {getTeamDisplay('Real')}</div>
               <div className="w-8 h-8 bg-system-red/10 rounded-full flex items-center justify-center">
                 <span className="text-system-red text-sm font-bold">R</span>
               </div>
@@ -1075,7 +1076,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="w-10 h-10 bg-fifa-blue/10 rounded-full flex items-center justify-center">
               <span className="text-lg">🔵</span>
             </div>
-            <h3 className="text-title3 font-bold text-fifa-blue">AEK Athen</h3>
+            <h3 className="text-title3 font-bold text-fifa-blue">{getTeamDisplay('AEK')}</h3>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between">
@@ -1102,7 +1103,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="w-10 h-10 bg-fifa-red/10 rounded-full flex items-center justify-center">
               <span className="text-lg">🔴</span>
             </div>
-            <h3 className="text-title3 font-bold text-fifa-red">Real Madrid</h3>
+            <h3 className="text-title3 font-bold text-fifa-red">{getTeamDisplay('Real')}</h3>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between">
@@ -1365,7 +1366,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <h3 className="font-bold text-lg mb-4">⚖️ Team-Vergleich</h3>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <h4 className="font-semibold text-blue-600">AEK Athen</h4>
+            <h4 className="font-semibold text-blue-600">{getTeamDisplay('AEK')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Aktive Spieler:</span>
@@ -1386,7 +1387,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             </div>
           </div>
           <div className="space-y-3">
-            <h4 className="font-semibold text-red-600">Real Madrid</h4>
+            <h4 className="font-semibold text-red-600">{getTeamDisplay('Real')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Aktive Spieler:</span>
@@ -1529,7 +1530,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               <div className="flex justify-between">
                 <span>Torreichstes Team:</span>
                 <span className="font-medium">
-                  {advancedStats.aekTotalGoals >= advancedStats.realTotalGoals ? 'AEK Athen' : 'Real Madrid'}
+                  {advancedStats.aekTotalGoals >= advancedStats.realTotalGoals ? getTeamDisplay('AEK') : getTeamDisplay('Real')}
                   ({Math.max(advancedStats.aekTotalGoals, advancedStats.realTotalGoals)} Tore)
                 </span>
               </div>
@@ -1564,7 +1565,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               <div className="flex justify-between">
                 <span>Dominanteres Team:</span>
                 <span className="font-medium">
-                  {aekWins > realWins ? 'AEK Athen' : realWins > aekWins ? 'Real Madrid' : 'Ausgeglichen'}
+                  {aekWins > realWins ? getTeamDisplay('AEK') : realWins > aekWins ? getTeamDisplay('Real') : 'Ausgeglichen'}
                 </span>
               </div>
             </div>
@@ -1576,7 +1577,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       <div className="modern-card">
         <h3 className="font-bold text-lg mb-4">⚔️ Head-to-Head Bilanz</h3>
         <div className="mb-4 text-sm text-text-muted">
-          Direkter Vergleich zwischen AEK Athen und Real Madrid über alle Spiele.
+          Direkter Vergleich zwischen {getTeamDisplay('AEK')} und {getTeamDisplay('Real')} über alle Spiele.
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-blue-50 rounded-lg">
@@ -1817,7 +1818,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                   <div className="p-4 bg-blue-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-blue-700">AEK Athens</span>
+                      <span className="font-medium text-blue-700">{getTeamDisplay('AEK')}</span>
                       <span className="text-sm text-blue-600">{aekWinRate}% Siege</span>
                     </div>
                     <div className="space-y-1 text-sm">
@@ -1840,7 +1841,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
                   <div className="p-4 bg-red-50 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-red-700">Real Madrid</span>
+                      <span className="font-medium text-red-700">{getTeamDisplay('Real')}</span>
                       <span className="text-sm text-red-600">{realWinRate}% Siege</span>
                     </div>
                     <div className="space-y-1 text-sm">

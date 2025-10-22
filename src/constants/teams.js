@@ -1,10 +1,17 @@
 import { getVersionTeamsArray, getVersionTeamDisplay } from '../utils/versionTeamManager.js';
-import { getCurrentFifaVersion } from '../utils/fifaVersionManager.js';
+import { getCurrentFifaVersion, BUILT_IN_FIFA_VERSIONS } from '../utils/fifaVersionManager.js';
 
-// Legacy TEAMS constant for backward compatibility
+// Legacy TEAMS constant for backward compatibility (FC25 defaults)
 export const TEAMS = [
   { value: 'AEK', label: 'AEK Athen', color: 'blue', icon: 'aek' },
   { value: 'Real', label: 'Real Madrid', color: 'red', icon: 'real' },
+  { value: 'Ehemalige', label: 'Ehemalige', color: 'gray', icon: '⚫' },
+];
+
+// FC26 TEAMS (with Dynamo and Rangers)
+export const TEAMS_FC26 = [
+  { value: 'AEK', label: 'Dynamo', color: 'blue', icon: 'dynamo' }, // Dynamo for FC26
+  { value: 'Real', label: 'Rangers', color: 'red', icon: 'real' }, // Rangers for FC26
   { value: 'Ehemalige', label: 'Ehemalige', color: 'gray', icon: '⚫' },
 ];
 
