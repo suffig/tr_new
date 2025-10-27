@@ -261,7 +261,7 @@ export default function SearchTab({ onNavigate }) {
                     {new Date(item.date).toLocaleDateString('de-DE')}
                   </h3>
                   <p className="text-sm text-text-secondary">
-                    {item.teama || 'AEK'} {item.goalsa || 0} - {item.goalsb || 0} {item.teamb || 'Real'}
+                    {getTeamDisplay(item.teama || 'AEK')} {item.goalsa || 0} - {item.goalsb || 0} {getTeamDisplay(item.teamb || 'Real')}
                   </p>
                   {/* Show goalscorers if available */}
                   {(() => {

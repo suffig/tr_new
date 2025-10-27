@@ -194,7 +194,7 @@ export default function AddMatchTab() {
       const playerGoalsA = formData.goalslista.reduce((sum, scorer) => sum + scorer.count, 0);
       const ownGoalsFromB = formData.ownGoalsB || 0;
       if (playerGoalsA + ownGoalsFromB < formData.goalsa) {
-        issues.push(`AEK Torschützen fehlen (${playerGoalsA + ownGoalsFromB}/${formData.goalsa})`);
+        issues.push(`${getTeamDisplay('AEK')} Torschützen fehlen (${playerGoalsA + ownGoalsFromB}/${formData.goalsa})`);
       }
     }
     
@@ -202,7 +202,7 @@ export default function AddMatchTab() {
       const playerGoalsB = formData.goalslistb.reduce((sum, scorer) => sum + scorer.count, 0);
       const ownGoalsFromA = formData.ownGoalsA || 0;
       if (playerGoalsB + ownGoalsFromA < formData.goalsb) {
-        issues.push(`Real Torschützen fehlen (${playerGoalsB + ownGoalsFromA}/${formData.goalsb})`);
+        issues.push(`${getTeamDisplay('Real')} Torschützen fehlen (${playerGoalsB + ownGoalsFromA}/${formData.goalsb})`);
       }
     }
     
@@ -398,8 +398,8 @@ export default function AddMatchTab() {
                     </div>
                     {(formData.goalsa > 0 || formData.goalsb > 0) && (
                       <div className="text-xs text-gray-500 mt-2">
-                        {formData.goalsa > formData.goalsb ? '🏆 AEK führt' : 
-                         formData.goalsb > formData.goalsa ? '🏆 Real führt' : '⚖️ Unentschieden'}
+                        {formData.goalsa > formData.goalsb ? `🏆 ${getTeamDisplay('AEK')} führt` : 
+                         formData.goalsb > formData.goalsa ? `🏆 ${getTeamDisplay('Real')} führt` : '⚖️ Unentschieden'}
                       </div>
                     )}
                   </div>
@@ -756,7 +756,7 @@ export default function AddMatchTab() {
                         }`}
                         disabled={loading}
                       >
-                        AEK
+                        {getTeamDisplay('AEK')}
                       </button>
                       <button
                         type="button"
@@ -768,7 +768,7 @@ export default function AddMatchTab() {
                         }`}
                         disabled={loading}
                       >
-                        Real
+                        {getTeamDisplay('Real')}
                       </button>
                     </div>
                   </div>
@@ -800,7 +800,7 @@ export default function AddMatchTab() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-2">
-                        Preisgeld AEK (€)
+                        Preisgeld {getTeamDisplay('AEK')} (€)
                       </label>
                       <input
                         type="number"
@@ -813,7 +813,7 @@ export default function AddMatchTab() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-2">
-                        Preisgeld Real (€)
+                        Preisgeld {getTeamDisplay('Real')} (€)
                       </label>
                       <input
                         type="number"
@@ -869,7 +869,7 @@ export default function AddMatchTab() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-green-700">Ergebnis:</span>
-                        <span className="font-medium text-green-800">AEK {formData.goalsa} : {formData.goalsb} Real</span>
+                        <span className="font-medium text-green-800">{getTeamDisplay('AEK')} {formData.goalsa} : {formData.goalsb} {getTeamDisplay('Real')}</span>
                       </div>
                       {formData.manofthematch && (
                         <div className="flex justify-between">
@@ -880,7 +880,7 @@ export default function AddMatchTab() {
                       <div className="flex justify-between">
                         <span className="text-green-700">Preisgelder:</span>
                         <span className="font-medium text-green-800">
-                          AEK {formData.prizeaek.toLocaleString()}€, Real {formData.prizereal.toLocaleString()}€
+                          {getTeamDisplay('AEK')} {formData.prizeaek.toLocaleString()}€, {getTeamDisplay('Real')} {formData.prizereal.toLocaleString()}€
                         </span>
                       </div>
                     </div>
