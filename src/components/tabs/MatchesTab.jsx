@@ -168,12 +168,13 @@ export default function MatchesTab({ showHints = false }) {
 
   // Helper function to get player name and value
   const getPlayerInfo = (playerId, playerName) => {
-    if (!players) return { name: playerName || 'Unbekannt', value: 0 };
+    if (!players) return { name: playerName || 'Unbekannt', value: 0, team: 'Unbekannt' };
     const player = players.find(p => p.id === playerId || p.name === playerName);
+    const rawTeam = player?.team || 'Unbekannt';
     return {
       name: player?.name || playerName || 'Unbekannt',
       value: player?.value || 0,
-      team: player?.team || 'Unbekannt'
+      team: rawTeam === 'Unbekannt' ? 'Unbekannt' : getTeamDisplay(rawTeam)
     };
   };
 
@@ -470,6 +471,9 @@ export default function MatchesTab({ showHints = false }) {
                     const realGoals = match.goalsb || 0;
                     const winner = aekGoals > realGoals ? 'aek' : realGoals > aekGoals ? 'real' : 'draw';
                     
+                    // Calculate sequential match number (1-based, newest first)
+                    const matchNumber = matchIndex + 1;
+                    
                     return (
                       <div 
                         key={match.id} 
@@ -585,7 +589,7 @@ export default function MatchesTab({ showHints = false }) {
                                 </h3>
                                 <div className="flex items-center gap-3 text-sm">
                                   <span className="bg-white px-3 py-1.5 rounded-lg font-semibold text-gray-700 shadow-sm">
-                                    Match #{match.id}
+                                    Match #{matchNumber}
                                   </span>
                                   <span className="text-gray-400">•</span>
                                   <span className="bg-white px-3 py-1.5 rounded-lg font-medium text-gray-600 shadow-sm">
