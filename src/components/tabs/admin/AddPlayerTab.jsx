@@ -1,16 +1,24 @@
 import { useState } from 'react';
 import { supabaseDb } from '../../../utils/supabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
+import { POSITIONS } from '../../../utils/errorHandling';
 import toast from 'react-hot-toast';
 
-const POSITIONS = [
-  { value: 'TH', label: 'Torwart (TH)' },
-  { value: 'IV', label: 'Innenverteidiger (IV)' },
-  { value: 'AV', label: 'Außenverteidiger (AV)' },
-  { value: 'ZM', label: 'Zentrales Mittelfeld (ZM)' },
-  { value: 'OM', label: 'Offensives Mittelfeld (OM)' },
-  { value: 'ST', label: 'Stürmer (ST)' },
-];
+// Position labels for display (matching POSITIONS from errorHandling.js)
+const POSITION_LABELS = {
+  'TH': 'Torwart (TH)',
+  'LV': 'Linker Verteidiger (LV)',
+  'RV': 'Rechter Verteidiger (RV)',
+  'IV': 'Innenverteidiger (IV)',
+  'ZDM': 'Zentrales defensives Mittelfeld (ZDM)',
+  'ZM': 'Zentrales Mittelfeld (ZM)',
+  'ZOM': 'Zentrales offensives Mittelfeld (ZOM)',
+  'LM': 'Linkes Mittelfeld (LM)',
+  'RM': 'Rechtes Mittelfeld (RM)',
+  'LF': 'Linksaußen (LF)',
+  'RF': 'Rechtsaußen (RF)',
+  'ST': 'Stürmer (ST)',
+};
 
 export default function AddPlayerTab() {
   const [showModal, setShowModal] = useState(false);
@@ -178,8 +186,8 @@ export default function AddPlayerTab() {
                   >
                     <option value="">Position wählen</option>
                     {POSITIONS.map((position) => (
-                      <option key={position.value} value={position.value}>
-                        {position.label}
+                      <option key={position} value={position}>
+                        {POSITION_LABELS[position]}
                       </option>
                     ))}
                   </select>
@@ -277,8 +285,8 @@ export default function AddPlayerTab() {
         <h4 className="font-semibold text-text-primary mb-3">Verfügbare Positionen</h4>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {POSITIONS.map((position) => (
-            <div key={position.value} className="p-3 bg-bg-secondary rounded-lg text-center">
-              <span className="font-medium text-text-primary text-sm">{position.label}</span>
+            <div key={position} className="p-3 bg-bg-secondary rounded-lg text-center">
+              <span className="font-medium text-text-primary text-sm">{POSITION_LABELS[position]}</span>
             </div>
           ))}
         </div>
