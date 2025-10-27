@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
+import { getTeamDisplay } from '../../constants/teams';
 
 // Enhanced Analytics Dashboard with new features
 export default function AdvancedAnalytics() {
@@ -120,11 +121,11 @@ function PerformanceAnalysis({ data }) {
         </h3>
         <div className="space-y-2">
           <div className="flex justify-between">
-            <span>AEK Athen:</span>
+            <span>{getTeamDisplay('AEK')}:</span>
             <span className="font-semibold text-primary-blue">{data.shotAccuracy.aek}%</span>
           </div>
           <div className="flex justify-between">
-            <span>Real Madrid:</span>
+            <span>{getTeamDisplay('Real')}:</span>
             <span className="font-semibold text-accent-red">{data.shotAccuracy.real}%</span>
           </div>
         </div>
@@ -181,7 +182,7 @@ function TrendAnalysis({ data }) {
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <h4 className="font-medium mb-2 text-primary-blue">🔵 AEK Athen</h4>
+            <h4 className="font-medium mb-2 text-primary-blue">🔵 {getTeamDisplay('AEK')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Tore/Spiel Trend:</span>
@@ -201,7 +202,7 @@ function TrendAnalysis({ data }) {
           </div>
           
           <div>
-            <h4 className="font-medium mb-2 text-accent-red">🔴 Real Madrid</h4>
+            <h4 className="font-medium mb-2 text-accent-red">🔴 {getTeamDisplay('Real')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Tore/Spiel Trend:</span>

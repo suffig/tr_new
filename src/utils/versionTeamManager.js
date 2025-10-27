@@ -3,14 +3,14 @@
  * Manages team settings per FIFA version including custom names and icons
  */
 
-import { getCurrentFifaVersion, getAllFifaVersions } from './fifaVersionManager.js';
+import { getCurrentFifaVersion, getAllFifaVersions, BUILT_IN_FIFA_VERSIONS } from './fifaVersionManager.js';
 
 // Storage keys
 const VERSION_TEAMS_STORAGE_KEY = 'fifa_version_teams';
 const VERSION_ICONS_STORAGE_KEY = 'fifa_version_icons';
 
-// Default team configurations
-const DEFAULT_TEAMS = {
+// Default team configurations for FC25 (Legacy)
+const DEFAULT_TEAMS_FC25 = {
   AEK: { 
     label: 'AEK Athen', 
     color: 'blue', 
@@ -31,6 +31,43 @@ const DEFAULT_TEAMS = {
   }
 };
 
+// Default team configurations for FC26 (Current)
+const DEFAULT_TEAMS_FC26 = {
+  AEK: { 
+    label: 'Dynamo', 
+    color: 'blue', 
+    icon: 'dynamo',  // Use Dynamo Dresden logo for FC26
+    customIcon: null
+  },
+  Real: { 
+    label: 'Rangers', 
+    color: 'red', 
+    icon: 'real',  // Still using 'real' icon key, but custom logo can be uploaded
+    customIcon: null
+  },
+  Ehemalige: { 
+    label: 'Ehemalige', 
+    color: 'gray', 
+    icon: '⚫',
+    customIcon: null
+  }
+};
+
+// Default team configurations (for backward compatibility)
+const DEFAULT_TEAMS = DEFAULT_TEAMS_FC25;
+
+/**
+ * Get default teams for a specific FIFA version
+ * @param {string} version - FIFA version
+ * @returns {Object} Default team configurations for the version
+ */
+const getDefaultTeamsForVersion = (version) => {
+  if (version === BUILT_IN_FIFA_VERSIONS.FC26) {
+    return { ...DEFAULT_TEAMS_FC26 };
+  }
+  return { ...DEFAULT_TEAMS_FC25 };
+};
+
 /**
  * Get version-specific team configurations
  * @param {string} version - FIFA version (optional, defaults to current)
@@ -42,11 +79,11 @@ export const getVersionTeams = (version = null) => {
     const stored = localStorage.getItem(VERSION_TEAMS_STORAGE_KEY);
     const allVersionTeams = stored ? JSON.parse(stored) : {};
     
-    // Return version-specific teams or defaults
-    return allVersionTeams[fifaVersion] || { ...DEFAULT_TEAMS };
+    // Return version-specific teams or version-specific defaults
+    return allVersionTeams[fifaVersion] || getDefaultTeamsForVersion(fifaVersion);
   } catch (error) {
     console.error('Error getting version teams:', error);
-    return { ...DEFAULT_TEAMS };
+    return getDefaultTeamsForVersion(version);
   }
 };
 
@@ -114,7 +151,8 @@ export const copyTeamsBetweenVersions = (fromVersion, toVersion) => {
  */
 export const resetVersionTeams = (version = null) => {
   try {
-    return setVersionTeams({ ...DEFAULT_TEAMS }, version);
+    const fifaVersion = version || getCurrentFifaVersion();
+    return setVersionTeams(getDefaultTeamsForVersion(fifaVersion), version);
   } catch (error) {
     console.error('Error resetting version teams:', error);
     return false;

@@ -3,6 +3,7 @@ import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { MatchBusinessLogic } from '../../../utils/matchBusinessLogic';
 import { triggerNotification } from '../../NotificationSystem';
 import toast from 'react-hot-toast';
+import { getTeamDisplay } from '../../../constants/teams';
 
 export default function AddMatchTab() {
   const { data: players } = useSupabaseQuery('players', '*');
@@ -193,7 +194,7 @@ export default function AddMatchTab() {
       const playerGoalsA = formData.goalslista.reduce((sum, scorer) => sum + scorer.count, 0);
       const ownGoalsFromB = formData.ownGoalsB || 0;
       if (playerGoalsA + ownGoalsFromB < formData.goalsa) {
-        issues.push(`AEK Torschützen fehlen (${playerGoalsA + ownGoalsFromB}/${formData.goalsa})`);
+        issues.push(`${getTeamDisplay('AEK')} Torschützen fehlen (${playerGoalsA + ownGoalsFromB}/${formData.goalsa})`);
       }
     }
     
@@ -201,7 +202,7 @@ export default function AddMatchTab() {
       const playerGoalsB = formData.goalslistb.reduce((sum, scorer) => sum + scorer.count, 0);
       const ownGoalsFromA = formData.ownGoalsA || 0;
       if (playerGoalsB + ownGoalsFromA < formData.goalsb) {
-        issues.push(`Real Torschützen fehlen (${playerGoalsB + ownGoalsFromA}/${formData.goalsb})`);
+        issues.push(`${getTeamDisplay('Real')} Torschützen fehlen (${playerGoalsB + ownGoalsFromA}/${formData.goalsb})`);
       }
     }
     
@@ -354,11 +355,11 @@ export default function AddMatchTab() {
                     <h4 className="text-lg font-semibold text-gray-700 mb-2">⚽ Spielpaarung</h4>
                     <div className="flex items-center justify-center space-x-4">
                       <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-medium">
-                        AEK Athen
+                        {getTeamDisplay('AEK')}
                       </div>
                       <div className="text-gray-500 font-bold text-xl">vs</div>
                       <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg font-medium">
-                        Real Madrid
+                        {getTeamDisplay('Real')}
                       </div>
                     </div>
                   </div>
@@ -391,14 +392,14 @@ export default function AddMatchTab() {
                       <span className="text-red-600">{formData.goalsb}</span>
                     </div>
                     <div className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium text-blue-700">AEK Athen</span>
+                      <span className="font-medium text-blue-700">{getTeamDisplay('AEK')}</span>
                       <span className="mx-2">vs</span>
-                      <span className="font-medium text-red-700">Real Madrid</span>
+                      <span className="font-medium text-red-700">{getTeamDisplay('Real')}</span>
                     </div>
                     {(formData.goalsa > 0 || formData.goalsb > 0) && (
                       <div className="text-xs text-gray-500 mt-2">
-                        {formData.goalsa > formData.goalsb ? '🏆 AEK führt' : 
-                         formData.goalsb > formData.goalsa ? '🏆 Real führt' : '⚖️ Unentschieden'}
+                        {formData.goalsa > formData.goalsb ? `🏆 ${getTeamDisplay('AEK')} führt` : 
+                         formData.goalsb > formData.goalsa ? `🏆 ${getTeamDisplay('Real')} führt` : '⚖️ Unentschieden'}
                       </div>
                     )}
                   </div>
@@ -407,7 +408,7 @@ export default function AddMatchTab() {
                     {/* AEK Scoring */}
                     <div className="space-y-3">
                       <div className="text-center">
-                        <h5 className="text-sm font-medium text-blue-600 mb-3">⚽ AEK Athen Torschützen</h5>
+                        <h5 className="text-sm font-medium text-blue-600 mb-3">⚽ {getTeamDisplay('AEK')} Torschützen</h5>
                       </div>
                       
                       {/* AEK Scorers List */}
@@ -477,7 +478,7 @@ export default function AddMatchTab() {
                       <div className="flex items-center justify-between bg-orange-50 rounded-lg p-2 border border-orange-200">
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-700">Eigentore</div>
-                          <div className="text-xs text-gray-500">Zählen für Real Madrid</div>
+                          <div className="text-xs text-gray-500">Zählen für {getTeamDisplay('Real')}</div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
@@ -506,7 +507,7 @@ export default function AddMatchTab() {
                     {/* Real Scoring */}
                     <div className="space-y-3">
                       <div className="text-center">
-                        <h5 className="text-sm font-medium text-red-600 mb-3">⚽ Real Madrid Torschützen</h5>
+                        <h5 className="text-sm font-medium text-red-600 mb-3">⚽ {getTeamDisplay('Real')} Torschützen</h5>
                       </div>
                       
                       {/* Real Scorers List */}
@@ -576,7 +577,7 @@ export default function AddMatchTab() {
                       <div className="flex items-center justify-between bg-orange-50 rounded-lg p-2 border border-orange-200">
                         <div className="flex-1">
                           <div className="text-sm font-medium text-gray-700">Eigentore</div>
-                          <div className="text-xs text-gray-500">Zählen für AEK Athen</div>
+                          <div className="text-xs text-gray-500">Zählen für {getTeamDisplay('AEK')}</div>
                         </div>
                         <div className="flex items-center space-x-2">
                           <button
@@ -609,7 +610,7 @@ export default function AddMatchTab() {
                   <h4 className="text-sm font-medium text-text-primary mb-3">🟨🟥 Karten</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-3">
-                      <p className="text-xs text-blue-600 font-medium">AEK Athen</p>
+                      <p className="text-xs text-blue-600 font-medium">{getTeamDisplay('AEK')}</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs text-text-muted mb-1">
@@ -666,7 +667,7 @@ export default function AddMatchTab() {
                       </div>
                     </div>
                     <div className="space-y-3">
-                      <p className="text-xs text-red-600 font-medium">Real Madrid</p>
+                      <p className="text-xs text-red-600 font-medium">{getTeamDisplay('Real')}</p>
                       <div className="grid grid-cols-2 gap-2">
                         <div>
                           <label className="block text-xs text-text-muted mb-1">
@@ -755,7 +756,7 @@ export default function AddMatchTab() {
                         }`}
                         disabled={loading}
                       >
-                        AEK
+                        {getTeamDisplay('AEK')}
                       </button>
                       <button
                         type="button"
@@ -767,7 +768,7 @@ export default function AddMatchTab() {
                         }`}
                         disabled={loading}
                       >
-                        Real
+                        {getTeamDisplay('Real')}
                       </button>
                     </div>
                   </div>
@@ -799,7 +800,7 @@ export default function AddMatchTab() {
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-2">
-                        Preisgeld AEK (€)
+                        Preisgeld {getTeamDisplay('AEK')} (€)
                       </label>
                       <input
                         type="number"
@@ -812,7 +813,7 @@ export default function AddMatchTab() {
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-2">
-                        Preisgeld Real (€)
+                        Preisgeld {getTeamDisplay('Real')} (€)
                       </label>
                       <input
                         type="number"
@@ -868,7 +869,7 @@ export default function AddMatchTab() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-green-700">Ergebnis:</span>
-                        <span className="font-medium text-green-800">AEK {formData.goalsa} : {formData.goalsb} Real</span>
+                        <span className="font-medium text-green-800">{getTeamDisplay('AEK')} {formData.goalsa} : {formData.goalsb} {getTeamDisplay('Real')}</span>
                       </div>
                       {formData.manofthematch && (
                         <div className="flex justify-between">
@@ -879,7 +880,7 @@ export default function AddMatchTab() {
                       <div className="flex justify-between">
                         <span className="text-green-700">Preisgelder:</span>
                         <span className="font-medium text-green-800">
-                          AEK {formData.prizeaek.toLocaleString()}€, Real {formData.prizereal.toLocaleString()}€
+                          {getTeamDisplay('AEK')} {formData.prizeaek.toLocaleString()}€, {getTeamDisplay('Real')} {formData.prizereal.toLocaleString()}€
                         </span>
                       </div>
                     </div>

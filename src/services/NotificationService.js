@@ -3,6 +3,8 @@
  * Handles match reminders and important notifications
  */
 
+import { getTeamDisplay } from '../constants/teams.js';
+
 class NotificationService {
   constructor() {
     this.isSupported = 'serviceWorker' in navigator && 'PushManager' in window;
@@ -144,7 +146,7 @@ class NotificationService {
     setTimeout(() => {
       this.showNotification({
         title: '⚽ FIFA Match Reminder',
-        body: `Match starting in ${reminderTime} minutes: AEK vs Real Madrid`,
+        body: `Match starting in ${reminderTime} minutes: ${getTeamDisplay('AEK')} vs ${getTeamDisplay('Real')}`,
         icon: '/assets/icon-180.png',
         badge: '/assets/icon-180.png',
         tag: `match-reminder-${match.id}`,

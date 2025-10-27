@@ -144,7 +144,7 @@ export default function EventsSettingsTab() {
           
           <button
             onClick={() => triggerNotification('financial-milestone', {
-              team: 'AEK Athen',
+              team: getTeamDisplay('AEK'),
               amount: 250
             })}
             className="btn-secondary text-sm py-3 px-4 card-hover-lift btn-spring-press flex items-center justify-center gap-2"
@@ -179,7 +179,7 @@ export default function EventsSettingsTab() {
               // Send multiple notifications to test stacking
               setTimeout(() => triggerNotification('match-created', { date: new Date().toISOString() }), 0);
               setTimeout(() => triggerNotification('player-ban', { playerName: 'Test Player', games: 1 }), 300);
-              setTimeout(() => triggerNotification('financial-milestone', { team: 'Real Madrid', amount: 100 }), 600);
+              setTimeout(() => triggerNotification('financial-milestone', { team: getTeamDisplay('Real'), amount: 100 }), 600);
             }}
             className="btn-secondary text-sm py-3 px-4 card-hover-lift btn-spring-press flex items-center justify-center gap-2"
           >

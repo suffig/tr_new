@@ -4,6 +4,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import ExportImportManager from '../ExportImportManager';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
+import { getTeamDisplay } from '../../constants/teams';
 import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
@@ -273,7 +274,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             <div className="modern-card text-center border-l-4 border-blue-400 financial-card">
               <div className="flex items-center justify-center mb-2">
                 <TeamLogo team="aek" size="lg" className="mr-2" />
-                <h3 className="font-semibold text-blue-600">AEK Athen</h3>
+                <h3 className="font-semibold text-blue-600">{getTeamDisplay('AEK')}</h3>
               </div>
               <div className="space-y-1 text-sm">
                 <div>Kontostand: <span className={`font-bold ${getAmountColorClass(aekFinances.balance)} animate-numberCount`}>{formatCurrency(aekFinances.balance)}</span></div>
@@ -298,7 +299,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
           <div className="modern-card mb-6">
             <h3 className="font-bold text-lg mb-4 flex items-center">
               <TeamLogo team="aek" size="lg" className="mr-2" />
-              AEK Athen - Details
+              {getTeamDisplay('AEK')} - Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="text-center">
@@ -325,7 +326,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             <div className="modern-card text-center border-l-4 border-red-400 financial-card">
               <div className="flex items-center justify-center mb-2">
                 <TeamLogo team="real" size="lg" className="mr-2" />
-                <h3 className="font-semibold text-red-600">Real Madrid</h3>
+                <h3 className="font-semibold text-red-600">{getTeamDisplay('Real')}</h3>
               </div>
               <div className="space-y-1 text-sm">
                 <div>Kontostand: <span className={`font-bold ${getAmountColorClass(realFinances.balance)} animate-numberCount`}>{formatCurrency(realFinances.balance)}</span></div>
@@ -350,7 +351,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
           <div className="modern-card mb-6">
             <h3 className="font-bold text-lg mb-4 flex items-center">
               <TeamLogo team="real" size="lg" className="mr-2" />
-              Real Madrid - Details
+              {getTeamDisplay('Real')} - Details
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="text-center">
@@ -377,7 +378,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         <div className="modern-card text-center border-l-4 border-blue-400 financial-card">
           <div className="flex items-center justify-center mb-2">
             <TeamLogo team="aek" size="lg" className="mr-2" />
-            <h3 className="font-semibold text-blue-600">AEK Athen</h3>
+            <h3 className="font-semibold text-blue-600">{getTeamDisplay('AEK')}</h3>
           </div>
           <div className="space-y-1 text-sm">
             <div>Kontostand: <span className={`font-bold ${getAmountColorClass(aekFinances.balance)} animate-numberCount`}>{formatCurrency(aekFinances.balance)}</span></div>
@@ -389,7 +390,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         <div className="modern-card text-center border-l-4 border-red-400 financial-card">
           <div className="flex items-center justify-center mb-2">
             <TeamLogo team="real" size="lg" className="mr-2" />
-            <h3 className="font-semibold text-red-600">Real Madrid</h3>
+            <h3 className="font-semibold text-red-600">{getTeamDisplay('Real')}</h3>
           </div>
           <div className="space-y-1 text-sm">
             <div>Kontostand: <span className={`font-bold ${getAmountColorClass(realFinances.balance)} animate-numberCount`}>{formatCurrency(realFinances.balance)}</span></div>
@@ -671,7 +672,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                   : 'bg-bg-secondary text-text-muted hover:bg-bg-tertiary border border-border-light'
               }`}
             >
-              {team === 'AEK' ? '🔵 AEK Athen' : '🔴 Real Madrid'}
+              {team === 'AEK' ? `🔵 ${getTeamDisplay('AEK')}` : `🔴 ${getTeamDisplay('Real')}`}
             </button>
           ))}
         </div>
@@ -681,7 +682,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
       <div className="modern-card mb-6">
         <div className="flex items-center justify-between mb-4">
           <h4 className="font-semibold text-text-primary">
-            {selectedTeam === 'AEK' ? '🔵 AEK Athen' : '🔴 Real Madrid'} - Details
+            {selectedTeam === 'AEK' ? `🔵 ${getTeamDisplay('AEK')}` : `🔴 ${getTeamDisplay('Real')}`} - Details
           </h4>
           <div className="text-right">
             <div className={`text-lg font-bold ${getAmountColorClass(selectedTeamFinances.balance)}`}>

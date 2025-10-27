@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FIFADataService } from '../utils/fifaDataService';
+import { getTeamDisplay } from '../constants/teams';
 
 const PlayerDetailModal = ({ player, isOpen, onClose }) => {
   const [fifaData, setFifaData] = useState(null);
@@ -35,12 +36,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
   };
 
   const getTeamDisplayName = () => {
-    switch (player?.team) {
-      case 'AEK': return 'AEK Athens';
-      case 'Real': return 'Real Madrid';
-      case 'Ehemalige': return 'Former Players';
-      default: return player?.team;
-    }
+    return getTeamDisplay(player?.team) || player?.team;
   };
 
   const formatSkillName = (skillName) => {
