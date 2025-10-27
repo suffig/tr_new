@@ -262,10 +262,10 @@ class StatsCalculator {
 
     let prediction, confidence;
     if (aekWinProbability > realWinProbability) {
-      prediction = "AEK Sieg";
+      prediction = `${getTeamDisplay('AEK')} Sieg`;
       confidence = Math.round(aekWinProbability * 100);
     } else {
-      prediction = "Real Sieg";
+      prediction = `${getTeamDisplay('Real')} Sieg`;
       confidence = Math.round(realWinProbability * 100);
     }
 
@@ -285,15 +285,15 @@ class StatsCalculator {
     const reasons = [];
     
     if (aekForm > realForm) {
-      reasons.push("AEK zeigt bessere Form in den letzten Spielen");
+      reasons.push(`${getTeamDisplay('AEK')} zeigt bessere Form in den letzten Spielen`);
     } else if (realForm > aekForm) {
-      reasons.push("Real zeigt bessere Form in den letzten Spielen");
+      reasons.push(`${getTeamDisplay('Real')} zeigt bessere Form in den letzten Spielen`);
     }
 
     if (aekBans > realBans) {
-      reasons.push(`AEK hat mehr gesperrte Spieler (${aekBans} vs ${realBans})`);
+      reasons.push(`${getTeamDisplay('AEK')} hat mehr gesperrte Spieler (${aekBans} vs ${realBans})`);
     } else if (realBans > aekBans) {
-      reasons.push(`Real hat mehr gesperrte Spieler (${realBans} vs ${aekBans})`);
+      reasons.push(`${getTeamDisplay('Real')} hat mehr gesperrte Spieler (${realBans} vs ${aekBans})`);
     }
 
     return reasons.join('. ') || "Ausgeglichene Teams";
@@ -1149,7 +1149,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                   </div>
                   <div>
                     <div className="text-callout font-medium text-text-primary">{player.name}</div>
-                    <div className="text-caption1 text-text-secondary">{player.team}</div>
+                    <div className="text-caption1 text-text-secondary">{getTeamDisplay(player.team)}</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -1183,7 +1183,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 </span>
                 <div>
                   <div className="font-medium">{player.name}</div>
-                  <div className="text-sm text-text-muted">{player.team}</div>
+                  <div className="text-sm text-text-muted">{getTeamDisplay(player.team)}</div>
                 </div>
               </div>
               <div className="text-right">
@@ -1262,7 +1262,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     player.team === 'Ehemalige' ? 'bg-gray-100 text-gray-800' :
                     'bg-red-100 text-red-800'
                   }`}>
-                    {player.team}
+                    {getTeamDisplay(player.team)}
                   </span>
                 </td>
                 <td className="py-2 text-center font-bold">{player.goals}</td>
@@ -1442,7 +1442,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="text-sm text-text-muted">Siegesserie</div>
             <div className="text-xs text-text-muted mt-1">
               {advancedStats.currentStreak.count > 0 ? 
-                advancedStats.currentStreak.team : 'Keine aktuelle Serie'}
+                getTeamDisplay(advancedStats.currentStreak.team) : 'Keine aktuelle Serie'}
             </div>
           </div>
         </div>
@@ -2100,7 +2100,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                   </div>
                   <div>
                     <div className="font-medium text-text-primary">{player.name}</div>
-                    <div className="text-xs text-text-muted">{player.team}</div>
+                    <div className="text-xs text-text-muted">{getTeamDisplay(player.team)}</div>
                   </div>
                 </div>
                 <div className="text-right">
@@ -2180,7 +2180,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     </div>
                     <div>
                       <div className="font-medium text-text-primary">{player.name}</div>
-                      <div className="text-xs text-text-muted">{player.team} • {player.goals} Tore</div>
+                      <div className="text-xs text-text-muted">{getTeamDisplay(player.team)} • {player.goals} Tore</div>
                     </div>
                   </div>
                   <div className="text-right">
