@@ -3,6 +3,7 @@ import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
+import { getTeamDisplay } from '../../constants/teams';
 import '../../styles/match-animations.css';
 
 export default function MatchesTab({ showHints = false }) {
@@ -133,8 +134,8 @@ export default function MatchesTab({ showHints = false }) {
   const views = [
     { id: 'overview', label: 'Übersicht', icon: '⚽' },
     { id: 'recent', label: 'Letzte', icon: '📅' },
-    { id: 'aek-wins', label: 'AEK Siege', logoComponent: <TeamLogo team="aek" size="sm" /> },
-    { id: 'real-wins', label: 'Real Siege', logoComponent: <TeamLogo team="real" size="sm" /> },
+    { id: 'aek-wins', label: `${getTeamDisplay('AEK')} Siege`, logoComponent: <TeamLogo team="aek" size="sm" /> },
+    { id: 'real-wins', label: `${getTeamDisplay('Real')} Siege`, logoComponent: <TeamLogo team="real" size="sm" /> },
   ];
 
   // Sync horizontal navigation with dropdown filters
@@ -367,8 +368,8 @@ export default function MatchesTab({ showHints = false }) {
                 className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
               >
                 <option value="all">Alle Ergebnisse</option>
-                <option value="aek-wins">AEK Siege</option>
-                <option value="real-wins">Real Siege</option>
+                <option value="aek-wins">{getTeamDisplay('AEK')} Siege</option>
+                <option value="real-wins">{getTeamDisplay('Real')} Siege</option>
               </select>
             </div>
             
@@ -509,7 +510,7 @@ export default function MatchesTab({ showHints = false }) {
                                   )}
                                   <TeamLogo team={match.teama || 'AEK'} size="lg" />
                                   <div className="text-sm font-medium text-blue-700 mt-1">
-                                    {match.teama || 'AEK'}
+                                    {getTeamDisplay(match.teama || 'AEK')}
                                   </div>
                                 </div>
                                 
@@ -532,7 +533,7 @@ export default function MatchesTab({ showHints = false }) {
                                   )}
                                   <TeamLogo team={match.teamb || 'Real'} size="lg" />
                                   <div className="text-sm font-medium text-red-700 mt-1">
-                                    {match.teamb || 'Real'}
+                                    {getTeamDisplay(match.teamb || 'Real')}
                                   </div>
                                 </div>
                               </div>
@@ -621,7 +622,7 @@ export default function MatchesTab({ showHints = false }) {
                                       return goalsList && goalsList.length > 0 ? (
                                         <div className="space-y-2">
                                           <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
-                                            <TeamLogo team="aek" size="xs" /> AEK ({match.goalsa || 0} Tore)
+                                            <TeamLogo team="aek" size="xs" /> {getTeamDisplay('AEK')} ({match.goalsa || 0} Tore)
                                           </div>
                                           {goalsList.map((goal, idx) => {
                                             const isObject = typeof goal === 'object' && goal !== null;
@@ -654,7 +655,7 @@ export default function MatchesTab({ showHints = false }) {
                                         </div>
                                       ) : (
                                         <div className="p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                          <p className="text-sm text-gray-500 text-center"><TeamLogo team="aek" size="xs" /> AEK: Keine Tore erzielt</p>
+                                          <p className="text-sm text-gray-500 text-center"><TeamLogo team="aek" size="xs" /> {getTeamDisplay('AEK')}: Keine Tore erzielt</p>
                                         </div>
                                       );
                                     })()}
@@ -676,7 +677,7 @@ export default function MatchesTab({ showHints = false }) {
                                       return goalsList && goalsList.length > 0 ? (
                                         <div className="space-y-2">
                                           <div className="flex items-center gap-2 text-sm font-medium text-red-700">
-                                            <TeamLogo team="real" size="xs" /> Real ({match.goalsb || 0} Tore)
+                                            <TeamLogo team="real" size="xs" /> {getTeamDisplay('Real')} ({match.goalsb || 0} Tore)
                                           </div>
                                           {goalsList.map((goal, idx) => {
                                             const isObject = typeof goal === 'object' && goal !== null;
@@ -709,7 +710,7 @@ export default function MatchesTab({ showHints = false }) {
                                         </div>
                                       ) : (
                                         <div className="p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                          <p className="text-sm text-gray-500 text-center"><TeamLogo team="real" size="xs" /> Real: Keine Tore erzielt</p>
+                                          <p className="text-sm text-gray-500 text-center"><TeamLogo team="real" size="xs" /> {getTeamDisplay('Real')}: Keine Tore erzielt</p>
                                         </div>
                                       );
                                     })()}
@@ -770,7 +771,7 @@ export default function MatchesTab({ showHints = false }) {
                                       {/* AEK Cards */}
                                       <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300 hover:shadow-md transition-all">
                                         <div className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
-                                          <TeamLogo team="aek" size="xs" /> AEK
+                                          <TeamLogo team="aek" size="xs" /> {getTeamDisplay('AEK')}
                                         </div>
                                         <div className="space-y-2">
                                           <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
@@ -787,7 +788,7 @@ export default function MatchesTab({ showHints = false }) {
                                       {/* Real Cards */}
                                       <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border-2 border-red-300 hover:shadow-md transition-all">
                                         <div className="text-sm font-bold text-red-800 mb-3 flex items-center gap-2">
-                                          <TeamLogo team="real" size="xs" /> Real
+                                          <TeamLogo team="real" size="xs" /> {getTeamDisplay('Real')}
                                         </div>
                                         <div className="space-y-2">
                                           <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
@@ -822,7 +823,7 @@ export default function MatchesTab({ showHints = false }) {
                                       <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300 hover:shadow-md transition-all">
                                         <div className="flex items-center justify-between">
                                           <span className="text-sm font-bold text-blue-800 flex items-center gap-2">
-                                            <TeamLogo team="aek" size="xs" /> AEK
+                                            <TeamLogo team="aek" size="xs" /> {getTeamDisplay('AEK')}
                                           </span>
                                           <span className={`font-bold text-xl px-3 py-1 rounded-lg ${
                                             (match.prizeaek || 0) > 0 
@@ -840,7 +841,7 @@ export default function MatchesTab({ showHints = false }) {
                                       <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border-2 border-red-300 hover:shadow-md transition-all">
                                         <div className="flex items-center justify-between">
                                           <span className="text-sm font-bold text-red-800 flex items-center gap-2">
-                                            <TeamLogo team="real" size="xs" /> Real
+                                            <TeamLogo team="real" size="xs" /> {getTeamDisplay('Real')}
                                           </span>
                                           <span className={`font-bold text-xl px-3 py-1 rounded-lg ${
                                             (match.prizereal || 0) > 0 
