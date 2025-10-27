@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import EAPlayerCard from './EAPlayerCard';
+import { getTeamDisplay } from '../constants/teams';
 
 const EASquadOverview = ({ players, loading, onPlayerClick }) => {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
@@ -97,8 +98,8 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
               className="px-3 py-1 rounded-lg bg-bg-secondary text-text-primary border border-border-light text-sm"
             >
               <option value="all">All Teams</option>
-              <option value="AEK">AEK Athens</option>
-              <option value="Real">Real Madrid</option>
+              <option value="AEK">{getTeamDisplay('AEK')}</option>
+              <option value="Real">{getTeamDisplay('Real')}</option>
             </select>
 
             {/* Sort By */}
@@ -121,7 +122,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
           <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-800">
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">🔵</span>
-              <h3 className="font-semibold text-blue-700 dark:text-blue-300">AEK Athens</h3>
+              <h3 className="font-semibold text-blue-700 dark:text-blue-300">{getTeamDisplay('AEK')}</h3>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div className="text-center">
@@ -142,7 +143,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
           <div className="bg-red-50 dark:bg-red-900/20 rounded-lg p-4 border border-red-200 dark:border-red-800">
             <div className="flex items-center gap-3 mb-3">
               <span className="text-2xl">🔴</span>
-              <h3 className="font-semibold text-red-700 dark:text-red-300">Real Madrid</h3>
+              <h3 className="font-semibold text-red-700 dark:text-red-300">{getTeamDisplay('Real')}</h3>
             </div>
             <div className="grid grid-cols-3 gap-4 text-sm">
               <div className="text-center">

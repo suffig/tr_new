@@ -131,7 +131,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
     { 
       id: 'aek', 
       name: 'AEK', 
-      displayName: 'AEK Athen', 
+      displayName: getTeamDisplay('AEK'), 
       players: aekPlayers,
       squadValue: getTeamSquadValue('AEK'),
       logoComponent: <TeamLogo team="aek" size="md" />

@@ -378,7 +378,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         <div className="modern-card text-center border-l-4 border-blue-400 financial-card">
           <div className="flex items-center justify-center mb-2">
             <TeamLogo team="aek" size="lg" className="mr-2" />
-            <h3 className="font-semibold text-blue-600">AEK Athen</h3>
+            <h3 className="font-semibold text-blue-600">{getTeamDisplay('AEK')}</h3>
           </div>
           <div className="space-y-1 text-sm">
             <div>Kontostand: <span className={`font-bold ${getAmountColorClass(aekFinances.balance)} animate-numberCount`}>{formatCurrency(aekFinances.balance)}</span></div>
@@ -390,7 +390,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         <div className="modern-card text-center border-l-4 border-red-400 financial-card">
           <div className="flex items-center justify-center mb-2">
             <TeamLogo team="real" size="lg" className="mr-2" />
-            <h3 className="font-semibold text-red-600">Real Madrid</h3>
+            <h3 className="font-semibold text-red-600">{getTeamDisplay('Real')}</h3>
           </div>
           <div className="space-y-1 text-sm">
             <div>Kontostand: <span className={`font-bold ${getAmountColorClass(realFinances.balance)} animate-numberCount`}>{formatCurrency(realFinances.balance)}</span></div>
