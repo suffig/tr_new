@@ -371,6 +371,104 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             </div>
           </div>
         </>
+      ) : currentView === 'analysis' ? (
+        <>
+          {/* Echtgeld-Schulden Overview */}
+          <div className="modern-card mb-6">
+            <h3 className="font-bold text-lg mb-4 flex items-center">
+              <span className="mr-2">💳</span>
+              Echtgeld-Schulden Übersicht
+            </h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
+              <div className={`p-4 rounded-lg border-2 ${(aekFinances.debt || 0) > 0 ? 'border-red-400 bg-red-50' : 'border-green-400 bg-green-50'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <TeamLogo team="aek" size="sm" />
+                    <span className="font-semibold text-text-primary">{getTeamDisplay('AEK')}</span>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${(aekFinances.debt || 0) > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                    {(aekFinances.debt || 0) > 0 ? '⚠️ Schulden' : '✅ Schuldenfrei'}
+                  </span>
+                </div>
+                <div className={`text-2xl font-bold ${(aekFinances.debt || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {(aekFinances.debt || 0) > 0 ? `-${aekFinances.debt}€` : '0€'}
+                </div>
+                <div className="text-xs text-text-muted mt-1">Offene Echtgeld-Schulden</div>
+              </div>
+              <div className={`p-4 rounded-lg border-2 ${(realFinances.debt || 0) > 0 ? 'border-red-400 bg-red-50' : 'border-green-400 bg-green-50'}`}>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <TeamLogo team="real" size="sm" />
+                    <span className="font-semibold text-text-primary">{getTeamDisplay('Real')}</span>
+                  </div>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${(realFinances.debt || 0) > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                    {(realFinances.debt || 0) > 0 ? '⚠️ Schulden' : '✅ Schuldenfrei'}
+                  </span>
+                </div>
+                <div className={`text-2xl font-bold ${(realFinances.debt || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {(realFinances.debt || 0) > 0 ? `-${realFinances.debt}€` : '0€'}
+                </div>
+                <div className="text-xs text-text-muted mt-1">Offene Echtgeld-Schulden</div>
+              </div>
+            </div>
+            {((aekFinances.debt || 0) === 0 && (realFinances.debt || 0) === 0) && (
+              <div className="text-center py-3 bg-green-50 rounded-lg border border-green-200">
+                <span className="text-green-700 font-medium">🎉 Beide Teams sind schuldenfrei!</span>
+              </div>
+            )}
+          </div>
+
+          {/* Echtgeld Formula Explanation */}
+          <div className="modern-card mb-6">
+            <h3 className="font-bold text-lg mb-3 flex items-center">
+              <span className="mr-2">📐</span>
+              Echtgeld-Berechnung Formel
+            </h3>
+            <div className="bg-bg-secondary rounded-lg p-4 text-sm space-y-2">
+              <p className="text-text-primary font-medium">Für den Verlierer eines Spiels gilt:</p>
+              <div className="bg-bg-tertiary rounded-lg p-3 font-mono text-xs text-text-primary">
+                konto = Kontostand + (100.000€ falls SdS-Spieler)<br />
+                Betrag = 5 + max(0, runde((|Preisgeld| − konto) / 100.000€))
+              </div>
+              <ul className="text-text-secondary space-y-1 mt-2">
+                <li>• <strong>Basisgebühr:</strong> 5€ (immer)</li>
+                <li>• <strong>Aufschlag:</strong> +1€ je 100.000€ die das Konto das Preisgeld nicht decken kann</li>
+                <li>• <strong>SdS-Bonus:</strong> 100.000€ wird dem Kontostand angerechnet, falls ein Spieler des Spiels gewählt wurde</li>
+              </ul>
+              <p className="text-text-muted text-xs mt-2 italic">
+                Beispiel: Konto 300.000€, Preisgeld −700.000€ → Aufschlag: max(0, runde((700.000 − 300.000) / 100.000)) = 4 → Gesamt: 5 + 4 = 9€
+              </p>
+            </div>
+          </div>
+
+          {/* Financial Metrics */}
+          <div className="modern-card mb-6">
+            <h3 className="font-bold text-lg mb-4 flex items-center">
+              <span className="mr-2">📊</span>
+              Finanz-Kennzahlen
+            </h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+              <div className="text-center p-3 bg-bg-secondary rounded-lg">
+                <div className="text-xl font-bold text-blue-600">{formatCurrency(aekFinances.balance)}</div>
+                <div className="text-xs text-text-muted">{getTeamDisplay('AEK')} Bargeld</div>
+              </div>
+              <div className="text-center p-3 bg-bg-secondary rounded-lg">
+                <div className="text-xl font-bold text-red-600">{formatCurrency(realFinances.balance)}</div>
+                <div className="text-xs text-text-muted">{getTeamDisplay('Real')} Bargeld</div>
+              </div>
+              <div className="text-center p-3 bg-bg-secondary rounded-lg">
+                <div className="text-xl font-bold text-text-primary">
+                  {formatCurrency(aekFinances.balance + realFinances.balance)}
+                </div>
+                <div className="text-xs text-text-muted">Gesamt-Bargeld</div>
+              </div>
+              <div className="text-center p-3 bg-bg-secondary rounded-lg">
+                <div className="text-xl font-bold text-text-primary">{formatCurrency(totalCapital)}</div>
+                <div className="text-xs text-text-muted">Gesamtkapital</div>
+              </div>
+            </div>
+          </div>
+        </>
       ) : (
         <>
           {/* Original Overview Content */}

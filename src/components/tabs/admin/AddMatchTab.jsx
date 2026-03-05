@@ -7,6 +7,7 @@ import { getTeamDisplay } from '../../../constants/teams';
 
 export default function AddMatchTab() {
   const { data: players } = useSupabaseQuery('players', '*');
+  const { data: finances } = useSupabaseQuery('finances', '*');
   const [showModal, setShowModal] = useState(false);
   const [formData, setFormData] = useState({
     // Teams are now fixed - no longer selectable
@@ -300,6 +301,30 @@ export default function AddMatchTab() {
       [fieldName]: formData[fieldName].filter(scorer => scorer.player !== playerName)
     });
   };
+
+  // Calculate a live Echtgeld-Ausgleich preview using current team balances
+  const previewEchtgeld = () => {
+    if (formData.goalsa === formData.goalsb) return null;
+
+    const winner = formData.goalsa > formData.goalsb ? 'AEK' : 'Real';
+    const loser = winner === 'AEK' ? 'Real' : 'AEK';
+
+    const sdsBonusAek = formData.manofthematch && players?.find(p => p.name === formData.manofthematch && p.team === 'AEK') ? 1 : 0;
+    const sdsBonusReal = formData.manofthematch && players?.find(p => p.name === formData.manofthematch && p.team === 'Real') ? 1 : 0;
+
+    const aekBalance = finances?.find(f => f.team === 'AEK')?.balance || 0;
+    const realBalance = finances?.find(f => f.team === 'Real')?.balance || 0;
+
+    const aekBetrag = MatchBusinessLogic.calculateEchtgeldBetrag(aekBalance, formData.prizeaek, sdsBonusAek);
+    const realBetrag = MatchBusinessLogic.calculateEchtgeldBetrag(realBalance, formData.prizereal, sdsBonusReal);
+
+    const loserBetrag = loser === 'AEK' ? aekBetrag : realBetrag;
+    const winnerBetrag = winner === 'AEK' ? aekBetrag : realBetrag;
+
+    return { winner, loser, loserBetrag, winnerBetrag, aekBalance, realBalance };
+  };
+
+  const echtgeldPreview = previewEchtgeld();
 
   return (
     <div className="p-4 pb-20">
@@ -882,6 +907,41 @@ export default function AddMatchTab() {
                         <span className="font-medium text-green-800">
                           {getTeamDisplay('AEK')} {formData.prizeaek.toLocaleString()}€, {getTeamDisplay('Real')} {formData.prizereal.toLocaleString()}€
                         </span>
+                      </div>
+                      {echtgeldPreview && (
+                        <div className="mt-2 pt-2 border-t border-green-200">
+                          <div className="flex justify-between">
+                            <span className="text-green-700">💳 Echtgeld-Ausgleich:</span>
+                            <span className="font-bold text-red-700">{getTeamDisplay(echtgeldPreview.loser)} schuldet {echtgeldPreview.loserBetrag}€</span>
+                          </div>
+                          {echtgeldPreview.winnerBetrag > 0 && (
+                            <div className="flex justify-between">
+                              <span className="text-green-700">Schuldentilgung:</span>
+                              <span className="font-medium text-green-700">{getTeamDisplay(echtgeldPreview.winner)} −{echtgeldPreview.winnerBetrag}€ Schulden</span>
+                            </div>
+                          )}
+                          <div className="mt-1 text-xs text-green-600 italic">
+                            Basierend auf aktuellem Kontostand: {getTeamDisplay('AEK')} {echtgeldPreview.aekBalance.toLocaleString()}€ / {getTeamDisplay('Real')} {echtgeldPreview.realBalance.toLocaleString()}€
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Live Echtgeld preview even before form is fully valid (when score is known) */}
+                {!isFormValid() && echtgeldPreview && (
+                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+                    <h5 className="font-medium text-blue-800 mb-2 flex items-center text-sm">
+                      💳 Echtgeld-Vorschau
+                    </h5>
+                    <div className="space-y-1 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-blue-700">Verlierer schuldet:</span>
+                        <span className="font-bold text-red-700">{getTeamDisplay(echtgeldPreview.loser)} {echtgeldPreview.loserBetrag}€</span>
+                      </div>
+                      <div className="text-xs text-blue-600 italic">
+                        Kontostand: {getTeamDisplay('AEK')} {echtgeldPreview.aekBalance.toLocaleString()}€ / {getTeamDisplay('Real')} {echtgeldPreview.realBalance.toLocaleString()}€
                       </div>
                     </div>
                   </div>
