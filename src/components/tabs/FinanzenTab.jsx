@@ -223,7 +223,91 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
       />
 
       {/* Conditional Content Based on currentView */}
-      {currentView === 'transactions' ? (
+      {currentView === 'analysis' ? (
+        <div className="space-y-4">
+          {/* Echtgeld-Schulden Overview */}
+          <div className="modern-card">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <span>💳</span> Echtgeld-Schulden
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center p-4 bg-blue-50 rounded-lg border border-blue-200">
+                <TeamLogo team="aek" size="lg" className="mx-auto mb-2" />
+                <div className={`text-2xl font-bold ${aekFinances.debt > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {aekFinances.debt > 0 ? `${aekFinances.debt} €` : 'Keine'}
+                </div>
+                <div className="text-sm text-text-muted">AEK Schulden</div>
+              </div>
+              <div className="text-center p-4 bg-red-50 rounded-lg border border-red-200">
+                <TeamLogo team="real" size="lg" className="mx-auto mb-2" />
+                <div className={`text-2xl font-bold ${realFinances.debt > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  {realFinances.debt > 0 ? `${realFinances.debt} €` : 'Keine'}
+                </div>
+                <div className="text-sm text-text-muted">Real Schulden</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Financial Balance Summary */}
+          <div className="modern-card">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <span>📊</span> Finanz-Übersicht
+            </h3>
+            <div className="space-y-3">
+              {[
+                { label: 'AEK Kontostand', value: aekFinances.balance, color: 'text-blue-600' },
+                { label: 'Real Kontostand', value: realFinances.balance, color: 'text-red-600' },
+                { label: 'AEK Kaderwert', value: getTeamSquadValue('AEK') * 1_000_000, color: 'text-blue-400' },
+                { label: 'Real Kaderwert', value: getTeamSquadValue('Real') * 1_000_000, color: 'text-red-400' },
+              ].map(({ label, value, color }) => (
+                <div key={label} className="flex justify-between items-center py-2 border-b border-border-light last:border-0">
+                  <span className="text-text-secondary text-sm">{label}</span>
+                  <span className={`font-bold ${color}`}>{formatCurrency(value)}</span>
+                </div>
+              ))}
+              <div className="flex justify-between items-center py-2 mt-2 border-t-2 border-border-light">
+                <span className="font-semibold text-text-primary">Gesamtkapital</span>
+                <span className="font-bold text-lg text-primary-green">{formatCurrency(totalCapital)}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Transaction Statistics */}
+          <div className="modern-card">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
+              <span>📈</span> Transaktions-Statistik
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              {['AEK', 'Real'].map(team => {
+                const teamTx = getTeamTransactions(team);
+                const income = teamTx.filter(t => t.amount > 0).reduce((s, t) => s + t.amount, 0);
+                const expenses = teamTx.filter(t => t.amount < 0).reduce((s, t) => s + Math.abs(t.amount), 0);
+                return (
+                  <div key={team} className={`p-3 rounded-lg border ${team === 'AEK' ? 'bg-blue-50 border-blue-200' : 'bg-red-50 border-red-200'}`}>
+                    <div className={`font-bold mb-2 ${team === 'AEK' ? 'text-blue-700' : 'text-red-700'}`}>{team}</div>
+                    <div className="text-xs space-y-1">
+                      <div className="flex justify-between">
+                        <span className="text-text-muted">Einnahmen:</span>
+                        <span className="text-green-600 font-medium">{formatCurrency(income)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-text-muted">Ausgaben:</span>
+                        <span className="text-red-600 font-medium">{formatCurrency(expenses)}</span>
+                      </div>
+                      <div className="flex justify-between border-t border-border-light pt-1">
+                        <span className="text-text-muted">Bilanz:</span>
+                        <span className={`font-bold ${income - expenses >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                          {formatCurrency(income - expenses)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : currentView === 'transactions' ? (
         <div className="space-y-4">
           {/* Transactions List */}
           <div className="bg-bg-primary border border-border-light rounded-lg shadow-sm">
@@ -236,22 +320,31 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                   <div className="flex items-center justify-between">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2">
+                        <span className="text-lg">{getTransactionIcon(transaction.type)}</span>
                         <span className="font-medium text-text-primary">
                           {transaction.type || 'Transaktion'}
+                        </span>
+                        <span className={`text-xs px-2 py-0.5 rounded-full font-semibold ${
+                          transaction.team === 'AEK'
+                            ? 'bg-blue-100 text-blue-700'
+                            : 'bg-red-100 text-red-700'
+                        }`}>
+                          {transaction.team || '—'}
                         </span>
                         <span className="text-xs bg-bg-tertiary px-2 py-1 rounded border border-border-light text-text-secondary">
                           {new Date(transaction.date).toLocaleDateString('de-DE')}
                         </span>
                       </div>
                       <p className="text-sm text-text-secondary truncate mt-1">
-                        {transaction.description || 'Keine Beschreibung'}
+                        {transaction.info || ''}
                       </p>
                     </div>
                     <div className="text-right ml-4">
                       <div className={`font-bold ${
                         (transaction.amount || 0) >= 0 ? 'text-green-600' : 'text-red-600'
                       }`}>
-                        {(transaction.amount || 0) > 0 ? '+' : ''}{transaction.amount || 0}€
+                        {(transaction.amount || 0) > 0 ? '+' : ''}
+                        {formatCurrency(transaction.amount || 0)}
                       </div>
                     </div>
                   </div>

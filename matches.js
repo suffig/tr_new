@@ -1725,6 +1725,9 @@ async function submitMatchForm(event, id) {
     // Preisgelder buchen & neuen Kontostand berechnen (niemals unter 0)
     let aekOldBalance = await getTeamFinance("AEK");
     let realOldBalance = await getTeamFinance("Real");
+    // Save initial balances BEFORE any match-related changes (used for Echtgeld calculation)
+    const aekInitBalance = aekOldBalance;
+    const realInitBalance = realOldBalance;
     let aekNewBalance = aekOldBalance + (prizeaek || 0) + (sdsBonusAek || 0);
     let realNewBalance = realOldBalance + (prizereal || 0) + (sdsBonusReal || 0);
 
@@ -1767,37 +1770,41 @@ async function submitMatchForm(event, id) {
     }
 
     // 2. Preisgeld
+    const fifaFilter = createFifaVersionFilter();
     if (prizeaek !== 0) {
         aekOldBalance += prizeaek;
         if (aekOldBalance < 0) aekOldBalance = 0;
-        await supabase.from('transactions').insert([{
+        const prizeAekTrans = addFifaVersionToData({
             date: now,
             type: "Preisgeld",
             team: "AEK",
             amount: prizeaek,
             match_id: matchId,
             info: `Preisgeld`
-        }]);
-        await supabase.from('finances').update({ balance: aekOldBalance }).eq('team', "AEK");
+        });
+        await supabase.from('transactions').insert([prizeAekTrans]);
+        await supabase.from('finances').update({ balance: aekOldBalance }).eq('team', "AEK").eq('fifa_version', fifaFilter.fifa_version);
     }
     if (prizereal !== 0) {
         realOldBalance += prizereal;
         if (realOldBalance < 0) realOldBalance = 0;
-        await supabase.from('transactions').insert([{
+        const prizeRealTrans = addFifaVersionToData({
             date: now,
             type: "Preisgeld",
             team: "Real",
             amount: prizereal,
             match_id: matchId,
             info: `Preisgeld`
-        }]);
-        await supabase.from('finances').update({ balance: realOldBalance }).eq('team', "Real");
+        });
+        await supabase.from('transactions').insert([prizeRealTrans]);
+        await supabase.from('finances').update({ balance: realOldBalance }).eq('team', "Real").eq('fifa_version', fifaFilter.fifa_version);
     }
 
     // --- Berechne für beide Teams den Echtgeldbetrag nach deiner Formel ---
-    function calcEchtgeldbetrag(balance, preisgeld, sdsBonus) {
-        let konto = balance;
-        if (sdsBonus) konto += 100000;
+    // initBalance ist der Kontostand VOR allen Änderungen dieses Spiels.
+    // SdS-Bonus wird einmal addiert (kein doppeltes Zählen).
+    function calcEchtgeldbetrag(initBalance, preisgeld, sdsBonus) {
+        let konto = initBalance + (sdsBonus ? 100000 : 0);
         let zwischenbetrag = (Math.abs(preisgeld) - konto) / 100000;
         if (zwischenbetrag < 0) zwischenbetrag = 0;
         return 5 + Math.round(zwischenbetrag);
@@ -1811,8 +1818,8 @@ async function submitMatchForm(event, id) {
         const aekSds = manofthematch && matchesData.aek.find(p => p.name === manofthematch) ? 1 : 0;
         const realSds = manofthematch && matchesData.real.find(p => p.name === manofthematch) ? 1 : 0;
 
-        const aekBetrag = calcEchtgeldbetrag(aekOldBalance, prizeaek, aekSds);
-        const realBetrag = calcEchtgeldbetrag(realOldBalance, prizereal, realSds);
+        const aekBetrag = calcEchtgeldbetrag(aekInitBalance, prizeaek, aekSds);
+        const realBetrag = calcEchtgeldbetrag(realInitBalance, prizereal, realSds);
 
         let gewinner = winner === "AEK" ? "AEK" : "Real";
         let verlierer = loser === "AEK" ? "AEK" : "Real";
@@ -1831,26 +1838,28 @@ async function submitMatchForm(event, id) {
         await supabase.from('finances').update({ debt: neuerGewinnerDebt }).eq('team', gewinner);
 
         if (restVerliererBetrag > 0) {
-            await supabase.from('transactions').insert([{
+            const echtgeldTrans = addFifaVersionToData({
                 date: now,
                 type: "Echtgeld-Ausgleich",
                 team: verlierer,
                 amount: Math.max(0, restVerliererBetrag),
                 match_id: matchId,
                 info: `Echtgeld-Ausgleich`
-            }]);
+            });
+            await supabase.from('transactions').insert([echtgeldTrans]);
             await supabase.from('finances').update({ debt: neuerVerliererDebt }).eq('team', verlierer);
         }
 
         if (verrechnet > 0) {
-            await supabase.from('transactions').insert([{
+            const getilgtTrans = addFifaVersionToData({
                 date: now,
                 type: "Echtgeld-Ausgleich (getilgt)",
                 team: gewinner,
                 amount: -verrechnet,
                 match_id: matchId,
                 info: `Echtgeld-Ausgleich (getilgt)`
-            }]);
+            });
+            await supabase.from('transactions').insert([getilgtTrans]);
         }
     }
 
