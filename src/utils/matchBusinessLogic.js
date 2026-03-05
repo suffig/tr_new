@@ -271,8 +271,12 @@ export class MatchBusinessLogic {
     const aekFinance = await this.getTeamFinance('AEK');
     const realFinance = await this.getTeamFinance('Real');
 
-    let aekBalance = aekFinance.balance || 0;
-    let realBalance = realFinance.balance || 0;
+    // Save initial balances BEFORE any match-related changes (used for Echtgeld calculation)
+    const aekInitBalance = aekFinance.balance || 0;
+    const realInitBalance = realFinance.balance || 0;
+
+    let aekBalance = aekInitBalance;
+    let realBalance = realInitBalance;
 
     // Calculate SdS bonuses
     const sdsBonusAek = manofthematch ? await this.getSdSBonus(manofthematch, 'AEK') : 0;
@@ -343,8 +347,8 @@ export class MatchBusinessLogic {
         matchId,
         winner,
         loser,
-        aekBalance,
-        realBalance,
+        aekBalance: aekInitBalance,
+        realBalance: realInitBalance,
         prizeaek,
         prizereal,
         sdsBonusAek: sdsBonusAek > 0 ? 1 : 0,
@@ -404,9 +408,10 @@ export class MatchBusinessLogic {
     };
 
     // Calculate Echtgeld amounts using tracker_full_v1 formula
-    const calcEchtgeldbetrag = (balance, preisgeld, sdsBonus) => {
-      let konto = balance;
-      if (sdsBonus) konto += 100000;
+    // balance here is the INITIAL balance (before any match transactions),
+    // so we add sdsBonus once if applicable (no double counting).
+    const calcEchtgeldbetrag = (initBalance, preisgeld, sdsBonus) => {
+      let konto = initBalance + (sdsBonus ? 100000 : 0);
       let zwischenbetrag = (Math.abs(preisgeld) - konto) / 100000;
       if (zwischenbetrag < 0) zwischenbetrag = 0;
       return 5 + Math.round(zwischenbetrag);
