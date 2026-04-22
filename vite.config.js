@@ -2,8 +2,12 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// VITE_BASE_PATH wird von GitHub Actions automatisch auf /<repo-name>/ gesetzt.
+// Lokal: npm run build → relative Pfade (funktioniert immer).
+const base = process.env.VITE_BASE_PATH ?? './'
+
 export default defineConfig({
-  base: '/tr_new/', // <-- Für GitHub Pages im Unterverzeichnis!
+  base,
   plugins: [
     react(),
     VitePWA({

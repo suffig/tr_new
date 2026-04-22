@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useSupabaseQuery, useSupabaseMutation } from '../../../hooks/useSupabase';
-import { TEAMS } from '../../../constants/teams';
+import { TEAMS, getTeamDisplay } from '../../../constants/teams';
 import { deleteMatch } from '../../../services/matchService';
 import LoadingSpinner from '../../LoadingSpinner';
 import toast from 'react-hot-toast';
@@ -191,7 +191,7 @@ export default function DeleteTab() {
 
   const handleDeleteMatch = async (match) => {
     const relatedTransactions = transactions?.filter(t => t.match_id === match.id) || [];
-    const matchResult = `AEK ${match.goalsa || 0} - ${match.goalsb || 0} Real`;
+    const matchResult = `${getTeamDisplay('AEK')} ${match.goalsa || 0} - ${match.goalsb || 0} ${getTeamDisplay('Real')}`;
     
     let confirmMessage = `Sind Sie sicher, dass Sie das Spiel vom ${new Date(match.date).toLocaleDateString('de-DE')} (${matchResult}) löschen möchten?`;
     if (relatedTransactions.length > 0) {
@@ -286,7 +286,7 @@ export default function DeleteTab() {
       confirmMessage += `\nInfo: ${transaction.info}`;
     }
     if (matchContext) {
-      confirmMessage += `\nZugehöriges Spiel: ${new Date(matchContext.date).toLocaleDateString('de-DE')} (AEK ${matchContext.goalsa || 0} - ${matchContext.goalsb || 0} Real)`;
+      confirmMessage += `\nZugehöriges Spiel: ${new Date(matchContext.date).toLocaleDateString('de-DE')} (${getTeamDisplay('AEK')} ${matchContext.goalsa || 0} - ${matchContext.goalsb || 0} ${getTeamDisplay('Real')})`;
     }
     
     if (!confirm(confirmMessage)) return;
@@ -454,7 +454,7 @@ export default function DeleteTab() {
                       ID {match.id} • {new Date(match.date).toLocaleDateString('de-DE')}
                     </h4>
                     <p className="text-sm text-text-muted">
-                      AEK {match.goalsa || 0} - {match.goalsb || 0} Real
+                      {getTeamDisplay('AEK')} {match.goalsa || 0} - {match.goalsb || 0} {getTeamDisplay('Real')}
                     </p>
                     {match.manofthematch && (
                       <p className="text-xs text-text-muted mt-1">
@@ -550,7 +550,7 @@ export default function DeleteTab() {
       if (!transaction.match_id || !matches) return null;
       const match = matches.find(m => m.id === transaction.match_id);
       if (!match) return null;
-      return `Match: ${new Date(match.date).toLocaleDateString('de-DE')} (AEK ${match.goalsa || 0} - ${match.goalsb || 0} Real)`;
+      return `Match: ${new Date(match.date).toLocaleDateString('de-DE')} (${getTeamDisplay('AEK')} ${match.goalsa || 0} - ${match.goalsb || 0} ${getTeamDisplay('Real')})`;
     };
 
     return (

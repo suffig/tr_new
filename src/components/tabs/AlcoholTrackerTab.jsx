@@ -98,6 +98,14 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     philip: false
   });
 
+  // Schnaps-Counter state
+  const [schnapsShotsData, setSchnapsShotsData] = useState({
+    target: 18,
+    alex: 0,
+    philip: 0,
+    history: []
+  });
+
   // Load saved values on component mount
   useEffect(() => {
     // Load manager settings from database
@@ -127,6 +135,16 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     const savedStartTime = localStorage.getItem('drinkingStartTime');
     if (savedStartTime) {
       setDrinkingStartTime(savedStartTime);
+    }
+
+    // Load Schnaps counter from localStorage
+    const savedSchnaps = localStorage.getItem('schnapsShotsData');
+    if (savedSchnaps) {
+      try {
+        setSchnapsShotsData(JSON.parse(savedSchnaps));
+      } catch (e) {
+        console.error('Error loading Schnaps data:', e);
+      }
     }
 
     // Load BJ tracking data from localStorage
@@ -637,6 +655,61 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     }));
   };
 
+  // ─── Schnaps-Counter helpers ──────────────────────────────────────────────
+  const saveSchnapsShotsData = (newData) => {
+    setSchnapsShotsData(newData);
+    localStorage.setItem('schnapsShotsData', JSON.stringify(newData));
+  };
+
+  const addSchnapShot = (person) => {
+    const total = schnapsShotsData.alex + schnapsShotsData.philip;
+    if (total >= schnapsShotsData.target) return;
+    const newData = {
+      ...schnapsShotsData,
+      [person]: schnapsShotsData[person] + 1,
+      history: [
+        ...schnapsShotsData.history,
+        { person, timestamp: new Date().toISOString() }
+      ]
+    };
+    saveSchnapsShotsData(newData);
+  };
+
+  const undoLastShot = () => {
+    if (schnapsShotsData.history.length === 0) return;
+    const history = [...schnapsShotsData.history];
+    const last = history.pop();
+    const newData = {
+      ...schnapsShotsData,
+      [last.person]: Math.max(0, schnapsShotsData[last.person] - 1),
+      history
+    };
+    saveSchnapsShotsData(newData);
+  };
+
+  const resetSchnapsShotsData = () => {
+    saveSchnapsShotsData({ target: 18, alex: 0, philip: 0, history: [] });
+  };
+
+  const addSchnapShotToBoth = () => {
+    const total = schnapsShotsData.alex + schnapsShotsData.philip;
+    const spotsLeft = schnapsShotsData.target - total;
+    if (spotsLeft <= 0) return;
+    const now = new Date().toISOString();
+    const addAlex = spotsLeft >= 2 || spotsLeft === 1;
+    const addPhilip = spotsLeft >= 2;
+    const newHistory = [...schnapsShotsData.history];
+    if (addAlex) newHistory.push({ person: 'alex', timestamp: now });
+    if (addPhilip) newHistory.push({ person: 'philip', timestamp: now });
+    saveSchnapsShotsData({
+      ...schnapsShotsData,
+      alex: schnapsShotsData.alex + (addAlex ? 1 : 0),
+      philip: schnapsShotsData.philip + (addPhilip ? 1 : 0),
+      history: newHistory
+    });
+  };
+  // ─────────────────────────────────────────────────────────────────────────
+
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
       {/* Enhanced Header with iOS 26 Design - matching StatsTab */}
@@ -657,26 +730,43 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
       {/* Sub-Navigation */}
       <div className="mb-6">
-        <div className="flex bg-gray-100 rounded-lg p-1">
+        <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
           <button
             onClick={() => setActiveSection('alcohol')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
               activeSection === 'alcohol'
                 ? 'bg-white text-blue-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            🍺 Alkohol-Tracker
+            🍺 Alkohol
+          </button>
+          <button
+            onClick={() => setActiveSection('schnaps')}
+            className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeSection === 'schnaps'
+                ? 'bg-white text-amber-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            🥃 Schnaps
+            {(() => {
+              const done = schnapsShotsData.alex + schnapsShotsData.philip;
+              const rem = schnapsShotsData.target - done;
+              return rem > 0
+                ? <span className="ml-1 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{rem}</span>
+                : <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">✓</span>;
+            })()}
           </button>
           <button
             onClick={() => setActiveSection('blackjack')}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
               activeSection === 'blackjack'
                 ? 'bg-white text-red-600 shadow-sm'
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            🃏 Blackjack-Tracker
+            🃏 Blackjack
           </button>
         </div>
       </div>
@@ -1160,6 +1250,187 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           </ul>
         </div>
       )}
+        </>
+      )}
+
+      {/* ─── Schnaps-Counter Section ─────────────────────────────────────── */}
+      {activeSection === 'schnaps' && (
+        <>
+          {(() => {
+            const total = schnapsShotsData.alex + schnapsShotsData.philip;
+            const remaining = schnapsShotsData.target - total;
+            const pct = Math.min(100, (total / schnapsShotsData.target) * 100);
+            const isDone = remaining <= 0;
+
+            return (
+              <>
+                {/* Hero card */}
+                <div className={`modern-card mb-6 border-2 ${isDone ? 'border-green-400 bg-green-50' : 'border-amber-300 bg-gradient-to-br from-amber-50 to-orange-50'}`}>
+                  <div className="text-center mb-6">
+                    <div className="text-6xl mb-2">{isDone ? '🎉' : '🥃'}</div>
+                    {isDone ? (
+                      <>
+                        <div className="text-3xl font-bold text-green-700 mb-1">Fertig!</div>
+                        <div className="text-green-600 font-medium">Alle {schnapsShotsData.target} Shots getrunken</div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="text-6xl font-black text-amber-700 leading-none">{remaining}</div>
+                        <div className="text-lg text-amber-600 font-semibold mt-1">
+                          {remaining === 1 ? 'Shot noch übrig' : 'Shots noch übrig'}
+                        </div>
+                      </>
+                    )}
+                  </div>
+
+                  {/* Progress bar */}
+                  <div className="mb-6">
+                    <div className="flex justify-between text-sm font-semibold mb-2">
+                      <span className="text-amber-700">{total} getrunken</span>
+                      <span className="text-gray-500">Ziel: {schnapsShotsData.target}</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden relative">
+                      <div
+                        className={`h-full rounded-full transition-all duration-700 ${isDone ? 'bg-gradient-to-r from-green-500 to-green-400' : 'bg-gradient-to-r from-amber-500 to-orange-400'}`}
+                        style={{ width: `${pct}%` }}
+                      />
+                      {/* Shot markers */}
+                      {Array.from({ length: schnapsShotsData.target - 1 }).map((_, i) => (
+                        <div
+                          key={i}
+                          className="absolute top-0 bottom-0 w-px bg-white/40"
+                          style={{ left: `${((i + 1) / schnapsShotsData.target) * 100}%` }}
+                        />
+                      ))}
+                      <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold drop-shadow">
+                        {total}/{schnapsShotsData.target}
+                      </div>
+                    </div>
+                    {/* Individual shot bubbles */}
+                    <div className="flex flex-wrap gap-1 mt-2">
+                      {Array.from({ length: schnapsShotsData.target }).map((_, i) => {
+                        const isAlex = i < schnapsShotsData.alex;
+                        const isPhilip = !isAlex && i < total;
+                        return (
+                          <div
+                            key={i}
+                            className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold border-2 transition-all duration-300 ${
+                              isAlex
+                                ? 'bg-blue-500 border-blue-600 text-white'
+                                : isPhilip
+                                ? 'bg-green-500 border-green-600 text-white'
+                                : 'bg-gray-100 border-gray-300 text-gray-400'
+                            }`}
+                            title={isAlex ? managers.aek.name : isPhilip ? managers.real.name : ''}
+                          >
+                            {isAlex || isPhilip ? '🥃' : i + 1}
+                          </div>
+                        );
+                      })}
+                    </div>
+                    <div className="flex gap-4 mt-2 text-xs">
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-blue-500 inline-block"></span>{managers.aek.name}</span>
+                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-green-500 inline-block"></span>{managers.real.name}</span>
+                    </div>
+                  </div>
+
+                  {/* Per-person counts */}
+                  <div className="grid grid-cols-2 gap-4 mb-6">
+                    <div className="bg-blue-100 border-2 border-blue-300 rounded-xl p-4 text-center">
+                      <div className="text-2xl mb-1">🔵</div>
+                      <div className="font-bold text-blue-700 text-lg">{managers.aek.name}</div>
+                      <div className="text-4xl font-black text-blue-800">{schnapsShotsData.alex}</div>
+                      <div className="text-sm text-blue-600">Shots</div>
+                    </div>
+                    <div className="bg-green-100 border-2 border-green-300 rounded-xl p-4 text-center">
+                      <div className="text-2xl mb-1">🟢</div>
+                      <div className="font-bold text-green-700 text-lg">{managers.real.name}</div>
+                      <div className="text-4xl font-black text-green-800">{schnapsShotsData.philip}</div>
+                      <div className="text-sm text-green-600">Shots</div>
+                    </div>
+                  </div>
+
+                  {/* Action buttons */}
+                  {!isDone ? (
+                    <>
+                      <div className="grid grid-cols-2 gap-4 mb-3">
+                        <button
+                          onClick={() => addSchnapShot('alex')}
+                          className="bg-gradient-to-b from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 active:scale-95 text-white py-5 rounded-2xl transition-all duration-150 font-bold text-lg shadow-lg border-b-4 border-blue-800"
+                        >
+                          🥃 +1<br />
+                          <span className="text-sm font-normal">{managers.aek.name}</span>
+                        </button>
+                        <button
+                          onClick={() => addSchnapShot('philip')}
+                          className="bg-gradient-to-b from-green-500 to-green-700 hover:from-green-600 hover:to-green-800 active:scale-95 text-white py-5 rounded-2xl transition-all duration-150 font-bold text-lg shadow-lg border-b-4 border-green-800"
+                        >
+                          🥃 +1<br />
+                          <span className="text-sm font-normal">{managers.real.name}</span>
+                        </button>
+                      </div>
+                      <button
+                        onClick={addSchnapShotToBoth}
+                        disabled={schnapsShotsData.alex + schnapsShotsData.philip >= schnapsShotsData.target}
+                        className="w-full mb-4 bg-gradient-to-b from-amber-500 to-amber-700 hover:from-amber-600 hover:to-amber-800 active:scale-95 text-white py-4 rounded-2xl transition-all duration-150 font-bold text-base shadow-lg border-b-4 border-amber-800 disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        🥃🥃 Beide +1 (je ein Shot)
+                      </button>
+                    </>
+                  ) : (
+                    <div className="text-center text-4xl mb-4 animate-bounce">🎉🥂🎉</div>
+                  )}
+
+                  {/* Secondary actions */}
+                  <div className="flex gap-3">
+                    <button
+                      onClick={undoLastShot}
+                      disabled={schnapsShotsData.history.length === 0}
+                      className="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-medium transition-all text-sm border border-gray-300"
+                    >
+                      ↩ Letzten rückgängig
+                    </button>
+                    <button
+                      onClick={() => {
+                        if (window.confirm('Schnaps-Counter zurücksetzen?')) resetSchnapsShotsData();
+                      }}
+                      className="flex-1 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-medium transition-all text-sm border border-red-200"
+                    >
+                      🔄 Reset
+                    </button>
+                  </div>
+                </div>
+
+                {/* History */}
+                {schnapsShotsData.history.length > 0 && (
+                  <div className="modern-card">
+                    <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                      <span>📜</span> Verlauf
+                    </h4>
+                    <div className="space-y-1 max-h-64 overflow-y-auto">
+                      {[...schnapsShotsData.history].reverse().map((entry, i) => {
+                        const isAlex = entry.person === 'alex';
+                        return (
+                          <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg ${isAlex ? 'bg-blue-50 border border-blue-100' : 'bg-green-50 border border-green-100'}`}>
+                            <div className="flex items-center gap-2">
+                              <span>{isAlex ? '🔵' : '🟢'}</span>
+                              <span className={`font-medium text-sm ${isAlex ? 'text-blue-700' : 'text-green-700'}`}>
+                                {isAlex ? managers.aek.name : managers.real.name}
+                              </span>
+                              <span className="text-sm">🥃</span>
+                            </div>
+                            <span className="text-xs text-gray-500">
+                              {new Date(entry.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
+            );
+          })()}
         </>
       )}
 

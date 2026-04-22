@@ -274,6 +274,13 @@ export class MatchBusinessLogic {
     let aekBalance = aekFinance.balance || 0;
     let realBalance = realFinance.balance || 0;
 
+    // Save initial balances BEFORE any match transactions so calcEchtgeldbetrag
+    // can correctly determine how much of the prize money the team can cover
+    // from their own account (a team with 500k should not be treated the same
+    // as one with 0 just because the prize penalty is larger than 500k)
+    const aekInitialBalance = aekBalance;
+    const realInitialBalance = realBalance;
+
     // Calculate SdS bonuses
     const sdsBonusAek = manofthematch ? await this.getSdSBonus(manofthematch, 'AEK') : 0;
     const sdsBonusReal = manofthematch ? await this.getSdSBonus(manofthematch, 'Real') : 0;
@@ -337,19 +344,20 @@ export class MatchBusinessLogic {
     }
 
     // 3. Process Echtgeld-Ausgleich (Real money compensation)
+    // Pass the INITIAL balances so the formula correctly measures how much of
+    // the prize-money penalty the team could have covered from their own funds.
     if (winner && loser) {
       await this.processEchtgeldAusgleich({
         date,
         matchId,
         winner,
         loser,
-        aekBalance,
-        realBalance,
+        aekBalance: aekInitialBalance,
+        realBalance: realInitialBalance,
         prizeaek,
         prizereal,
         sdsBonusAek: sdsBonusAek > 0 ? 1 : 0,
-        sdsBonusReal: sdsBonusReal > 0 ? 1 : 0,
-        manofthematch
+        sdsBonusReal: sdsBonusReal > 0 ? 1 : 0
       });
     }
   }
@@ -391,9 +399,29 @@ export class MatchBusinessLogic {
   }
 
   /**
+   * Calculate the real-money (Echtgeld) amount owed based on INITIAL balances.
+   *
+   * The winner's existing balance reduces the loser's obligation: if the winner
+   * already has virtual money, less real money needs to change hands.
+   *
+   * @param {number} loserBalance   - Loser's balance before any transactions for this match
+   * @param {number} preisgeld      - Loser's prize money (negative value)
+   * @param {number|boolean} sdsBonus - 1/true if loser's player was SdS, 0/false otherwise
+   * @param {number} winnerBalance  - Winner's balance before any transactions for this match
+   * @returns {number} Real-money amount in euros
+   */
+  static calculateEchtgeldBetrag(loserBalance, preisgeld, sdsBonus, winnerBalance = 0) {
+    let konto = loserBalance + winnerBalance;
+    if (sdsBonus) konto += 100000;
+    let zwischenbetrag = (Math.abs(preisgeld) - konto) / 100000;
+    if (zwischenbetrag < 0) zwischenbetrag = 0;
+    return 5 + Math.round(zwischenbetrag);
+  }
+
+  /**
    * Process Echtgeld-Ausgleich calculation
    */
-  static async processEchtgeldAusgleich({ date, matchId, winner, loser, aekBalance, realBalance, prizeaek, prizereal, sdsBonusAek, sdsBonusReal, manofthematch }) {
+  static async processEchtgeldAusgleich({ date, matchId, winner, loser, aekBalance, realBalance, prizeaek, prizereal, sdsBonusAek, sdsBonusReal }) {
     // Get current debts
     const aekFinance = await this.getTeamFinance('AEK');
     const realFinance = await this.getTeamFinance('Real');
@@ -403,20 +431,15 @@ export class MatchBusinessLogic {
       Real: realFinance.debt || 0
     };
 
-    // Calculate Echtgeld amounts using tracker_full_v1 formula
-    const calcEchtgeldbetrag = (balance, preisgeld, sdsBonus) => {
-      let konto = balance;
-      if (sdsBonus) konto += 100000;
-      let zwischenbetrag = (Math.abs(preisgeld) - konto) / 100000;
-      if (zwischenbetrag < 0) zwischenbetrag = 0;
-      return 5 + Math.round(zwischenbetrag);
-    };
+    // Calculate Echtgeld only for the loser, factoring in the winner's balance.
+    // The winner's existing cash reduces the loser's real-money obligation because
+    // the winner already has virtual funds and needs less real compensation.
+    const loserBalance = loser === "AEK" ? aekBalance : realBalance;
+    const winnerBalance = winner === "AEK" ? aekBalance : realBalance;
+    const loserPrize = loser === "AEK" ? prizeaek : prizereal;
+    const loserSdsBonus = loser === "AEK" ? sdsBonusAek : sdsBonusReal;
 
-    const aekBetrag = calcEchtgeldbetrag(aekBalance, prizeaek, sdsBonusAek);
-    const realBetrag = calcEchtgeldbetrag(realBalance, prizereal, sdsBonusReal);
-
-    const gewinnerBetrag = winner === "AEK" ? aekBetrag : realBetrag;
-    const verliererBetrag = loser === "AEK" ? aekBetrag : realBetrag;
+    const verliererBetrag = this.calculateEchtgeldBetrag(loserBalance, loserPrize, loserSdsBonus, winnerBalance);
 
     const gewinnerDebt = debts[winner];
     const verliererDebt = debts[loser];
