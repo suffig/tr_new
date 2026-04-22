@@ -318,35 +318,51 @@ export default function MatchesTab({ showHints = false }) {
       {allMatches && allMatches.length > 0 && (() => {
         const aekWins = allMatches.filter(m => (m.goalsa || 0) > (m.goalsb || 0)).length;
         const realWins = allMatches.filter(m => (m.goalsb || 0) > (m.goalsa || 0)).length;
+        const draws = allMatches.length - aekWins - realWins;
         const totalGoalsA = allMatches.reduce((s, m) => s + (m.goalsa || 0), 0);
         const totalGoalsB = allMatches.reduce((s, m) => s + (m.goalsb || 0), 0);
         const recent5 = [...allMatches]
           .sort((a, b) => b.id - a.id)
           .slice(0, 5)
           .reverse()
-          .map(m => (m.goalsa || 0) > (m.goalsb || 0) ? 'A' : 'R');
+          .map(m => (m.goalsa || 0) > (m.goalsb || 0) ? 'AEK' : (m.goalsb || 0) > (m.goalsa || 0) ? 'Real' : 'D');
+        const aekName = getTeamDisplay('AEK');
+        const realName = getTeamDisplay('Real');
         return (
-          <div className="mb-4 bg-bg-secondary border border-border-light rounded-xl p-3 flex items-center gap-2">
-            {/* AEK side */}
-            <div className="flex-1 text-center">
-              <div className="text-2xl font-black text-blue-600">{aekWins}</div>
-              <div className="text-xs text-text-muted">{getTeamDisplay('AEK')}</div>
+          <div className="mb-4 bg-bg-secondary border border-border-light rounded-2xl overflow-hidden">
+            {/* Top: win counts with team logos */}
+            <div className="flex items-center p-3 gap-2">
+              <div className="flex-1 flex flex-col items-center gap-1">
+                <TeamLogo team="AEK" size="lg" />
+                <div className="text-3xl font-black text-blue-500">{aekWins}</div>
+                <div className="text-[11px] font-semibold text-blue-400 leading-tight text-center">{aekName}</div>
+              </div>
+              <div className="flex flex-col items-center gap-0.5 px-1">
+                <div className="text-[11px] text-text-muted font-medium">{allMatches.length} Spiele</div>
+                <div className="text-xl font-black text-text-secondary tracking-tight">{totalGoalsA}:{totalGoalsB}</div>
+                {draws > 0 && <div className="text-[10px] text-text-muted">{draws}× Unentschieden</div>}
+              </div>
+              <div className="flex-1 flex flex-col items-center gap-1">
+                <TeamLogo team="Real" size="lg" />
+                <div className="text-3xl font-black text-red-500">{realWins}</div>
+                <div className="text-[11px] font-semibold text-red-400 leading-tight text-center">{realName}</div>
+              </div>
             </div>
-            <div className="flex flex-col items-center gap-1 px-2">
-              <div className="text-lg font-bold text-text-secondary">{totalGoalsA}:{totalGoalsB}</div>
-              <div className="flex gap-0.5">
+            {/* Bottom: last 5 results */}
+            <div className="border-t border-border-light px-3 py-2 flex items-center gap-2">
+              <span className="text-[10px] text-text-muted font-medium shrink-0">Letzte {recent5.length}</span>
+              <div className="flex gap-1 flex-1 justify-center">
                 {recent5.map((r, i) => (
-                  <div key={i} className={`w-4 h-4 rounded-sm text-white text-[9px] flex items-center justify-center font-bold ${r === 'A' ? 'bg-blue-500' : 'bg-red-500'}`}>
-                    {r === 'A' ? 'A' : 'R'}
+                  <div
+                    key={i}
+                    className={`flex-1 max-w-[36px] h-6 rounded-lg flex items-center justify-center text-white text-[10px] font-bold ${
+                      r === 'AEK' ? 'bg-blue-500' : r === 'Real' ? 'bg-red-500' : 'bg-gray-400'
+                    }`}
+                  >
+                    {r === 'AEK' ? aekName.split(' ')[0][0] + (aekName.split(' ')[1]?.[0] ?? '') : r === 'Real' ? realName.split(' ')[0][0] + (realName.split(' ')[1]?.[0] ?? '') : 'U'}
                   </div>
                 ))}
               </div>
-              <div className="text-[10px] text-text-muted">Letzte {recent5.length}</div>
-            </div>
-            {/* Real side */}
-            <div className="flex-1 text-center">
-              <div className="text-2xl font-black text-red-600">{realWins}</div>
-              <div className="text-xs text-text-muted">{getTeamDisplay('Real')}</div>
             </div>
           </div>
         );
@@ -536,76 +552,60 @@ export default function MatchesTab({ showHints = false }) {
                         
                         <button
                           onClick={() => toggleMatchDetails(match.id)}
-                          className="relative w-full p-6 flex items-center justify-between cursor-pointer hover:bg-white/20 transition-all duration-200 rounded-xl group"
+                          className="relative w-full px-4 py-4 flex items-center justify-between cursor-pointer active:bg-white/30 transition-all duration-200 rounded-xl group"
+                          style={{ WebkitTapHighlightColor: 'transparent' }}
                         >
-                          <div className="flex items-center space-x-6">
-                            {/* Match result with enhanced styling */}
-                            <div className="text-center relative">
-                              <div className="flex items-center gap-4">
-                                {/* Team A */}
-                                <div className="text-right flex flex-col items-center relative">
-                                  {/* Winner crown for Team A */}
-                                  {winner === 'aek' && (
-                                    <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold bg-blue-500 text-white shadow-lg z-10">
-                                      👑
-                                    </div>
-                                  )}
-                                  <TeamLogo team={match.teama || 'AEK'} size="lg" />
-                                  <div className="text-sm font-medium text-blue-700 mt-1">
-                                    {getTeamDisplay(match.teama || 'AEK')}
+                          <div className="flex items-center flex-1 min-w-0">
+                            {/* Match result layout */}
+                            <div className="flex items-center gap-3 flex-1 min-w-0">
+                              {/* Team A */}
+                              <div className="flex flex-col items-center gap-1 relative flex-shrink-0 w-14">
+                                {winner === 'aek' && (
+                                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-blue-500 text-white shadow-md z-10">
+                                    👑
                                   </div>
+                                )}
+                                <TeamLogo team={match.teama || 'AEK'} size="lg" />
+                                <div className="text-[11px] font-semibold text-blue-700 text-center leading-tight truncate w-full">
+                                  {getTeamDisplay(match.teama || 'AEK').split(' ')[0]}
                                 </div>
-                                
-                                {/* Score */}
-                                <div className="bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
-                                  <div className="text-2xl font-black text-gray-800">
+                              </div>
+
+                              {/* Score */}
+                              <div className="flex-1 flex flex-col items-center gap-0.5">
+                                <div className="bg-white/80 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-md">
+                                  <div className="text-3xl font-black tracking-tight">
                                     <span className="text-blue-600">{aekGoals}</span>
-                                    <span className="mx-2 text-gray-400">:</span>
+                                    <span className="mx-1.5 text-gray-300">:</span>
                                     <span className="text-red-600">{realGoals}</span>
                                   </div>
                                 </div>
-                                
-                                {/* Team B */}
-                                <div className="text-left flex flex-col items-center relative">
-                                  {/* Winner crown for Team B */}
-                                  {winner === 'real' && (
-                                    <div className="absolute -top-2 -right-2 w-7 h-7 rounded-full flex items-center justify-center text-base font-bold bg-red-500 text-white shadow-lg z-10">
-                                      👑
-                                    </div>
-                                  )}
-                                  <TeamLogo team={match.teamb || 'Real'} size="lg" />
-                                  <div className="text-sm font-medium text-red-700 mt-1">
-                                    {getTeamDisplay(match.teamb || 'Real')}
+                                {match.status && match.status !== 'finished' && (
+                                  <span className="text-[10px] text-orange-600 font-medium">⏱️ Laufend</span>
+                                )}
+                              </div>
+
+                              {/* Team B */}
+                              <div className="flex flex-col items-center gap-1 relative flex-shrink-0 w-14">
+                                {winner === 'real' && (
+                                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-red-500 text-white shadow-md z-10">
+                                    👑
                                   </div>
+                                )}
+                                <TeamLogo team={match.teamb || 'Real'} size="lg" />
+                                <div className="text-[11px] font-semibold text-red-700 text-center leading-tight truncate w-full">
+                                  {getTeamDisplay(match.teamb || 'Real').split(' ').pop()}
                                 </div>
                               </div>
-                              
-                              {/* Match status */}
-                              {match.status && (
-                                <div className="mt-3">
-                                  <span className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium ${
-                                    match.status === 'finished' 
-                                      ? 'bg-green-100 text-green-700 border border-green-200'
-                                      : 'bg-orange-100 text-orange-700 border border-orange-200'
-                                  }`}>
-                                    {match.status === 'finished' ? '✅ Beendet' : '⏱️ Laufend'}
-                                  </span>
-                                </div>
-                              )}
                             </div>
                           </div>
-                          
-                          {/* Clean result overview - only show expand indicator */}
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs text-gray-500 group-hover:text-gray-700 transition-colors">
-                              {isExpanded ? 'Weniger' : 'Details'}
-                            </span>
-                            <div className={`
-                              p-2 rounded-full bg-white/60 group-hover:bg-white/80 transition-all duration-300
-                              ${isExpanded ? 'rotate-90 bg-blue-100' : 'hover:scale-110'}
-                            `}>
-                              <span className="text-lg block">▶</span>
-                            </div>
+
+                          {/* Expand indicator */}
+                          <div className={`
+                            ml-3 p-2.5 rounded-full bg-white/60 active:bg-white/80 transition-all duration-300 flex-shrink-0
+                            ${isExpanded ? 'rotate-90 bg-blue-100' : ''}
+                          `}>
+                            <span className="text-base block leading-none">▶</span>
                           </div>
                         </button>
                         

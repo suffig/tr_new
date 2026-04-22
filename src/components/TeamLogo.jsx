@@ -25,17 +25,15 @@ export default function TeamLogo({ team, size = 'md', className = '', version = 
     // Otherwise use default logos with version awareness
     switch (teamName?.toLowerCase()) {
       case 'aek':
-        // Use Dynamo Dresden logo for FC26, AEK logo for FC25
         if (fifaVersion === 'FC26') {
-          return '/tr_new/dynamo_logo_transparent.png';
+          return `${import.meta.env.BASE_URL}dynamo_logo_transparent.png`;
         }
-        return '/tr_new/aek_logo_transparent.png';
+        return `${import.meta.env.BASE_URL}aek_logo_transparent.png`;
       case 'real':
-        // Use Rangers logo for FC26 if available, otherwise fallback to Real Madrid logo
         if (fifaVersion === 'FC26') {
-          return '/tr_new/rangers_logo_transparent.png';
+          return `${import.meta.env.BASE_URL}rangers_logo_transparent.png`;
         }
-        return '/tr_new/real_logo_transparent.png';
+        return `${import.meta.env.BASE_URL}real_logo_transparent.png`;
       default:
         return null;
     }

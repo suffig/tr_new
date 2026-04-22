@@ -33,16 +33,16 @@ const DEFAULT_TEAMS_FC25 = {
 
 // Default team configurations for FC26 (Current)
 const DEFAULT_TEAMS_FC26 = {
-  AEK: { 
-    label: 'Dynamo', 
-    color: 'blue', 
-    icon: 'dynamo',  // Use Dynamo Dresden logo for FC26
+  AEK: {
+    label: 'Dynamo Dresden',
+    color: 'blue',
+    icon: 'dynamo',
     customIcon: null
   },
-  Real: { 
-    label: 'Rangers', 
-    color: 'red', 
-    icon: 'real',  // Still using 'real' icon key, but custom logo can be uploaded
+  Real: {
+    label: 'Glasgow Rangers',
+    color: 'red',
+    icon: 'real',
     customIcon: null
   },
   Ehemalige: { 
