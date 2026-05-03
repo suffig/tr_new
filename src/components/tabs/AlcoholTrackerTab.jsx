@@ -731,12 +731,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
   const addSterne = () => {
     const { person, stars } = sterneInput;
+    const gained = 6 - stars; // Differenz zu 6 Sternen
     const newData = {
       ...sterneData,
-      [person]: sterneData[person] + stars,
+      [person]: sterneData[person] + gained,
       history: [
         ...sterneData.history,
-        { person, stars, timestamp: new Date().toISOString() }
+        { person, stars, gained, timestamp: new Date().toISOString() }
       ]
     };
     saveSterneData(newData);
@@ -746,9 +747,10 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     if (sterneData.history.length === 0) return;
     const history = [...sterneData.history];
     const last = history.pop();
+    const toRemove = last.gained ?? (6 - last.stars); // backward compat
     const newData = {
       ...sterneData,
-      [last.person]: Math.max(0, sterneData[last.person] - last.stars),
+      [last.person]: Math.max(0, sterneData[last.person] - toRemove),
       history
     };
     saveSterneData(newData);
@@ -1647,9 +1649,17 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   ))}
                 </div>
 
-                {/* Preview */}
-                <div className="flex justify-center gap-0.5 text-2xl mb-4">
-                  {renderStars(sterneInput.stars, 5)}
+                {/* Preview: entered stars + computed gain */}
+                <div className="flex flex-col items-center gap-1 mb-4">
+                  <div className="flex justify-center gap-0.5 text-2xl">
+                    {renderStars(sterneInput.stars, 5)}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    Team-Stärke: <strong className="text-gray-700">{sterneInput.stars}</strong>
+                    {' → '}
+                    Gutschrift: <strong className="text-yellow-600">+{(6 - sterneInput.stars) % 1 === 0 ? 6 - sterneInput.stars : (6 - sterneInput.stars).toFixed(1)} ⭐</strong>
+                    {' '}(6 − {sterneInput.stars})
+                  </div>
                 </div>
 
                 {/* Confirm button */}
@@ -1661,7 +1671,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       : 'bg-gradient-to-b from-green-500 to-green-700 border-green-800'
                   }`}
                 >
-                  ⭐ {sterneInput.stars % 1 === 0 ? sterneInput.stars : sterneInput.stars.toFixed(1)} Sterne für {sterneInput.person === 'alex' ? managers.aek.name : managers.real.name}
+                  ⭐ +{(6 - sterneInput.stars) % 1 === 0 ? 6 - sterneInput.stars : (6 - sterneInput.stars).toFixed(1)} für {sterneInput.person === 'alex' ? managers.aek.name : managers.real.name}
                 </button>
               </div>
 
@@ -1702,9 +1712,9 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                           <span className={`font-semibold text-sm ${isAlex ? 'text-blue-700' : 'text-green-700'}`}>
                             {isAlex ? managers.aek.name : managers.real.name}
                           </span>
-                          <span className="text-yellow-500 text-sm">{renderStars(entry.stars, 5)}</span>
+                          <span className="text-xs text-gray-400">{entry.stars}★ Team</span>
                           <span className={`text-xs font-bold ${isAlex ? 'text-blue-600' : 'text-green-600'}`}>
-                            +{entry.stars % 1 === 0 ? entry.stars : entry.stars.toFixed(1)}⭐
+                            {(() => { const g = entry.gained ?? (6 - entry.stars); return `+${g % 1 === 0 ? g : g.toFixed(1)}⭐`; })()}
                           </span>
                         </div>
                         <span className="text-xs text-gray-400">

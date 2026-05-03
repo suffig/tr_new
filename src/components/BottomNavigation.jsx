@@ -7,8 +7,9 @@ const baseTabs = [
   { id: 'squad', icon: '👥', label: 'Kader', ariaLabel: 'Zu Kader-Übersicht wechseln' },
   { id: 'stats', icon: '📊', label: 'Stats', ariaLabel: 'Zu Statistik-Übersicht wechseln' },
   { id: 'events', icon: '🎉', label: 'Events', ariaLabel: 'Zu Events-Übersicht wechseln' },
-  { id: 'alcohol', icon: '🍺', label: 'Alkohol', ariaLabel: 'Zu Alkohol & Blackjack-Tracker wechseln' },
-  { id: 'admin', icon: '⚙️', label: 'Admin', ariaLabel: 'Zu Verwaltung wechseln' },
+  { id: 'alcohol',        icon: '🍺', label: 'Alkohol',  ariaLabel: 'Zu Alkohol & Blackjack-Tracker wechseln' },
+  { id: 'spielersaufen', icon: '🎙️', label: 'Saufen',   ariaLabel: 'Zu Spielersaufen wechseln' },
+  { id: 'admin',         icon: '⚙️', label: 'Admin',    ariaLabel: 'Zu Verwaltung wechseln' },
 ];
 
 export default function BottomNavigation({ activeTab, onTabChange, user }) {
