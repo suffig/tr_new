@@ -106,6 +106,20 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     history: []
   });
 
+  // Schnaps target editing
+  const [editingSchnapsTarget, setEditingSchnapsTarget] = useState(false);
+  const [schnapsTargetInput, setSchnapsTargetInput] = useState('');
+
+  // Sterne-Counter state
+  const [sterneData, setSterneData] = useState({
+    philip: 0,
+    alex: 0,
+    history: []
+  });
+
+  // Sterne input state
+  const [sterneInput, setSterneInput] = useState({ person: 'philip', stars: 3 });
+
   // Load saved values on component mount
   useEffect(() => {
     // Load manager settings from database
@@ -144,6 +158,16 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
         setSchnapsShotsData(JSON.parse(savedSchnaps));
       } catch (e) {
         console.error('Error loading Schnaps data:', e);
+      }
+    }
+
+    // Load Sterne counter from localStorage
+    const savedSterne = localStorage.getItem('sterneData');
+    if (savedSterne) {
+      try {
+        setSterneData(JSON.parse(savedSterne));
+      } catch (e) {
+        console.error('Error loading Sterne data:', e);
       }
     }
 
@@ -688,8 +712,67 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   };
 
   const resetSchnapsShotsData = () => {
-    saveSchnapsShotsData({ target: 18, alex: 0, philip: 0, history: [] });
+    saveSchnapsShotsData({ target: schnapsShotsData.target, alex: 0, philip: 0, history: [] });
   };
+
+  const applySchnapsTarget = () => {
+    const val = parseInt(schnapsTargetInput, 10);
+    if (!isNaN(val) && val >= 1 && val <= 200) {
+      saveSchnapsShotsData({ ...schnapsShotsData, target: val });
+    }
+    setEditingSchnapsTarget(false);
+  };
+
+  // ─── Sterne-Counter helpers ───────────────────────────────────────────────
+  const saveSterneData = (newData) => {
+    setSterneData(newData);
+    localStorage.setItem('sterneData', JSON.stringify(newData));
+  };
+
+  const addSterne = () => {
+    const { person, stars } = sterneInput;
+    const newData = {
+      ...sterneData,
+      [person]: sterneData[person] + stars,
+      history: [
+        ...sterneData.history,
+        { person, stars, timestamp: new Date().toISOString() }
+      ]
+    };
+    saveSterneData(newData);
+  };
+
+  const undoLastSterne = () => {
+    if (sterneData.history.length === 0) return;
+    const history = [...sterneData.history];
+    const last = history.pop();
+    const newData = {
+      ...sterneData,
+      [last.person]: Math.max(0, sterneData[last.person] - last.stars),
+      history
+    };
+    saveSterneData(newData);
+  };
+
+  const resetSterneData = () => {
+    saveSterneData({ philip: 0, alex: 0, history: [] });
+  };
+
+  // Render filled / half / empty stars
+  const renderStars = (value, maxStars = 5) => {
+    const stars = [];
+    for (let i = 1; i <= maxStars; i++) {
+      if (value >= i) {
+        stars.push(<span key={i} className="text-yellow-400">★</span>);
+      } else if (value >= i - 0.5) {
+        stars.push(<span key={i} className="text-yellow-400 opacity-60">★</span>);
+      } else {
+        stars.push(<span key={i} className="text-gray-300">★</span>);
+      }
+    }
+    return stars;
+  };
+  // ─────────────────────────────────────────────────────────────────────────
 
   const addSchnapShotToBoth = () => {
     const total = schnapsShotsData.alex + schnapsShotsData.philip;
@@ -759,6 +842,22 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             })()}
           </button>
           <button
+            onClick={() => setActiveSection('sterne')}
+            className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
+              activeSection === 'sterne'
+                ? 'bg-white text-yellow-600 shadow-sm'
+                : 'text-gray-600 hover:text-gray-800'
+            }`}
+          >
+            ⭐ Sterne
+            {(() => {
+              const net = Math.abs(sterneData.philip - sterneData.alex);
+              return net > 0
+                ? <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">{net % 1 === 0 ? net : net.toFixed(1)}</span>
+                : null;
+            })()}
+          </button>
+          <button
             onClick={() => setActiveSection('blackjack')}
             className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
               activeSection === 'blackjack'
@@ -766,7 +865,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 : 'text-gray-600 hover:text-gray-800'
             }`}
           >
-            🃏 Blackjack
+            🃏 BJ
           </button>
         </div>
       </div>
@@ -1287,7 +1386,33 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <div className="mb-6">
                     <div className="flex justify-between text-sm font-semibold mb-2">
                       <span className="text-amber-700">{total} getrunken</span>
-                      <span className="text-gray-500">Ziel: {schnapsShotsData.target}</span>
+                      <div className="flex items-center gap-2">
+                        {editingSchnapsTarget ? (
+                          <>
+                            <input
+                              type="number"
+                              min="1"
+                              max="200"
+                              value={schnapsTargetInput}
+                              onChange={e => setSchnapsTargetInput(e.target.value)}
+                              onKeyDown={e => { if (e.key === 'Enter') applySchnapsTarget(); if (e.key === 'Escape') setEditingSchnapsTarget(false); }}
+                              className="w-16 text-center border border-amber-400 rounded-lg px-1 py-0.5 text-sm font-bold text-amber-700 bg-white focus:outline-none focus:ring-2 focus:ring-amber-400"
+                              autoFocus
+                            />
+                            <button onClick={applySchnapsTarget} className="text-xs bg-amber-500 text-white px-2 py-0.5 rounded-md font-medium">✓</button>
+                            <button onClick={() => setEditingSchnapsTarget(false)} className="text-xs text-gray-500">✕</button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => { setSchnapsTargetInput(String(schnapsShotsData.target)); setEditingSchnapsTarget(true); }}
+                            className="flex items-center gap-1 text-gray-500 hover:text-amber-700 active:scale-95 transition-all"
+                            title="Ziel anpassen"
+                          >
+                            <span>Ziel: <span className="text-amber-700 font-bold">{schnapsShotsData.target}</span></span>
+                            <span className="text-xs">✏️</span>
+                          </button>
+                        )}
+                      </div>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-6 overflow-hidden relative">
                       <div
@@ -1433,6 +1558,167 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           })()}
         </>
       )}
+
+      {/* ─── Sterne-Counter Section ──────────────────────────────────────── */}
+      {activeSection === 'sterne' && (() => {
+        const net = sterneData.philip - sterneData.alex; // positive = Philip leads
+        const absNet = Math.abs(net);
+        const leader = net > 0 ? managers.real.name : net < 0 ? managers.aek.name : null;
+        const leaderColor = net > 0 ? 'green' : 'blue';
+
+        const starOptions = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
+
+        return (
+          <>
+            {/* Balance card */}
+            <div className={`modern-card mb-6 border-2 ${leader ? `border-yellow-400 bg-gradient-to-br from-yellow-50 to-amber-50` : 'border-gray-200 bg-gray-50'}`}>
+              <div className="text-center mb-5">
+                <div className="text-5xl mb-2">⭐</div>
+                {leader ? (
+                  <>
+                    <div className={`text-2xl font-black ${leaderColor === 'green' ? 'text-green-700' : 'text-blue-700'} mb-1`}>
+                      {leader} führt
+                    </div>
+                    <div className="flex justify-center gap-1 text-3xl mb-1">
+                      {renderStars(absNet, 5)}
+                    </div>
+                    <div className="text-yellow-600 font-semibold">
+                      {absNet % 1 === 0 ? absNet : absNet.toFixed(1)} Stern{absNet !== 1 ? 'e' : ''} Vorsprung
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="text-xl font-bold text-gray-600 mb-1">Gleichstand</div>
+                    <div className="text-gray-400 text-sm">Noch kein Vorsprung</div>
+                  </>
+                )}
+              </div>
+
+              {/* Per-person totals */}
+              <div className="grid grid-cols-2 gap-3 mb-6">
+                <div className="bg-blue-50 border-2 border-blue-200 rounded-xl p-3 text-center">
+                  <div className="text-blue-700 font-bold text-sm mb-1">🔵 {managers.aek.name}</div>
+                  <div className="flex justify-center gap-0.5 text-xl mb-1">{renderStars(sterneData.alex, 5)}</div>
+                  <div className="text-2xl font-black text-blue-800">
+                    {sterneData.alex % 1 === 0 ? sterneData.alex : sterneData.alex.toFixed(1)}
+                  </div>
+                  <div className="text-xs text-blue-500">Sterne gesamt</div>
+                </div>
+                <div className="bg-green-50 border-2 border-green-200 rounded-xl p-3 text-center">
+                  <div className="text-green-700 font-bold text-sm mb-1">🟢 {managers.real.name}</div>
+                  <div className="flex justify-center gap-0.5 text-xl mb-1">{renderStars(sterneData.philip, 5)}</div>
+                  <div className="text-2xl font-black text-green-800">
+                    {sterneData.philip % 1 === 0 ? sterneData.philip : sterneData.philip.toFixed(1)}
+                  </div>
+                  <div className="text-xs text-green-500">Sterne gesamt</div>
+                </div>
+              </div>
+
+              {/* Star entry form */}
+              <div className="bg-white border border-yellow-200 rounded-2xl p-4 mb-4">
+                <div className="text-sm font-semibold text-gray-600 mb-3 text-center">⭐ Sterne eintragen</div>
+
+                {/* Person selector */}
+                <div className="flex gap-2 mb-3">
+                  <button
+                    onClick={() => setSterneInput(p => ({ ...p, person: 'alex' }))}
+                    className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 ${sterneInput.person === 'alex' ? 'bg-blue-500 text-white shadow-md' : 'bg-blue-50 text-blue-600 border border-blue-200'}`}
+                  >
+                    🔵 {managers.aek.name}
+                  </button>
+                  <button
+                    onClick={() => setSterneInput(p => ({ ...p, person: 'philip' }))}
+                    className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 ${sterneInput.person === 'philip' ? 'bg-green-500 text-white shadow-md' : 'bg-green-50 text-green-600 border border-green-200'}`}
+                  >
+                    🟢 {managers.real.name}
+                  </button>
+                </div>
+
+                {/* Star amount selector */}
+                <div className="flex flex-wrap gap-1.5 justify-center mb-4">
+                  {starOptions.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setSterneInput(p => ({ ...p, stars: s }))}
+                      className={`w-12 h-10 rounded-lg text-sm font-bold transition-all active:scale-95 ${sterneInput.stars === s ? 'bg-yellow-400 text-white shadow-md scale-105' : 'bg-gray-100 text-gray-600 border border-gray-200'}`}
+                    >
+                      {s % 1 === 0 ? s : s.toFixed(1)}
+                    </button>
+                  ))}
+                </div>
+
+                {/* Preview */}
+                <div className="flex justify-center gap-0.5 text-2xl mb-4">
+                  {renderStars(sterneInput.stars, 5)}
+                </div>
+
+                {/* Confirm button */}
+                <button
+                  onClick={addSterne}
+                  className={`w-full py-4 rounded-2xl font-bold text-lg text-white shadow-lg active:scale-95 transition-all border-b-4 ${
+                    sterneInput.person === 'alex'
+                      ? 'bg-gradient-to-b from-blue-500 to-blue-700 border-blue-800'
+                      : 'bg-gradient-to-b from-green-500 to-green-700 border-green-800'
+                  }`}
+                >
+                  ⭐ {sterneInput.stars % 1 === 0 ? sterneInput.stars : sterneInput.stars.toFixed(1)} Sterne für {sterneInput.person === 'alex' ? managers.aek.name : managers.real.name}
+                </button>
+              </div>
+
+              {/* Secondary actions */}
+              <div className="flex gap-3">
+                <button
+                  onClick={undoLastSterne}
+                  disabled={sterneData.history.length === 0}
+                  className="flex-1 py-3 rounded-xl bg-gray-100 hover:bg-gray-200 disabled:opacity-40 disabled:cursor-not-allowed text-gray-700 font-medium transition-all text-sm border border-gray-300"
+                >
+                  ↩ Letzten rückgängig
+                </button>
+                <button
+                  onClick={() => { if (window.confirm('Sterne-Counter zurücksetzen?')) resetSterneData(); }}
+                  className="flex-1 py-3 rounded-xl bg-red-50 hover:bg-red-100 text-red-600 font-medium transition-all text-sm border border-red-200"
+                >
+                  🔄 Reset
+                </button>
+              </div>
+            </div>
+
+            {/* History */}
+            {sterneData.history.length > 0 && (
+              <div className="modern-card">
+                <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                  <span>📜</span> Verlauf
+                </h4>
+                <div className="space-y-1.5 max-h-64 overflow-y-auto">
+                  {[...sterneData.history].reverse().map((entry, i) => {
+                    const isAlex = entry.person === 'alex';
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center justify-between px-3 py-2 rounded-lg ${isAlex ? 'bg-blue-50 border border-blue-100' : 'bg-green-50 border border-green-100'}`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{isAlex ? '🔵' : '🟢'}</span>
+                          <span className={`font-semibold text-sm ${isAlex ? 'text-blue-700' : 'text-green-700'}`}>
+                            {isAlex ? managers.aek.name : managers.real.name}
+                          </span>
+                          <span className="text-yellow-500 text-sm">{renderStars(entry.stars, 5)}</span>
+                          <span className={`text-xs font-bold ${isAlex ? 'text-blue-600' : 'text-green-600'}`}>
+                            +{entry.stars % 1 === 0 ? entry.stars : entry.stars.toFixed(1)}⭐
+                          </span>
+                        </div>
+                        <span className="text-xs text-gray-400">
+                          {new Date(entry.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
       {/* New BJ-Tracking Section */}
       {activeSection === 'blackjack' && (
