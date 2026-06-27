@@ -5,6 +5,7 @@ import { triggerNotification } from '../../NotificationSystem';
 import toast from 'react-hot-toast';
 import { getTeamDisplay } from '../../../constants/teams';
 import Icon from '../../icons/Icon';
+import TeamLogo from '../../TeamLogo';
 
 const DRAFTS_KEY = 'fusta_match_drafts_v1';
 
@@ -509,17 +510,16 @@ export default function AddMatchTab() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Fixed Teams Display */}
-                <div className="bg-gray-50 rounded-lg p-4 border">
-                  <div className="text-center">
-                    <h4 className="text-lg font-semibold text-gray-700 mb-2">⚽ Spielpaarung</h4>
-                    <div className="flex items-center justify-center space-x-4">
-                      <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-medium">
-                        {getTeamDisplay('AEK')}
-                      </div>
-                      <div className="text-gray-500 font-bold text-xl">vs</div>
-                      <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg font-medium">
-                        {getTeamDisplay('Real')}
-                      </div>
+                <div className="bg-bg-tertiary rounded-xl p-4">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <TeamLogo team="aek" size="md" />
+                      <span className="text-xs font-semibold text-system-blue text-center">{getTeamDisplay('AEK')}</span>
+                    </div>
+                    <div className="text-text-tertiary font-bold">vs</div>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <TeamLogo team="real" size="md" />
+                      <span className="text-xs font-semibold text-system-red text-center">{getTeamDisplay('Real')}</span>
                     </div>
                   </div>
                 </div>
@@ -541,7 +541,7 @@ export default function AddMatchTab() {
 
                 {/* Live Goal Scoring */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">⚽ Live Torwertung</h4>
+                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Live Torwertung</h4>
                   
                   {/* Enhanced Score Display */}
                   <div className="bg-gradient-to-r from-blue-50 to-red-50 rounded-xl p-6 mb-4 text-center border border-gray-200 shadow-sm">
@@ -766,7 +766,7 @@ export default function AddMatchTab() {
 
                 {/* Cards */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">🟨🟥 Karten</h4>
+                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} className="text-system-red" />Karten</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-3">
                       <p className="text-xs text-blue-600 font-medium">{getTeamDisplay('AEK')}</p>
@@ -887,7 +887,7 @@ export default function AddMatchTab() {
 
                 {/* Player of the Match */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">⭐ Spieler des Spiels</h4>
+                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} className="text-system-orange" />Spieler des Spiels</h4>
                   
                   {/* Team Filter */}
                   <div className="mb-3">
@@ -955,7 +955,7 @@ export default function AddMatchTab() {
 
                 {/* Prize Money */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">💰 Preisgelder (automatisch berechnet)</h4>
+                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="euro" size={16} strokeWidth={2.2} className="text-system-green" />Preisgelder (automatisch berechnet)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-2">

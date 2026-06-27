@@ -1,5 +1,5 @@
 ﻿import Icon from '../icons/Icon';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
