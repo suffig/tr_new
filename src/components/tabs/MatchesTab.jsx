@@ -1,5 +1,5 @@
 ﻿import Icon from '../icons/Icon';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
@@ -342,6 +342,60 @@ export default function MatchesTab({ showHints = false }) {
                 </span>
               </button>
             </div>
+
+            {/* Active filter chips (visible when collapsed) */}
+            {!filterExpanded && activeChips.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {activeChips.map((chip) => (
+                  <button key={chip.key} onClick={chip.clear} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full text-xs font-medium bg-system-green/12 text-system-green">
+                    {chip.label}
+                    <Icon name="x" size={13} strokeWidth={2.4} />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Expandable filter panel */}
+            {filterExpanded && (
+              <div className="modern-card mt-3 animate-mobile-slide-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Zeitraum</label>
+                    <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="1week">Letzte Woche</option>
+                      <option value="4weeks">Letzte 4 Wochen</option>
+                      <option value="3months">Letzte 3 Monate</option>
+                      <option value="all">Alle Spiele</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Ergebnis</label>
+                    <select value={resultFilter} onChange={(e) => setResultFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="all">Alle Ergebnisse</option>
+                      <option value="aek-wins">{getTeamDisplay('AEK')} Siege</option>
+                      <option value="real-wins">{getTeamDisplay('Real')} Siege</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Tore</label>
+                    <select value={goalFilter} onChange={(e) => setGoalFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="all">Alle Spiele</option>
+                      <option value="high-scoring">Torreich (&gt;10 Tore)</option>
+                      <option value="low-scoring">Torarm (&lt;5 Tore)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Datum</label>
+                    <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none" />
+                  </div>
+                </div>
+                {activeChips.length > 0 && (
+                  <button onClick={resetAll} className="mt-3 w-full py-2.5 rounded-xl text-sm font-medium btn-soft btn-soft-gray">
+                    Filter zurücksetzen
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* Active filter chips (visible when collapsed) */}
             {!filterExpanded && activeChips.length > 0 && (
