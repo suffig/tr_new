@@ -1,3 +1,4 @@
+﻿import Icon from '../icons/Icon';
 import { useState, useEffect } from 'react';
 
 export default function EventsTab() {
@@ -167,17 +168,15 @@ export default function EventsTab() {
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
       {/* Enhanced Header with iOS 26 Design - matching StatsTab */}
-      <div className="mb-6 animate-mobile-slide-in">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gradient-info rounded-ios-lg flex items-center justify-center">
-            <span className="text-white text-xl">🎉</span>
-          </div>
+      <div className="page-header animate-mobile-slide-in">
+        <div className="page-header-row">
           <div>
-            <h2 className="text-title1 font-bold text-text-primary">Events</h2>
-            <p className="text-footnote text-text-secondary">Besondere Events, Turniere und Challenges</p>
+            <h2 className="page-title">Events</h2>
+            <p className="page-subtitle">Besondere Events, Turniere und Challenges</p>
           </div>
+          <div className="page-icon tile-purple"><Icon name="sparkles" size={22} strokeWidth={2} /></div>
         </div>
-        <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
+        <div className="hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
       </div>

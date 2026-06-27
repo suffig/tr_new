@@ -142,10 +142,7 @@ export default function Login() {
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="floating-orb floating-orb-1 bg-system-green/10"></div>
         <div className="floating-orb floating-orb-2 bg-system-blue/10"></div>
-        <div className="floating-orb floating-orb-3 bg-fifa-green/10"></div>
-        <div className="floating-pattern floating-pattern-1">⚽</div>
-        <div className="floating-pattern floating-pattern-2">🏆</div>
-        <div className="floating-pattern floating-pattern-3">⭐</div>
+        <div className="floating-orb floating-orb-3 bg-system-green/10"></div>
       </div>
 
       {/* Login Card */}
@@ -163,7 +160,7 @@ export default function Login() {
                 />
               </div>
             </div>
-            <h1 className="text-title1 font-bold text-text-primary mb-2 login-title-bounce">FUSTA</h1>
+            <h1 className="text-title1 font-bold brand-gradient-text mb-2 login-title-bounce">FUSTA</h1>
             
             {/* Demo Mode Indicator */}
             {isDemoMode && (

@@ -81,7 +81,7 @@ export default {
         separator: 'var(--separator)',
       },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'system-ui', 'sans-serif'],
+        sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'system-ui', 'sans-serif'],
       },
       fontSize: {
         'headline': ['34px', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],

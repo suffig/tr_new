@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from 'react';
+﻿import Icon from '../icons/Icon';
+import { useState, useEffect } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
@@ -13,11 +14,8 @@ export default function MatchesTab({ showHints = false }) {
   const [dateFilter, setDateFilter] = useState('');
   const [resultFilter, setResultFilter] = useState('all'); // 'all', 'aek-wins', 'real-wins'
   const [goalFilter, setGoalFilter] = useState('all'); // 'all', 'high-scoring', 'low-scoring'
-  const [hoveredMatch, setHoveredMatch] = useState(null);
-  const [animatingMatches, setAnimatingMatches] = useState(new Set());
   const [activeView, setActiveView] = useState('overview');
-  const animationTimeouts = useRef(new Map());
-  
+
   const { data: allMatches, loading, error, refetch } = useSupabaseQuery(
     'matches',
     '*',
@@ -132,8 +130,8 @@ export default function MatchesTab({ showHints = false }) {
 
   // Define views for horizontal navigation (removed stats view)
   const views = [
-    { id: 'overview', label: 'Übersicht', icon: '⚽' },
-    { id: 'recent', label: 'Letzte', icon: '📅' },
+    { id: 'overview', label: 'Übersicht', iconName: 'football' },
+    { id: 'recent', label: 'Letzte', iconName: 'calendar' },
     { id: 'aek-wins', label: `${getTeamDisplay('AEK')} Siege`, logoComponent: <TeamLogo team="aek" size="sm" /> },
     { id: 'real-wins', label: `${getTeamDisplay('Real')} Siege`, logoComponent: <TeamLogo team="real" size="sm" /> },
   ];
@@ -179,45 +177,13 @@ export default function MatchesTab({ showHints = false }) {
   };
 
   const toggleMatchDetails = (matchId) => {
-    const newExpanded = new Set(expandedMatches);
-    const isCurrentlyExpanded = newExpanded.has(matchId);
-    
-    // Add animation state
-    setAnimatingMatches(prev => new Set(prev).add(matchId));
-    
-    // Clear any existing timeout for this match
-    if (animationTimeouts.current.has(matchId)) {
-      clearTimeout(animationTimeouts.current.get(matchId));
-    }
-    
-    if (isCurrentlyExpanded) {
-      newExpanded.delete(matchId);
-    } else {
-      newExpanded.add(matchId);
-    }
-    
-    setExpandedMatches(newExpanded);
-    
-    // Remove animation state after animation completes
-    const timeout = setTimeout(() => {
-      setAnimatingMatches(prev => {
-        const next = new Set(prev);
-        next.delete(matchId);
-        return next;
-      });
-      animationTimeouts.current.delete(matchId);
-    }, 300);
-    
-    animationTimeouts.current.set(matchId, timeout);
+    setExpandedMatches(prev => {
+      const next = new Set(prev);
+      if (next.has(matchId)) next.delete(matchId);
+      else next.add(matchId);
+      return next;
+    });
   };
-
-  // Cleanup timeouts on unmount
-  useEffect(() => {
-    return () => {
-      const timeouts = animationTimeouts.current;
-      timeouts.forEach(timeout => clearTimeout(timeout));
-    };
-  }, []);
 
   // Group matches by date
   const groupMatchesByDate = () => {
@@ -241,38 +207,6 @@ export default function MatchesTab({ showHints = false }) {
       }));
   };
 
-  // Generate color schemes for different dates
-  const getDateColorScheme = (index) => {
-    const colorSchemes = [
-      {
-        container: "border-blue-400 bg-blue-50 dark:bg-blue-900",
-        header: "text-blue-800 dark:text-blue-100",
-        accent: "blue-500"
-      },
-      {
-        container: "border-green-500 bg-green-50 dark:bg-green-900", 
-        header: "text-green-800 dark:text-green-100",
-        accent: "green-500"
-      },
-      {
-        container: "border-purple-500 bg-purple-50 dark:bg-purple-900",
-        header: "text-purple-800 dark:text-purple-100", 
-        accent: "purple-500"
-      },
-      {
-        container: "border-red-500 bg-red-50 dark:bg-red-900",
-        header: "text-red-800 dark:text-red-100", 
-        accent: "red-500"
-      },
-      {
-        container: "border-yellow-500 bg-yellow-50 dark:bg-yellow-900",
-        header: "text-yellow-800 dark:text-yellow-100",
-        accent: "yellow-500"
-      }
-    ];
-    
-    return colorSchemes[index % colorSchemes.length];
-  };
 
   if (isLoading) {
     return <LoadingSpinner message="Lade Spiele..." />;
@@ -297,19 +231,17 @@ export default function MatchesTab({ showHints = false }) {
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
       {/* Enhanced Header with iOS 26 Design - matching StatsTab */}
-      <div className="mb-6 animate-mobile-slide-in">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gradient-info rounded-ios-lg flex items-center justify-center">
-            <span className="text-white text-xl">⚽</span>
-          </div>
+      <div className="page-header animate-mobile-slide-in">
+        <div className="page-header-row">
           <div>
-            <h2 className="text-title1 font-bold text-text-primary">Spiele</h2>
-            <p className="text-footnote text-text-secondary">
+            <h2 className="page-title">Spiele</h2>
+            <p className="page-subtitle">
               {matches?.length || 0} Spiele gefunden, gruppiert nach Datum
             </p>
           </div>
+          <div className="page-icon tile-green"><Icon name="football" size={22} strokeWidth={2} /></div>
         </div>
-        <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
+        <div className="hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
       </div>
@@ -375,531 +307,280 @@ export default function MatchesTab({ showHints = false }) {
         onViewChange={setActiveView}
       />
 
-      {/* Enhanced Filter Controls */}
-      <div className="mb-6 modern-card">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-text-primary mb-2">🔍 Filter & Suche</h3>
-            <p className="text-sm text-text-muted">Finde schnell die Spiele, die dich interessieren</p>
-          </div>
-          <button
-            onClick={() => setFilterExpanded(!filterExpanded)}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-bg-secondary hover:bg-bg-tertiary border border-border-light rounded-lg transition-all"
-          >
-            <span>{filterExpanded ? 'Einklappen' : 'Erweitern'}</span>
-            <span className={`text-lg transition-transform duration-200 ${filterExpanded ? 'rotate-90' : ''}`}>
-              ▶
-            </span>
-          </button>
-        </div>
-        
-        <div className={`overflow-hidden transition-all duration-300 ${filterExpanded ? 'max-h-96' : 'max-h-0'}`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Time Period Filter */}
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                📅 Zeitraum
-              </label>
-              <select
-                value={timeFilter}
-                onChange={(e) => setTimeFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
+      {/* Discreet filter bar */}
+      {(() => {
+        const timeLabels = { '1week': 'Letzte Woche', '4weeks': 'Letzte 4 Wochen', '3months': 'Letzte 3 Monate', 'all': 'Alle Spiele' };
+        const resultLabels = { 'all': 'Alle', 'aek-wins': `${getTeamDisplay('AEK')} Siege`, 'real-wins': `${getTeamDisplay('Real')} Siege` };
+        const goalLabels = { 'all': 'Alle', 'high-scoring': 'Torreich', 'low-scoring': 'Torarm' };
+        const activeChips = [];
+        if (timeFilter !== '4weeks') activeChips.push({ key: 'time', label: timeLabels[timeFilter], clear: () => setTimeFilter('4weeks') });
+        if (resultFilter !== 'all') activeChips.push({ key: 'result', label: resultLabels[resultFilter], clear: () => setResultFilter('all') });
+        if (goalFilter !== 'all') activeChips.push({ key: 'goal', label: goalLabels[goalFilter], clear: () => setGoalFilter('all') });
+        if (dateFilter) activeChips.push({ key: 'date', label: new Date(dateFilter).toLocaleDateString('de-DE'), clear: () => setDateFilter('') });
+        const resetAll = () => { setTimeFilter('4weeks'); setDateFilter(''); setResultFilter('all'); setGoalFilter('all'); };
+        return (
+          <div className="mb-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-text-muted">
+                {matches.length === (allMatches?.length || 0) ? `${matches.length} Spiele` : `${matches.length} von ${allMatches?.length || 0}`}
+              </span>
+              <button
+                onClick={() => setFilterExpanded(!filterExpanded)}
+                className={`flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl transition-colors min-h-[40px] ${
+                  filterExpanded || activeChips.length > 0
+                    ? 'bg-system-green/12 text-system-green'
+                    : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
+                }`}
               >
-                <option value="1week">Letzte Woche</option>
-                <option value="4weeks">Letzte 4 Wochen</option>
-                <option value="3months">Letzte 3 Monate</option>
-                <option value="all">Alle Spiele</option>
-              </select>
+                <Icon name="filter" size={16} strokeWidth={2.2} />
+                Filter
+                {activeChips.length > 0 && (
+                  <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-system-green text-white text-[11px] font-bold flex items-center justify-center">{activeChips.length}</span>
+                )}
+                <span className={`transition-transform duration-200 ${filterExpanded ? 'rotate-90' : ''}`}>
+                  <Icon name="chevronRight" size={16} strokeWidth={2.2} />
+                </span>
+              </button>
             </div>
-            
-            {/* Result Filter */}
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                🏆 Ergebnis
-              </label>
-              <select
-                value={resultFilter}
-                onChange={(e) => setResultFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
-              >
-                <option value="all">Alle Ergebnisse</option>
-                <option value="aek-wins">{getTeamDisplay('AEK')} Siege</option>
-                <option value="real-wins">{getTeamDisplay('Real')} Siege</option>
-              </select>
-            </div>
-            
-            {/* Goal Filter */}
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                ⚽ Tore
-              </label>
-              <select
-                value={goalFilter}
-                onChange={(e) => setGoalFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
-              >
-                <option value="all">Alle Spiele</option>
-                <option value="high-scoring">🔥 Torreich (&gt;10 Tore)</option>
-                <option value="low-scoring">🛡️ Torarm (&lt;5 Tore)</option>
-              </select>
-            </div>
-            
-            {/* Specific Date Filter */}
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                📆 Datum
-              </label>
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
-              />
-            </div>
-          </div>
-          
-          {/* Filter Actions */}
-          <div className="mt-4 flex flex-wrap gap-2 items-center justify-between">
-            <div className="text-sm text-text-muted">
-              {(() => {
-                const count = matches.length;
-                const total = allMatches?.length || 0;
-                if (count === total) return `Zeige alle ${count} Spiele`;
-                return `${count} von ${total} Spielen gefiltert`;
-              })()}
-            </div>
-            <button
-              onClick={() => {
-                setTimeFilter('4weeks');
-                setDateFilter('');
-                setResultFilter('all');
-                setGoalFilter('all');
-              }}
-              className="px-4 py-2 text-sm bg-accent-orange text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              🔄 Filter zurücksetzen
-            </button>
-          </div>
-        </div>
-      </div>
 
-      {dateGroups && dateGroups.length > 0 ? (
-        <div className="space-y-4">
-          {dateGroups.map((dateGroup, groupIndex) => {
-            const colorScheme = getDateColorScheme(groupIndex);
-            
-            return (
-              <div key={dateGroup.date} className={`border-2 ${colorScheme.container} rounded-lg shadow-lg`}>
-                <div className="p-4 border-b border-opacity-20">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center">
-                      <div className={`w-3 h-3 bg-${colorScheme.accent} rounded-full mr-3 flex-shrink-0`}></div>
-                      <div>
-                        <h3 className={`text-lg font-bold ${colorScheme.header}`}>
-                          {new Date(dateGroup.date).toLocaleDateString('de-DE', {
-                            weekday: 'long',
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </h3>
-                        <p className={`text-sm opacity-75 ${colorScheme.header}`}>
-                          {dateGroup.matches.length} Spiel{dateGroup.matches.length !== 1 ? 'e' : ''}
-                        </p>
-                      </div>
-                    </div>
-                    <div className={`text-xs bg-${colorScheme.accent} text-white px-3 py-1 rounded-full font-semibold`}>
-                      Spieltag
-                    </div>
+            {/* Active filter chips (visible when collapsed) */}
+            {!filterExpanded && activeChips.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {activeChips.map((chip) => (
+                  <button key={chip.key} onClick={chip.clear} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full text-xs font-medium bg-system-green/12 text-system-green">
+                    {chip.label}
+                    <Icon name="x" size={13} strokeWidth={2.4} />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Expandable filter panel */}
+            {filterExpanded && (
+              <div className="modern-card mt-3 animate-mobile-slide-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Zeitraum</label>
+                    <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="1week">Letzte Woche</option>
+                      <option value="4weeks">Letzte 4 Wochen</option>
+                      <option value="3months">Letzte 3 Monate</option>
+                      <option value="all">Alle Spiele</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Ergebnis</label>
+                    <select value={resultFilter} onChange={(e) => setResultFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="all">Alle Ergebnisse</option>
+                      <option value="aek-wins">{getTeamDisplay('AEK')} Siege</option>
+                      <option value="real-wins">{getTeamDisplay('Real')} Siege</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Tore</label>
+                    <select value={goalFilter} onChange={(e) => setGoalFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="all">Alle Spiele</option>
+                      <option value="high-scoring">Torreich (&gt;10 Tore)</option>
+                      <option value="low-scoring">Torarm (&lt;5 Tore)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Datum</label>
+                    <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none" />
                   </div>
                 </div>
-                
-                <div className="p-4 space-y-3">
+                {activeChips.length > 0 && (
+                  <button onClick={resetAll} className="mt-3 w-full py-2.5 rounded-xl text-sm font-medium btn-soft btn-soft-gray">
+                    Filter zurücksetzen
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        );
+      })()}
+
+      {dateGroups && dateGroups.length > 0 ? (
+        <div className="space-y-5">
+          {dateGroups.map((dateGroup) => (
+              <div key={dateGroup.date}>
+                {/* Date group label */}
+                <div className="flex items-center justify-between px-1 mb-2">
+                  <h3 className="text-sm font-semibold text-text-secondary">
+                    {new Date(dateGroup.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
+                  </h3>
+                  <span className="text-xs text-text-tertiary">
+                    {dateGroup.matches.length} Spiel{dateGroup.matches.length !== 1 ? 'e' : ''}
+                  </span>
+                </div>
+
+                <div className="space-y-2">
                   {dateGroup.matches.map((match, matchIndex) => {
                     const isExpanded = expandedMatches.has(match.id);
-                    const isAnimating = animatingMatches.has(match.id);
-                    const isHovered = hoveredMatch === match.id;
-                    
-                    // Determine winner for styling
                     const aekGoals = match.goalsa || 0;
                     const realGoals = match.goalsb || 0;
                     const winner = aekGoals > realGoals ? 'aek' : realGoals > aekGoals ? 'real' : 'draw';
-                    
-                    // Calculate sequential match number (1-based, newest first)
                     const matchNumber = matchIndex + 1;
-                    
+                    const totalGoals = aekGoals + realGoals;
+
+                    const parseGoals = (raw) => {
+                      try {
+                        if (typeof raw === 'string') return JSON.parse(raw) || [];
+                        if (Array.isArray(raw)) return raw;
+                      } catch { /* ignore */ }
+                      return [];
+                    };
+
                     return (
-                      <div 
-                        key={match.id} 
-                        className={`
-                          relative overflow-hidden rounded-xl border transition-all duration-300 ease-out transform
-                          ${isExpanded ? 'shadow-2xl scale-[1.02]' : 'shadow-lg hover:shadow-xl hover:scale-[1.01]'}
-                          ${isHovered ? 'ring-2 ring-blue-400/50' : ''}
-                          bg-gradient-to-r from-blue-50 to-blue-100 border-blue-200
-                          ${isAnimating ? 'transition-all duration-300' : ''}
-                        `}
-                        style={{
-                          animationDelay: `${matchIndex * 100}ms`,
-                          animation: 'slideInUp 0.5s ease-out forwards'
-                        }}
-                        onMouseEnter={() => setHoveredMatch(match.id)}
-                        onMouseLeave={() => setHoveredMatch(null)}
-                      >
-                        {/* Decorative background pattern */}
-                        <div className="absolute inset-0 opacity-5">
-                          <div className="w-full h-full bg-gradient-to-br from-blue-400 to-blue-600"></div>
-                        </div>
-                        
+                      <div key={match.id} className="modern-card p-0 overflow-hidden">
+                        {/* Match summary row */}
                         <button
                           onClick={() => toggleMatchDetails(match.id)}
-                          className="relative w-full px-4 py-4 flex items-center justify-between cursor-pointer active:bg-white/30 transition-all duration-200 rounded-xl group"
+                          className="w-full px-4 py-3 flex items-center gap-3"
                           style={{ WebkitTapHighlightColor: 'transparent' }}
                         >
-                          <div className="flex items-center flex-1 min-w-0">
-                            {/* Match result layout */}
-                            <div className="flex items-center gap-3 flex-1 min-w-0">
-                              {/* Team A */}
-                              <div className="flex flex-col items-center gap-1 relative flex-shrink-0 w-14">
-                                {winner === 'aek' && (
-                                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-blue-500 text-white shadow-md z-10">
-                                    👑
-                                  </div>
-                                )}
-                                <TeamLogo team={match.teama || 'AEK'} size="lg" />
-                                <div className="text-[11px] font-semibold text-blue-700 text-center leading-tight truncate w-full">
-                                  {getTeamDisplay(match.teama || 'AEK').split(' ')[0]}
-                                </div>
-                              </div>
-
-                              {/* Score */}
-                              <div className="flex-1 flex flex-col items-center gap-0.5">
-                                <div className="bg-white/80 backdrop-blur-sm rounded-xl px-3 py-1.5 shadow-md">
-                                  <div className="text-3xl font-black tracking-tight">
-                                    <span className="text-blue-600">{aekGoals}</span>
-                                    <span className="mx-1.5 text-gray-300">:</span>
-                                    <span className="text-red-600">{realGoals}</span>
-                                  </div>
-                                </div>
-                                {match.status && match.status !== 'finished' && (
-                                  <span className="text-[10px] text-orange-600 font-medium">⏱️ Laufend</span>
-                                )}
-                              </div>
-
-                              {/* Team B */}
-                              <div className="flex flex-col items-center gap-1 relative flex-shrink-0 w-14">
-                                {winner === 'real' && (
-                                  <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold bg-red-500 text-white shadow-md z-10">
-                                    👑
-                                  </div>
-                                )}
-                                <TeamLogo team={match.teamb || 'Real'} size="lg" />
-                                <div className="text-[11px] font-semibold text-red-700 text-center leading-tight truncate w-full">
-                                  {getTeamDisplay(match.teamb || 'Real').split(' ').pop()}
-                                </div>
-                              </div>
+                          {/* Team A */}
+                          <div className="flex flex-col items-center gap-1 w-16 flex-shrink-0">
+                            <TeamLogo team={match.teama || 'AEK'} size="md" />
+                            <div className={`text-[11px] font-semibold text-center leading-tight truncate w-full ${winner === 'aek' ? 'text-system-blue' : 'text-text-tertiary'}`}>
+                              {getTeamDisplay(match.teama || 'AEK').split(' ')[0]}
                             </div>
                           </div>
 
-                          {/* Expand indicator */}
-                          <div className={`
-                            ml-3 p-2.5 rounded-full bg-white/60 active:bg-white/80 transition-all duration-300 flex-shrink-0
-                            ${isExpanded ? 'rotate-90 bg-blue-100' : ''}
-                          `}>
-                            <span className="text-base block leading-none">▶</span>
+                          {/* Score */}
+                          <div className="flex-1 flex flex-col items-center">
+                            <div className="text-2xl font-black tracking-tight tabular-nums">
+                              <span className={winner === 'aek' ? 'text-system-blue' : 'text-text-secondary'}>{aekGoals}</span>
+                              <span className="mx-1.5 text-text-tertiary">:</span>
+                              <span className={winner === 'real' ? 'text-system-red' : 'text-text-secondary'}>{realGoals}</span>
+                            </div>
+                            {match.status && match.status !== 'finished' && (
+                              <span className="text-[10px] text-system-orange font-medium">Laufend</span>
+                            )}
                           </div>
+
+                          {/* Team B */}
+                          <div className="flex flex-col items-center gap-1 w-16 flex-shrink-0">
+                            <TeamLogo team={match.teamb || 'Real'} size="md" />
+                            <div className={`text-[11px] font-semibold text-center leading-tight truncate w-full ${winner === 'real' ? 'text-system-red' : 'text-text-tertiary'}`}>
+                              {getTeamDisplay(match.teamb || 'Real').split(' ').pop()}
+                            </div>
+                          </div>
+
+                          {/* Chevron */}
+                          <span className={`flex-shrink-0 text-text-tertiary transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`}>
+                            <Icon name="chevronRight" size={18} strokeWidth={2.2} />
+                          </span>
                         </button>
-                        
-                        {/* Enhanced expanded details with smooth animation */}
+
+                        {/* Expanded details */}
                         {isExpanded && (
-                          <div className={`
-                            px-6 pb-6 border-t border-gray-200/50 bg-white/60 backdrop-blur-sm
-                            transform transition-all duration-300 ease-out
-                            ${isAnimating ? 'animate-slideDown' : ''}
-                          `}>
-                            <div className="mt-6">
-                              {/* Enhanced match statistics header */}
-                              <div className="flex items-center justify-between mb-6 p-5 bg-gradient-to-r from-blue-50 via-purple-50 to-pink-50 rounded-xl border-2 border-blue-200 shadow-sm">
-                                <h3 className="text-xl font-bold text-gray-800 flex items-center gap-3">
-                                  ⚽ Match Details
-                                  <span className="text-sm font-normal text-gray-600 bg-white px-3 py-1 rounded-full">
-                                    {(match.goalsa || 0) + (match.goalsb || 0)} Tore gesamt
-                                  </span>
-                                </h3>
-                                <div className="flex items-center gap-3 text-sm">
-                                  <span className="bg-white px-3 py-1.5 rounded-lg font-semibold text-gray-700 shadow-sm">
-                                    Match #{matchNumber}
-                                  </span>
-                                  <span className="text-gray-400">•</span>
-                                  <span className="bg-white px-3 py-1.5 rounded-lg font-medium text-gray-600 shadow-sm">
-                                    {new Date(match.date).toLocaleDateString('de-DE')}
-                                  </span>
-                                </div>
-                              </div>
-                              
-                              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
-                                
-                                {/* Enhanced Goal Scorers Section */}
-                                <div className="space-y-3 bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border-2 border-gray-200 hover:shadow-lg transition-all duration-300">
-                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg border-b-2 border-blue-300 pb-2">
-                                    ⚽ Torschützen
-                                    <span className="text-xs bg-gradient-to-r from-blue-500 to-purple-500 text-white px-3 py-1 rounded-full font-bold shadow-sm">
-                                      {(match.goalsa || 0) + (match.goalsb || 0)} Tore
-                                    </span>
-                                  </h4>
-                                  <div className="space-y-3">
-                                    {(() => {
-                                      // Safely parse goalslista
-                                      let goalsList = [];
-                                      try {
-                                        if (typeof match.goalslista === 'string') {
-                                          goalsList = JSON.parse(match.goalslista);
-                                        } else if (Array.isArray(match.goalslista)) {
-                                          goalsList = match.goalslista;
-                                        }
-                                      } catch (e) {
-                                        console.warn('Failed to parse goalslista:', e);
-                                        goalsList = [];
-                                      }
-                                      
-                                      return goalsList && goalsList.length > 0 ? (
-                                        <div className="space-y-2">
-                                          <div className="flex items-center gap-2 text-sm font-medium text-blue-700">
-                                            <TeamLogo team="aek" size="xs" /> {getTeamDisplay('AEK')} ({match.goalsa || 0} Tore)
-                                          </div>
-                                          {goalsList.map((goal, idx) => {
-                                            const isObject = typeof goal === 'object' && goal !== null;
-                                            const playerInfo = isObject 
-                                              ? getPlayerInfo(goal.player_id, goal.player)
-                                              : getPlayerInfo(null, goal);
-                                            return (
-                                              <div key={idx} className="group p-3 bg-gradient-to-r from-blue-50 via-blue-100 to-blue-50 rounded-lg border-l-4 border-blue-500 hover:shadow-md hover:scale-[1.02] transition-all duration-200">
-                                                <div className="flex items-center justify-between">
-                                                  <div>
-                                                    <div className="font-semibold text-blue-800 flex items-center gap-2">
-                                                      <span className="text-lg">⚽</span> 
-                                                      <span className="font-bold">{playerInfo.name}</span>
-                                                      {isObject && goal.count > 1 && (
-                                                        <span className="text-xs bg-blue-500 text-white px-2.5 py-1 rounded-full font-bold shadow-sm">
-                                                          {goal.count}x Treffer
-                                                        </span>
-                                                      )}
-                                                    </div>
-                                                    <div className="text-xs text-blue-700 flex items-center gap-3 mt-1.5 font-medium">
-                                                      <span className="bg-blue-200 px-2 py-0.5 rounded">💰 {playerInfo.value}M €</span>
-                                                      <span className="bg-blue-200 px-2 py-0.5 rounded">👕 {playerInfo.team}</span>
-                                                    </div>
-                                                  </div>
+                          <div className="px-4 pb-4 border-t border-border-light pt-4 space-y-3">
+                            {/* Meta line */}
+                            <div className="flex items-center gap-2 text-xs text-text-muted">
+                              <span className="bg-bg-tertiary px-2 py-1 rounded-md font-medium">Match #{matchNumber}</span>
+                              <span className="bg-bg-tertiary px-2 py-1 rounded-md">{totalGoals} Tore</span>
+                              <span className="bg-bg-tertiary px-2 py-1 rounded-md">{new Date(match.date).toLocaleDateString('de-DE')}</span>
+                            </div>
 
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      ) : (
-                                        <div className="p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                          <p className="text-sm text-gray-500 text-center"><TeamLogo team="aek" size="xs" /> {getTeamDisplay('AEK')}: Keine Tore erzielt</p>
-                                        </div>
-                                      );
-                                    })()}
-                                    
-                                    {(() => {
-                                      // Safely parse goalslistb
-                                      let goalsList = [];
-                                      try {
-                                        if (typeof match.goalslistb === 'string') {
-                                          goalsList = JSON.parse(match.goalslistb);
-                                        } else if (Array.isArray(match.goalslistb)) {
-                                          goalsList = match.goalslistb;
-                                        }
-                                      } catch (e) {
-                                        console.warn('Failed to parse goalslistb:', e);
-                                        goalsList = [];
-                                      }
-                                      
-                                      return goalsList && goalsList.length > 0 ? (
-                                        <div className="space-y-2">
-                                          <div className="flex items-center gap-2 text-sm font-medium text-red-700">
-                                            <TeamLogo team="real" size="xs" /> {getTeamDisplay('Real')} ({match.goalsb || 0} Tore)
-                                          </div>
-                                          {goalsList.map((goal, idx) => {
-                                            const isObject = typeof goal === 'object' && goal !== null;
-                                            const playerInfo = isObject 
-                                              ? getPlayerInfo(goal.player_id, goal.player)
-                                              : getPlayerInfo(null, goal);
-                                            return (
-                                              <div key={idx} className="group p-3 bg-gradient-to-r from-red-50 via-red-100 to-red-50 rounded-lg border-l-4 border-red-500 hover:shadow-md hover:scale-[1.02] transition-all duration-200">
-                                                <div className="flex items-center justify-between">
-                                                  <div>
-                                                    <div className="font-semibold text-red-800 flex items-center gap-2">
-                                                      <span className="text-lg">⚽</span> 
-                                                      <span className="font-bold">{playerInfo.name}</span>
-                                                      {isObject && goal.count > 1 && (
-                                                        <span className="text-xs bg-red-500 text-white px-2.5 py-1 rounded-full font-bold shadow-sm">
-                                                          {goal.count}x Treffer
-                                                        </span>
-                                                      )}
-                                                    </div>
-                                                    <div className="text-xs text-red-700 flex items-center gap-3 mt-1.5 font-medium">
-                                                      <span className="bg-red-200 px-2 py-0.5 rounded">💰 {playerInfo.value}M €</span>
-                                                      <span className="bg-red-200 px-2 py-0.5 rounded">👕 {playerInfo.team}</span>
-                                                    </div>
-                                                  </div>
-
-                                                </div>
-                                              </div>
-                                            );
-                                          })}
-                                        </div>
-                                      ) : (
-                                        <div className="p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                                          <p className="text-sm text-gray-500 text-center"><TeamLogo team="real" size="xs" /> {getTeamDisplay('Real')}: Keine Tore erzielt</p>
-                                        </div>
-                                      );
-                                    })()}
-                                  </div>
-                                </div>
-                                
-                                {/* Enhanced Player of the Match Section */}
-                                <div className="space-y-3 bg-gradient-to-br from-white to-yellow-50 rounded-xl p-5 border-2 border-yellow-300 hover:shadow-lg transition-all duration-300">
-                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg border-b-2 border-yellow-300 pb-2">
-                                    ⭐ Spieler des Spiels
-                                  </h4>
-                                  <div className="space-y-2">
-                                    {match.manofthematch ? (
-                                      <div className="p-4 bg-gradient-to-r from-yellow-100 to-amber-100 rounded-lg border-2 border-yellow-400 relative overflow-hidden shadow-md">
-                                        {/* Sparkle animation background */}
-                                        <div className="absolute inset-0 bg-gradient-to-r from-yellow-200/20 to-amber-200/20 animate-pulse"></div>
-                                        <div className="relative">
-                                          <div className="flex items-center justify-between">
-                                            <div>
-                                              <div className="font-bold text-yellow-900 text-lg flex items-center gap-2">
-                                                <span className="text-2xl">🏆</span> 
-                                                <span>{match.manofthematch}</span>
-                                                <span className="text-xs bg-yellow-500 text-white px-2.5 py-1 rounded-full shadow-sm font-bold">
-                                                  MVP
-                                                </span>
-                                              </div>
-                                              {(() => {
-                                                const playerInfo = getPlayerInfo(match.manofthematch_player_id, match.manofthematch);
-                                                return (
-                                                  <div className="text-sm text-yellow-800 flex items-center gap-3 mt-2 font-medium">
-                                                    <span className="bg-yellow-200 px-2 py-0.5 rounded">👕 {playerInfo.team}</span>
-                                                    <span className="bg-yellow-200 px-2 py-0.5 rounded">💰 {playerInfo.value}M €</span>
-                                                  </div>
-                                                );
-                                              })()}
+                            {/* Goal scorers */}
+                            <div className="bg-bg-tertiary rounded-xl p-3">
+                              <h4 className="text-sm font-semibold text-text-primary mb-2 inline-flex items-center gap-2">
+                                <Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Torschützen
+                              </h4>
+                              <div className="space-y-3">
+                                {[
+                                  { team: 'aek', label: getTeamDisplay('AEK'), goals: aekGoals, list: parseGoals(match.goalslista), color: 'text-system-blue' },
+                                  { team: 'real', label: getTeamDisplay('Real'), goals: realGoals, list: parseGoals(match.goalslistb), color: 'text-system-red' },
+                                ].map((side) => (
+                                  <div key={side.team}>
+                                    <div className={`flex items-center gap-2 text-xs font-semibold mb-1.5 ${side.color}`}>
+                                      <TeamLogo team={side.team} size="xs" /> {side.label} · {side.goals}
+                                    </div>
+                                    {side.list.length > 0 ? (
+                                      <div className="space-y-1">
+                                        {side.list.map((goal, idx) => {
+                                          const isObject = typeof goal === 'object' && goal !== null;
+                                          const playerInfo = isObject ? getPlayerInfo(goal.player_id, goal.player) : getPlayerInfo(null, goal);
+                                          return (
+                                            <div key={idx} className="flex items-center justify-between bg-bg-secondary rounded-lg px-3 py-2">
+                                              <span className="text-sm font-medium text-text-primary truncate">
+                                                {playerInfo.name}
+                                                {isObject && goal.count > 1 && <span className={`ml-2 text-xs font-bold ${side.color}`}>{goal.count}×</span>}
+                                              </span>
+                                              <span className="text-xs text-text-tertiary flex-shrink-0 ml-2">{playerInfo.value}M €</span>
                                             </div>
-                                            <div className="text-5xl animate-bounce">
-                                              ⭐
-                                            </div>
-                                          </div>
-                                        </div>
+                                          );
+                                        })}
                                       </div>
                                     ) : (
-                                      <div className="p-4 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300">
-                                        <p className="text-sm text-gray-500 text-center">⭐ Kein Spieler des Spiels ausgewählt</p>
-                                      </div>
+                                      <p className="text-xs text-text-tertiary px-1">Keine Tore</p>
                                     )}
                                   </div>
-                                </div>
-                                
-                                {/* Enhanced Cards Section */}
-                                <div className="space-y-3 bg-gradient-to-br from-white to-gray-50 rounded-xl p-5 border-2 border-gray-200 hover:shadow-lg transition-all duration-300">
-                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg border-b-2 border-gray-300 pb-2">
-                                    🟨🟥 Karten & Disziplin
-                                  </h4>
-                                  <div className="space-y-3">
-                                    <div className="grid grid-cols-2 gap-3">
-                                      {/* AEK Cards */}
-                                      <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300 hover:shadow-md transition-all">
-                                        <div className="text-sm font-bold text-blue-800 mb-3 flex items-center gap-2">
-                                          <TeamLogo team="aek" size="xs" /> {getTeamDisplay('AEK')}
-                                        </div>
-                                        <div className="space-y-2">
-                                          <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
-                                            <span className="text-sm text-gray-700 font-medium">🟨 Gelb</span>
-                                            <span className="font-bold text-yellow-600 text-lg">{match.yellowa || 0}</span>
-                                          </div>
-                                          <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
-                                            <span className="text-sm text-gray-700 font-medium">🟥 Rot</span>
-                                            <span className="font-bold text-red-600 text-lg">{match.reda || 0}</span>
-                                          </div>
-                                        </div>
+                                ))}
+                              </div>
+                            </div>
+
+                            {/* MVP + Cards row */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                              {/* MVP */}
+                              <div className="bg-bg-tertiary rounded-xl p-3">
+                                <h4 className="text-sm font-semibold text-text-primary mb-2 inline-flex items-center gap-2">
+                                  <Icon name="star" size={16} strokeWidth={2.2} className="text-system-orange" />Spieler des Spiels
+                                </h4>
+                                {match.manofthematch ? (
+                                  (() => {
+                                    const playerInfo = getPlayerInfo(match.manofthematch_player_id, match.manofthematch);
+                                    return (
+                                      <div className="bg-system-orange/10 rounded-lg px-3 py-2">
+                                        <div className="font-semibold text-text-primary text-sm">{match.manofthematch}</div>
+                                        <div className="text-xs text-text-muted mt-0.5">{playerInfo.team} · {playerInfo.value}M €</div>
                                       </div>
-                                      
-                                      {/* Real Cards */}
-                                      <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border-2 border-red-300 hover:shadow-md transition-all">
-                                        <div className="text-sm font-bold text-red-800 mb-3 flex items-center gap-2">
-                                          <TeamLogo team="real" size="xs" /> {getTeamDisplay('Real')}
-                                        </div>
-                                        <div className="space-y-2">
-                                          <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
-                                            <span className="text-sm text-gray-700 font-medium">🟨 Gelb</span>
-                                            <span className="font-bold text-yellow-600 text-lg">{match.yellowb || 0}</span>
-                                          </div>
-                                          <div className="flex items-center justify-between bg-white/60 px-2 py-1.5 rounded">
-                                            <span className="text-sm text-gray-700 font-medium">🟥 Rot</span>
-                                            <span className="font-bold text-red-600 text-lg">{match.redb || 0}</span>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    </div>
-                                    
-                                    {/* Total cards summary */}
-                                    <div className="p-3 bg-gradient-to-r from-gray-100 to-gray-200 rounded-lg border border-gray-300 shadow-sm">
-                                      <div className="text-center text-sm font-semibold text-gray-700">
-                                        📊 Gesamt: <span className="text-yellow-600 font-bold">🟨 {(match.yellowa || 0) + (match.yellowb || 0)}</span> | <span className="text-red-600 font-bold">🟥 {(match.reda || 0) + (match.redb || 0)}</span>
-                                      </div>
-                                    </div>
+                                    );
+                                  })()
+                                ) : (
+                                  <p className="text-xs text-text-tertiary">Keiner ausgewählt</p>
+                                )}
+                              </div>
+
+                              {/* Cards */}
+                              <div className="bg-bg-tertiary rounded-xl p-3">
+                                <h4 className="text-sm font-semibold text-text-primary mb-2 inline-flex items-center gap-2">
+                                  <Icon name="ban" size={16} strokeWidth={2.2} className="text-system-red" />Karten
+                                </h4>
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                  <div className="flex items-center justify-between bg-bg-secondary rounded-lg px-2.5 py-1.5">
+                                    <span className="text-xs text-text-secondary">{getTeamDisplay('AEK').split(' ')[0]}</span>
+                                    <span className="font-semibold"><span className="text-system-yellow-dark">{match.yellowa || 0}</span> / <span className="text-system-red">{match.reda || 0}</span></span>
+                                  </div>
+                                  <div className="flex items-center justify-between bg-bg-secondary rounded-lg px-2.5 py-1.5">
+                                    <span className="text-xs text-text-secondary">{getTeamDisplay('Real').split(' ').pop()}</span>
+                                    <span className="font-semibold"><span className="text-system-yellow-dark">{match.yellowb || 0}</span> / <span className="text-system-red">{match.redb || 0}</span></span>
                                   </div>
                                 </div>
-                                
-                                {/* Enhanced Prize Money Section */}
-                                <div className="space-y-3 bg-gradient-to-br from-white to-green-50 rounded-xl p-5 border-2 border-green-200 hover:shadow-lg transition-all duration-300">
-                                  <h4 className="font-bold text-gray-800 flex items-center gap-2 text-lg border-b-2 border-green-300 pb-2">
-                                    💰 Preisgelder & Finanzen
-                                  </h4>
-                                  <div className="space-y-3">
-                                    <div className="grid grid-cols-1 gap-3">
-                                      {/* AEK Prize */}
-                                      <div className="p-4 bg-gradient-to-br from-blue-50 to-blue-100 rounded-lg border-2 border-blue-300 hover:shadow-md transition-all">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-sm font-bold text-blue-800 flex items-center gap-2">
-                                            <TeamLogo team="aek" size="xs" /> {getTeamDisplay('AEK')}
-                                          </span>
-                                          <span className={`font-bold text-xl px-3 py-1 rounded-lg ${
-                                            (match.prizeaek || 0) > 0 
-                                              ? 'text-green-700 bg-green-200' 
-                                              : (match.prizeaek || 0) < 0 
-                                              ? 'text-red-700 bg-red-200' 
-                                              : 'text-gray-600 bg-gray-200'
-                                          }`}>
-                                            {(match.prizeaek || 0) > 0 ? '+' : ''}€{(match.prizeaek || 0).toLocaleString('de-DE')}
-                                          </span>
-                                        </div>
-                                      </div>
-                                      
-                                      {/* Real Prize */}
-                                      <div className="p-4 bg-gradient-to-br from-red-50 to-red-100 rounded-lg border-2 border-red-300 hover:shadow-md transition-all">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-sm font-bold text-red-800 flex items-center gap-2">
-                                            <TeamLogo team="real" size="xs" /> {getTeamDisplay('Real')}
-                                          </span>
-                                          <span className={`font-bold text-xl px-3 py-1 rounded-lg ${
-                                            (match.prizereal || 0) > 0 
-                                              ? 'text-green-700 bg-green-200' 
-                                              : (match.prizereal || 0) < 0 
-                                              ? 'text-red-700 bg-red-200' 
-                                              : 'text-gray-600 bg-gray-200'
-                                          }`}>
-                                            {(match.prizereal || 0) > 0 ? '+' : ''}€{(match.prizereal || 0).toLocaleString('de-DE')}
-                                          </span>
-                                        </div>
-                                      </div>
+                                <div className="text-[11px] text-text-tertiary text-center mt-1.5">🟨 gelb / 🟥 rot</div>
+                              </div>
+                            </div>
+
+                            {/* Prize money */}
+                            <div className="bg-bg-tertiary rounded-xl p-3">
+                              <h4 className="text-sm font-semibold text-text-primary mb-2 inline-flex items-center gap-2">
+                                <Icon name="euro" size={16} strokeWidth={2.2} className="text-system-green" />Preisgelder
+                              </h4>
+                              <div className="grid grid-cols-2 gap-2">
+                                {[
+                                  { team: 'aek', label: getTeamDisplay('AEK'), prize: match.prizeaek || 0 },
+                                  { team: 'real', label: getTeamDisplay('Real'), prize: match.prizereal || 0 },
+                                ].map((side) => (
+                                  <div key={side.team} className="bg-bg-secondary rounded-lg px-3 py-2">
+                                    <div className="flex items-center gap-1.5 text-xs text-text-secondary mb-0.5">
+                                      <TeamLogo team={side.team} size="xs" /> {side.label.split(' ')[0]}
+                                    </div>
+                                    <div className={`font-bold text-sm ${side.prize > 0 ? 'text-system-green' : side.prize < 0 ? 'text-system-red' : 'text-text-secondary'}`}>
+                                      {side.prize > 0 ? '+' : ''}{side.prize.toLocaleString('de-DE')} €
                                     </div>
                                   </div>
-                                </div>
-                                
+                                ))}
                               </div>
                             </div>
                           </div>
@@ -909,8 +590,7 @@ export default function MatchesTab({ showHints = false }) {
                   })}
                 </div>
               </div>
-            );
-          })}
+          ))}
         </div>
       ) : (
         <div className="text-center py-12">

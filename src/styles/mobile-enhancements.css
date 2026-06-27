@@ -655,24 +655,26 @@ button:focus {
   }
 }
 
-/* Dark mode improvements for mobile */
-@media (prefers-color-scheme: dark) and (max-width: 640px) {
-  .modern-card {
-    background-color: #1F2937;
-    border-color: #374151;
+/* Dark mode improvements for mobile — follows the app theme (.dark class),
+   NOT the OS preference, otherwise light-theme users with OS dark mode get
+   dark inputs on light cards. */
+@media (max-width: 640px) {
+  .dark .modern-card {
+    background-color: var(--bg-secondary);
+    border-color: var(--border-light);
   }
-  
-  input,
-  select,
-  textarea {
-    background-color: #1F2937;
-    border-color: #374151;
-    color: #F9FAFB;
+
+  .dark input,
+  .dark select,
+  .dark textarea {
+    background-color: var(--bg-tertiary);
+    border-color: var(--border-light);
+    color: var(--text-primary);
   }
-  
-  .modern-bottom-nav {
-    background-color: #111827;
-    border-color: #374151;
+
+  .dark .modern-bottom-nav {
+    background-color: var(--bg-elevated);
+    border-color: var(--border-light);
   }
 }
 

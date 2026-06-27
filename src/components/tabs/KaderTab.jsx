@@ -1,8 +1,10 @@
+﻿import Icon from '../icons/Icon';
 import { useState } from 'react';
 import { useSupabaseQuery, useSupabaseMutation } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import ExportImportManager from '../ExportImportManager';
 import PlayerDetailModal from '../PlayerDetailModal';
+import CollapsibleCard from '../CollapsibleCard';
 import TeamLogo from '../TeamLogo';
 import { POSITIONS } from '../../utils/errorHandling';
 import { getTeamDisplay } from '../../constants/teams';
@@ -60,15 +62,16 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   // Team analysis functions
   const generatePlayerReport = () => {
     if (!players || players.length === 0) {
-      alert('Keine Spieler für Report verfügbar');
+      toast.error('Keine Spieler für Report verfügbar');
       return;
     }
-    
-    const report = players.map(p => 
-      `${p.name} (${p.team}): ${p.goals || 0} Tore, ${p.position || 'Unbekannt'}, Wert: ${formatCurrencyInMillions(p.value || 0)}`
+
+    const report = players.slice(0, 8).map(p =>
+      `${p.name} (${p.team}): ${p.goals || 0} Tore, Wert: ${formatCurrencyInMillions(p.value || 0)}`
     ).join('\n');
-    
-    alert(`📊 Spieler-Report:\n\n${report}`);
+    const more = players.length > 8 ? `\n… und ${players.length - 8} weitere` : '';
+
+    toast.success(`📊 Spieler-Report:\n\n${report}${more}`, { duration: 6000 });
   };
 
   const getTeamColor = (teamName) => {
@@ -157,48 +160,42 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
       {/* Enhanced Header with iOS 26 Design - matching StatsTab */}
-      <div className="mb-6 animate-mobile-slide-in">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gradient-info rounded-ios-lg flex items-center justify-center">
-            <span className="text-white text-xl">👥</span>
-          </div>
+      <div className="page-header animate-mobile-slide-in">
+        <div className="page-header-row">
           <div>
-            <h2 className="text-title1 font-bold text-text-primary">Kader</h2>
-            <p className="text-footnote text-text-secondary">
+            <h2 className="page-title">Kader</h2>
+            <p className="page-subtitle">
               {players?.length || 0} Spieler insgesamt
             </p>
           </div>
+          <div className="page-icon tile-indigo"><Icon name="users" size={22} strokeWidth={2} /></div>
         </div>
-        <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
+        <div className="hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
       </div>
 
       {/* Enhanced Quick Actions Panel */}
-      <div className="modern-card mb-6">
-        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
-          <div>
-            <h3 className="font-bold text-lg flex items-center">
-              <span className="mr-2">⚡</span>
-              Kader-Management
-            </h3>
-          </div>
-        </div>
-        
+      <CollapsibleCard
+        title="Kader-Management"
+        icon="zap"
+        subtitle="Report, Export/Import & Analyse"
+        className="mb-6"
+      >
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {/* Existing Actions */}
           <button
             onClick={generatePlayerReport}
-            className="flex items-center justify-center space-x-2 bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+            className="flex items-center justify-center gap-2 btn-soft btn-soft-blue py-3 px-4 rounded-xl text-sm"
           >
-            <span>📊</span>
+            <Icon name="chart" size={16} strokeWidth={2.2} />
             <span>Spieler-Report</span>
           </button>
           
           {/* Enhanced Features */}
           <button
             onClick={() => setShowExportImport(true)}
-            className="flex items-center justify-center space-x-2 bg-orange-600 text-white py-3 px-4 rounded-lg hover:bg-orange-700 transition-colors text-sm"
+            className="flex items-center justify-center space-x-2 btn-soft btn-soft-orange py-3 px-4 rounded-xl text-sm"
           >
             <span>📦</span>
             <span>Export/Import</span>
@@ -215,13 +212,13 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                 { duration: 5000 }
               );
             }}
-            className="flex items-center justify-center space-x-2 bg-teal-600 text-white py-3 px-4 rounded-lg hover:bg-teal-700 transition-colors text-sm"
+            className="flex items-center justify-center space-x-2 btn-soft btn-soft-teal py-3 px-4 rounded-xl text-sm"
           >
             <span>📈</span>
             <span>Kader-Analyse</span>
           </button>
         </div>
-      </div>
+      </CollapsibleCard>
 
       {/* Team Accordions */}
       <div className="space-y-4">
@@ -249,12 +246,9 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                         </p>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <span className="text-sm text-text-muted">
-                        {team.players.length}
-                      </span>
-                      <i className={`fas fa-chevron-${openPanel === team.id ? 'up' : 'down'} transition-transform`}></i>
-                    </div>
+                    <span className={`text-text-tertiary transition-transform duration-200 ${openPanel === team.id ? 'rotate-90' : ''}`}>
+                      <Icon name="chevronRight" size={20} strokeWidth={2.2} />
+                    </span>
                   </div>
                 </button>
 
@@ -340,22 +334,6 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                 )}
               </div>
             ))}
-          </div>
-
-          {/* Summary Cards */}
-          <div className="mt-6 grid grid-cols-2 gap-4">
-            <div className="modern-card text-center">
-              <div className="text-2xl font-bold text-primary-green">
-                {players?.length || 0}
-              </div>
-              <div className="text-sm text-text-muted">Gesamt Spieler</div>
-            </div>
-            <div className="modern-card text-center">
-              <div className="text-2xl font-bold text-accent-orange">
-                {POSITIONS.length}
-              </div>
-              <div className="text-sm text-text-muted">Positionen</div>
-            </div>
           </div>
 
       {/* New Feature Modals */}

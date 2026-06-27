@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+﻿import { useState, useEffect } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
+import { getTeamDisplay } from '../constants/teams';
+import Icon from './icons/Icon';
 
 export default function QuickStatsWidget() {
   const { data: matches } = useSupabaseQuery('matches', '*');
@@ -92,8 +94,8 @@ export default function QuickStatsWidget() {
   return (
     <div className="modern-card p-4">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-text-primary">
-          📊 Liga-Statistiken
+        <h3 className="text-lg font-bold text-text-primary inline-flex items-center gap-2">
+          <Icon name="chart" size={18} strokeWidth={2.2} className="text-system-green" />Liga-Statistiken
         </h3>
         <span className="text-xs text-text-muted bg-bg-tertiary px-2 py-1 rounded-full">
           Gesamt
@@ -110,7 +112,7 @@ export default function QuickStatsWidget() {
         {/* Win Rate */}
         <div className="text-center p-3 bg-system-green/10 rounded-lg">
           <div className="text-xl font-bold text-system-green">{stats.winRate}%</div>
-          <div className="text-xs text-text-secondary">AEK Siege</div>
+          <div className="text-xs text-text-secondary">{getTeamDisplay('AEK')} Siege</div>
         </div>
 
         {/* Total Goals */}
@@ -124,14 +126,14 @@ export default function QuickStatsWidget() {
           <div className="text-xl font-bold text-system-orange">
             {stats.goalsFor - stats.goalsAgainst >= 0 ? '+' : ''}{stats.goalsFor - stats.goalsAgainst}
           </div>
-          <div className="text-xs text-text-secondary">AEK Differenz</div>
+          <div className="text-xs text-text-secondary">{getTeamDisplay('AEK')} Differenz</div>
         </div>
       </div>
 
       {/* Detailed Breakdown */}
       <div className="space-y-2">
         <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">AEK Siege:</span>
+          <span className="text-text-secondary">{getTeamDisplay('AEK')} Siege:</span>
           <span className="text-system-green font-medium">{stats.wins}</span>
         </div>
         <div className="flex justify-between text-sm">
@@ -139,7 +141,7 @@ export default function QuickStatsWidget() {
           <span className="text-system-orange font-medium">{stats.draws}</span>
         </div>
         <div className="flex justify-between text-sm">
-          <span className="text-text-secondary">Real Siege:</span>
+          <span className="text-text-secondary">{getTeamDisplay('Real')} Siege:</span>
           <span className="text-system-red font-medium">{stats.losses}</span>
         </div>
       </div>

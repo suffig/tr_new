@@ -1,14 +1,56 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { MatchBusinessLogic } from '../../../utils/matchBusinessLogic';
 import { triggerNotification } from '../../NotificationSystem';
 import toast from 'react-hot-toast';
 import { getTeamDisplay } from '../../../constants/teams';
+import Icon from '../../icons/Icon';
+
+const DRAFTS_KEY = 'fusta_match_drafts_v1';
+
+const loadDraftsFromStorage = () => {
+  try {
+    const raw = localStorage.getItem(DRAFTS_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+};
+
+const persistDrafts = (drafts) => {
+  try {
+    localStorage.setItem(DRAFTS_KEY, JSON.stringify(drafts));
+  } catch {
+    // ignore quota / serialization errors
+  }
+};
+
+const makeEmptyForm = () => ({
+  teama: 'AEK',
+  teamb: 'Real',
+  date: new Date().toISOString().split('T')[0],
+  goalsa: 0,
+  goalsb: 0,
+  goalslista: [],
+  goalslistb: [],
+  ownGoalsA: 0,
+  ownGoalsB: 0,
+  yellowa: 0,
+  reda: 0,
+  yellowb: 0,
+  redb: 0,
+  prizeaek: 0,
+  prizereal: 0,
+  manofthematch: '',
+  motmTeamFilter: 'all'
+});
 
 export default function AddMatchTab() {
   const { data: players } = useSupabaseQuery('players', '*');
   const { data: finances } = useSupabaseQuery('finances', '*');
   const [showModal, setShowModal] = useState(false);
+  const [drafts, setDrafts] = useState(loadDraftsFromStorage);
+  const [editingDraftId, setEditingDraftId] = useState(null);
   const [formData, setFormData] = useState({
     // Teams are now fixed - no longer selectable
     teama: 'AEK',
@@ -66,6 +108,61 @@ export default function AddMatchTab() {
     updateFormData({ [field]: value });
   };
 
+  // Persist drafts to localStorage whenever they change
+  useEffect(() => {
+    persistDrafts(drafts);
+  }, [drafts]);
+
+  // A draft is worth keeping once any score / scorer / card has been entered
+  const hasMeaningfulInput = () => {
+    return (
+      formData.goalsa > 0 || formData.goalsb > 0 ||
+      formData.goalslista.length > 0 || formData.goalslistb.length > 0 ||
+      formData.yellowa > 0 || formData.reda > 0 ||
+      formData.yellowb > 0 || formData.redb > 0 ||
+      !!formData.manofthematch
+    );
+  };
+
+  const openNewMatch = () => {
+    setEditingDraftId(null);
+    setFormData(makeEmptyForm());
+    setShowModal(true);
+  };
+
+  // Save current form as a draft (localStorage only — no DB write)
+  const saveDraft = () => {
+    if (!hasMeaningfulInput()) {
+      toast.error('Noch nichts zum Speichern – trage zuerst ein Ergebnis ein.');
+      return;
+    }
+    const now = new Date().toISOString();
+    if (editingDraftId) {
+      setDrafts(prev => prev.map(d =>
+        d.id === editingDraftId ? { ...d, savedAt: now, formData: { ...formData } } : d
+      ));
+      toast.success('Entwurf aktualisiert');
+    } else {
+      const id = `draft_${Date.now()}`;
+      setDrafts(prev => [{ id, savedAt: now, formData: { ...formData } }, ...prev]);
+      setEditingDraftId(id);
+      toast.success('Als Entwurf gespeichert');
+    }
+    setShowModal(false);
+  };
+
+  const loadDraft = (draft) => {
+    setFormData({ ...makeEmptyForm(), ...draft.formData });
+    setEditingDraftId(draft.id);
+    setShowModal(true);
+  };
+
+  const deleteDraft = (id) => {
+    setDrafts(prev => prev.filter(d => d.id !== id));
+    if (editingDraftId === id) setEditingDraftId(null);
+    toast.success('Entwurf gelöscht');
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -109,26 +206,14 @@ export default function AddMatchTab() {
         manofthematch: formData.manofthematch || null
       });
       
+      // Match is now on the DB — drop the draft it came from (if any)
+      if (editingDraftId) {
+        setDrafts(prev => prev.filter(d => d.id !== editingDraftId));
+        setEditingDraftId(null);
+      }
+
       // Reset form and close modal
-      setFormData({
-        teama: 'AEK',
-        teamb: 'Real',
-        date: new Date().toISOString().split('T')[0],
-        goalsa: 0,
-        goalsb: 0,
-        goalslista: [],
-        goalslistb: [],
-        ownGoalsA: 0,
-        ownGoalsB: 0,
-        yellowa: 0,
-        reda: 0,
-        yellowb: 0,
-        redb: 0,
-        prizeaek: 0,
-        prizereal: 0,
-        manofthematch: '',
-        motmTeamFilter: 'all'
-      });
+      setFormData(makeEmptyForm());
       setShowModal(false);
       
       // Show success message with comprehensive feedback
@@ -302,7 +387,9 @@ export default function AddMatchTab() {
     });
   };
 
-  // Calculate a live Echtgeld-Ausgleich preview using current team balances
+  // Calculate a live Echtgeld-Ausgleich preview that mirrors the real
+  // tracker_full_v1 processing: SdS bonus + prize are applied to the loser's
+  // balance (clamped to 0) BEFORE the real-money amount is derived.
   const previewEchtgeld = () => {
     if (formData.goalsa === formData.goalsb) return null;
 
@@ -313,11 +400,14 @@ export default function AddMatchTab() {
     const realBalance = finances?.find(f => f.team === 'Real')?.balance || 0;
 
     const loserBalance = loser === 'AEK' ? aekBalance : realBalance;
-    const winnerBalance = winner === 'AEK' ? aekBalance : realBalance;
     const loserPrize = loser === 'AEK' ? formData.prizeaek : formData.prizereal;
-    const loserSdsBonus = formData.manofthematch && players?.find(p => p.name === formData.manofthematch && p.team === loser) ? 1 : 0;
+    const loserHasSds = !!(formData.manofthematch && players?.find(p => p.name === formData.manofthematch && p.team === loser));
 
-    const loserBetrag = MatchBusinessLogic.calculateEchtgeldBetrag(loserBalance, loserPrize, loserSdsBonus, winnerBalance);
+    // Replicate processFinancialTransactions: add SdS bonus, then prize, clamp ≥ 0
+    let loserPostPrize = loserBalance + (loserHasSds ? 100000 : 0) + loserPrize;
+    if (loserPostPrize < 0) loserPostPrize = 0;
+
+    const loserBetrag = MatchBusinessLogic.calculateEchtgeldBetrag(loserPostPrize, loserPrize, loserHasSds ? 1 : 0);
 
     return { winner, loser, loserBetrag, aekBalance, realBalance };
   };
@@ -337,23 +427,69 @@ export default function AddMatchTab() {
 
       <div className="modern-card">
         <div className="text-center py-8">
-          <div className="text-4xl mb-4">⚽</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
+            <Icon name="football" size={32} strokeWidth={1.8} />
+          </div>
           <h4 className="text-lg font-medium text-text-primary mb-2">
             Spiel hinzufügen
           </h4>
           <p className="text-text-muted mb-6">
             Klicken Sie auf den Button, um ein neues Spiel zu erfassen.
           </p>
-          
-          <button 
-            onClick={() => setShowModal(true)}
-            className="btn-primary inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl transform hover:scale-105"
+
+          <button
+            onClick={openNewMatch}
+            className="btn-brand inline-flex items-center gap-2 px-6 py-3 rounded-xl"
           >
-            <i className="fas fa-plus mr-2"></i>
+            <Icon name="football" size={18} strokeWidth={2} />
             Neues Spiel erfassen
           </button>
         </div>
       </div>
+
+      {/* Draft matches — saved locally, not yet on the DB */}
+      {drafts.length > 0 && (
+        <div className="modern-card mt-4">
+          <h4 className="font-semibold text-text-primary mb-1 inline-flex items-center gap-2">
+            <Icon name="clipboard" size={18} strokeWidth={2.2} className="text-system-orange" />
+            Entwürfe
+            <span className="text-xs font-medium bg-system-orange/15 text-system-orange px-2 py-0.5 rounded-full">{drafts.length}</span>
+          </h4>
+          <p className="text-text-muted text-xs mb-3">
+            Zwischengespeicherte Spiele. Noch nicht in der Datenbank – jederzeit weiter bearbeiten und abschließen.
+          </p>
+          <div className="space-y-2">
+            {drafts.map((draft) => {
+              const d = draft.formData || {};
+              return (
+                <div key={draft.id} className="flex items-center gap-3 p-3 rounded-xl bg-bg-tertiary border border-border-light">
+                  <div className="flex-1 min-w-0">
+                    <div className="font-semibold text-text-primary text-sm">
+                      {getTeamDisplay(d.teama || 'AEK')} {d.goalsa ?? 0} : {d.goalsb ?? 0} {getTeamDisplay(d.teamb || 'Real')}
+                    </div>
+                    <div className="text-xs text-text-muted">
+                      {d.date || '—'} · gespeichert {new Date(draft.savedAt).toLocaleString('de-DE', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => loadDraft(draft)}
+                    className="btn-soft btn-soft-green px-3 py-2 rounded-lg text-sm font-medium whitespace-nowrap"
+                  >
+                    Weiter
+                  </button>
+                  <button
+                    onClick={() => deleteDraft(draft.id)}
+                    aria-label="Entwurf löschen"
+                    className="btn-soft btn-soft-red w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0"
+                  >
+                    <Icon name="trash" size={16} strokeWidth={2} />
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {/* Match Modal */}
       {showModal && (
@@ -361,7 +497,7 @@ export default function AddMatchTab() {
           <div className="bg-bg-secondary rounded-lg w-full max-w-lg modal-content match-modal-content modal-mobile-safe my-4 sm:my-8" style={{ maxHeight: 'calc(100vh - 2rem)' }}>
             <div className="p-4 sm:p-6 overflow-y-auto mobile-safe-bottom" style={{ maxHeight: 'calc(100vh - 4rem)' }}>
               <div className="flex justify-between items-center mb-6 sticky top-0 bg-bg-secondary z-10 pb-4">
-                <h3 className="text-xl font-semibold text-text-primary">Neues Spiel</h3>
+                <h3 className="text-xl font-semibold text-text-primary">{editingDraftId ? 'Entwurf bearbeiten' : 'Neues Spiel'}</h3>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-text-secondary hover:text-text-primary text-2xl font-bold bg-bg-tertiary hover:bg-bg-hover rounded-full w-8 h-8 flex items-center justify-center transition-colors"
@@ -960,33 +1096,45 @@ export default function AddMatchTab() {
                 )}
 
                 {/* Buttons */}
-                <div className="flex gap-3 pt-4 pb-20 sm:pb-4">
+                <div className="pt-4 pb-20 sm:pb-4 space-y-2">
+                  {/* Save as draft — works even when the form is still incomplete */}
                   <button
                     type="button"
-                    onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-2 border border-border-light rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+                    onClick={saveDraft}
                     disabled={loading}
+                    className="w-full px-4 py-2.5 rounded-xl font-medium btn-soft btn-soft-orange inline-flex items-center justify-center gap-2"
                   >
-                    Abbrechen
+                    <Icon name="save" size={16} strokeWidth={2} />
+                    {editingDraftId ? 'Entwurf aktualisieren' : 'Als Entwurf speichern'}
                   </button>
-                  <button
-                    type="submit"
-                    disabled={loading || !isFormValid()}
-                    className={`flex-1 px-4 py-2 rounded-lg font-medium transition-colors ${
-                      isFormValid() 
-                        ? 'bg-green-600 hover:bg-green-700 text-white' 
-                        : 'bg-red-500 text-white cursor-not-allowed opacity-75'
-                    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
-                  >
-                    {loading ? (
-                      <div className="flex items-center justify-center">
-                        <div className="spinner w-4 h-4 mr-2"></div>
-                        Speichern...
-                      </div>
-                    ) : (
-                      isFormValid() ? '✅ Spiel speichern' : `❌ ${getValidationStatus().issues[0] || 'Eingaben unvollständig'}`
-                    )}
-                  </button>
+                  <div className="flex gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowModal(false)}
+                      className="flex-1 px-4 py-2.5 border border-border-light rounded-xl text-text-secondary hover:bg-bg-tertiary transition-colors"
+                      disabled={loading}
+                    >
+                      Schließen
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={loading || !isFormValid()}
+                      className={`flex-1 px-4 py-2.5 rounded-xl font-medium transition-colors ${
+                        isFormValid()
+                          ? 'btn-brand'
+                          : 'bg-bg-tertiary text-text-tertiary cursor-not-allowed'
+                      } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      {loading ? (
+                        <div className="flex items-center justify-center">
+                          <div className="spinner w-4 h-4 mr-2"></div>
+                          Speichern...
+                        </div>
+                      ) : (
+                        isFormValid() ? 'Abschließen & speichern' : (getValidationStatus().issues[0] || 'Eingaben unvollständig')
+                      )}
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

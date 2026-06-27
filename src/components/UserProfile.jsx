@@ -1,36 +1,26 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
+import { useTheme } from '../contexts/ThemeContext';
+import Icon from './icons/Icon';
 
 export default function UserProfile({ onClose, onNavigate }) {
   const { user } = useAuth();
+  const { isDark, setManualTheme } = useTheme();
   const [preferences, setPreferences] = useState({
     favoriteTeam: localStorage.getItem('userFavoriteTeam') || '',
-    darkMode: localStorage.getItem('darkMode') === 'true',
     notifications: localStorage.getItem('userNotifications') !== 'false',
-    language: localStorage.getItem('userLanguage') || 'de',
-    compactView: localStorage.getItem('compactView') === 'true'
+    compactView: localStorage.getItem('compactView') === 'true',
   });
 
-  // Load data immediately on opening and set default favorites
+  // Default favourite team based on the logged-in account
   useEffect(() => {
-    if (user?.email) {
-      let defaultFavorite = localStorage.getItem('userFavoriteTeam');
-      
-      // Set default favorites based on email if not already set
-      if (!defaultFavorite) {
-        if (user.email === 'philip-melchert@live.de') {
-          defaultFavorite = 'Real';
-        } else if (user.email === 'alexander.lueckmann@web.de') {
-          defaultFavorite = 'AEK';
-        }
-        
-        if (defaultFavorite) {
-          localStorage.setItem('userFavoriteTeam', defaultFavorite);
-          setPreferences(prev => ({
-            ...prev,
-            favoriteTeam: defaultFavorite
-          }));
-        }
+    if (user?.email && !localStorage.getItem('userFavoriteTeam')) {
+      let fav = '';
+      if (user.email === 'philip-melchert@live.de') fav = 'Real';
+      else if (user.email === 'alexander.lueckmann@web.de') fav = 'AEK';
+      if (fav) {
+        localStorage.setItem('userFavoriteTeam', fav);
+        setPreferences((prev) => ({ ...prev, favoriteTeam: fav }));
       }
     }
   }, [user?.email]);
@@ -39,281 +29,145 @@ export default function UserProfile({ onClose, onNavigate }) {
     { value: '', label: 'Kein Favorit' },
     { value: 'AEK', label: 'AEK' },
     { value: 'Real', label: 'Real' },
-    { value: 'Ehemalige', label: 'Ehemalige' }
+    { value: 'Ehemalige', label: 'Ehemalige' },
   ];
 
-  const handlePreferenceChange = (key, value) => {
-    setPreferences(prev => ({
-      ...prev,
-      [key]: value
-    }));
-    
-    // Save to localStorage
-    localStorage.setItem(
-      key === 'favoriteTeam' ? 'userFavoriteTeam' :
-      key === 'darkMode' ? 'darkMode' :
-      key === 'notifications' ? 'userNotifications' :
-      key === 'language' ? 'userLanguage' : 'compactView',
-      value.toString()
-    );
-
-    // Apply dark mode immediately
-    if (key === 'darkMode') {
-      document.documentElement.classList.toggle('dark', value);
-    }
-
-    // Dispatch event for other components to react
-    window.dispatchEvent(new CustomEvent('userPreferencesChanged', {
-      detail: { [key]: value }
-    }));
+  const setPref = (key, value) => {
+    setPreferences((prev) => ({ ...prev, [key]: value }));
+    const lsKey = key === 'favoriteTeam' ? 'userFavoriteTeam'
+      : key === 'notifications' ? 'userNotifications' : 'compactView';
+    localStorage.setItem(lsKey, value.toString());
+    window.dispatchEvent(new CustomEvent('userPreferencesChanged', { detail: { [key]: value } }));
   };
 
-  const getUserStats = () => {
-    // Get basic user stats from localStorage
-    const stats = {
-      favoriteTeam: preferences.favoriteTeam,
-      memberSince: user?.created_at ? new Date(user.created_at).toLocaleDateString('de-DE') : 'Unbekannt',
-      email: user?.email || 'Unbekannt'
-    };
-    return stats;
-  };
+  const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString('de-DE') : '—';
+  const email = user?.email || '—';
 
-  const stats = getUserStats();
+  const go = (tab) => { onNavigate(tab); onClose(); };
 
   return (
-    <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-bg-primary border border-border-light rounded-2xl max-w-md w-full max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 bg-bg-overlay backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
+      <div className="bg-bg-primary border border-border-light w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto safe-area-bottom">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-border-light">
-          <h2 className="text-xl font-bold text-text-primary">
-            👤 Benutzerprofil
-          </h2>
+        <div className="flex items-center justify-between px-5 py-4 sticky top-0 bg-bg-primary/90 backdrop-blur z-10 border-b border-separator">
+          <h2 className="text-lg font-bold text-text-primary">Profil</h2>
           <button
             onClick={onClose}
-            className="text-text-muted hover:text-text-primary text-2xl p-1"
+            className="w-9 h-9 rounded-full bg-bg-tertiary text-text-secondary hover:text-text-primary flex items-center justify-center transition-colors"
             aria-label="Schließen"
           >
-            ×
+            <Icon name="x" size={18} strokeWidth={2.2} />
           </button>
         </div>
 
-        <div className="p-6 space-y-6">
-          {/* User Info */}
-          <div className="bg-bg-secondary rounded-lg p-4">
-            <h3 className="text-lg font-semibold text-text-primary mb-3 flex items-center gap-2">
-              <span className="text-xl">👤</span>
-              Benutzerinformationen
-            </h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">📧</span>
-                  <div>
-                    <span className="text-sm font-medium text-text-primary">E-Mail</span>
-                    <p className="text-xs text-text-muted">Deine Anmelde-E-Mail</p>
-                  </div>
-                </div>
-                <span className="text-sm text-text-primary font-medium">{stats.email}</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">📅</span>
-                  <div>
-                    <span className="text-sm font-medium text-text-primary">Mitglied seit</span>
-                    <p className="text-xs text-text-muted">Registrierungsdatum</p>
-                  </div>
-                </div>
-                <span className="text-sm text-text-primary font-medium">{stats.memberSince}</span>
-              </div>
-              
-              <div className="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
-                <div className="flex items-center gap-3">
-                  <span className="text-lg">⚽</span>
-                  <div>
-                    <span className="text-sm font-medium text-text-primary">Lieblingsverein</span>
-                    <p className="text-xs text-text-muted">Dein Favorit</p>
-                  </div>
-                </div>
-                <span className="text-sm text-text-primary font-medium">
-                  {stats.favoriteTeam || 'Kein Favorit'}
-                </span>
-              </div>
+        <div className="p-4 space-y-5">
+          {/* Account identity */}
+          <div className="flex items-center gap-3">
+            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-system-green to-system-blue flex items-center justify-center text-white">
+              <Icon name="user" size={26} strokeWidth={2} />
+            </div>
+            <div className="min-w-0">
+              <div className="font-bold text-text-primary truncate">{email}</div>
+              <div className="text-xs text-text-muted">Mitglied seit {memberSince}</div>
             </div>
           </div>
 
-          {/* Preferences */}
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="text-lg font-semibold text-text-primary">
-                Einstellungen
-              </h3>
-              <p className="text-sm text-text-muted">
-                Personalisiere deine App-Erfahrung mit diesen Einstellungen
-              </p>
-            </div>
-
-            {/* Favorite Team */}
-            <div className="bg-bg-secondary rounded-lg p-4">
-              <div className="mb-3">
-                <label className="block text-sm font-medium text-text-primary mb-1">
-                  ⚽ Lieblingsverein
-                </label>
-                <p className="text-xs text-text-muted">
-                  Wähle deinen Favoriten für personalisierte Inhalte
-                </p>
-              </div>
-              <select
-                value={preferences.favoriteTeam}
-                onChange={(e) => handlePreferenceChange('favoriteTeam', e.target.value)}
-                className="form-input w-full rounded-lg"
-              >
-                {teams.map(team => (
-                  <option key={team.value} value={team.value}>
-                    {team.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-
-            {/* Apple-like Toggle Switches */}
-            <div className="bg-bg-secondary rounded-lg p-4 space-y-4">
-              {/* Dark Mode */}
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🌙</span>
-                    <label className="text-sm font-medium text-text-primary">
-                      Dunkler Modus
-                    </label>
-                  </div>
-                  <p className="text-xs text-text-muted mt-1">
-                    Schont die Augen bei schwachem Licht
-                  </p>
+          {/* Settings — grouped iOS list */}
+          <div>
+            <div className="section-label">Einstellungen</div>
+            <div className="modern-card p-0 overflow-hidden divide-y divide-separator">
+              {/* Favourite team */}
+              <div className="flex items-center justify-between gap-3 p-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <span className="w-9 h-9 rounded-xl bg-system-green/12 text-system-green flex items-center justify-center flex-shrink-0">
+                    <Icon name="trophy" size={18} strokeWidth={2.1} />
+                  </span>
+                  <span className="text-sm font-medium text-text-primary">Lieblingsverein</span>
                 </div>
-                <AppleSwitch
-                  checked={preferences.darkMode}
-                  onChange={(checked) => handlePreferenceChange('darkMode', checked)}
-                />
+                <select
+                  value={preferences.favoriteTeam}
+                  onChange={(e) => setPref('favoriteTeam', e.target.value)}
+                  className="bg-bg-tertiary border border-border-light rounded-lg text-sm text-text-primary px-2 py-1.5 focus:outline-none"
+                >
+                  {teams.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+                </select>
               </div>
+
+              {/* Dark mode */}
+              <SettingRow icon="moon" iconClass="bg-system-indigo/12 text-system-indigo" title="Dunkler Modus" subtitle="Schont die Augen bei wenig Licht">
+                <AppleSwitch checked={isDark} onChange={(v) => setManualTheme(v ? 'dark' : 'light')} />
+              </SettingRow>
 
               {/* Notifications */}
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">🔔</span>
-                    <label className="text-sm font-medium text-text-primary">
-                      Benachrichtigungen
-                    </label>
-                  </div>
-                  <p className="text-xs text-text-muted mt-1">
-                    Erhalte Push-Nachrichten für neue Spiele und Events
-                  </p>
-                </div>
-                <AppleSwitch
-                  checked={preferences.notifications}
-                  onChange={(checked) => handlePreferenceChange('notifications', checked)}
-                />
-              </div>
+              <SettingRow icon="bell" iconClass="bg-system-orange/12 text-system-orange" title="Benachrichtigungen" subtitle="Push-Nachrichten für Spiele & Events">
+                <AppleSwitch checked={preferences.notifications} onChange={(v) => setPref('notifications', v)} />
+              </SettingRow>
 
-              {/* Compact View */}
-              <div className="flex items-center justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-lg">📱</span>
-                    <label className="text-sm font-medium text-text-primary">
-                      Kompakte Ansicht
-                    </label>
-                  </div>
-                  <p className="text-xs text-text-muted mt-1">
-                    Zeigt mehr Inhalte auf kleineren Bildschirmen
-                  </p>
-                </div>
-                <AppleSwitch
-                  checked={preferences.compactView}
-                  onChange={(checked) => handlePreferenceChange('compactView', checked)}
-                />
-              </div>
+              {/* Compact view */}
+              <SettingRow icon="phone" iconClass="bg-system-teal/12 text-system-teal" title="Kompakte Ansicht" subtitle="Mehr Inhalt auf kleinen Bildschirmen">
+                <AppleSwitch checked={preferences.compactView} onChange={(v) => setPref('compactView', v)} />
+              </SettingRow>
             </div>
           </div>
 
-          {/* Quick Actions */}
-          <div className="space-y-3">
-            <h3 className="text-lg font-semibold text-text-primary">
-              Schnellzugriff
-            </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <button
-                onClick={() => {
-                  onNavigate('stats');
-                  onClose();
-                }}
-                className="btn-secondary text-sm py-2"
-              >
-                📊 Statistiken
-              </button>
-              <button
-                onClick={() => {
-                  onNavigate('matches');
-                  onClose();
-                }}
-                className="btn-secondary text-sm py-2"
-              >
-                ⚽ Spiele
-              </button>
-              {preferences.favoriteTeam && (
-                <>
-                  <button
-                    onClick={() => {
-                      onNavigate('squad');
-                      onClose();
-                    }}
-                    className="btn-secondary text-sm py-2"
-                  >
-                    👥 {preferences.favoriteTeam} Kader
-                  </button>
-                  <button
-                    onClick={() => {
-                      onNavigate('finanzen');
-                      onClose();
-                    }}
-                    className="btn-secondary text-sm py-2"
-                  >
-                    € Finanzen
-                  </button>
-                </>
-              )}
+          {/* Quick actions */}
+          <div>
+            <div className="section-label">Schnellzugriff</div>
+            <div className="grid grid-cols-2 gap-2">
+              <QuickAction icon="chart" label="Statistiken" onClick={() => go('stats')} />
+              <QuickAction icon="football" label="Spiele" onClick={() => go('matches')} />
+              <QuickAction icon="users" label="Kader" onClick={() => go('squad')} />
+              <QuickAction icon="euro" label="Finanzen" onClick={() => go('finanzen')} />
             </div>
           </div>
 
-          {/* App Info */}
-          <div className="text-center pt-4 border-t border-border-light">
-            <p className="text-xs text-text-muted">
-              FIFA Tracker v1.0 • React App
-            </p>
-          </div>
+          <p className="text-center text-[11px] text-text-tertiary pt-1">FUSTA · FIFA Statistik-Tracker</p>
         </div>
       </div>
     </div>
   );
 }
 
-// Apple-style Switch Component
+function SettingRow({ icon, iconClass, title, subtitle, children }) {
+  return (
+    <div className="flex items-center justify-between gap-3 p-4">
+      <div className="flex items-center gap-3 min-w-0">
+        <span className={`w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 ${iconClass}`}>
+          <Icon name={icon} size={18} strokeWidth={2.1} />
+        </span>
+        <div className="min-w-0">
+          <div className="text-sm font-medium text-text-primary">{title}</div>
+          <div className="text-xs text-text-muted">{subtitle}</div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+}
+
+function QuickAction({ icon, label, onClick }) {
+  return (
+    <button
+      onClick={onClick}
+      className="flex items-center gap-2 p-3 rounded-xl bg-bg-secondary border border-border-light hover:bg-bg-tertiary transition-colors press-scale"
+    >
+      <span className="text-text-secondary"><Icon name={icon} size={18} strokeWidth={2} /></span>
+      <span className="text-sm font-medium text-text-primary">{label}</span>
+    </button>
+  );
+}
+
 function AppleSwitch({ checked, onChange }) {
   return (
     <button
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-primary-green focus:ring-offset-2 ${
-        checked ? 'bg-primary-green' : 'bg-gray-300 dark:bg-gray-600'
+      className={`relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full transition-colors focus:outline-none ${
+        checked ? 'bg-system-green' : 'bg-border-strong'
       }`}
       role="switch"
       aria-checked={checked}
     >
-      <span
-        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform shadow-lg ${
-          checked ? 'translate-x-6' : 'translate-x-1'
-        }`}
-      />
+      <span className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform shadow ${checked ? 'translate-x-5' : 'translate-x-0.5'}`} />
     </button>
   );
 }
