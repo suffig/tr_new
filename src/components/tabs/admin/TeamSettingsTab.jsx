@@ -45,8 +45,8 @@ export default function TeamSettingsTab() {
         await initializeManagers();
       }
     } catch (error) {
-      console.error('❌ [AdminTab] Error loading manager settings from database:', error);
-      // Try to initialize managers if they don't exist
+      // Expected in demo/offline mode — try to initialize defaults instead
+      console.warn('[Admin] Manager-Einstellungen nicht geladen:', error?.message || error);
       await initializeManagers();
     } finally {
       setLoading(false);

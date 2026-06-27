@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
+import { getTeamDisplay } from '../constants/teams';
 
 export default function MatchDayOverview({ matches }) {
   const [selectedDate, setSelectedDate] = useState(null);
@@ -324,13 +325,13 @@ export default function MatchDayOverview({ matches }) {
             
             <div className="modern-card text-center">
               <div className="text-2xl font-bold text-primary-blue">{selectedDateStats.aekWins}</div>
-              <div className="text-sm text-text-secondary">AEK Siege</div>
+              <div className="text-sm text-text-secondary">{getTeamDisplay('AEK')} Siege</div>
               <div className="text-xs text-text-muted">{selectedDateStats.aekGoals} Tore erzielt</div>
             </div>
             
             <div className="modern-card text-center">
               <div className="text-2xl font-bold text-primary-red">{selectedDateStats.realWins}</div>
-              <div className="text-sm text-text-secondary">Real Siege</div>
+              <div className="text-sm text-text-secondary">{getTeamDisplay('Real')} Siege</div>
               <div className="text-xs text-text-muted">{selectedDateStats.realGoals} Tore erzielt</div>
             </div>
             

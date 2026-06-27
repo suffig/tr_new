@@ -1,3 +1,4 @@
+﻿import Icon from '../icons/Icon';
 import { useState, useEffect, useRef } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
@@ -132,8 +133,8 @@ export default function MatchesTab({ showHints = false }) {
 
   // Define views for horizontal navigation (removed stats view)
   const views = [
-    { id: 'overview', label: 'Übersicht', icon: '⚽' },
-    { id: 'recent', label: 'Letzte', icon: '📅' },
+    { id: 'overview', label: 'Übersicht', iconName: 'football' },
+    { id: 'recent', label: 'Letzte', iconName: 'calendar' },
     { id: 'aek-wins', label: `${getTeamDisplay('AEK')} Siege`, logoComponent: <TeamLogo team="aek" size="sm" /> },
     { id: 'real-wins', label: `${getTeamDisplay('Real')} Siege`, logoComponent: <TeamLogo team="real" size="sm" /> },
   ];
@@ -297,19 +298,17 @@ export default function MatchesTab({ showHints = false }) {
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
       {/* Enhanced Header with iOS 26 Design - matching StatsTab */}
-      <div className="mb-6 animate-mobile-slide-in">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gradient-info rounded-ios-lg flex items-center justify-center">
-            <span className="text-white text-xl">⚽</span>
-          </div>
+      <div className="page-header animate-mobile-slide-in">
+        <div className="page-header-row">
           <div>
-            <h2 className="text-title1 font-bold text-text-primary">Spiele</h2>
-            <p className="text-footnote text-text-secondary">
+            <h2 className="page-title">Spiele</h2>
+            <p className="page-subtitle">
               {matches?.length || 0} Spiele gefunden, gruppiert nach Datum
             </p>
           </div>
+          <div className="page-icon tile-green"><Icon name="football" size={22} strokeWidth={2} /></div>
         </div>
-        <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
+        <div className="hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
       </div>
@@ -375,113 +374,98 @@ export default function MatchesTab({ showHints = false }) {
         onViewChange={setActiveView}
       />
 
-      {/* Enhanced Filter Controls */}
-      <div className="mb-6 modern-card">
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h3 className="text-lg font-semibold text-text-primary mb-2">🔍 Filter & Suche</h3>
-            <p className="text-sm text-text-muted">Finde schnell die Spiele, die dich interessieren</p>
-          </div>
-          <button
-            onClick={() => setFilterExpanded(!filterExpanded)}
-            className="flex items-center gap-2 px-3 py-2 text-sm bg-bg-secondary hover:bg-bg-tertiary border border-border-light rounded-lg transition-all"
-          >
-            <span>{filterExpanded ? 'Einklappen' : 'Erweitern'}</span>
-            <span className={`text-lg transition-transform duration-200 ${filterExpanded ? 'rotate-90' : ''}`}>
-              ▶
-            </span>
-          </button>
-        </div>
-        
-        <div className={`overflow-hidden transition-all duration-300 ${filterExpanded ? 'max-h-96' : 'max-h-0'}`}>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {/* Time Period Filter */}
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                📅 Zeitraum
-              </label>
-              <select
-                value={timeFilter}
-                onChange={(e) => setTimeFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
+      {/* Discreet filter bar */}
+      {(() => {
+        const timeLabels = { '1week': 'Letzte Woche', '4weeks': 'Letzte 4 Wochen', '3months': 'Letzte 3 Monate', 'all': 'Alle Spiele' };
+        const resultLabels = { 'all': 'Alle', 'aek-wins': `${getTeamDisplay('AEK')} Siege`, 'real-wins': `${getTeamDisplay('Real')} Siege` };
+        const goalLabels = { 'all': 'Alle', 'high-scoring': 'Torreich', 'low-scoring': 'Torarm' };
+        const activeChips = [];
+        if (timeFilter !== '4weeks') activeChips.push({ key: 'time', label: timeLabels[timeFilter], clear: () => setTimeFilter('4weeks') });
+        if (resultFilter !== 'all') activeChips.push({ key: 'result', label: resultLabels[resultFilter], clear: () => setResultFilter('all') });
+        if (goalFilter !== 'all') activeChips.push({ key: 'goal', label: goalLabels[goalFilter], clear: () => setGoalFilter('all') });
+        if (dateFilter) activeChips.push({ key: 'date', label: new Date(dateFilter).toLocaleDateString('de-DE'), clear: () => setDateFilter('') });
+        const resetAll = () => { setTimeFilter('4weeks'); setDateFilter(''); setResultFilter('all'); setGoalFilter('all'); };
+        return (
+          <div className="mb-4">
+            <div className="flex items-center justify-between gap-3">
+              <span className="text-sm text-text-muted">
+                {matches.length === (allMatches?.length || 0) ? `${matches.length} Spiele` : `${matches.length} von ${allMatches?.length || 0}`}
+              </span>
+              <button
+                onClick={() => setFilterExpanded(!filterExpanded)}
+                className={`flex items-center gap-2 px-3.5 py-2 text-sm font-medium rounded-xl transition-colors min-h-[40px] ${
+                  filterExpanded || activeChips.length > 0
+                    ? 'bg-system-green/12 text-system-green'
+                    : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'
+                }`}
               >
-                <option value="1week">Letzte Woche</option>
-                <option value="4weeks">Letzte 4 Wochen</option>
-                <option value="3months">Letzte 3 Monate</option>
-                <option value="all">Alle Spiele</option>
-              </select>
+                <Icon name="filter" size={16} strokeWidth={2.2} />
+                Filter
+                {activeChips.length > 0 && (
+                  <span className="ml-0.5 min-w-[18px] h-[18px] px-1 rounded-full bg-system-green text-white text-[11px] font-bold flex items-center justify-center">{activeChips.length}</span>
+                )}
+                <span className={`transition-transform duration-200 ${filterExpanded ? 'rotate-90' : ''}`}>
+                  <Icon name="chevronRight" size={16} strokeWidth={2.2} />
+                </span>
+              </button>
             </div>
-            
-            {/* Result Filter */}
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                🏆 Ergebnis
-              </label>
-              <select
-                value={resultFilter}
-                onChange={(e) => setResultFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
-              >
-                <option value="all">Alle Ergebnisse</option>
-                <option value="aek-wins">{getTeamDisplay('AEK')} Siege</option>
-                <option value="real-wins">{getTeamDisplay('Real')} Siege</option>
-              </select>
-            </div>
-            
-            {/* Goal Filter */}
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                ⚽ Tore
-              </label>
-              <select
-                value={goalFilter}
-                onChange={(e) => setGoalFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
-              >
-                <option value="all">Alle Spiele</option>
-                <option value="high-scoring">🔥 Torreich (&gt;10 Tore)</option>
-                <option value="low-scoring">🛡️ Torarm (&lt;5 Tore)</option>
-              </select>
-            </div>
-            
-            {/* Specific Date Filter */}
-            <div>
-              <label className="block text-sm font-medium text-text-primary mb-2">
-                📆 Datum
-              </label>
-              <input
-                type="date"
-                value={dateFilter}
-                onChange={(e) => setDateFilter(e.target.value)}
-                className="w-full px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary-blue transition-colors"
-              />
-            </div>
+
+            {/* Active filter chips (visible when collapsed) */}
+            {!filterExpanded && activeChips.length > 0 && (
+              <div className="flex flex-wrap gap-2 mt-3">
+                {activeChips.map((chip) => (
+                  <button key={chip.key} onClick={chip.clear} className="inline-flex items-center gap-1.5 pl-3 pr-2 py-1 rounded-full text-xs font-medium bg-system-green/12 text-system-green">
+                    {chip.label}
+                    <Icon name="x" size={13} strokeWidth={2.4} />
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Expandable filter panel */}
+            {filterExpanded && (
+              <div className="modern-card mt-3 animate-mobile-slide-in">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Zeitraum</label>
+                    <select value={timeFilter} onChange={(e) => setTimeFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="1week">Letzte Woche</option>
+                      <option value="4weeks">Letzte 4 Wochen</option>
+                      <option value="3months">Letzte 3 Monate</option>
+                      <option value="all">Alle Spiele</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Ergebnis</label>
+                    <select value={resultFilter} onChange={(e) => setResultFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="all">Alle Ergebnisse</option>
+                      <option value="aek-wins">{getTeamDisplay('AEK')} Siege</option>
+                      <option value="real-wins">{getTeamDisplay('Real')} Siege</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Tore</label>
+                    <select value={goalFilter} onChange={(e) => setGoalFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none">
+                      <option value="all">Alle Spiele</option>
+                      <option value="high-scoring">Torreich (&gt;10 Tore)</option>
+                      <option value="low-scoring">Torarm (&lt;5 Tore)</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-text-secondary mb-1.5">Datum</label>
+                    <input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-full px-3 py-2.5 bg-bg-tertiary border border-border-light rounded-xl text-sm focus:outline-none" />
+                  </div>
+                </div>
+                {activeChips.length > 0 && (
+                  <button onClick={resetAll} className="mt-3 w-full py-2.5 rounded-xl text-sm font-medium btn-soft btn-soft-gray">
+                    Filter zurücksetzen
+                  </button>
+                )}
+              </div>
+            )}
           </div>
-          
-          {/* Filter Actions */}
-          <div className="mt-4 flex flex-wrap gap-2 items-center justify-between">
-            <div className="text-sm text-text-muted">
-              {(() => {
-                const count = matches.length;
-                const total = allMatches?.length || 0;
-                if (count === total) return `Zeige alle ${count} Spiele`;
-                return `${count} von ${total} Spielen gefiltert`;
-              })()}
-            </div>
-            <button
-              onClick={() => {
-                setTimeFilter('4weeks');
-                setDateFilter('');
-                setResultFilter('all');
-                setGoalFilter('all');
-              }}
-              className="px-4 py-2 text-sm bg-accent-orange text-white rounded-lg hover:bg-orange-600 transition-colors"
-            >
-              🔄 Filter zurücksetzen
-            </button>
-          </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {dateGroups && dateGroups.length > 0 ? (
         <div className="space-y-4">

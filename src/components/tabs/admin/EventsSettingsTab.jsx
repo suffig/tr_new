@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import toast from 'react-hot-toast';
 import { triggerNotification } from '../../NotificationSystem';
+import { getTeamDisplay } from '../../../constants/teams';
 
 export default function EventsSettingsTab() {
   const [eventsEnabled, setEventsEnabled] = useState(() => {
@@ -32,7 +34,7 @@ export default function EventsSettingsTab() {
   // Send custom notification
   const sendCustomNotification = () => {
     if (!customNotification.title || !customNotification.message) {
-      alert('Bitte Titel und Nachricht eingeben');
+      toast.error('Bitte Titel und Nachricht eingeben');
       return;
     }
 
@@ -61,7 +63,7 @@ export default function EventsSettingsTab() {
       type: 'general'
     });
 
-    alert('Benachrichtigung gesendet!');
+    toast.success('Benachrichtigung gesendet!');
   };
 
   const notificationTypes = [

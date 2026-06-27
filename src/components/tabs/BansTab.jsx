@@ -1,3 +1,4 @@
+﻿import Icon from '../icons/Icon';
 import { useState } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
@@ -42,9 +43,9 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
 
   // Define views for horizontal navigation
   const views = [
-    { id: 'all', label: 'Alle', icon: '📋', count: bans?.length || 0 },
-    { id: 'active', label: 'Aktiv', icon: '🔴', count: activeBans.length },
-    { id: 'completed', label: 'Beendet', icon: '✅', count: completedBans.length },
+    { id: 'all', label: 'Alle', iconName: 'clipboard', count: bans?.length || 0 },
+    { id: 'active', label: 'Aktiv', iconName: 'ban', count: activeBans.length },
+    { id: 'completed', label: 'Beendet', iconName: 'trophy', count: completedBans.length },
     ...BAN_TYPES.map(type => ({
       id: type.value,
       label: type.label,
@@ -60,17 +61,15 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
       {/* Enhanced Header with iOS 26 Design - matching StatsTab */}
-      <div className="mb-6 animate-mobile-slide-in">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gradient-info rounded-ios-lg flex items-center justify-center">
-            <span className="text-white text-xl">🚫</span>
-          </div>
+      <div className="page-header animate-mobile-slide-in">
+        <div className="page-header-row">
           <div>
-            <h2 className="text-title1 font-bold text-text-primary">Sperren</h2>
-            <p className="text-footnote text-text-secondary">Übersicht aller Spielersperren</p>
+            <h2 className="page-title">Sperren</h2>
+            <p className="page-subtitle">Übersicht aller Spielersperren</p>
           </div>
+          <div className="page-icon tile-red"><Icon name="ban" size={22} strokeWidth={2} /></div>
         </div>
-        <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
+        <div className="hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
       </div>
@@ -345,7 +344,9 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
       {((selectedType === 'active' && activeBans.length === 0) || 
         (selectedType === 'all' && bans?.length === 0)) && (
         <div className="text-center py-12">
-          <div className="text-4xl mb-4">🚫</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+            <Icon name="ban" size={32} strokeWidth={1.6} />
+          </div>
           <h3 className="text-lg font-medium text-text-primary mb-2">
             {selectedType === 'all' ? 'Keine Sperren gefunden' : 'Keine aktiven Sperren'}
           </h3>
@@ -358,33 +359,6 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
         </div>
       )}
 
-      {/* Statistics Cards - moved to the end as requested */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
-        <div className="modern-card text-center hover:bg-bg-secondary transition-colors cursor-pointer group">
-          <div className="text-2xl font-bold text-accent-red group-hover:scale-110 transition-transform">
-            {activeBans.length}
-          </div>
-          <div className="text-sm text-text-muted group-hover:text-text-primary transition-colors">Aktive Sperren</div>
-        </div>
-        <div className="modern-card text-center hover:bg-bg-secondary transition-colors cursor-pointer group">
-          <div className="text-2xl font-bold text-primary-green group-hover:scale-110 transition-transform">
-            {completedBans.length}
-          </div>
-          <div className="text-sm text-text-muted group-hover:text-text-primary transition-colors">Beendete Sperren</div>
-        </div>
-        <div className="modern-card text-center hover:bg-bg-secondary transition-colors cursor-pointer group">
-          <div className="text-2xl font-bold text-accent-orange group-hover:scale-110 transition-transform">
-            {bans?.length || 0}
-          </div>
-          <div className="text-sm text-text-muted group-hover:text-text-primary transition-colors">Gesamt Sperren</div>
-        </div>
-        <div className="modern-card text-center hover:bg-bg-secondary transition-colors cursor-pointer group">
-          <div className="text-2xl font-bold text-accent-blue group-hover:scale-110 transition-transform">
-            {BAN_TYPES.length}
-          </div>
-          <div className="text-sm text-text-muted group-hover:text-text-primary transition-colors">Sperr-Arten</div>
-        </div>
-      </div>
     </div>
   );
 }

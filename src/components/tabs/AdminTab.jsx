@@ -1,3 +1,4 @@
+﻿import Icon from '../icons/Icon';
 import { useState } from 'react';
 import AddMatchTab from './admin/AddMatchTab';
 import AddBanTab from './admin/AddBanTab';
@@ -11,8 +12,6 @@ import ManagerTab from './admin/ManagerTab';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false, user }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('search');
-  const [collapsedCategories, setCollapsedCategories] = useState({});
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
 
   // Security check - only allow access for authorized user
   if (!user || user.email !== 'philip-melchert@live.de') {
@@ -113,10 +112,10 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
   // Group tabs by category for better organization
   const getCategorizedTabs = () => {
     const categories = {
-      quick: { name: 'Schnellzugriff', icon: '⚡', color: 'blue' },
-      data: { name: 'Datenmanagement', icon: '📊', color: 'green' },
-      config: { name: 'Konfiguration', icon: '⚙️', color: 'purple' },
-      system: { name: 'System', icon: '🔧', color: 'red' }
+      quick: { name: 'Schnellzugriff', icon: 'zap', color: 'blue' },
+      data: { name: 'Datenmanagement', icon: 'chart', color: 'green' },
+      config: { name: 'Konfiguration', icon: 'settings', color: 'purple' },
+      system: { name: 'System', icon: 'wrench', color: 'red' }
     };
 
     return Object.entries(categories).map(([key, meta]) => ({
@@ -153,38 +152,27 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
 
   const categorizedTabs = getCategorizedTabs();
 
-  const toggleCategory = (category) => {
-    setCollapsedCategories(prev => ({
-      ...prev,
-      [category]: !prev[category]
-    }));
-  };
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(prev => !prev);
-  };
-
   return (
     <div className="flex flex-col h-full">
-      {/* Enhanced Header */}
-      <div className="bg-gradient-to-r from-gray-900 to-blue-900 text-white shadow-lg">
+      {/* Header */}
+      <div className="bg-bg-secondary border-b border-separator">
         <div className="p-6 flex justify-between items-center">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
+            <div className="w-12 h-12 bg-system-green/12 text-system-green rounded-xl flex items-center justify-center">
               <i className="fas fa-cogs text-xl"></i>
             </div>
             <div>
-              <h2 className="text-2xl font-bold mb-1">
+              <h2 className="text-2xl font-bold mb-1 text-text-primary">
                 Verwaltung
               </h2>
-              <p className="text-white/80 text-sm">
+              <p className="text-text-secondary text-sm">
                 Zentrale Administration und Datenmanagement
               </p>
             </div>
           </div>
           <button
             onClick={onLogout}
-            className="flex items-center gap-2 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg transition-all duration-200 hover:shadow-lg transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-400 focus:ring-opacity-50"
+            className="flex items-center gap-2 px-4 py-2 btn-soft btn-soft-red rounded-xl"
             aria-label="Abmelden"
           >
             <i className="fas fa-sign-out-alt"></i>
@@ -193,15 +181,15 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
         </div>
       </div>
 
-      {/* Enhanced Navigation with Categories */}
-      <div className="bg-gradient-to-r from-slate-50 to-blue-50 border-b border-border-light">
+      {/* Navigation with Categories */}
+      <div className="bg-bg-secondary border-b border-border-light">
         <div className="p-6">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
             {categorizedTabs.map((categoryGroup) => (
               <div key={categoryGroup.category} className="space-y-3">
                 {/* Category Header */}
                 <div className="flex items-center gap-2 mb-3">
-                  <span className="text-lg">{categoryGroup.icon}</span>
+                  <Icon name={categoryGroup.icon} size={16} strokeWidth={2.2} className="text-system-green" />
                   <h3 className="text-sm font-semibold text-gray-700 uppercase tracking-wide">
                     {categoryGroup.name}
                   </h3>
@@ -213,43 +201,36 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
                     <button
                       key={tab.id}
                       onClick={() => setActiveSubTab(tab.id)}
-                      className={`w-full group relative overflow-hidden rounded-xl p-4 text-left transition-all duration-300 ${
+                      className={`w-full group relative rounded-xl p-4 text-left transition-all duration-200 border ${
                         activeSubTab === tab.id
-                          ? `bg-gradient-to-r from-${categoryGroup.color}-500 to-${categoryGroup.color}-600 text-white shadow-lg transform scale-105`
-                          : 'bg-white hover:bg-gray-50 border border-gray-200 hover:border-gray-300 hover:shadow-md'
+                          ? 'bg-system-green/10 border-system-green/40 shadow-sm'
+                          : 'bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300'
                       }`}
                       title={tab.description}
                     >
                       <div className="flex items-center gap-3">
                         <div className={`flex-shrink-0 w-10 h-10 rounded-lg flex items-center justify-center ${
-                          activeSubTab === tab.id 
-                            ? 'bg-white/20' 
-                            : `bg-${categoryGroup.color}-50`
+                          activeSubTab === tab.id
+                            ? 'bg-system-green/15'
+                            : 'bg-gray-100'
                         }`}>
                           <i className={`${tab.icon} ${
-                            activeSubTab === tab.id 
-                              ? 'text-white' 
-                              : `text-${categoryGroup.color}-600`
+                            activeSubTab === tab.id
+                              ? 'text-system-green'
+                              : 'text-gray-500'
                           }`}></i>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className={`font-medium ${
-                            activeSubTab === tab.id ? 'text-white' : 'text-gray-900'
+                            activeSubTab === tab.id ? 'text-system-green' : 'text-gray-900'
                           }`}>
                             {tab.label}
                           </div>
-                          <div className={`text-xs mt-1 ${
-                            activeSubTab === tab.id ? 'text-white/80' : 'text-gray-500'
-                          }`}>
+                          <div className="text-xs mt-1 text-gray-500">
                             {tab.description}
                           </div>
                         </div>
                       </div>
-                      
-                      {/* Active indicator */}
-                      {activeSubTab === tab.id && (
-                        <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-white/5 pointer-events-none"></div>
-                      )}
                     </button>
                   ))}
                 </div>

@@ -5,31 +5,35 @@
 @tailwind components;
 @tailwind utilities;
 
-/* iOS 26-Style Design System Variables - Enhanced */
+/* FUSTA Design System — "Pitch & Stadium Night" */
 :root {
-  /* iOS 26 Light Theme - Enhanced Backgrounds */
-  --bg-primary: #F2F2F7;
-  --bg-secondary: rgba(255, 255, 255, 0.95);
-  --bg-tertiary: rgba(242, 242, 247, 0.8);
-  --bg-elevated: rgba(255, 255, 255, 0.9);
-  --bg-grouped: #F2F2F7;
-  --bg-overlay: rgba(0, 0, 0, 0.4);
-  --bg-card: rgba(255, 255, 255, 0.85);
-  --bg-glass: rgba(255, 255, 255, 0.1);
-  
-  --text-primary: #000000;
-  --text-secondary: #3C3C43;
-  --text-tertiary: rgba(60, 60, 67, 0.6);
-  --text-quaternary: rgba(60, 60, 67, 0.3);
-  --text-muted: rgba(60, 60, 67, 0.6);
-  
-  /* Enhanced iOS System Colors with accessibility variants */
-  --system-blue: #007AFF;
-  --system-blue-light: #40A6FF;
-  --system-blue-dark: #0051D5;
-  --system-green: #34C759;
-  --system-green-light: #5DD87C;
-  --system-green-dark: #248A3D;
+  /* Light Theme — clean pitch-tinted off-white */
+  --bg-primary: #F3F6F4;
+  --bg-secondary: rgba(255, 255, 255, 0.96);
+  --bg-tertiary: rgba(236, 242, 238, 0.85);
+  --bg-elevated: rgba(255, 255, 255, 0.92);
+  --bg-grouped: #F3F6F4;
+  --bg-overlay: rgba(8, 18, 13, 0.45);
+  --bg-card: rgba(255, 255, 255, 0.9);
+  --bg-glass: rgba(255, 255, 255, 0.55);
+
+  --text-primary: #0E1613;
+  --text-secondary: #38453F;
+  --text-tertiary: rgba(56, 69, 63, 0.62);
+  --text-quaternary: rgba(56, 69, 63, 0.32);
+  --text-muted: rgba(56, 69, 63, 0.62);
+
+  /* Brand */
+  --brand: #00A862;
+  --brand-gradient: linear-gradient(135deg, #00A862 0%, #0A6CFF 100%);
+
+  /* System Colors — tuned to the FUSTA palette */
+  --system-blue: #0A6CFF;
+  --system-blue-light: #4D94FF;
+  --system-blue-dark: #0049C2;
+  --system-green: #00A862;
+  --system-green-light: #2FC987;
+  --system-green-dark: #00794A;
   --system-indigo: #5856D6;
   --system-indigo-light: #7B79E8;
   --system-indigo-dark: #3634A3;
@@ -53,15 +57,15 @@
   --system-yellow-dark: #CC9900;
   
   /* FIFA Team Colors */
-  --fifa-blue: #007AFF;
+  --fifa-blue: #0A6CFF;
   --fifa-red: #FF3B30;
-  --fifa-green: #34C759;
-  
+  --fifa-green: #00A862;
+
   /* Surfaces & Borders */
-  --border-light: rgba(60, 60, 67, 0.1);
-  --border-medium: rgba(60, 60, 67, 0.2);
-  --border-strong: rgba(60, 60, 67, 0.3);
-  --separator: rgba(60, 60, 67, 0.15);
+  --border-light: rgba(40, 60, 50, 0.1);
+  --border-medium: rgba(40, 60, 50, 0.2);
+  --border-strong: rgba(40, 60, 50, 0.3);
+  --separator: rgba(40, 60, 50, 0.14);
   
   /* Enhanced Shadows & Blur with more iOS 26 style effects */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
@@ -97,29 +101,33 @@
 
 :root.dark,
 [data-theme="dark"] {
-  /* iOS 26 Dark Theme - Enhanced */
-  --bg-primary: #000000;
-  --bg-secondary: rgba(28, 28, 30, 0.95);
-  --bg-tertiary: rgba(44, 44, 46, 0.8);
-  --bg-elevated: rgba(28, 28, 30, 0.9);
-  --bg-grouped: #000000;
-  --bg-overlay: rgba(0, 0, 0, 0.7);
-  --bg-card: rgba(28, 28, 30, 0.85);
-  --bg-glass: rgba(255, 255, 255, 0.05);
+  /* Dark Theme — "Stadium Night" deep navy */
+  --bg-primary: #0A1119;
+  --bg-secondary: rgba(19, 28, 40, 0.95);
+  --bg-tertiary: rgba(31, 42, 56, 0.8);
+  --bg-elevated: rgba(23, 33, 46, 0.92);
+  --bg-grouped: #0A1119;
+  --bg-overlay: rgba(2, 6, 12, 0.7);
+  --bg-card: rgba(19, 28, 40, 0.85);
+  --bg-glass: rgba(160, 195, 220, 0.06);
 
-  --text-primary: #FFFFFF;
-  --text-secondary: rgba(235, 235, 245, 0.6);
-  --text-tertiary: rgba(235, 235, 245, 0.3);
-  --text-quaternary: rgba(235, 235, 245, 0.18);
-  --text-muted: rgba(235, 235, 245, 0.6);
+  --text-primary: #F2F6F4;
+  --text-secondary: rgba(225, 238, 232, 0.62);
+  --text-tertiary: rgba(225, 238, 232, 0.34);
+  --text-quaternary: rgba(225, 238, 232, 0.18);
+  --text-muted: rgba(225, 238, 232, 0.62);
 
-  /* Enhanced iOS System Colors - Dark variants with accessibility */
-  --system-blue: #0A84FF;
-  --system-blue-light: #409CFF;
-  --system-blue-dark: #0056CC;
-  --system-green: #30D158;
-  --system-green-light: #5DE075;
-  --system-green-dark: #1FA046;
+  /* Brand */
+  --brand: #2FD97C;
+  --brand-gradient: linear-gradient(135deg, #2FD97C 0%, #4D94FF 100%);
+
+  /* System Colors — dark variants */
+  --system-blue: #3D9BFF;
+  --system-blue-light: #70B5FF;
+  --system-blue-dark: #1E6FD6;
+  --system-green: #2FD97C;
+  --system-green-light: #5FE69C;
+  --system-green-dark: #1AA85C;
   --system-indigo: #5E5CE6;
   --system-indigo-light: #7D7BEB;
   --system-indigo-dark: #4644B8;
@@ -143,15 +151,15 @@
   --system-yellow-dark: #CCA800;
   
   /* FIFA Team Colors - Dark variants */
-  --fifa-blue: #0A84FF;
+  --fifa-blue: #3D9BFF;
   --fifa-red: #FF453A;
-  --fifa-green: #30D158;
-  
+  --fifa-green: #2FD97C;
+
   /* Surfaces & Borders */
-  --border-light: rgba(84, 84, 88, 0.2);
-  --border-medium: rgba(84, 84, 88, 0.4);
-  --border-strong: rgba(84, 84, 88, 0.6);
-  --separator: rgba(84, 84, 88, 0.3);
+  --border-light: rgba(140, 168, 190, 0.16);
+  --border-medium: rgba(140, 168, 190, 0.3);
+  --border-strong: rgba(140, 168, 190, 0.45);
+  --separator: rgba(140, 168, 190, 0.22);
   
   /* Shadows & Blur */
   --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3);
@@ -169,7 +177,7 @@
 @layer base {
   html, body {
     @apply h-full min-h-full bg-bg-primary text-text-primary font-sans antialiased transition-colors duration-300;
-    font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', system-ui, sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     text-rendering: optimizeLegibility;
@@ -1563,25 +1571,23 @@
   }
 }
 
-/* Dark mode enhancements */
-@media (prefers-color-scheme: dark) {
-  .card-ios {
-    border-color: var(--border-medium);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-  }
-  
-  .metric-card-ios {
-    background: var(--gradient-card);
-    border-color: var(--border-medium);
-  }
-  
-  .btn-primary-ios {
-    box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
-  }
-  
-  .btn-destructive-ios {
-    box-shadow: 0 2px 8px rgba(255, 69, 58, 0.3);
-  }
+/* Dark mode enhancements — scoped to the app theme, not OS preference */
+.dark .card-ios {
+  border-color: var(--border-medium);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+.dark .metric-card-ios {
+  background: var(--gradient-card);
+  border-color: var(--border-medium);
+}
+
+.dark .btn-primary-ios {
+  box-shadow: 0 2px 8px rgba(10, 108, 255, 0.3);
+}
+
+.dark .btn-destructive-ios {
+  box-shadow: 0 2px 8px rgba(255, 69, 58, 0.3);
 }
 
 /* Enhanced Login Animations */

@@ -46,11 +46,11 @@ export const ThemeProvider = ({ children }) => {
     document.documentElement.setAttribute('data-theme', theme);
     document.documentElement.classList.toggle('dark', theme === 'dark');
     
-    // Update meta theme-color for mobile browsers
-    const metaThemeColor = document.querySelector('meta[name="theme-color"]');
-    if (metaThemeColor) {
-      metaThemeColor.setAttribute('content', theme === 'dark' ? '#1F2937' : '#475569');
-    }
+    // Update meta theme-color for mobile browsers (matches --bg-primary)
+    const color = theme === 'dark' ? '#0A1119' : '#F3F6F4';
+    document.querySelectorAll('meta[name="theme-color"]').forEach((meta) => {
+      meta.setAttribute('content', color);
+    });
   }, [theme]);
 
   const toggleTheme = () => {

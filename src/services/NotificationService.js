@@ -24,8 +24,9 @@ class NotificationService {
     }
 
     try {
-      // Register service worker
-      if ('serviceWorker' in navigator) {
+      // Register service worker — production only. In dev the legacy
+      // cache-first sw.js would serve stale modules and break HMR.
+      if ('serviceWorker' in navigator && import.meta.env.PROD) {
         const registration = await navigator.serviceWorker.register('/sw.js');
         console.log('Service Worker registered:', registration);
       }

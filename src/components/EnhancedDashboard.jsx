@@ -1,5 +1,6 @@
-import { useState, useMemo } from 'react';
+﻿import { useState, useMemo } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
+import { getTeamDisplay } from '../constants/teams';
 import LoadingSpinner from './LoadingSpinner';
 import RecentActivity from './RecentActivity';
 
@@ -238,7 +239,7 @@ export default function EnhancedDashboard({ onNavigate }) {
                 <div className="flex items-center gap-3">
                   <span className="text-2xl" aria-hidden="true">🔵</span>
                   <div>
-                    <div className="font-semibold text-blue-900">AEK</div>
+                    <div className="font-semibold text-blue-900">{getTeamDisplay('AEK')}</div>
                     <div className="text-sm text-blue-700">
                       {insights.teamRecords.AEK.wins}S / {insights.teamRecords.AEK.losses}N
                     </div>
@@ -259,7 +260,7 @@ export default function EnhancedDashboard({ onNavigate }) {
                 <div className="flex items-center gap-3">
                   <span className="text-2xl" aria-hidden="true">🔴</span>
                   <div>
-                    <div className="font-semibold text-red-900">Real</div>
+                    <div className="font-semibold text-red-900">{getTeamDisplay('Real')}</div>
                     <div className="text-sm text-red-700">
                       {insights.teamRecords.Real.wins}S / {insights.teamRecords.Real.losses}N
                     </div>

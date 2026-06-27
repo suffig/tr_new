@@ -1,4 +1,6 @@
+﻿import Icon from '../icons/Icon';
 import { useState, useEffect, useRef } from 'react';
+import toast from 'react-hot-toast';
 
 const STORAGE_KEY = 'spielersaufenData';
 
@@ -105,7 +107,6 @@ export default function SpielersaufenTab() {
       setElapsed(0);
     }
     return () => clearInterval(timerRef.current);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [data.currentGame.active, data.currentGame.startedAt]);
 
   const fmtElapsed = (secs) => {
@@ -255,7 +256,7 @@ export default function SpielersaufenTab() {
     const taken    = takenIds(participantId);
     const mineMine = new Set((data.assignments[participantId] || []).map(a => a.playerId));
     const pool     = allActivePlayers().filter(p => !taken.has(p.id) && !mineMine.has(p.id));
-    if (!pool.length) { alert('Keine freien aktiven Spieler mehr!'); return; }
+    if (!pool.length) { toast.error('Keine freien aktiven Spieler mehr!'); return; }
     const picked = pool[Math.floor(Math.random() * pool.length)];
     const entry  = { playerId: picked.id, playerName: picked.name, playerNumber: picked.number,
                      teamId: picked.teamId, teamName: picked.teamName, teamColor: picked.teamColor,
@@ -365,11 +366,11 @@ export default function SpielersaufenTab() {
 
   // ─────────────────────────────────────────────────────────────────────────
   const navItems = [
-    { id:'setup',       label:'Setup',      icon:'⚙️' },
-    { id:'aufstellung', label:'Aufstellung', icon:'📋' },
-    { id:'auslosung',   label:'Auslosung',   icon:'🎲' },
-    { id:'counter',     label:'Counter',     icon:'🔔' },
-    { id:'endergebnis', label:'Ergebnis',    icon:'🏆' },
+    { id:'setup',       label:'Setup',      icon:'settings' },
+    { id:'aufstellung', label:'Aufstellung', icon:'clipboard' },
+    { id:'auslosung',   label:'Auslosung',   icon:'target' },
+    { id:'counter',     label:'Counter',     icon:'bell' },
+    { id:'endergebnis', label:'Ergebnis',    icon:'trophy' },
   ];
 
   // ════════════════ RENDER ══════════════════════════════════════════════════
@@ -377,20 +378,22 @@ export default function SpielersaufenTab() {
     <div className="p-4 pb-28 mobile-safe-bottom">
 
       {/* ── Top header ─────────────────────────────────────────────────────── */}
-      <div className="flex items-center gap-3 mb-5">
-        <div className="w-12 h-12 bg-gradient-to-br from-amber-400 to-orange-500 rounded-2xl flex items-center justify-center shadow-md flex-shrink-0">
-          <span className="text-white text-2xl">🎙️</span>
-        </div>
-        <div className="flex-1 min-w-0">
-          <h2 className="text-xl font-bold text-text-primary">Spielersaufen</h2>
-          <p className="text-xs text-text-secondary truncate">Nennungen → Shots · jede {data.settings.mentionsPerShot}. Nennung/Teilnehmer</p>
-        </div>
-        {data.currentGame.active && (
-          <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2.5 py-1.5 rounded-full text-xs font-bold border border-green-300 flex-shrink-0">
-            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-            {totalShotsAll()} 🥃
+      <div className="page-header">
+        <div className="page-header-row">
+          <div className="min-w-0">
+            <h2 className="page-title">Spielersaufen</h2>
+            <p className="page-subtitle truncate">Nennungen → Shots · jede {data.settings.mentionsPerShot}. Nennung/Teilnehmer</p>
           </div>
-        )}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {data.currentGame.active && (
+              <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2.5 py-1.5 rounded-full text-xs font-bold border border-green-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                {totalShotsAll()} 🥃
+              </div>
+            )}
+            <div className="page-icon tile-orange"><Icon name="mic" size={22} strokeWidth={2} /></div>
+          </div>
+        </div>
       </div>
 
       {/* ── Game-active banner (shown on non-counter sections) ─────────────── */}
@@ -408,11 +411,11 @@ export default function SpielersaufenTab() {
 
       {/* ── Sub-nav ────────────────────────────────────────────────────────── */}
       <div className="mb-5 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-1 bg-gray-100 rounded-xl p-1 min-w-max">
+        <div className="flex gap-1 bg-bg-tertiary rounded-2xl p-1 min-w-max">
           {navItems.map(n => (
             <button key={n.id} onClick={() => setSection(n.id)}
-              className={`flex items-center gap-1 px-3 py-2 rounded-lg text-xs font-semibold transition-all whitespace-nowrap ${section===n.id ? 'bg-white text-amber-600 shadow-sm' : 'text-gray-500'}`}>
-              <span>{n.icon}</span><span>{n.label}</span>
+              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap min-h-[40px] ${section===n.id ? 'bg-bg-secondary text-amber-600 shadow-sm' : 'text-text-tertiary hover:text-text-secondary'}`}>
+              <Icon name={n.icon} size={15} strokeWidth={2.1} /><span>{n.label}</span>
               {n.id==='counter' && data.currentGame.active && <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse ml-0.5" />}
             </button>
           ))}
@@ -427,7 +430,7 @@ export default function SpielersaufenTab() {
 
           {/* Shot rule */}
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
-            <h3 className="font-bold text-gray-800 mb-1">🥃 Shot-Regel</h3>
+            <h3 className="font-bold text-gray-800 mb-1 inline-flex items-center gap-2"><Icon name="glass" size={18} strokeWidth={2.2} />Shot-Regel</h3>
             <p className="text-xs text-gray-400 mb-3">
               Jede wievielte Nennung (über <em>alle</em> Spieler eines Teilnehmers zusammen) = 1 Shot?
             </p>
@@ -454,7 +457,7 @@ export default function SpielersaufenTab() {
           {/* Participants */}
           <div className="bg-white border border-gray-200 rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-gray-800">👥 Mitspieler</h3>
+              <h3 className="font-bold text-gray-800 inline-flex items-center gap-2"><Icon name="users" size={18} strokeWidth={2.2} />Mitspieler</h3>
               <span className="text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full">{data.participants.length}</span>
             </div>
             <div className="flex gap-2 mb-4">
@@ -752,7 +755,7 @@ export default function SpielersaufenTab() {
 
           {/* Player pool */}
           <div className="bg-white border border-gray-200 rounded-2xl p-4">
-            <h4 className="font-semibold text-gray-600 text-sm mb-3">📊 Spieler-Pool</h4>
+            <h4 className="font-semibold text-gray-600 text-sm mb-3 inline-flex items-center gap-2"><Icon name="chart" size={15} strokeWidth={2.2} />Spieler-Pool</h4>
             {['home','away'].map(tid => {
               const team = data.teams[tid]; const color = tc(team.color);
               const active = team.players.filter(p => p.active);
@@ -1081,7 +1084,7 @@ export default function SpielersaufenTab() {
                 if (!top.length) return null;
                 return (
                   <div className="bg-white border border-gray-200 rounded-2xl p-4">
-                    <h4 className="font-bold text-gray-700 mb-3">⚽ Meistgenannte Spieler</h4>
+                    <h4 className="font-bold text-gray-700 mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Meistgenannte Spieler</h4>
                     {top.map(([name, info], i) => (
                       <div key={name} className="flex items-center gap-3 mb-1.5">
                         <span className="w-6 text-center">{i===0?'🏅':i===1?'🥈':i===2?'🥉':'  '}</span>

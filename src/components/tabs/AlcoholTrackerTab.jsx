@@ -1,3 +1,4 @@
+﻿import Icon from '../icons/Icon';
 import { useState, useEffect, useCallback } from 'react';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
@@ -54,8 +55,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
         });
       }
     } catch (error) {
-      console.error('❌ Error loading manager settings from database:', error);
-      // Fallback to defaults if database fails
+      // Expected in demo/offline mode (no DB) — fall back to defaults quietly
+      console.warn('Manager-Einstellungen nicht geladen, nutze Defaults:', error?.message || error);
       setManagers({
         aek: { name: 'Alexander', age: 30, weight: 110 },
         real: { name: 'Philip', age: 30, weight: 105 }
@@ -798,76 +799,78 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
       {/* Enhanced Header with iOS 26 Design - matching StatsTab */}
-      <div className="mb-6 animate-mobile-slide-in">
-        <div className="flex items-center gap-3 mb-3">
-          <div className="w-12 h-12 bg-gradient-info rounded-ios-lg flex items-center justify-center">
-            <span className="text-white text-xl">🍺</span>
-          </div>
+      <div className="page-header animate-mobile-slide-in">
+        <div className="page-header-row">
           <div>
-            <h2 className="text-title1 font-bold text-text-primary">Alkohol & Blackjack</h2>
-            <p className="text-footnote text-text-secondary">Alexander vs Philip - Getränke und Kartenspiele verfolgen</p>
+            <h2 className="page-title">Alkohol & Blackjack</h2>
+            <p className="page-subtitle">Alexander vs Philip - Getränke und Kartenspiele verfolgen</p>
           </div>
+          <div className="page-icon tile-orange"><Icon name="beer" size={22} strokeWidth={2} /></div>
         </div>
-        <div className="w-full h-1 bg-bg-tertiary rounded-full overflow-hidden">
+        <div className="hidden">
           <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
         </div>
       </div>
 
       {/* Sub-Navigation */}
       <div className="mb-6">
-        <div className="flex bg-gray-100 rounded-lg p-1 gap-1">
+        <div className="flex bg-bg-tertiary rounded-2xl p-1 gap-1">
           <button
             onClick={() => setActiveSection('alcohol')}
-            className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] ${
               activeSection === 'alcohol'
-                ? 'bg-white text-blue-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'bg-bg-secondary text-system-blue shadow-sm'
+                : 'text-text-tertiary hover:text-text-secondary'
             }`}
           >
-            🍺 Alkohol
+            <Icon name="beer" size={17} strokeWidth={2.1} />
+            <span>Alkohol</span>
           </button>
           <button
             onClick={() => setActiveSection('schnaps')}
-            className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] ${
               activeSection === 'schnaps'
-                ? 'bg-white text-amber-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'bg-bg-secondary text-amber-600 shadow-sm'
+                : 'text-text-tertiary hover:text-text-secondary'
             }`}
           >
-            🥃 Schnaps
+            <Icon name="glass" size={17} strokeWidth={2.1} />
+            <span>Schnaps</span>
             {(() => {
               const done = schnapsShotsData.alex + schnapsShotsData.philip;
               const rem = schnapsShotsData.target - done;
               return rem > 0
-                ? <span className="ml-1 text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{rem}</span>
-                : <span className="ml-1 text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">✓</span>;
+                ? <span className="text-xs bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded-full">{rem}</span>
+                : <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">✓</span>;
             })()}
           </button>
           <button
             onClick={() => setActiveSection('sterne')}
-            className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] ${
               activeSection === 'sterne'
-                ? 'bg-white text-yellow-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'bg-bg-secondary text-yellow-600 shadow-sm'
+                : 'text-text-tertiary hover:text-text-secondary'
             }`}
           >
-            ⭐ Sterne
+            <Icon name="star" size={17} strokeWidth={2.1} />
+            <span>Sterne</span>
             {(() => {
               const net = Math.abs(sterneData.philip - sterneData.alex);
               return net > 0
-                ? <span className="ml-1 text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">{net % 1 === 0 ? net : net.toFixed(1)}</span>
+                ? <span className="text-xs bg-yellow-100 text-yellow-700 px-1.5 py-0.5 rounded-full">{net % 1 === 0 ? net : net.toFixed(1)}</span>
                 : null;
             })()}
           </button>
           <button
             onClick={() => setActiveSection('blackjack')}
-            className={`flex-1 py-2 px-2 rounded-md text-sm font-medium transition-all duration-200 ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] ${
               activeSection === 'blackjack'
-                ? 'bg-white text-red-600 shadow-sm'
-                : 'text-gray-600 hover:text-gray-800'
+                ? 'bg-bg-secondary text-red-600 shadow-sm'
+                : 'text-text-tertiary hover:text-text-secondary'
             }`}
           >
-            🃏 BJ
+            <Icon name="spade" size={17} strokeWidth={2.1} />
+            <span>BJ</span>
           </button>
         </div>
       </div>
@@ -882,24 +885,22 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           )}
 
       {/* Quick Actions */}
-      <div className="modern-card mb-6 bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200">
-        <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-          <span className="text-2xl">⚡</span>
-          <span className="bg-gradient-to-r from-blue-600 to-green-600 bg-clip-text text-transparent">
-            Schnell-Aktionen
-          </span>
+      <div className="modern-card mb-6">
+        <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-text-primary">
+          <Icon name="zap" size={18} strokeWidth={2.2} className="text-system-green" />
+          <span>Schnell-Aktionen</span>
         </h3>
         <div className="grid grid-cols-1 gap-3">
           <button
             onClick={addBeerToBoth}
-            className="bg-gradient-to-r from-blue-600 to-green-600 hover:from-blue-700 hover:to-green-700 text-white px-6 py-4 rounded-xl transition-all duration-200 font-medium text-lg shadow-lg hover:shadow-xl transform hover:scale-105 flex items-center justify-center gap-2"
+            className="btn-brand px-6 py-4 rounded-xl text-lg flex items-center justify-center gap-2"
           >
             <span className="text-2xl">🍻</span>
             <span>Beiden ein Bier hinzufügen</span>
           </button>
           <button
             onClick={resetConsumption}
-            className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-4 py-3 rounded-xl transition-all duration-200 font-medium shadow-md hover:shadow-lg flex items-center justify-center gap-2"
+            className="btn-soft btn-soft-gray px-4 py-3 rounded-xl flex items-center justify-center gap-2"
           >
             <span className="text-xl">🔄</span>
             <span>Zurücksetzen</span>
@@ -910,7 +911,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       {/* Individual Beer Tracking */}
       <div className="space-y-6">
         {/* Alexander Section */}
-        <div className="modern-card bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300 shadow-lg">
+        <div className="modern-card bg-blue-50 border border-blue-200">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg text-blue-700 flex items-center gap-2">
               <span className="text-2xl">🔵</span>
@@ -1027,7 +1028,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
         </div>
 
         {/* Philip Section */}
-        <div className="modern-card bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300 shadow-lg">
+        <div className="modern-card bg-green-50 border border-green-200">
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg text-green-700 flex items-center gap-2">
               <span className="text-2xl">🟢</span>
@@ -1146,7 +1147,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
       {/* Enhanced Summary */}
       <div className="modern-card mt-6">
-        <h3 className="font-bold text-lg mb-4">📊 Erweiterte Statistiken</h3>
+        <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="chart" size={18} strokeWidth={2.2} />Erweiterte Statistiken</h3>
         
         {/* Current Session Stats */}
         <div className="mb-6">
@@ -1183,7 +1184,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
         {/* Individual Player Stats */}
         <div className="mb-6">
-          <h4 className="font-semibold text-md mb-3 text-text-primary">👥 Spieler-Vergleich</h4>
+          <h4 className="font-semibold text-md mb-3 text-text-primary inline-flex items-center gap-2"><Icon name="users" size={16} strokeWidth={2.2} />Spieler-Vergleich</h4>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Alexander Stats */}
             <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
@@ -1806,25 +1807,25 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => addToPlayerAccount('alexander', 5.00)}
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-soft btn-soft-green px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
                     🏆 Win<br/>+5.00€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 7.50)}
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-soft btn-soft-purple px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
                     🃏 BJ<br/>+7.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 2.50)}
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-soft btn-soft-orange px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
                     🤝 BJ-Push<br/>+2.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 10.00)}
-                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-soft btn-soft-red px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
                     🎲 Double<br/>+10.00€
                   </button>
@@ -1887,25 +1888,25 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <div className="grid grid-cols-2 gap-2">
                   <button
                     onClick={() => addToPlayerAccount('philip', 5.00)}
-                    className="bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-soft btn-soft-green px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
                     🏆 Win<br/>+5.00€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 7.50)}
-                    className="bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-soft btn-soft-purple px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
                     🃏 BJ<br/>+7.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 2.50)}
-                    className="bg-gradient-to-r from-yellow-500 to-yellow-600 hover:from-yellow-600 hover:to-yellow-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-soft btn-soft-orange px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
                     🤝 BJ-Push<br/>+2.50€
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 10.00)}
-                    className="bg-gradient-to-r from-red-500 to-red-600 hover:from-red-600 hover:to-red-700 text-white px-3 py-4 rounded-lg transition-all duration-200 font-bold text-sm shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-soft btn-soft-red px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
                     🎲 Double<br/>+10.00€
                   </button>
@@ -1973,9 +1974,9 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           </div>
 
           {/* Round Management */}
-          <div className="modern-card mb-6 bg-gradient-to-r from-indigo-50 to-blue-50 border-2 border-indigo-300">
+          <div className="modern-card mb-6 bg-blue-50 border border-blue-200">
             <h4 className="font-bold text-lg mb-4 text-indigo-700 flex items-center gap-2">
-              📋 Runden-Verwaltung
+              Runden-Verwaltung
             </h4>
             
             <div className="flex flex-col sm:flex-row gap-3 justify-center">
@@ -1983,7 +1984,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <div className="text-center">
                   <button
                     onClick={startNewRound}
-                    className="bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                    className="btn-brand px-6 py-4 rounded-xl font-bold min-h-[56px]"
                   >
                     ▶️ Neue Runde starten
                   </button>
@@ -1994,7 +1995,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               ) : (
                 <button
                   onClick={finishCurrentRound}
-                  className="bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                  className="btn-brand px-6 py-4 rounded-xl font-bold min-h-[56px]"
                 >
                   ✅ Runde abschließen
                 </button>
@@ -2002,14 +2003,14 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               
               <button
                 onClick={endBjSession}
-                className="bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                className="btn-soft btn-soft-purple px-6 py-4 rounded-xl font-bold min-h-[56px]"
               >
                 🏁 BJ-Beenden
               </button>
               
               <button
                 onClick={resetBjTracking}
-                className="bg-gradient-to-r from-gray-500 to-gray-600 hover:from-gray-600 hover:to-gray-700 text-white px-6 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg min-h-[56px]"
+                className="btn-soft btn-soft-gray px-6 py-4 rounded-xl font-bold min-h-[56px]"
               >
                 🔄 Alles zurücksetzen
               </button>
@@ -2127,7 +2128,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           {/* Statistics */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Alexander Stats */}
-            <div className="modern-card bg-gradient-to-br from-blue-50 to-blue-100 border-2 border-blue-300">
+            <div className="modern-card bg-blue-50 border border-blue-200">
               <h5 className="font-bold text-blue-700 mb-3 flex items-center gap-2">
                 🔵 {managers.aek.name} - Statistiken
               </h5>
@@ -2144,7 +2145,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             </div>
 
             {/* Philip Stats */}
-            <div className="modern-card bg-gradient-to-br from-green-50 to-green-100 border-2 border-green-300">
+            <div className="modern-card bg-green-50 border border-green-200">
               <h5 className="font-bold text-green-700 mb-3 flex items-center gap-2">
                 🟢 {managers.real.name} - Statistiken
               </h5>

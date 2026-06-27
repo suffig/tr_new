@@ -1,5 +1,6 @@
-import { useState, Suspense, lazy, useEffect } from 'react';
+﻿import { useState, Suspense, lazy, useEffect, useRef } from 'react';
 import * as React from 'react';
+import { getVisibleTabs, ADMIN_EMAIL } from './constants/navigation.js';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './hooks/useAuth.js';
 import { OfflineIndicator } from './hooks/useOfflineManager.jsx';
@@ -9,7 +10,6 @@ import Header from './components/Header';
 import BottomNavigation from './components/BottomNavigation';
 import LoadingSpinner, { FullScreenLoader } from './components/LoadingSpinner';
 import GlobalSearch from './components/GlobalSearch';
-import PerformanceMonitor from './components/PerformanceMonitor';
 import NotificationSystem from './components/NotificationSystem';
 
 // Lazy load tab components for better performance
@@ -21,39 +21,44 @@ const StatsTab = lazy(() => import('./components/tabs/StatsTab'));
 const EventsTab = lazy(() => import('./components/tabs/EventsTab'));
 const AlcoholTrackerTab = lazy(() => import('./components/tabs/AlcoholTrackerTab'));
 const SpielersaufenTab  = lazy(() => import('./components/tabs/SpielersaufenTab'));
+const TeamTrackerTab = lazy(() => import('./components/tabs/TeamTrackerTab'));
 const AdminTab = lazy(() => import('./components/tabs/AdminTab'));
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState('matches');
-  const [tabLoading, setTabLoading] = useState(false);
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
-  // Check if we're in demo mode
+  const mainRef = useRef(null);
+
+  // Check if we're in demo mode (event-driven instead of 1s polling)
   useEffect(() => {
     const checkDemoMode = () => {
-      // Check if user has demo metadata or if there are demo-related console logs
-      const demoMode = user?.user_metadata?.demo_mode || 
+      const demoMode = user?.user_metadata?.demo_mode ||
                        localStorage.getItem('supabase.auth.token')?.includes('demo-token');
-      setIsDemoMode(demoMode);
+      setIsDemoMode(!!demoMode);
     };
-    
+
     checkDemoMode();
-    
-    // Listen for demo mode changes
-    const interval = setInterval(checkDemoMode, 1000);
-    return () => clearInterval(interval);
+    window.addEventListener('fifa-fallback-activated', checkDemoMode);
+    return () => window.removeEventListener('fifa-fallback-activated', checkDemoMode);
   }, [user]);
 
   const handleTabChange = async (newTab, options = {}) => {
-    if (newTab === activeTab && !options.force) return;
-    
-    setTabLoading(true);
-    // Add small delay for better UX
-    await new Promise(resolve => setTimeout(resolve, 200));
+    if (newTab === activeTab && !options.force) {
+      // iOS pattern: tapping the active tab again scrolls back to top
+      mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+
+    // Switch instantly — the tab content animates in via .tab-transition
     setActiveTab(newTab);
-    setTabLoading(false);
+    // Each tab starts at the top (main keeps its scroll position otherwise)
+    mainRef.current?.scrollTo({ top: 0 });
+    if (navigator.vibrate) {
+      try { navigator.vibrate(8); } catch { /* not supported */ }
+    }
 
     // Handle navigation options
     if (options.action) {
@@ -70,9 +75,56 @@ function App() {
     }
   };
 
+  // Swipe left/right on the content area to switch tabs (touch devices)
+  useEffect(() => {
+    if (!('ontouchstart' in window)) return;
+    const main = mainRef.current;
+    if (!main) return;
+
+    let startX = 0;
+    let startY = 0;
+    let startTime = 0;
+    let valid = false;
+
+    const isExcluded = (target) =>
+      target.closest('input, textarea, select, button, [role="dialog"], .modal, [class*="overflow-x"]') !== null;
+
+    const onTouchStart = (e) => {
+      valid = !isExcluded(e.target);
+      startX = e.changedTouches[0].clientX;
+      startY = e.changedTouches[0].clientY;
+      startTime = Date.now();
+    };
+
+    const onTouchEnd = (e) => {
+      if (!valid) return;
+      const dx = e.changedTouches[0].clientX - startX;
+      const dy = Math.abs(e.changedTouches[0].clientY - startY);
+      const dt = Date.now() - startTime;
+      // Deliberate horizontal swipe: long enough, fast enough, not diagonal
+      if (Math.abs(dx) < 80 || dy > 60 || dt > 600) return;
+
+      const tabs = getVisibleTabs(user).map((t) => t.id);
+      const idx = tabs.indexOf(activeTab);
+      if (idx === -1) return;
+      const next = dx < 0 ? idx + 1 : idx - 1;
+      if (next >= 0 && next < tabs.length) {
+        handleTabChange(tabs[next]);
+      }
+    };
+
+    main.addEventListener('touchstart', onTouchStart, { passive: true });
+    main.addEventListener('touchend', onTouchEnd, { passive: true });
+    return () => {
+      main.removeEventListener('touchstart', onTouchStart);
+      main.removeEventListener('touchend', onTouchEnd);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, user]);
+
   // Global search shortcut and event listener - only work on admin page for authorized users
   useEffect(() => {
-    const isAdminUser = user?.email === 'philip-melchert@live.de';
+    const isAdminUser = user?.email === ADMIN_EMAIL;
     
     const handleKeyDown = (e) => {
       if (e.ctrlKey && e.key === 'k' && activeTab === 'admin' && isAdminUser) {
@@ -114,7 +166,7 @@ function App() {
     const props = { onNavigate: handleTabChange, showHints, user };
     
     // Security check: redirect unauthorized users away from admin tab
-    if (activeTab === 'admin' && (!user || user.email !== 'philip-melchert@live.de')) {
+    if (activeTab === 'admin' && (!user || user.email !== ADMIN_EMAIL)) {
       // Redirect to matches tab
       setTimeout(() => setActiveTab('matches'), 0);
       return <MatchesTab {...props} />;
@@ -137,6 +189,8 @@ function App() {
         return <AlcoholTrackerTab {...props} />;
       case 'spielersaufen':
         return <SpielersaufenTab {...props} />;
+      case 'teams':
+        return <TeamTrackerTab {...props} />;
       case 'admin':
         return <AdminTab onLogout={handleLogout} {...props} />;
       default:
@@ -184,15 +238,15 @@ function App() {
 
   return (
     <ThemeProvider>
-      <div className="flex flex-col min-h-screen bg-bg-primary transition-colors duration-ios safe-area-all">
+      <div className="flex flex-col min-h-screen bg-bg-primary transition-colors duration-ios safe-area-all app-aurora">
         {/* Header */}
         <Header onNavigate={handleTabChange} />
         
         {/* Offline Status Indicator - Only show on admin page for authorized users */}
-        {activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && <OfflineIndicator />}
+        {activeTab === 'admin' && user?.email === ADMIN_EMAIL && <OfflineIndicator />}
         
         {/* Connection Status Indicator - Only show on admin page for authorized users */}
-        {isDemoMode && activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && (
+        {isDemoMode && activeTab === 'admin' && user?.email === ADMIN_EMAIL && (
           <div className="bg-system-yellow/20 border-system-yellow/40 text-system-yellow px-4 py-3 text-center" role="alert">
             <div className="flex items-center justify-center gap-2">
               <span className="text-lg">⚠️</span>
@@ -202,17 +256,13 @@ function App() {
         )}
         
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto ios-scroll-smooth pb-20" role="main">
+        <main ref={mainRef} className="flex-1 overflow-y-auto ios-scroll-smooth pb-28" role="main">
           <Suspense fallback={<LoadingSpinner message="Lade Tab..." />}>
-            {tabLoading ? (
-              <div className="flex items-center justify-center min-h-[50vh]">
-                <LoadingSpinner message="Wechsle Tab..." />
-              </div>
-            ) : (
-              <ErrorBoundary>
+            <ErrorBoundary>
+              <div key={activeTab} className="tab-transition">
                 {renderTabContent()}
-              </ErrorBoundary>
-            )}
+              </div>
+            </ErrorBoundary>
           </Suspense>
         </main>
 
@@ -263,15 +313,12 @@ function App() {
         />
 
         {/* Global Search Modal - Only available on admin page for authorized users */}
-        {showGlobalSearch && activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && (
+        {showGlobalSearch && activeTab === 'admin' && user?.email === ADMIN_EMAIL && (
           <GlobalSearch 
             onNavigate={handleGlobalSearchNavigate}
             onClose={() => setShowGlobalSearch(false)}
           />
         )}
-
-        {/* Performance Monitor - Only show on admin page for authorized users */}
-        {activeTab === 'admin' && user?.email === 'philip-melchert@live.de' && <PerformanceMonitor />}
 
         {/* Global Notification System */}
         <NotificationSystem onNavigate={(tab) => {

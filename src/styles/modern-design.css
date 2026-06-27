@@ -1,0 +1,952 @@
+/* ==========================================================================
+   Modern Design Layer — loaded last, refines the iOS design system
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   0. Mobile polish — comfortable touch targets & spacing on phones
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  /* Large title scales down a touch so long titles wrap gracefully */
+  .page-title {
+    font-size: 28px;
+    line-height: 1.12;
+  }
+
+  .page-subtitle {
+    font-size: 13px;
+  }
+
+  /* Every tinted/brand/primary button is a comfortable tap target */
+  .btn-soft,
+  .btn-brand,
+  .btn-primary,
+  .btn-secondary,
+  .btn-primary-ios,
+  .btn-secondary-ios {
+    min-height: 46px;
+  }
+
+  /* Cards sit a little tighter together on phones */
+  .modern-card {
+    border-radius: 16px;
+  }
+
+  /* Reduce oversized decorative emoji/empty-state glyphs */
+  .text-4xl {
+    font-size: 2rem;
+  }
+}
+
+/* Slightly larger tap area for icon-only controls everywhere */
+button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* --------------------------------------------------------------------------
+   1. Focus handling: only show focus rings for keyboard navigation.
+   Overrides the global *:focus rule from globals.css so mouse/touch clicks
+   don't flash a blue ring on every element.
+   -------------------------------------------------------------------------- */
+*:focus {
+  box-shadow: none;
+}
+
+*:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--system-blue) 55%, transparent);
+  border-radius: 8px;
+}
+
+/* --------------------------------------------------------------------------
+   2. Tab/page transitions
+   -------------------------------------------------------------------------- */
+@keyframes pageEnter {
+  0% {
+    opacity: 0;
+    transform: translateY(12px) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.tab-transition {
+  animation: pageEnter 0.35s cubic-bezier(0.23, 1, 0.32, 1) both;
+  will-change: opacity, transform;
+}
+
+/* Staggered entrance for lists/grids: apply to a container */
+@keyframes staggerItemIn {
+  0% {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-children > * {
+  animation: staggerItemIn 0.45s cubic-bezier(0.23, 1, 0.32, 1) both;
+}
+
+.stagger-children > *:nth-child(1)  { animation-delay: 0.03s; }
+.stagger-children > *:nth-child(2)  { animation-delay: 0.07s; }
+.stagger-children > *:nth-child(3)  { animation-delay: 0.11s; }
+.stagger-children > *:nth-child(4)  { animation-delay: 0.15s; }
+.stagger-children > *:nth-child(5)  { animation-delay: 0.19s; }
+.stagger-children > *:nth-child(6)  { animation-delay: 0.23s; }
+.stagger-children > *:nth-child(7)  { animation-delay: 0.27s; }
+.stagger-children > *:nth-child(8)  { animation-delay: 0.31s; }
+.stagger-children > *:nth-child(n+9) { animation-delay: 0.35s; }
+
+/* --------------------------------------------------------------------------
+   3. Ambient aurora background for the app shell
+   -------------------------------------------------------------------------- */
+@keyframes auroraDrift {
+  0%, 100% {
+    transform: translate(0, 0) scale(1);
+  }
+  33% {
+    transform: translate(4%, -3%) scale(1.06);
+  }
+  66% {
+    transform: translate(-3%, 3%) scale(0.97);
+  }
+}
+
+.app-aurora {
+  position: relative;
+  isolation: isolate;
+}
+
+.app-aurora::before {
+  content: '';
+  position: fixed;
+  inset: -20%;
+  z-index: -1;
+  pointer-events: none;
+  background:
+    radial-gradient(40% 35% at 18% 12%, color-mix(in srgb, var(--system-blue) 5%, transparent) 0%, transparent 70%),
+    radial-gradient(35% 30% at 85% 20%, color-mix(in srgb, var(--system-green) 4%, transparent) 0%, transparent 70%),
+    radial-gradient(45% 40% at 60% 90%, color-mix(in srgb, var(--system-indigo) 4%, transparent) 0%, transparent 70%);
+  animation: auroraDrift 24s ease-in-out infinite;
+  will-change: transform;
+}
+
+/* --------------------------------------------------------------------------
+   4. Modern desktop scrollbars (WebKit + Firefox)
+   -------------------------------------------------------------------------- */
+@media (pointer: fine) {
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+  }
+
+  *::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  *::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  *::-webkit-scrollbar-thumb {
+    background: var(--border-medium);
+    border-radius: 8px;
+  }
+
+  *::-webkit-scrollbar-thumb:hover {
+    background: var(--border-strong);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   5. Header polish
+   -------------------------------------------------------------------------- */
+.brand-gradient-text {
+  background: linear-gradient(120deg, var(--system-green) 0%, var(--system-teal) 50%, var(--system-blue) 100%);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: brandShimmer 6s ease-in-out infinite;
+}
+
+@keyframes brandShimmer {
+  0%, 100% { background-position: 0% center; }
+  50% { background-position: 100% center; }
+}
+
+.logo-glow {
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--system-green) 25%, transparent),
+    0 4px 14px color-mix(in srgb, var(--system-green) 28%, transparent);
+  transition: box-shadow 0.4s ease, transform 0.4s var(--spring-bounce);
+}
+
+.logo-glow:hover {
+  transform: scale(1.05);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--system-green) 35%, transparent),
+    0 5px 16px color-mix(in srgb, var(--system-green) 32%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   6. Bottom navigation: floating glass bar + animated active pill
+   -------------------------------------------------------------------------- */
+.nav-floating {
+  background: color-mix(in srgb, var(--bg-elevated) 82%, transparent);
+  -webkit-backdrop-filter: blur(22px) saturate(1.6);
+  backdrop-filter: blur(22px) saturate(1.6);
+  border: 1px solid var(--border-light);
+  border-radius: 22px;
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.16),
+    0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+.dark .nav-floating {
+  box-shadow:
+    0 10px 30px rgba(0, 0, 0, 0.5),
+    0 2px 8px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
+.nav-tab {
+  position: relative;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.nav-tab .nav-pill {
+  position: absolute;
+  inset: 3px 1px;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--brand) 14%, transparent);
+  opacity: 0;
+  transform: scale(0.7);
+  transition: opacity 0.25s ease, transform 0.3s var(--spring-bounce);
+  pointer-events: none;
+}
+
+.nav-tab[aria-current="page"] .nav-pill {
+  opacity: 1;
+  transform: scale(1);
+}
+
+.nav-tab .nav-icon {
+  transition: transform 0.3s var(--spring-bounce);
+}
+
+.nav-tab:active .nav-icon {
+  transform: scale(0.85);
+}
+
+.nav-tab[aria-current="page"] .nav-icon {
+  transform: translateY(-1px) scale(1.12);
+}
+
+/* Small screens: inactive tabs show icon only, the active tab keeps its label */
+@media (max-width: 480px) {
+  .nav-tab:not([aria-current="page"]) .nav-label {
+    display: none;
+  }
+
+  .nav-tab:not([aria-current="page"]) .nav-icon {
+    margin-bottom: 0;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   7. Modern loader (bouncing dots) + branded full screen loader
+   -------------------------------------------------------------------------- */
+@keyframes dotBounce {
+  0%, 80%, 100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+  40% {
+    transform: translateY(-8px);
+    opacity: 1;
+  }
+}
+
+.loader-dots {
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.loader-dots > span {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--system-green), var(--system-blue));
+  animation: dotBounce 1.1s ease-in-out infinite;
+}
+
+.loader-dots > span:nth-child(2) { animation-delay: 0.15s; }
+.loader-dots > span:nth-child(3) { animation-delay: 0.3s; }
+
+.loader-dots.loader-sm > span { width: 6px; height: 6px; }
+.loader-dots.loader-lg > span { width: 12px; height: 12px; }
+
+@keyframes loaderRingSpin {
+  to { transform: rotate(360deg); }
+}
+
+.loader-ring {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 3px solid var(--border-light);
+  border-top-color: var(--system-blue);
+  border-right-color: var(--system-green);
+  animation: loaderRingSpin 0.9s linear infinite;
+}
+
+/* --------------------------------------------------------------------------
+   8. Micro-interactions for interactive elements
+   -------------------------------------------------------------------------- */
+.press-scale {
+  transition: transform 0.15s var(--spring-smooth);
+}
+
+.press-scale:active {
+  transform: scale(0.96);
+}
+
+.hover-raise {
+  transition: transform 0.25s var(--spring-smooth), box-shadow 0.25s ease;
+}
+
+.hover-raise:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
+}
+
+/* Subtle attention pulse for status dots */
+@keyframes statusPing {
+  0% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--system-green) 50%, transparent);
+  }
+  70% {
+    box-shadow: 0 0 0 6px transparent;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+.status-ping {
+  animation: statusPing 2.2s ease-out infinite;
+}
+
+/* --------------------------------------------------------------------------
+   8a-0. Apple-style page anatomy: Large Title headers + icon tiles
+   -------------------------------------------------------------------------- */
+.page-header {
+  margin-bottom: 1.25rem;
+  padding-top: 0.25rem;
+}
+
+.page-header-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.page-title {
+  font-size: 32px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+  color: var(--text-primary);
+}
+
+.page-subtitle {
+  font-size: 14px;
+  color: var(--text-tertiary);
+  margin-top: 4px;
+}
+
+/* Settings-app style icon tile, one accent per page */
+.page-icon {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 21px;
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.tile-green  { background: linear-gradient(135deg, var(--system-green), var(--system-teal)); }
+.tile-red    { background: linear-gradient(135deg, var(--system-red), var(--system-pink)); }
+.tile-blue   { background: linear-gradient(135deg, var(--system-blue), var(--system-teal)); }
+.tile-indigo { background: linear-gradient(135deg, var(--system-indigo), var(--system-purple)); }
+.tile-purple { background: linear-gradient(135deg, var(--system-purple), var(--system-pink)); }
+.tile-orange { background: linear-gradient(135deg, var(--system-orange), var(--system-yellow)); }
+
+/* iOS grouped-list section label */
+.section-label {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-tertiary);
+  margin: 0 4px 8px;
+}
+
+/* --------------------------------------------------------------------------
+   8a. Clean design pass — applies to every page
+   -------------------------------------------------------------------------- */
+
+/* Cards: iOS grouped-list look — borderless elevated surfaces.
+   Cards that set their own border-* tint keep it. */
+.modern-card {
+  border-radius: 18px;
+  box-shadow: 0 1px 1px rgba(0, 0, 0, 0.03), 0 2px 10px rgba(10, 25, 18, 0.05);
+}
+
+.modern-card:not([class*="border-"]),
+.card-ios:not([class*="border-"]) {
+  border-color: transparent;
+}
+
+.card-ios {
+  border-radius: 18px;
+}
+
+.modern-card::before {
+  display: none;
+}
+
+.modern-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 14px rgba(10, 25, 18, 0.08);
+}
+
+.dark .modern-card {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.dark .modern-card:hover {
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
+}
+
+/* Tailwind can't apply opacity modifiers to CSS-variable colors
+   (bg-system-blue/10 etc. silently produce NO rule). Provide the variants
+   used in the app manually. */
+.bg-system-blue\/10 { background-color: color-mix(in srgb, var(--system-blue) 10%, transparent); }
+.bg-system-green\/10 { background-color: color-mix(in srgb, var(--system-green) 10%, transparent); }
+.bg-system-green\/12 { background-color: color-mix(in srgb, var(--system-green) 12%, transparent); }
+.bg-system-green\/15 { background-color: color-mix(in srgb, var(--system-green) 15%, transparent); }
+.bg-system-green\/20 { background-color: color-mix(in srgb, var(--system-green) 20%, transparent); }
+.hover\:bg-system-green\/20:hover { background-color: color-mix(in srgb, var(--system-green) 20%, transparent); }
+.bg-system-orange\/10 { background-color: color-mix(in srgb, var(--system-orange) 10%, transparent); }
+.bg-system-purple\/10 { background-color: color-mix(in srgb, var(--system-purple) 10%, transparent); }
+.bg-system-red\/10 { background-color: color-mix(in srgb, var(--system-red) 10%, transparent); }
+.bg-system-yellow\/10 { background-color: color-mix(in srgb, var(--system-yellow) 10%, transparent); }
+.bg-system-yellow\/20 { background-color: color-mix(in srgb, var(--system-yellow) 20%, transparent); }
+.border-system-blue\/30 { border-color: color-mix(in srgb, var(--system-blue) 30%, transparent); }
+.border-system-green\/20 { border-color: color-mix(in srgb, var(--system-green) 20%, transparent); }
+.border-system-green\/40 { border-color: color-mix(in srgb, var(--system-green) 40%, transparent); }
+.border-system-red\/20 { border-color: color-mix(in srgb, var(--system-red) 20%, transparent); }
+.border-system-yellow\/40 { border-color: color-mix(in srgb, var(--system-yellow) 40%, transparent); }
+
+/* Soft tinted buttons — replace loud solid/gradient buttons app-wide */
+.btn-soft {
+  border: 1px solid transparent;
+  font-weight: 600;
+  transition: background-color 0.2s ease, transform 0.15s var(--spring-smooth);
+}
+
+.btn-soft:active {
+  transform: scale(0.97);
+}
+
+.btn-soft-blue {
+  background-color: color-mix(in srgb, var(--system-blue) 12%, transparent);
+  color: var(--system-blue);
+}
+.btn-soft-blue:hover {
+  background-color: color-mix(in srgb, var(--system-blue) 20%, transparent);
+}
+
+.btn-soft-green {
+  background-color: color-mix(in srgb, var(--system-green) 12%, transparent);
+  color: var(--system-green);
+}
+.btn-soft-green:hover {
+  background-color: color-mix(in srgb, var(--system-green) 20%, transparent);
+}
+
+.btn-soft-orange {
+  background-color: color-mix(in srgb, var(--system-orange) 14%, transparent);
+  color: var(--system-orange-dark);
+}
+.btn-soft-orange:hover {
+  background-color: color-mix(in srgb, var(--system-orange) 22%, transparent);
+}
+.dark .btn-soft-orange {
+  color: var(--system-orange-light);
+}
+
+.btn-soft-teal {
+  background-color: color-mix(in srgb, var(--system-teal) 14%, transparent);
+  color: var(--system-teal-dark);
+}
+.btn-soft-teal:hover {
+  background-color: color-mix(in srgb, var(--system-teal) 22%, transparent);
+}
+.dark .btn-soft-teal {
+  color: var(--system-teal-light);
+}
+
+.btn-soft-purple {
+  background-color: color-mix(in srgb, var(--system-purple) 12%, transparent);
+  color: var(--system-purple);
+}
+.btn-soft-purple:hover {
+  background-color: color-mix(in srgb, var(--system-purple) 20%, transparent);
+}
+
+.btn-soft-red {
+  background-color: color-mix(in srgb, var(--system-red) 12%, transparent);
+  color: var(--system-red);
+}
+.btn-soft-red:hover {
+  background-color: color-mix(in srgb, var(--system-red) 20%, transparent);
+}
+
+.btn-soft-gray {
+  background-color: var(--bg-tertiary);
+  color: var(--text-secondary);
+  border-color: var(--border-light);
+}
+.btn-soft-gray:hover {
+  background-color: color-mix(in srgb, var(--text-tertiary) 18%, transparent);
+}
+
+/* Primary brand button — the one strong action per screen */
+.btn-brand {
+  background: var(--brand);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--brand) 35%, transparent);
+  transition: filter 0.2s ease, transform 0.15s var(--spring-smooth), box-shadow 0.2s ease;
+}
+
+.btn-brand:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--brand) 45%, transparent);
+}
+
+.btn-brand:active {
+  transform: scale(0.97);
+}
+
+/* Soften loud colored borders (light theme; dark is normalized in section 9) */
+:root:not(.dark) .border-blue-200,
+:root:not(.dark) .border-blue-300 {
+  border-color: color-mix(in srgb, var(--system-blue) 25%, transparent);
+}
+
+:root:not(.dark) .border-green-200,
+:root:not(.dark) .border-green-300 {
+  border-color: color-mix(in srgb, var(--system-green) 25%, transparent);
+}
+
+:root:not(.dark) .border-red-200,
+:root:not(.dark) .border-red-300 {
+  border-color: color-mix(in srgb, var(--system-red) 25%, transparent);
+}
+
+:root:not(.dark) .border-yellow-300,
+:root:not(.dark) .border-amber-300,
+:root:not(.dark) .border-orange-300 {
+  border-color: color-mix(in srgb, var(--system-orange) 30%, transparent);
+}
+
+:root:not(.dark) .border-purple-200,
+:root:not(.dark) .border-purple-300 {
+  border-color: color-mix(in srgb, var(--system-purple) 25%, transparent);
+}
+
+:root:not(.dark) .border-blue-400 {
+  border-color: color-mix(in srgb, var(--system-blue) 40%, transparent);
+}
+
+:root:not(.dark) .border-red-400 {
+  border-color: color-mix(in srgb, var(--system-red) 40%, transparent);
+}
+
+.dark .border-blue-400 {
+  border-color: color-mix(in srgb, var(--system-blue) 50%, transparent);
+}
+
+.dark .border-red-400 {
+  border-color: color-mix(in srgb, var(--system-red) 50%, transparent);
+}
+
+/* --------------------------------------------------------------------------
+   8b. iOS refinements
+   -------------------------------------------------------------------------- */
+html {
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior-y: none;
+}
+
+/* iOS Safari zooms into inputs with font-size < 16px — prevent that */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Standalone PWA: a touch more breathing room under the floating tab bar */
+@media (display-mode: standalone) {
+  main[role="main"] {
+    padding-bottom: calc(6.5rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* --------------------------------------------------------------------------
+   9. Dark mode normalization
+   Some tabs were built with hardcoded light Tailwind colors (bg-white,
+   border-gray-200, text-gray-500, …). Map them onto the theme tokens in dark
+   mode so every tab respects the theme. Loaded after Tailwind, so these win.
+   -------------------------------------------------------------------------- */
+.dark .bg-white {
+  background-color: var(--bg-secondary);
+}
+
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: var(--bg-tertiary);
+}
+
+.dark .border-gray-100,
+.dark .border-gray-200 {
+  border-color: var(--border-light);
+}
+
+.dark .border-gray-300 {
+  border-color: var(--border-medium);
+}
+
+.dark .divide-gray-50 > :not([hidden]) ~ :not([hidden]),
+.dark .divide-gray-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: var(--separator);
+}
+
+.dark .text-gray-400,
+.dark .text-gray-500 {
+  color: var(--text-tertiary);
+}
+
+.dark .text-gray-600,
+.dark .text-gray-700 {
+  color: var(--text-secondary);
+}
+
+.dark .text-gray-800,
+.dark .text-gray-900 {
+  color: var(--text-primary);
+}
+
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--bg-tertiary);
+}
+
+/* Native form controls follow the active theme */
+:root {
+  color-scheme: light;
+}
+
+:root.dark,
+[data-theme="dark"] {
+  color-scheme: dark;
+}
+
+/* Inputs without an explicit background get themed surfaces in dark mode */
+.dark input:not([class*="bg-"]):not([type="checkbox"]):not([type="radio"]),
+.dark textarea:not([class*="bg-"]),
+.dark select:not([class*="bg-"]) {
+  background-color: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+/* Stronger pastel surfaces (badges, buttons) */
+.dark .bg-amber-100,
+.dark .bg-yellow-100,
+.dark .bg-orange-100 {
+  background-color: color-mix(in srgb, var(--system-orange) 24%, transparent);
+}
+
+.dark .hover\:bg-amber-200:hover,
+.dark .hover\:bg-yellow-200:hover {
+  background-color: color-mix(in srgb, var(--system-orange) 34%, transparent);
+}
+
+.dark .bg-red-100,
+.dark .bg-rose-100 {
+  background-color: color-mix(in srgb, var(--system-red) 24%, transparent);
+}
+
+.dark .hover\:bg-red-200:hover {
+  background-color: color-mix(in srgb, var(--system-red) 34%, transparent);
+}
+
+.dark .bg-green-100,
+.dark .bg-emerald-100 {
+  background-color: color-mix(in srgb, var(--system-green) 24%, transparent);
+}
+
+.dark .hover\:bg-green-200:hover {
+  background-color: color-mix(in srgb, var(--system-green) 34%, transparent);
+}
+
+.dark .bg-blue-100,
+.dark .bg-indigo-100 {
+  background-color: color-mix(in srgb, var(--system-blue) 24%, transparent);
+}
+
+.dark .hover\:bg-blue-200:hover {
+  background-color: color-mix(in srgb, var(--system-blue) 34%, transparent);
+}
+
+.dark .bg-purple-100 {
+  background-color: color-mix(in srgb, var(--system-purple) 24%, transparent);
+}
+
+/* Light gradient stops → translucent dark tints */
+.dark .from-blue-50,
+.dark .from-blue-100,
+.dark .from-sky-50 {
+  --tw-gradient-from: color-mix(in srgb, var(--system-blue) 16%, transparent) var(--tw-gradient-from-position);
+  --tw-gradient-to: transparent var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.dark .to-blue-50,
+.dark .to-blue-100 {
+  --tw-gradient-to: color-mix(in srgb, var(--system-blue) 10%, transparent) var(--tw-gradient-to-position);
+}
+
+.dark .from-green-50,
+.dark .from-green-100,
+.dark .from-emerald-50 {
+  --tw-gradient-from: color-mix(in srgb, var(--system-green) 16%, transparent) var(--tw-gradient-from-position);
+  --tw-gradient-to: transparent var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.dark .to-green-50,
+.dark .to-green-100 {
+  --tw-gradient-to: color-mix(in srgb, var(--system-green) 10%, transparent) var(--tw-gradient-to-position);
+}
+
+.dark .from-amber-50,
+.dark .from-yellow-50,
+.dark .from-orange-50 {
+  --tw-gradient-from: color-mix(in srgb, var(--system-orange) 16%, transparent) var(--tw-gradient-from-position);
+  --tw-gradient-to: transparent var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.dark .to-amber-50,
+.dark .to-orange-50,
+.dark .to-yellow-50 {
+  --tw-gradient-to: color-mix(in srgb, var(--system-orange) 10%, transparent) var(--tw-gradient-to-position);
+}
+
+.dark .from-red-50,
+.dark .from-red-100 {
+  --tw-gradient-from: color-mix(in srgb, var(--system-red) 16%, transparent) var(--tw-gradient-from-position);
+  --tw-gradient-to: transparent var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.dark .to-red-50,
+.dark .to-red-100 {
+  --tw-gradient-to: color-mix(in srgb, var(--system-red) 10%, transparent) var(--tw-gradient-to-position);
+}
+
+.dark .from-purple-50 {
+  --tw-gradient-from: color-mix(in srgb, var(--system-purple) 16%, transparent) var(--tw-gradient-from-position);
+  --tw-gradient-to: transparent var(--tw-gradient-to-position);
+  --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to);
+}
+
+.dark .to-purple-50 {
+  --tw-gradient-to: color-mix(in srgb, var(--system-purple) 10%, transparent) var(--tw-gradient-to-position);
+}
+
+.dark .border-blue-300 {
+  border-color: color-mix(in srgb, var(--system-blue) 45%, transparent);
+}
+
+.dark .border-green-300 {
+  border-color: color-mix(in srgb, var(--system-green) 45%, transparent);
+}
+
+.dark .border-amber-300,
+.dark .border-yellow-300 {
+  border-color: color-mix(in srgb, var(--system-orange) 45%, transparent);
+}
+
+.dark .border-red-300 {
+  border-color: color-mix(in srgb, var(--system-red) 45%, transparent);
+}
+
+/* Tinted pastel surfaces → translucent dark tints */
+.dark .bg-amber-50,
+.dark .bg-yellow-50,
+.dark .bg-orange-50 {
+  background-color: color-mix(in srgb, var(--system-orange) 14%, transparent);
+}
+
+.dark .bg-red-50,
+.dark .bg-rose-50,
+.dark .bg-pink-50 {
+  background-color: color-mix(in srgb, var(--system-red) 14%, transparent);
+}
+
+.dark .bg-green-50,
+.dark .bg-emerald-50 {
+  background-color: color-mix(in srgb, var(--system-green) 14%, transparent);
+}
+
+.dark .bg-blue-50,
+.dark .bg-sky-50,
+.dark .bg-indigo-50 {
+  background-color: color-mix(in srgb, var(--system-blue) 14%, transparent);
+}
+
+.dark .bg-purple-50,
+.dark .bg-violet-50 {
+  background-color: color-mix(in srgb, var(--system-purple) 14%, transparent);
+}
+
+.dark .border-amber-200,
+.dark .border-yellow-200,
+.dark .border-orange-200 {
+  border-color: color-mix(in srgb, var(--system-orange) 35%, transparent);
+}
+
+.dark .border-red-200,
+.dark .border-rose-200 {
+  border-color: color-mix(in srgb, var(--system-red) 35%, transparent);
+}
+
+.dark .border-green-200,
+.dark .border-emerald-200 {
+  border-color: color-mix(in srgb, var(--system-green) 35%, transparent);
+}
+
+.dark .border-blue-200,
+.dark .border-indigo-200 {
+  border-color: color-mix(in srgb, var(--system-blue) 35%, transparent);
+}
+
+.dark .border-purple-200 {
+  border-color: color-mix(in srgb, var(--system-purple) 35%, transparent);
+}
+
+/* Dark text-on-pastel → readable light accent text */
+.dark .text-blue-900 {
+  color: var(--system-blue-light);
+}
+
+.dark .text-red-900,
+.dark .text-rose-900 {
+  color: var(--system-red-light);
+}
+
+.dark .text-green-900,
+.dark .text-emerald-900 {
+  color: var(--system-green-light);
+}
+
+.dark .text-amber-900,
+.dark .text-yellow-800,
+.dark .text-yellow-900,
+.dark .text-orange-800,
+.dark .text-orange-900 {
+  color: var(--system-orange-light);
+}
+
+.dark .text-purple-800,
+.dark .text-purple-900,
+.dark .text-indigo-600,
+.dark .text-indigo-700,
+.dark .text-indigo-800 {
+  color: var(--system-purple-light);
+}
+
+.dark .text-amber-600,
+.dark .text-amber-700,
+.dark .text-amber-800,
+.dark .text-yellow-700,
+.dark .text-orange-600,
+.dark .text-orange-700 {
+  color: var(--system-orange-light);
+}
+
+.dark .text-red-600,
+.dark .text-red-700,
+.dark .text-red-800 {
+  color: var(--system-red-light);
+}
+
+.dark .text-green-600,
+.dark .text-green-700,
+.dark .text-green-800,
+.dark .text-emerald-700 {
+  color: var(--system-green-light);
+}
+
+.dark .text-blue-600,
+.dark .text-blue-700,
+.dark .text-blue-800 {
+  color: var(--system-blue-light);
+}
+
+.dark .text-purple-600,
+.dark .text-purple-700 {
+  color: var(--system-purple-light);
+}
+
+/* --------------------------------------------------------------------------
+   10. Reduced motion: disable decorative animation, keep functionality
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  .tab-transition,
+  .stagger-children > *,
+  .brand-gradient-text,
+  .status-ping,
+  .nav-tab .nav-pill,
+  .nav-tab .nav-icon,
+  .app-aurora::before {
+    animation: none !important;
+    transition: none !important;
+  }
+
+  .tab-transition,
+  .stagger-children > * {
+    opacity: 1;
+    transform: none;
+  }
+}
