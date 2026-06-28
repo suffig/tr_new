@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import LoadingSpinner from './LoadingSpinner';
+import Icon from './icons/Icon';
 
 export default function MatchPredictionAI() {
   const [predictionsEnabled, setPredictionsEnabled] = useState(true);
@@ -410,7 +411,7 @@ export default function MatchPredictionAI() {
               <h4 className="text-lg font-bold mb-4">🔍 KI-Einblicke</h4>
               <div className="space-y-3 text-sm">
                 <div className="flex items-start space-x-2">
-                  <i className="fas fa-lightbulb text-yellow-500 mt-0.5"></i>
+                  <Icon name="bulb" size={16} className="text-yellow-500 mt-0.5" />
                   <span>
                     {prediction.aekProbability > prediction.realProbability 
                       ? `AEK ist leicht favorisiert aufgrund besserer Form und Offensive.`
@@ -419,14 +420,14 @@ export default function MatchPredictionAI() {
                   </span>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <i className="fas fa-chart-line text-blue-500 mt-0.5"></i>
+                  <Icon name="trendingUp" size={16} className="text-blue-500 mt-0.5" />
                   <span>
                     Das vorhergesagte Ergebnis basiert auf {analysisDepth === 'deep' ? '20' : analysisDepth === 'detailed' ? '10' : '5'} 
                     vergangenen Spielen und aktueller Teamstärke.
                   </span>
                 </div>
                 <div className="flex items-start space-x-2">
-                  <i className="fas fa-exclamation-triangle text-orange-500 mt-0.5"></i>
+                  <Icon name="warning" size={16} className="text-orange-500 mt-0.5" />
                   <span>
                     Gesperrte Spieler können das Ergebnis erheblich beeinflussen.
                   </span>
@@ -438,7 +439,7 @@ export default function MatchPredictionAI() {
           {/* Disclaimer */}
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start space-x-2">
-              <i className="fas fa-info-circle text-yellow-600 mt-0.5"></i>
+              <Icon name="bulb" size={16} className="text-yellow-600 mt-0.5" />
               <div className="text-sm text-yellow-800">
                 <strong>Hinweis:</strong> Diese Vorhersagen basieren auf statistischen Analysen vergangener Spiele 
                 und sind nicht garantiert. Fußball ist unberechenbar und viele Faktoren können das tatsächliche 

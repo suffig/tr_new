@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import EnhancedDeletionSystem, { BatchDeletionManager } from '../components/EnhancedDeletion';
 import { triggerNotification } from '../components/NotificationSystem';
+import Icon from './icons/Icon';
 
 export default function DeletionTestSuite() {
   const [testResults, setTestResults] = useState([]);
@@ -271,11 +272,11 @@ export default function DeletionTestSuite() {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'success': return 'fas fa-check-circle';
-      case 'error': return 'fas fa-times-circle';
-      case 'warning': return 'fas fa-exclamation-triangle';
-      case 'info': return 'fas fa-info-circle';
-      default: return 'fas fa-question-circle';
+      case 'success': return 'check';
+      case 'error': return 'x';
+      case 'warning': return 'warning';
+      case 'info': return 'bulb';
+      default: return 'help';
     }
   };
 
@@ -298,7 +299,7 @@ export default function DeletionTestSuite() {
             </>
           ) : (
             <>
-              <i className="fas fa-play mr-2" />
+              <Icon name="play" size={16} className="mr-2" />
               Alle Tests ausführen
             </>
           )}
@@ -350,7 +351,7 @@ export default function DeletionTestSuite() {
             onClick={runPerformanceTest}
             className="w-full btn-secondary text-sm"
           >
-            <i className="fas fa-stopwatch mr-2" />
+            <Icon name="clock" size={16} className="mr-2" />
             Performance Test
           </button>
         </div>
@@ -364,7 +365,7 @@ export default function DeletionTestSuite() {
             onClick={runUndoTest}
             className="w-full btn-secondary text-sm"
           >
-            <i className="fas fa-undo mr-2" />
+            <Icon name="undo" size={16} className="mr-2" />
             Undo Test
           </button>
         </div>
@@ -381,7 +382,7 @@ export default function DeletionTestSuite() {
               <div key={index} className="px-6 py-4">
                 <div className="flex items-start space-x-3">
                   <div className={`p-2 rounded-full ${getStatusColor(result.status)}`}>
-                    <i className={`${getStatusIcon(result.status)} text-sm`} />
+                    <Icon name={getStatusIcon(result.status)} size={14} strokeWidth={2.2} />
                   </div>
                   <div className="flex-1">
                     <h4 className="text-sm font-medium text-gray-900">

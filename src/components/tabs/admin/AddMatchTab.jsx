@@ -5,6 +5,7 @@ import { triggerNotification } from '../../NotificationSystem';
 import toast from 'react-hot-toast';
 import { getTeamDisplay } from '../../../constants/teams';
 import Icon from '../../icons/Icon';
+import TeamLogo from '../../TeamLogo';
 
 const DRAFTS_KEY = 'fusta_match_drafts_v1';
 
@@ -379,14 +380,6 @@ export default function AddMatchTab() {
     }
   };
 
-  // Remove scorer entirely
-  const removeScorer = (team, playerName) => {
-    const fieldName = team === 'AEK' ? 'goalslista' : 'goalslistb';
-    updateFormData({
-      [fieldName]: formData[fieldName].filter(scorer => scorer.player !== playerName)
-    });
-  };
-
   // Calculate a live Echtgeld-Ausgleich preview that mirrors the real
   // tracker_full_v1 processing: SdS bonus + prize are applied to the loser's
   // balance (clamped to 0) BEFORE the real-money amount is derived.
@@ -413,6 +406,101 @@ export default function AddMatchTab() {
   };
 
   const echtgeldPreview = previewEchtgeld();
+
+  // Compact +/- stepper used for scorers, own goals and cards
+  const renderStepper = (value, onDec, onInc, decDisabled = false) => (
+    <div className="flex items-center gap-1">
+      <button
+        type="button"
+        onClick={onDec}
+        className="w-8 h-8 rounded-lg bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover flex items-center justify-center text-lg font-semibold disabled:opacity-40 transition-colors"
+        disabled={loading || decDisabled}
+      >
+        −
+      </button>
+      <span className="w-7 text-center font-bold text-text-primary tabular-nums">{value}</span>
+      <button
+        type="button"
+        onClick={onInc}
+        className="w-8 h-8 rounded-lg bg-system-green/15 text-system-green hover:bg-system-green/25 flex items-center justify-center text-lg font-semibold disabled:opacity-40 transition-colors"
+        disabled={loading}
+      >
+        +
+      </button>
+    </div>
+  );
+
+  // One team's scoring column (scorers list + add dropdown + own goals)
+  const renderTeamScoring = (team) => {
+    const isAek = team === 'AEK';
+    const accent = isAek ? 'text-system-blue' : 'text-system-red';
+    const fieldName = isAek ? 'goalslista' : 'goalslistb';
+    const ownField = isAek ? 'ownGoalsA' : 'ownGoalsB';
+    const opponent = isAek ? 'Real' : 'AEK';
+
+    return (
+      <div className="space-y-2">
+        <h5 className={`text-xs font-semibold ${accent} flex items-center gap-1.5`}>
+          <TeamLogo team={team.toLowerCase()} size="xs" />{getTeamDisplay(team)}
+        </h5>
+
+        {formData[fieldName].map((scorer, index) => (
+          <div key={`${team}-${scorer.player}-${index}`} className="flex items-center justify-between gap-2 bg-bg-tertiary rounded-lg p-2">
+            <div className="min-w-0">
+              <div className="text-sm font-medium text-text-primary truncate">{scorer.player}</div>
+              <div className="text-[11px] text-text-muted">{scorer.count} Tor{scorer.count !== 1 ? 'e' : ''}</div>
+            </div>
+            {renderStepper(
+              scorer.count,
+              () => removePlayerGoal(team, scorer.player),
+              () => addPlayerGoal(team, scorer.player)
+            )}
+          </div>
+        ))}
+
+        <select
+          onChange={(e) => { if (e.target.value) { addScorer(team, e.target.value); e.target.value = ''; } }}
+          className="form-input text-sm"
+          disabled={loading}
+        >
+          <option value="">+ Torschütze hinzufügen</option>
+          {getTeamPlayers(team).map((player) => (
+            <option key={player.id} value={player.name}>
+              {player.name} ({player.position})
+            </option>
+          ))}
+        </select>
+
+        <div className="flex items-center justify-between gap-2 rounded-lg p-2 bg-system-orange/10">
+          <div className="min-w-0">
+            <div className="text-sm font-medium text-text-primary">Eigentore</div>
+            <div className="text-[11px] text-text-muted">Zählen für {getTeamDisplay(opponent)}</div>
+          </div>
+          {renderStepper(
+            formData[ownField],
+            () => adjustOwnGoals(team, -1),
+            () => adjustOwnGoals(team, 1),
+            formData[ownField] === 0
+          )}
+        </div>
+      </div>
+    );
+  };
+
+  // One card counter (yellow/red) for a team
+  const renderCardCounter = (label, field) => (
+    <div>
+      <label className="block text-[11px] text-text-muted mb-1">{label}</label>
+      <div className="flex items-center justify-between bg-bg-tertiary rounded-lg px-2 py-1.5">
+        {renderStepper(
+          formData[field] || 0,
+          () => adjustCards(field, -1),
+          () => adjustCards(field, 1),
+          (formData[field] || 0) <= 0
+        )}
+      </div>
+    </div>
+  );
 
   return (
     <div className="p-4 pb-20">
@@ -509,17 +597,16 @@ export default function AddMatchTab() {
 
               <form onSubmit={handleSubmit} className="space-y-4">
                 {/* Fixed Teams Display */}
-                <div className="bg-gray-50 rounded-lg p-4 border">
-                  <div className="text-center">
-                    <h4 className="text-lg font-semibold text-gray-700 mb-2">⚽ Spielpaarung</h4>
-                    <div className="flex items-center justify-center space-x-4">
-                      <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded-lg font-medium">
-                        {getTeamDisplay('AEK')}
-                      </div>
-                      <div className="text-gray-500 font-bold text-xl">vs</div>
-                      <div className="bg-red-100 text-red-800 px-4 py-2 rounded-lg font-medium">
-                        {getTeamDisplay('Real')}
-                      </div>
+                <div className="bg-bg-tertiary rounded-xl p-4">
+                  <div className="flex items-center justify-center gap-4">
+                    <div className="flex flex-col items-center gap-1.5">
+                      <TeamLogo team="aek" size="md" />
+                      <span className="text-xs font-semibold text-system-blue text-center">{getTeamDisplay('AEK')}</span>
+                    </div>
+                    <div className="text-text-tertiary font-bold">vs</div>
+                    <div className="flex flex-col items-center gap-1.5">
+                      <TeamLogo team="real" size="md" />
+                      <span className="text-xs font-semibold text-system-red text-center">{getTeamDisplay('Real')}</span>
                     </div>
                   </div>
                 </div>
@@ -540,346 +627,50 @@ export default function AddMatchTab() {
                 </div>
 
                 {/* Live Goal Scoring */}
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">⚽ Live Torwertung</h4>
-                  
-                  {/* Enhanced Score Display */}
-                  <div className="bg-gradient-to-r from-blue-50 to-red-50 rounded-xl p-6 mb-4 text-center border border-gray-200 shadow-sm">
-                    <div className="text-4xl font-bold text-gray-800 mb-2">
-                      <span className="text-blue-600">{formData.goalsa}</span>
-                      <span className="mx-4 text-gray-400">:</span>
-                      <span className="text-red-600">{formData.goalsb}</span>
-                    </div>
-                    <div className="text-sm text-gray-600 mb-1">
-                      <span className="font-medium text-blue-700">{getTeamDisplay('AEK')}</span>
-                      <span className="mx-2">vs</span>
-                      <span className="font-medium text-red-700">{getTeamDisplay('Real')}</span>
+                <div className="border-t border-border-light pt-4">
+                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Live Torwertung</h4>
+
+                  {/* Compact score display */}
+                  <div className="rounded-xl p-4 mb-4 text-center bg-bg-tertiary">
+                    <div className="flex items-center justify-center gap-4 mb-1">
+                      <TeamLogo team="aek" size="md" />
+                      <div className="text-3xl font-bold tabular-nums">
+                        <span className="text-system-blue">{formData.goalsa}</span>
+                        <span className="mx-3 text-text-tertiary">:</span>
+                        <span className="text-system-red">{formData.goalsb}</span>
+                      </div>
+                      <TeamLogo team="real" size="md" />
                     </div>
                     {(formData.goalsa > 0 || formData.goalsb > 0) && (
-                      <div className="text-xs text-gray-500 mt-2">
-                        {formData.goalsa > formData.goalsb ? `🏆 ${getTeamDisplay('AEK')} führt` : 
+                      <div className="text-xs font-medium text-text-secondary mt-1">
+                        {formData.goalsa > formData.goalsb ? `🏆 ${getTeamDisplay('AEK')} führt` :
                          formData.goalsb > formData.goalsa ? `🏆 ${getTeamDisplay('Real')} führt` : '⚖️ Unentschieden'}
                       </div>
                     )}
                   </div>
-                  
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
-                    {/* AEK Scoring */}
-                    <div className="space-y-3">
-                      <div className="text-center">
-                        <h5 className="text-sm font-medium text-blue-600 mb-3">⚽ {getTeamDisplay('AEK')} Torschützen</h5>
-                      </div>
-                      
-                      {/* AEK Scorers List */}
-                      <div className="space-y-2">
-                        {formData.goalslista.map((scorer, index) => (
-                          <div key={`aek-${scorer.player}-${index}`} className="flex items-center justify-between bg-blue-50 rounded-lg p-2">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-700">{scorer.player}</div>
-                              <div className="text-xs text-gray-500">{scorer.count} Tor{scorer.count !== 1 ? 'e' : ''}</div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <button
-                                type="button"
-                                onClick={() => removePlayerGoal('AEK', scorer.player)}
-                                className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                                disabled={loading}
-                              >
-                                −
-                              </button>
-                              <span className="w-8 text-center font-bold text-lg text-gray-700">
-                                {scorer.count}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => addPlayerGoal('AEK', scorer.player)}
-                                className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                                disabled={loading}
-                              >
-                                +
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeScorer('AEK', scorer.player)}
-                                className="w-8 h-8 bg-gray-500 hover:bg-gray-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-colors"
-                                disabled={loading}
-                                title="Torschütze entfernen"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Add AEK Scorer Button */}
-                      <div className="border-t pt-2">
-                        <select
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              addScorer('AEK', e.target.value);
-                              e.target.value = '';
-                            }
-                          }}
-                          className="w-full form-input bg-blue-100 border-blue-300 text-blue-800"
-                          disabled={loading}
-                        >
-                          <option value="">+ Torschütze hinzufügen</option>
-                          {getTeamPlayers('AEK').map((player) => (
-                            <option key={player.id} value={player.name}>
-                              {player.name} ({player.position})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      {/* AEK Own Goals */}
-                      <div className="flex items-center justify-between bg-orange-50 rounded-lg p-2 border border-orange-200">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-700">Eigentore</div>
-                          <div className="text-xs text-gray-500">Zählen für {getTeamDisplay('Real')}</div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => adjustOwnGoals('AEK', -1)}
-                            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                            disabled={loading || formData.ownGoalsA === 0}
-                          >
-                            −
-                          </button>
-                          <span className="w-8 text-center font-bold text-lg text-gray-700">
-                            {formData.ownGoalsA}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => adjustOwnGoals('AEK', 1)}
-                            className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                            disabled={loading}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Real Scoring */}
-                    <div className="space-y-3">
-                      <div className="text-center">
-                        <h5 className="text-sm font-medium text-red-600 mb-3">⚽ {getTeamDisplay('Real')} Torschützen</h5>
-                      </div>
-                      
-                      {/* Real Scorers List */}
-                      <div className="space-y-2">
-                        {formData.goalslistb.map((scorer, index) => (
-                          <div key={`real-${scorer.player}-${index}`} className="flex items-center justify-between bg-red-50 rounded-lg p-2">
-                            <div className="flex-1">
-                              <div className="text-sm font-medium text-gray-700">{scorer.player}</div>
-                              <div className="text-xs text-gray-500">{scorer.count} Tor{scorer.count !== 1 ? 'e' : ''}</div>
-                            </div>
-                            <div className="flex items-center space-x-2">
-                              <button
-                                type="button"
-                                onClick={() => removePlayerGoal('Real', scorer.player)}
-                                className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                                disabled={loading}
-                              >
-                                −
-                              </button>
-                              <span className="w-8 text-center font-bold text-lg text-gray-700">
-                                {scorer.count}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => addPlayerGoal('Real', scorer.player)}
-                                className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                                disabled={loading}
-                              >
-                                +
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => removeScorer('Real', scorer.player)}
-                                className="w-8 h-8 bg-gray-500 hover:bg-gray-600 text-white rounded-full flex items-center justify-center text-xs font-bold transition-colors"
-                                disabled={loading}
-                                title="Torschütze entfernen"
-                              >
-                                ✕
-                              </button>
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                      
-                      {/* Add Real Scorer Button */}
-                      <div className="border-t pt-2">
-                        <select
-                          onChange={(e) => {
-                            if (e.target.value) {
-                              addScorer('Real', e.target.value);
-                              e.target.value = '';
-                            }
-                          }}
-                          className="w-full form-input bg-red-100 border-red-300 text-red-800"
-                          disabled={loading}
-                        >
-                          <option value="">+ Torschütze hinzufügen</option>
-                          {getTeamPlayers('Real').map((player) => (
-                            <option key={player.id} value={player.name}>
-                              {player.name} ({player.position})
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      {/* Real Own Goals */}
-                      <div className="flex items-center justify-between bg-orange-50 rounded-lg p-2 border border-orange-200">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-700">Eigentore</div>
-                          <div className="text-xs text-gray-500">Zählen für {getTeamDisplay('AEK')}</div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <button
-                            type="button"
-                            onClick={() => adjustOwnGoals('Real', -1)}
-                            className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                            disabled={loading || formData.ownGoalsB === 0}
-                          >
-                            −
-                          </button>
-                          <span className="w-8 text-center font-bold text-lg text-gray-700">
-                            {formData.ownGoalsB}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => adjustOwnGoals('Real', 1)}
-                            className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                            disabled={loading}
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {renderTeamScoring('AEK')}
+                    {renderTeamScoring('Real')}
                   </div>
                 </div>
 
                 {/* Cards */}
-                <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">🟨🟥 Karten</h4>
+                <div className="border-t border-border-light pt-4">
+                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} className="text-system-red" />Karten</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-3">
-                      <p className="text-xs text-blue-600 font-medium">{getTeamDisplay('AEK')}</p>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-system-blue flex items-center gap-1.5"><TeamLogo team="aek" size="xs" />{getTeamDisplay('AEK')}</p>
                       <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs text-text-muted mb-1">
-                            🟨 Gelbe Karten
-                          </label>
-                          <div className="flex items-center justify-center bg-yellow-50 border border-yellow-300 rounded-lg p-2">
-                            <button
-                              type="button"
-                              onClick={() => adjustCards('yellowa', -1)}
-                              className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                              disabled={loading || formData.yellowa <= 0}
-                            >
-                              −
-                            </button>
-                            <span className="mx-3 text-lg font-bold text-gray-700 min-w-[2rem] text-center">
-                              {formData.yellowa}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => adjustCards('yellowa', 1)}
-                              className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                              disabled={loading}
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-text-muted mb-1">
-                            🟥 Rote Karten
-                          </label>
-                          <div className="flex items-center justify-center bg-red-50 border border-red-300 rounded-lg p-2">
-                            <button
-                              type="button"
-                              onClick={() => adjustCards('reda', -1)}
-                              className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                              disabled={loading || formData.reda <= 0}
-                            >
-                              −
-                            </button>
-                            <span className="mx-3 text-lg font-bold text-gray-700 min-w-[2rem] text-center">
-                              {formData.reda}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => adjustCards('reda', 1)}
-                              className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                              disabled={loading}
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
+                        {renderCardCounter('🟨 Gelb', 'yellowa')}
+                        {renderCardCounter('🟥 Rot', 'reda')}
                       </div>
                     </div>
-                    <div className="space-y-3">
-                      <p className="text-xs text-red-600 font-medium">{getTeamDisplay('Real')}</p>
+                    <div className="space-y-2">
+                      <p className="text-xs font-medium text-system-red flex items-center gap-1.5"><TeamLogo team="real" size="xs" />{getTeamDisplay('Real')}</p>
                       <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="block text-xs text-text-muted mb-1">
-                            🟨 Gelbe Karten
-                          </label>
-                          <div className="flex items-center justify-center bg-yellow-50 border border-yellow-300 rounded-lg p-2">
-                            <button
-                              type="button"
-                              onClick={() => adjustCards('yellowb', -1)}
-                              className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                              disabled={loading || formData.yellowb <= 0}
-                            >
-                              −
-                            </button>
-                            <span className="mx-3 text-lg font-bold text-gray-700 min-w-[2rem] text-center">
-                              {formData.yellowb}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => adjustCards('yellowb', 1)}
-                              className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                              disabled={loading}
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
-                        <div>
-                          <label className="block text-xs text-text-muted mb-1">
-                            🟥 Rote Karten
-                          </label>
-                          <div className="flex items-center justify-center bg-red-50 border border-red-300 rounded-lg p-2">
-                            <button
-                              type="button"
-                              onClick={() => adjustCards('redb', -1)}
-                              className="w-8 h-8 bg-red-500 hover:bg-red-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                              disabled={loading || formData.redb <= 0}
-                            >
-                              −
-                            </button>
-                            <span className="mx-3 text-lg font-bold text-gray-700 min-w-[2rem] text-center">
-                              {formData.redb}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => adjustCards('redb', 1)}
-                              className="w-8 h-8 bg-green-500 hover:bg-green-600 text-white rounded-full flex items-center justify-center text-sm font-bold transition-colors"
-                              disabled={loading}
-                            >
-                              +
-                            </button>
-                          </div>
-                        </div>
+                        {renderCardCounter('🟨 Gelb', 'yellowb')}
+                        {renderCardCounter('🟥 Rot', 'redb')}
                       </div>
                     </div>
                   </div>
@@ -887,7 +678,7 @@ export default function AddMatchTab() {
 
                 {/* Player of the Match */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">⭐ Spieler des Spiels</h4>
+                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} className="text-system-orange" />Spieler des Spiels</h4>
                   
                   {/* Team Filter */}
                   <div className="mb-3">
@@ -946,7 +737,7 @@ export default function AddMatchTab() {
                       </option>
                     ))}
                   </select>
-                  {!players || players.length === 0 && (
+                  {(!players || players.length === 0) && (
                     <p className="text-xs text-text-muted mt-1">
                       Keine Spieler verfügbar. Bitte fügen Sie erst Spieler hinzu.
                     </p>
@@ -955,7 +746,7 @@ export default function AddMatchTab() {
 
                 {/* Prize Money */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-medium text-text-primary mb-3">💰 Preisgelder (automatisch berechnet)</h4>
+                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="euro" size={16} strokeWidth={2.2} className="text-system-green" />Preisgelder (automatisch berechnet)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-sm font-medium text-text-primary mb-2">
@@ -989,36 +780,11 @@ export default function AddMatchTab() {
                   </p>
                 </div>
 
-                {/* Validation Messages */}
-                {formData.goalsa === formData.goalsb && (formData.goalsa > 0 || formData.goalsb > 0) && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-                    <div className="flex items-center">
-                      <div className="text-red-600 mr-2">⚠️</div>
-                      <div>
-                        <h5 className="font-medium text-red-800">Unentschieden nicht erlaubt</h5>
-                        <p className="text-sm text-red-700">Ein Team muss gewinnen. Unentschieden sind in dieser App nicht möglich.</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                {!formData.manofthematch && (formData.goalsa > 0 || formData.goalsb > 0) && (
-                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
-                    <div className="flex items-center">
-                      <div className="text-yellow-600 mr-2">⭐</div>
-                      <div>
-                        <h5 className="font-medium text-yellow-800">Spieler des Spiels erforderlich</h5>
-                        <p className="text-sm text-yellow-700">Bitte wählen Sie einen Spieler des Spiels aus, bevor Sie das Match speichern.</p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-
                 {/* Match Summary Preview */}
                 {isFormValid() && (
                   <div className="bg-green-50 border border-green-200 rounded-lg p-4">
                     <h5 className="font-medium text-green-800 mb-3 flex items-center">
-                      <i className="fas fa-check-circle mr-2"></i>
+                      <Icon name="check" size={16} strokeWidth={2.6} className="mr-2" />
                       Spiel-Zusammenfassung
                     </h5>
                     <div className="space-y-2 text-sm">
