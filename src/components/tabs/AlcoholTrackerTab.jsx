@@ -899,7 +899,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             <span>Beiden ein Bier hinzufügen</span>
           </button>
           <button
-            onClick={resetConsumption}
+            onClick={() => { if (window.confirm('Alle Getränke (Bier & Shots) und die Trinkzeit zurücksetzen?')) resetConsumption(); }}
             className="btn-soft btn-soft-gray px-4 py-3 rounded-xl flex items-center justify-center gap-2"
           >
             <span className="text-xl">🔄</span>
@@ -2009,7 +2009,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               </button>
               
               <button
-                onClick={resetBjTracking}
+                onClick={() => { if (window.confirm('Gesamtes Blackjack-Tracking (Einsätze, Ergebnisse, Verlauf) zurücksetzen?')) resetBjTracking(); }}
                 className="btn-soft btn-soft-gray px-6 py-4 rounded-xl font-bold min-h-[56px]"
               >
                 🔄 Alles zurücksetzen

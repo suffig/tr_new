@@ -503,8 +503,8 @@ const createDatabaseOperations = (client) => {
     async update(table, data, id) {
       try {
         const { data: { session } } = await client.auth.getSession();
-        authSession = session;
-        
+        authSession = session || fallbackSession;
+
         if (session && !usingFallback) {
           try {
             const result = await client.from(table).update(data).eq('id', id).select().single();
