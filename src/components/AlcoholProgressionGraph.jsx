@@ -463,7 +463,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
             <path 
               d={philipPath} 
               fill="none" 
-              stroke="#10b981" 
+              stroke="#ef4444" 
               strokeWidth="4"
               strokeLinecap="round"
               strokeLinejoin="round"
@@ -494,11 +494,11 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
                     cx={xScale(i)} 
                     cy={yScale(d.philip)} 
                     r="6" 
-                    fill="#10b981"
+                    fill="#ef4444"
                     stroke="white"
                     strokeWidth="3"
                     style={{
-                      filter: 'drop-shadow(0 2px 4px rgba(16, 185, 129, 0.3))'
+                      filter: 'drop-shadow(0 2px 4px rgba(239, 68, 68, 0.3))'
                     }}
                   />
                 </g>
@@ -515,7 +515,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
               <text x={30} y={-5} textAnchor="middle" fontSize="12" fill="#374151" className="font-bold">Legende</text>
               <line x1={5} y1={10} x2={20} y2={10} stroke="#3b82f6" strokeWidth="4"/>
               <text x={25} y={14} fontSize="11" fill="#374151" className="font-medium">Alexander</text>
-              <line x1={5} y1={30} x2={20} y2={30} stroke="#10b981" strokeWidth="4"/>
+              <line x1={5} y1={30} x2={20} y2={30} stroke="#ef4444" strokeWidth="4"/>
               <text x={25} y={34} fontSize="11" fill="#374151" className="font-medium">Philip</text>
               <line x1={5} y1={50} x2={20} y2={50} stroke="#8b5cf6" strokeWidth="2" strokeDasharray="4,2"/>
               <text x={25} y={54} fontSize="11" fill="#374151" className="font-medium">🍺 Bier</text>
@@ -537,7 +537,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
                 <span className="text-sm">Alexander</span>
               </div>
               <div className="flex items-center gap-2 justify-center">
-                <div className="w-5 h-2 bg-green-500 rounded-full"></div>
+                <div className="w-5 h-2 bg-red-500 rounded-full"></div>
                 <span className="text-sm">Philip</span>
               </div>
               <div className="flex items-center gap-2 justify-center">
@@ -579,7 +579,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
               </span>
             </div>
             <div className="flex items-center gap-1">
-              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
               <span>Philip: </span>
               <span className={`font-bold ${getColorForBAC(historicalData[historicalData.length - 1]?.philip || 0)}`}>
                 {(historicalData[historicalData.length - 1]?.philip || 0).toFixed(2)}‰
@@ -624,9 +624,9 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
               </div>
             </div>
             
-            <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
-              <div className="font-medium text-green-800 mb-1">🟢 Philip aktuell</div>
-              <div className="text-green-700">
+            <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+              <div className="font-medium text-red-800 mb-1">🔴 Philip aktuell</div>
+              <div className="text-red-700">
                 <div>Gewicht: {managers.real.weight}kg</div>
                 <div>Biere: {beerConsumption.philip}</div>
                 <div>Shots: {shotConsumption.philip.shots20 + shotConsumption.philip.shots40}</div>
@@ -676,15 +676,15 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
                         {/* Philip's drinks */}
                         {event.philipChange > 0 && (
                           <div className="flex items-center gap-1">
-                            <span className="text-xs text-green-600 font-medium">Phil:</span>
+                            <span className="text-xs text-red-600 font-medium">Phil:</span>
                             {philipBeers > 0 && (
                               <span className="flex items-center text-sm">
-                                🍺<span className="text-xs text-green-600 ml-0.5">+{event.philipChange}</span>
+                                🍺<span className="text-xs text-red-600 ml-0.5">+{event.philipChange}</span>
                               </span>
                             )}
                             {philipShots > 0 && (
                               <span className="flex items-center text-sm">
-                                🥃<span className="text-xs text-green-600 ml-0.5">+{event.philipChange}</span>
+                                🥃<span className="text-xs text-red-600 ml-0.5">+{event.philipChange}</span>
                               </span>
                             )}
                           </div>

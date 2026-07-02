@@ -517,6 +517,7 @@ const createDatabaseOperations = (client) => {
         }
       } catch (authError) {
         console.warn('Auth check failed for update:', authError);
+        authSession = fallbackSession;
       }
       
       // Simulate update when authenticated
@@ -542,8 +543,8 @@ const createDatabaseOperations = (client) => {
     async delete(table, id) {
       try {
         const { data: { session } } = await client.auth.getSession();
-        authSession = session;
-        
+        authSession = session || fallbackSession;
+
         if (session && !usingFallback) {
           try {
             const result = await client.from(table).delete().eq('id', id);
@@ -556,6 +557,7 @@ const createDatabaseOperations = (client) => {
         }
       } catch (authError) {
         console.warn('Auth check failed for delete:', authError);
+        authSession = fallbackSession;
       }
       
       // Simulate delete when authenticated

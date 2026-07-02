@@ -1,26 +1,37 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import Icon from '../icons/Icon';
-import { FC26_TEAMS } from '../../constants/fc26Teams';
-import { loadCollection, saveCollection, syncPull } from '../../utils/teamCollection';
+import { getCatalog } from '../../utils/fc26Catalog';
+import {
+  loadPulls, countsInWindow, addPull, removeLatestPull, clearPerson,
+  windowStart, TIME_WINDOWS,
+} from '../../utils/teamCollection';
 
 const PEOPLE = [
   { id: 'alexander', name: 'Alexander', accent: 'blue' },
-  { id: 'philip', name: 'Philip', accent: 'green' },
+  { id: 'philip', name: 'Philip', accent: 'red' },
 ];
 
 const ACCENT = {
   blue: { text: 'text-system-blue', chip: 'bg-system-blue/12 text-system-blue', pill: 'bg-system-blue text-white', bar: 'bg-system-blue' },
-  green: { text: 'text-system-green', chip: 'bg-system-green/12 text-system-green', pill: 'bg-system-green text-white', bar: 'bg-system-green' },
+  red: { text: 'text-system-red', chip: 'bg-system-red/12 text-system-red', pill: 'bg-system-red text-white', bar: 'bg-system-red' },
 };
 
 const RATING_TIERS = [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5];
 const fmtRating = (r) => (r == null ? '—' : r.toFixed(1).replace('.', ','));
 
-// Half-star rating display (0.5 steps) — like the star counter.
+function relTime(ts) {
+  const d = Date.now() - new Date(ts).getTime();
+  const min = Math.floor(d / 60000);
+  if (min < 1) return 'gerade eben';
+  if (min < 60) return `vor ${min} Min.`;
+  const h = Math.floor(min / 60);
+  if (h < 24) return `vor ${h} Std.`;
+  const days = Math.floor(h / 24);
+  return `vor ${days} T.`;
+}
+
 function StarRating({ rating, size = 13 }) {
-  if (rating == null) {
-    return <span className="text-[10px] text-text-tertiary font-medium">Nat.-Team</span>;
-  }
+  if (rating == null) return <span className="text-[10px] text-text-tertiary font-medium">Nat.-Team</span>;
   return (
     <span className="inline-flex items-center gap-1">
       <span className="inline-flex items-center gap-0.5">
@@ -44,66 +55,65 @@ function StarRating({ rating, size = 13 }) {
 }
 
 export default function TeamTrackerTab() {
-  const [data, setData] = useState(loadCollection);
+  const [pulls, setPulls] = useState(loadPulls);
   const [person, setPerson] = useState('alexander');
+  const [windowId, setWindowId] = useState('all');
   const [search, setSearch] = useState('');
-  const [ratingFilter, setRatingFilter] = useState('all'); // 'all' | number | 'none'
+  const [ratingFilter, setRatingFilter] = useState('all');
   const [openTier, setOpenTier] = useState(5);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  useEffect(() => { saveCollection(data); }, [data]);
-
-  const isCompare = person === 'compare';
   const isStats = person === 'stats';
-  const isPerson = !isCompare && !isStats;
   const current = PEOPLE.find((p) => p.id === person) || PEOPLE[0];
   const accent = ACCENT[current.accent];
-  const counts = data[current.id] || {};
+  const sinceTs = windowStart(windowId);
 
+  const catalog = useMemo(() => getCatalog(), []);
   const teamByName = useMemo(() => {
     const m = new Map();
-    FC26_TEAMS.forEach((t) => m.set(t.name, t));
+    catalog.forEach((t) => m.set(t.name, t));
     return m;
-  }, []);
+  }, [catalog]);
+
+  const counts = useMemo(() => countsInWindow(pulls, current.id, sinceTs), [pulls, current.id, sinceTs]);
 
   const change = (teamName, delta) => {
     const team = teamByName.get(teamName);
     if (!team) return;
-    setData((prev) => {
-      const pc = { ...(prev[current.id] || {}) };
-      const next = Math.max(0, (pc[teamName] || 0) + delta);
-      if (next === 0) delete pc[teamName]; else pc[teamName] = next;
-      return { ...prev, [current.id]: pc };
-    });
-    syncPull(current.id, team, delta); // best-effort DB write-through
+    setPulls((prev) => (delta > 0 ? addPull(prev, current.id, team) : removeLatestPull(prev, current.id, teamName, sinceTs)));
   };
 
-  // Aggregate stats for a person's collection
+  // Rich stats for a person within the current window
   const statsFor = (pid) => {
-    const c = data[pid] || {};
-    let totalPulls = 0, unique = 0, ratingSum = 0, ratingWeight = 0, best = null, mostTeam = null, mostCount = 0;
+    const c = countsInWindow(pulls, pid, sinceTs);
+    let totalPulls = 0, unique = 0, ratingSum = 0, ratingWeight = 0, nationals = 0;
+    let best = null, worst = null, mostTeam = null, mostCount = 0;
     const dist = {};
     for (const [name, cnt] of Object.entries(c)) {
       if (!cnt) continue;
-      unique += 1;
-      totalPulls += cnt;
+      unique += 1; totalPulls += cnt;
       const t = teamByName.get(name);
       if (t && t.rating != null) {
-        ratingSum += t.rating * cnt;
-        ratingWeight += cnt;
+        ratingSum += t.rating * cnt; ratingWeight += cnt;
         dist[t.rating] = (dist[t.rating] || 0) + cnt;
         if (!best || t.rating > best.rating) best = t;
+        if (!worst || t.rating < worst.rating) worst = t;
+      } else if (t && t.rating == null) {
+        nationals += cnt;
       }
       if (cnt > mostCount) { mostCount = cnt; mostTeam = name; }
     }
-    return {
-      totalPulls, unique,
-      avgRating: ratingWeight ? ratingSum / ratingWeight : null,
-      best, mostTeam, mostCount, dist,
-    };
+    // last pull in window
+    let last = null;
+    for (const e of pulls) {
+      if (e.person !== pid) continue;
+      if (sinceTs && new Date(e.ts).getTime() < sinceTs) continue;
+      if (!last || new Date(e.ts) > new Date(last.ts)) last = e;
+    }
+    return { totalPulls, unique, avgRating: ratingWeight ? ratingSum / ratingWeight : null, ratedTotal: ratingWeight, nationals, best, worst, mostTeam, mostCount, dist, last };
   };
 
-  const curStats = useMemo(() => statsFor(current.id), [data, current.id]); // eslint-disable-line react-hooks/exhaustive-deps
+  const curStats = useMemo(() => statsFor(current.id), [pulls, current.id, sinceTs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const q = search.trim().toLowerCase();
   const filterActive = !!q || ratingFilter !== 'all';
@@ -113,21 +123,13 @@ export default function TeamTrackerTab() {
     if (ratingFilter !== 'all' && t.rating !== ratingFilter) return false;
     return true;
   };
-  const flatFiltered = useMemo(
-    () => (filterActive ? FC26_TEAMS.filter(matchesFilter) : []),
-    [q, ratingFilter] // eslint-disable-line react-hooks/exhaustive-deps
-  );
+  const flatFiltered = useMemo(() => (filterActive ? catalog.filter(matchesFilter) : []), [q, ratingFilter, catalog]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const teamsByTier = useMemo(() => {
-    const groups = {};
-    RATING_TIERS.forEach((r) => { groups[r] = []; });
-    groups.none = [];
-    FC26_TEAMS.forEach((t) => {
-      const key = t.rating == null ? 'none' : t.rating;
-      (groups[key] || (groups[key] = [])).push(t);
-    });
+    const groups = {}; RATING_TIERS.forEach((r) => { groups[r] = []; }); groups.none = [];
+    catalog.forEach((t) => { const key = t.rating == null ? 'none' : t.rating; (groups[key] || (groups[key] = [])).push(t); });
     return groups;
-  }, []);
+  }, [catalog]);
 
   const renderTeamRow = (t) => {
     const cnt = counts[t.name] || 0;
@@ -138,26 +140,29 @@ export default function TeamTrackerTab() {
           <div className="mt-0.5"><StarRating rating={t.rating} /></div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
-          <button
-            onClick={() => change(t.name, -1)}
-            disabled={cnt === 0}
-            aria-label={`${t.name} verringern`}
-            className="w-8 h-8 rounded-lg bg-bg-secondary border border-border-light text-text-secondary flex items-center justify-center text-lg font-semibold disabled:opacity-40"
-          >−</button>
+          <button onClick={() => change(t.name, -1)} disabled={cnt === 0} aria-label={`${t.name} verringern`}
+            className="w-8 h-8 rounded-lg bg-bg-secondary border border-border-light text-text-secondary flex items-center justify-center text-lg font-semibold disabled:opacity-40">−</button>
           <span className="w-6 text-center font-bold tabular-nums text-text-primary">{cnt}</span>
-          <button
-            onClick={() => change(t.name, 1)}
-            aria-label={`${t.name} bekommen`}
-            className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg font-semibold ${accent.pill}`}
-          >+</button>
+          <button onClick={() => change(t.name, 1)} aria-label={`${t.name} bekommen`}
+            className={`w-8 h-8 rounded-lg flex items-center justify-center text-lg font-semibold ${accent.pill}`}>+</button>
         </div>
       </div>
     );
   };
 
+  const WindowFilter = () => (
+    <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl mb-4">
+      {TIME_WINDOWS.map((w) => (
+        <button key={w.id} onClick={() => setWindowId(w.id)}
+          className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all ${windowId === w.id ? 'bg-bg-secondary shadow-sm text-text-primary' : 'text-text-tertiary'}`}>
+          {w.label}
+        </button>
+      ))}
+    </div>
+  );
+
   return (
     <div className="p-4 pb-28 mobile-safe-bottom">
-      {/* Header */}
       <div className="page-header animate-mobile-slide-in">
         <div className="page-header-row">
           <div>
@@ -173,35 +178,28 @@ export default function TeamTrackerTab() {
         {PEOPLE.map((p) => {
           const a = ACCENT[p.accent];
           const active = person === p.id;
-          const total = Object.values(data[p.id] || {}).reduce((s, n) => s + n, 0);
+          const total = countsTotal(pulls, p.id, sinceTs);
           return (
-            <button
-              key={p.id}
-              onClick={() => setPerson(p.id)}
-              className={`flex-1 min-w-[92px] flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
-                active ? `bg-bg-secondary shadow-sm ${a.text}` : 'text-text-tertiary hover:text-text-secondary'
-              }`}
-            >
+            <button key={p.id} onClick={() => setPerson(p.id)}
+              className={`flex-1 min-w-[92px] flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${active ? `bg-bg-secondary shadow-sm ${a.text}` : 'text-text-tertiary hover:text-text-secondary'}`}>
               <span className={`w-2.5 h-2.5 rounded-full ${a.bar}`} />
               {p.name}
               <span className="text-xs font-medium opacity-70">{total}</span>
             </button>
           );
         })}
-        <button
-          onClick={() => setPerson('stats')}
-          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${
-            isStats ? 'bg-bg-secondary shadow-sm text-system-purple' : 'text-text-tertiary hover:text-text-secondary'
-          }`}
-        >
+        <button onClick={() => setPerson('stats')}
+          className={`flex-1 min-w-[80px] flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-sm font-semibold transition-all min-h-[44px] ${isStats ? 'bg-bg-secondary shadow-sm text-system-purple' : 'text-text-tertiary hover:text-text-secondary'}`}>
           <Icon name="chart" size={16} strokeWidth={2.1} />
           Statistik
         </button>
       </div>
 
+      <WindowFilter />
+
       {isStats ? (
-        <StatsView people={PEOPLE} statsFor={statsFor} />
-      ) : isPerson ? (
+        <StatsView people={PEOPLE} statsFor={statsFor} pulls={pulls} catalog={catalog} sinceTs={sinceTs} windowLabel={TIME_WINDOWS.find((w) => w.id === windowId)?.label} />
+      ) : (
         <>
           {/* Person summary */}
           <div className="modern-card mb-4">
@@ -211,15 +209,11 @@ export default function TeamTrackerTab() {
               </span>
               <div className="min-w-0">
                 <div className="font-semibold text-text-primary leading-tight">{current.name}</div>
-                <div className="text-xs text-text-muted">Sammlung &amp; Ausbeute</div>
+                <div className="text-xs text-text-muted">Sammlung · {TIME_WINDOWS.find((w) => w.id === windowId)?.label}</div>
               </div>
-              {curStats.totalPulls > 0 && (
-                <button
-                  onClick={() => { if (window.confirm(`Sammlung von ${current.name} zurücksetzen?`)) setData((prev) => ({ ...prev, [current.id]: {} })); }}
-                  className="ml-auto text-xs font-medium text-text-tertiary hover:text-system-red px-2 py-1"
-                >
-                  Zurücksetzen
-                </button>
+              {countsTotal(pulls, current.id, 0) > 0 && (
+                <button onClick={() => { if (window.confirm(`Komplette Sammlung von ${current.name} löschen?`)) setPulls((prev) => clearPerson(prev, current.id)); }}
+                  className="ml-auto text-xs font-medium text-text-tertiary hover:text-system-red px-2 py-1">Zurücksetzen</button>
               )}
             </div>
             <div className="grid grid-cols-3 gap-2">
@@ -238,28 +232,85 @@ export default function TeamTrackerTab() {
                 <div className="text-[11px] text-text-tertiary">⌀ Rating</div>
               </div>
             </div>
+            {curStats.last && (
+              <div className="mt-3 text-xs text-text-muted flex items-center gap-1.5">
+                <Icon name="clock" size={13} strokeWidth={2} className="text-text-tertiary" />
+                Zuletzt: <span className="font-medium text-text-secondary">{curStats.last.team}</span> · {relTime(curStats.last.ts)}
+              </div>
+            )}
           </div>
 
-          {/* Search + discreet rating filter */}
+          {/* Star distribution + extended stats (respects the active time window;
+              dims non-matching tiers when a rating filter is set) */}
+          {curStats.totalPulls > 0 && (() => {
+            const maxVal = Math.max(1, ...Object.values(curStats.dist), curStats.nationals);
+            const denom = curStats.ratedTotal || 1;
+            return (
+              <div className="modern-card mb-3">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2">
+                    <Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />Sterne-Verteilung
+                  </h3>
+                  <span className="text-[11px] text-text-tertiary">
+                    {TIME_WINDOWS.find((w) => w.id === windowId)?.label}{ratingFilter !== 'all' ? ' · gefiltert' : ''}
+                  </span>
+                </div>
+                <div className="space-y-1.5">
+                  {RATING_TIERS.filter((r) => curStats.dist[r]).map((r) => {
+                    const val = curStats.dist[r];
+                    const dim = ratingFilter !== 'all' && ratingFilter !== r ? 'opacity-40' : '';
+                    return (
+                      <div key={r} className={`flex items-center gap-2 ${dim}`}>
+                        <span className="w-12 inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary tabular-nums">
+                          <Icon name="starFilled" size={11} strokeWidth={0} className="text-system-yellow" />{fmtRating(r)}
+                        </span>
+                        <div className="flex-1 h-2.5 rounded-full bg-bg-tertiary overflow-hidden">
+                          <div className={`h-full ${accent.bar}`} style={{ width: `${(val / maxVal) * 100}%` }} />
+                        </div>
+                        <span className="w-16 text-right text-[11px] text-text-tertiary tabular-nums">{val} · {Math.round((val / denom) * 100)}%</span>
+                      </div>
+                    );
+                  })}
+                  {curStats.nationals > 0 && (
+                    <div className={`flex items-center gap-2 ${ratingFilter !== 'all' && ratingFilter !== 'none' ? 'opacity-40' : ''}`}>
+                      <span className="w-12 inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary">
+                        <Icon name="trophy" size={11} strokeWidth={2} className="text-text-tertiary" />Nat.
+                      </span>
+                      <div className="flex-1 h-2.5 rounded-full bg-bg-tertiary overflow-hidden">
+                        <div className="h-full bg-text-tertiary" style={{ width: `${(curStats.nationals / maxVal) * 100}%` }} />
+                      </div>
+                      <span className="w-16 text-right text-[11px] text-text-tertiary tabular-nums">{curStats.nationals}</span>
+                    </div>
+                  )}
+                </div>
+
+                {/* Extended stat chips */}
+                <div className="mt-3 pt-3 border-t border-border-light flex flex-wrap gap-2">
+                  {curStats.best && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-bg-tertiary text-xs">
+                      <Icon name="trophy" size={12} strokeWidth={2} className="text-system-orange" />
+                      <span className="text-text-tertiary">Bestes:</span><span className="font-semibold text-text-primary truncate max-w-[110px]">{curStats.best.name}</span>
+                    </span>
+                  )}
+                  {curStats.mostTeam && curStats.mostCount > 1 && (
+                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-bg-tertiary text-xs">
+                      <span className="text-text-tertiary">Häufigste:</span><span className="font-semibold text-text-primary truncate max-w-[110px]">{curStats.mostTeam}</span><span className="text-text-tertiary">{curStats.mostCount}×</span>
+                    </span>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Search + rating filter */}
           <div className="flex items-center gap-2 mb-3">
             <div className="relative flex-1">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none">
-                <Icon name="search" size={18} strokeWidth={2} />
-              </span>
-              <input
-                type="text"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Team suchen…"
-                className="w-full pl-11 pr-3 py-3 bg-bg-secondary border border-border-light rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none"
-              />
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"><Icon name="search" size={18} strokeWidth={2} /></span>
+              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Team suchen…"
+                className="w-full pl-11 pr-3 py-3 bg-bg-secondary border border-border-light rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none" />
             </div>
-            <button
-              onClick={() => setFiltersOpen((o) => !o)}
-              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium ${
-                ratingFilter !== 'all' || filtersOpen ? 'bg-system-blue/12 text-system-blue' : 'bg-bg-tertiary text-text-secondary'
-              }`}
-            >
+            <button onClick={() => setFiltersOpen((o) => !o)}
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium ${ratingFilter !== 'all' || filtersOpen ? 'bg-system-blue/12 text-system-blue' : 'bg-bg-tertiary text-text-secondary'}`}>
               <Icon name="filter" size={16} strokeWidth={2.2} />
               {ratingFilter !== 'all' && <span className="w-1.5 h-1.5 rounded-full bg-system-blue" />}
             </button>
@@ -269,37 +320,24 @@ export default function TeamTrackerTab() {
             <div className="modern-card mb-3 animate-mobile-slide-in">
               <div className="section-label mb-1.5">Nach Rating filtern</div>
               <div className="flex flex-wrap gap-2">
-                <button
-                  onClick={() => setRatingFilter('all')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === 'all' ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}
-                >Alle</button>
+                <button onClick={() => setRatingFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === 'all' ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>Alle</button>
                 {RATING_TIERS.map((r) => (
-                  <button
-                    key={r}
-                    onClick={() => setRatingFilter(r)}
-                    className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === r ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}
-                  >
+                  <button key={r} onClick={() => setRatingFilter(r)} className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === r ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>
                     <Icon name="starFilled" size={11} strokeWidth={0} className={ratingFilter === r ? '' : 'text-system-yellow'} />{fmtRating(r)}
                   </button>
                 ))}
-                <button
-                  onClick={() => setRatingFilter('none')}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === 'none' ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}
-                >Nationalteams</button>
+                <button onClick={() => setRatingFilter('none')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === 'none' ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>Nationalteams</button>
               </div>
             </div>
           )}
 
-          {/* Team list */}
           {filterActive ? (
             <div className="space-y-1.5">
               <div className="text-xs text-text-tertiary px-1">{flatFiltered.length} Teams</div>
               {flatFiltered.map(renderTeamRow)}
               {flatFiltered.length === 0 && (
                 <div className="modern-card text-center py-8">
-                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
-                    <Icon name="search" size={28} strokeWidth={1.6} />
-                  </div>
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center"><Icon name="search" size={28} strokeWidth={1.6} /></div>
                   <p className="text-text-muted text-sm">Kein Team gefunden.</p>
                 </div>
               )}
@@ -320,43 +358,104 @@ export default function TeamTrackerTab() {
                         : <span className="flex items-center gap-0.5 flex-shrink-0"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" /></span>}
                       <span className="flex-1 min-w-0">
                         <span className="font-semibold text-text-primary text-sm">{label}</span>
-                        <span className="block text-[11px] text-text-tertiary">
-                          {owned > 0 ? `${owned} bekommen · ` : ''}{list.length} Teams
-                        </span>
+                        <span className="block text-[11px] text-text-tertiary">{owned > 0 ? `${owned} bekommen · ` : ''}{list.length} Teams</span>
                       </span>
-                      <span className={`text-text-tertiary transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}>
-                        <Icon name="chevronRight" size={18} strokeWidth={2.2} />
-                      </span>
+                      <span className={`text-text-tertiary transition-transform duration-200 ${isOpen ? 'rotate-90' : ''}`}><Icon name="chevronRight" size={18} strokeWidth={2.2} /></span>
                     </button>
-                    {isOpen && (
-                      <div className="px-3 pb-3 space-y-1.5">
-                        {list.map(renderTeamRow)}
-                      </div>
-                    )}
+                    {isOpen && <div className="px-3 pb-3 space-y-1.5">{list.map(renderTeamRow)}</div>}
                   </div>
                 );
               })}
             </div>
           )}
         </>
-      ) : null}
+      )}
     </div>
   );
 }
 
-// ── Statistics across both people ────────────────────────────────────────────
-function StatsView({ people, statsFor }) {
+function countsTotal(pulls, personId, sinceTs) {
+  let n = 0;
+  for (const e of pulls) {
+    if (e.person !== personId) continue;
+    if (sinceTs && new Date(e.ts).getTime() < sinceTs) continue;
+    n += 1;
+  }
+  return n;
+}
+
+function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel }) {
   const all = people.map((p) => ({ ...p, stats: statsFor(p.id) }));
   const combinedPulls = all.reduce((s, p) => s + p.stats.totalPulls, 0);
+  const catalogTotal = catalog.length;
+
+  const ratingByNameQ = new Map(catalog.map((t) => [t.name, t.rating]));
+  const topTeams = (s) => RATING_TIERS.filter((r) => r >= 4.5).reduce((sum, r) => sum + (s.dist[r] || 0), 0);
+
+  // Per-match duel: pair each person's rated pulls chronologically and compare
+  // ratings — since both get a team per match, this shows who got the better one.
+  const duel = (() => {
+    const rated = (pid) => pulls
+      .filter((e) => e.person === pid && (!sinceTs || new Date(e.ts).getTime() >= sinceTs) && ratingByNameQ.get(e.team) != null)
+      .sort((a, b) => new Date(a.ts) - new Date(b.ts))
+      .map((e) => ratingByNameQ.get(e.team));
+    const A = rated('alexander'); const P = rated('philip');
+    const n = Math.min(A.length, P.length);
+    let aw = 0, pw = 0, dr = 0;
+    for (let i = 0; i < n; i++) { if (A[i] > P[i]) aw++; else if (P[i] > A[i]) pw++; else dr++; }
+    return { aw, pw, dr, n };
+  })();
+
+  // All-time collection completion (unique teams ever obtained)
+  const completion = (pid) => {
+    const set = new Set();
+    for (const e of pulls) if (e.person === pid) set.add(e.team);
+    return set.size;
+  };
+
+  // Per-star-tier completion (unique owned all-time vs total teams in that tier)
+  const ratingByName = new Map(catalog.map((t) => [t.name, t.rating]));
+  const tierTotals = {};
+  catalog.forEach((t) => { if (t.rating != null) tierTotals[t.rating] = (tierTotals[t.rating] || 0) + 1; });
+  const ownedPerTier = (pid) => {
+    const seen = new Set(); const owned = {};
+    for (const e of pulls) {
+      if (e.person !== pid || seen.has(e.team)) continue;
+      seen.add(e.team);
+      const r = ratingByName.get(e.team);
+      if (r != null) owned[r] = (owned[r] || 0) + 1;
+    }
+    return owned;
+  };
+
+  // Last-7-days activity per person (pulls per day)
+  const activity = (() => {
+    const days = [];
+    const now = new Date(); now.setHours(0, 0, 0, 0);
+    for (let d = 6; d >= 0; d--) {
+      const start = new Date(now); start.setDate(now.getDate() - d);
+      const end = new Date(start); end.setDate(start.getDate() + 1);
+      const per = {};
+      for (const p of people) per[p.id] = 0;
+      for (const e of pulls) {
+        const t = new Date(e.ts).getTime();
+        if (t >= start.getTime() && t < end.getTime() && per[e.person] != null) per[e.person] += 1;
+      }
+      days.push({ label: start.toLocaleDateString('de-DE', { weekday: 'short' })[0], per, total: Object.values(per).reduce((s, n) => s + n, 0) });
+    }
+    return days;
+  })();
+  const maxActivity = Math.max(1, ...activity.map((d) => d.total));
+  // Leader = better average rating (quality), not quantity (counts are equal)
+  const avgA = all[0].stats.avgRating, avgP = all[1].stats.avgRating;
+  const qualityLeader = (avgA == null || avgP == null) ? null : (avgA > avgP ? all[0] : (avgP > avgA ? all[1] : null));
 
   if (combinedPulls === 0) {
     return (
       <div className="modern-card text-center py-10 animate-mobile-slide-in">
-        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
-          <Icon name="chart" size={28} strokeWidth={1.6} />
-        </div>
-        <h4 className="font-medium text-text-primary mb-1">Noch keine Teams erfasst</h4>
-        <p className="text-sm text-text-muted">Sobald ihr Mannschaften als bekommen markiert, erscheinen hier die Statistiken.</p>
+        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center"><Icon name="chart" size={28} strokeWidth={1.6} /></div>
+        <h4 className="font-medium text-text-primary mb-1">Keine Teams im Zeitraum</h4>
+        <p className="text-sm text-text-muted">Für den Zeitraum {windowLabel} wurden noch keine Mannschaften erfasst.</p>
       </div>
     );
   }
@@ -365,9 +464,64 @@ function StatsView({ people, statsFor }) {
 
   return (
     <div className="space-y-3 animate-mobile-slide-in">
+      {/* Quality comparison banner — beide bekommen pro Spiel ein Team,
+          also zählt die Team-QUALITÄT (Rating), nicht die Menge. */}
+      <div className="modern-card">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold text-text-primary inline-flex items-center gap-2"><Icon name="scale" size={18} strokeWidth={2.2} className="text-system-purple" />Wer bekommt die besseren Teams?</h3>
+          <span className="text-xs text-text-tertiary">{windowLabel}</span>
+        </div>
+        <div className="flex items-center justify-between text-center">
+          <div className="flex-1">
+            <div className="text-2xl font-bold text-system-blue tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={16} strokeWidth={0} className="text-system-yellow" />{avgA ? fmtRating(avgA) : '—'}</div>
+            <div className="text-[11px] text-text-tertiary">{all[0].name} · ⌀</div>
+          </div>
+          <div className="px-2 text-xs font-semibold text-text-tertiary">
+            {qualityLeader ? <span className="inline-flex items-center gap-1 text-system-orange">🔥 {qualityLeader.name}</span> : 'Gleichstand'}
+          </div>
+          <div className="flex-1">
+            <div className="text-2xl font-bold text-system-red tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={16} strokeWidth={0} className="text-system-yellow" />{avgP ? fmtRating(avgP) : '—'}</div>
+            <div className="text-[11px] text-text-tertiary">{all[1].name} · ⌀</div>
+          </div>
+        </div>
+
+        {/* Per-match duel: who got the higher-rated team */}
+        {duel.n > 0 && (
+          <div className="mt-3 pt-3 border-t border-border-light">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-text-secondary">Bessere-Team-Duelle</span>
+              <span className="text-[11px] text-text-tertiary">{duel.n} Spiele{duel.dr ? ` · ${duel.dr} × gleich` : ''}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-8 text-right text-sm font-bold text-system-blue tabular-nums">{duel.aw}</span>
+              <div className="flex-1 h-2.5 rounded-full overflow-hidden bg-bg-tertiary flex">
+                <div className="bg-system-blue h-full" style={{ width: `${(duel.aw / duel.n) * 100}%` }} />
+                <div className="bg-text-tertiary/40 h-full" style={{ width: `${(duel.dr / duel.n) * 100}%` }} />
+                <div className="bg-system-red h-full" style={{ width: `${(duel.pw / duel.n) * 100}%` }} />
+              </div>
+              <span className="w-8 text-sm font-bold text-system-red tabular-nums">{duel.pw}</span>
+            </div>
+          </div>
+        )}
+
+        {/* Quality metrics: Top-Teams (≥4,5★) + Gesamt-Sternwert */}
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          {all.map((p) => {
+            const a = ACCENT[p.accent]; const s = p.stats;
+            const starSum = s.avgRating ? s.avgRating * s.ratedTotal : 0;
+            return (
+              <div key={p.id} className="bg-bg-tertiary rounded-xl p-3">
+                <div className={`text-xs font-semibold ${a.text} mb-1.5 inline-flex items-center gap-1.5`}><span className={`w-2 h-2 rounded-full ${a.bar}`} />{p.name}</div>
+                <div className="flex justify-between text-[11px] text-text-tertiary"><span>Top-Teams (≥4,5★)</span><span className="font-semibold text-text-primary tabular-nums">{topTeams(s)}</span></div>
+                <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5"><span>Gesamt-Sternwert</span><span className="font-semibold text-text-primary tabular-nums">{starSum.toFixed(1).replace('.', ',')}</span></div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
       {all.map((p) => {
-        const a = ACCENT[p.accent];
-        const s = p.stats;
+        const a = ACCENT[p.accent]; const s = p.stats;
         return (
           <div key={p.id} className="modern-card">
             <div className="flex items-center gap-2 mb-3">
@@ -375,49 +529,102 @@ function StatsView({ people, statsFor }) {
               <h3 className={`font-semibold ${a.text}`}>{p.name}</h3>
               <span className="ml-auto text-xs text-text-tertiary">{s.totalPulls} bekommen · {s.unique} {s.unique === 1 ? 'Team' : 'Teams'}</span>
             </div>
-
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div className="bg-bg-tertiary rounded-xl p-3">
                 <div className="text-[11px] text-text-tertiary mb-0.5">⌀ Rating</div>
-                <div className="font-bold text-system-yellow inline-flex items-center gap-1">
-                  <Icon name="starFilled" size={14} strokeWidth={0} />{s.avgRating ? fmtRating(s.avgRating) : '—'}
-                </div>
+                <div className="font-bold text-system-yellow inline-flex items-center gap-1"><Icon name="starFilled" size={14} strokeWidth={0} />{s.avgRating ? fmtRating(s.avgRating) : '—'}</div>
               </div>
               <div className="bg-bg-tertiary rounded-xl p-3">
                 <div className="text-[11px] text-text-tertiary mb-0.5">Bestes Team</div>
                 <div className="font-semibold text-text-primary text-sm truncate">{s.best ? s.best.name : '—'}</div>
               </div>
             </div>
-
-            {s.mostTeam && (
-              <div className="text-xs text-text-secondary mb-3">
-                Am häufigsten: <span className="font-semibold text-text-primary">{s.mostTeam}</span> ({s.mostCount}×)
+            {(s.mostTeam || s.last) && (
+              <div className="space-y-1 mb-3 text-xs text-text-secondary">
+                {s.mostTeam && <div>Am häufigsten: <span className="font-semibold text-text-primary">{s.mostTeam}</span> ({s.mostCount}×)</div>}
+                {s.worst && s.worst.name !== (s.best && s.best.name) && <div>Schwächstes: <span className="font-semibold text-text-primary">{s.worst.name}</span> ({fmtRating(s.worst.rating)})</div>}
+                {s.last && <div>Zuletzt: <span className="font-semibold text-text-primary">{s.last.team}</span> · {relTime(s.last.ts)}</div>}
               </div>
             )}
-
-            {/* Rating distribution */}
             <div className="space-y-1.5">
               {RATING_TIERS.filter((r) => s.dist[r]).map((r) => (
                 <div key={r} className="flex items-center gap-2">
                   <span className="w-8 text-[11px] font-semibold text-text-secondary tabular-nums">{fmtRating(r)}</span>
-                  <div className="flex-1 h-2 rounded-full bg-bg-tertiary overflow-hidden">
-                    <div className={`h-full ${a.bar}`} style={{ width: `${(s.dist[r] / maxDist) * 100}%` }} />
-                  </div>
+                  <div className="flex-1 h-2 rounded-full bg-bg-tertiary overflow-hidden"><div className={`h-full ${a.bar}`} style={{ width: `${(s.dist[r] / maxDist) * 100}%` }} /></div>
                   <span className="w-6 text-right text-[11px] text-text-tertiary tabular-nums">{s.dist[r]}</span>
                 </div>
               ))}
             </div>
+
+            {/* All-time collection completion */}
+            {(() => {
+              const done = completion(p.id);
+              const pct = catalogTotal ? Math.round((done / catalogTotal) * 100) : 0;
+              return (
+                <div className="mt-3 pt-3 border-t border-border-light">
+                  <div className="flex justify-between text-[11px] text-text-tertiary mb-1">
+                    <span>Sammlung gesamt</span>
+                    <span className="tabular-nums">{done}/{catalogTotal} · {pct}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-bg-tertiary overflow-hidden"><div className={`h-full ${a.bar}`} style={{ width: `${Math.max(2, pct)}%` }} /></div>
+                </div>
+              );
+            })()}
+
+            {/* Per-tier completion (all-time) */}
+            {(() => {
+              const owned = ownedPerTier(p.id);
+              const tiers = RATING_TIERS.filter((r) => tierTotals[r] && owned[r]);
+              if (tiers.length === 0) return null;
+              return (
+                <div className="mt-3 pt-3 border-t border-border-light">
+                  <div className="text-[11px] text-text-tertiary mb-1.5">Vollständigkeit nach Sternen</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                    {tiers.map((r) => {
+                      const done = owned[r]; const total = tierTotals[r];
+                      return (
+                        <div key={r} className="flex items-center gap-1.5">
+                          <span className="w-10 inline-flex items-center gap-0.5 text-[11px] font-semibold text-text-secondary tabular-nums">
+                            <Icon name="starFilled" size={10} strokeWidth={0} className="text-system-yellow" />{fmtRating(r)}
+                          </span>
+                          <div className="flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden"><div className={`h-full ${a.bar}`} style={{ width: `${(done / total) * 100}%` }} /></div>
+                          <span className="text-[10px] text-text-tertiary tabular-nums w-9 text-right">{done}/{total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })}
 
+      {/* 7-day activity */}
+      <div className="modern-card">
+        <h3 className="font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="calendar" size={18} strokeWidth={2.2} className="text-system-purple" />Aktivität (7 Tage)</h3>
+        <div className="flex items-end justify-between gap-1.5 h-24">
+          {activity.map((d, i) => (
+            <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+              <div className="w-full flex flex-col-reverse rounded-md overflow-hidden bg-bg-tertiary" style={{ height: '72px' }}>
+                <div className="bg-system-blue" style={{ height: `${(d.per.alexander / maxActivity) * 72}px` }} />
+                <div className="bg-system-red" style={{ height: `${(d.per.philip / maxActivity) * 72}px` }} />
+              </div>
+              <span className="text-[10px] text-text-tertiary">{d.label}</span>
+            </div>
+          ))}
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-2 text-[11px] text-text-tertiary">
+          <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-system-blue" />Alexander</span>
+          <span className="inline-flex items-center gap-1"><span className="w-2.5 h-2.5 rounded-full bg-system-red" />Philip</span>
+        </div>
+      </div>
+
       <div className="modern-card flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <span className="w-10 h-10 rounded-xl bg-system-purple/12 text-system-purple flex items-center justify-center">
-            <Icon name="trophy" size={20} strokeWidth={2} />
-          </span>
+          <span className="w-10 h-10 rounded-xl bg-system-purple/12 text-system-purple flex items-center justify-center"><Icon name="trophy" size={20} strokeWidth={2} /></span>
           <div>
-            <div className="text-xs text-text-muted">Insgesamt bekommen</div>
+            <div className="text-xs text-text-muted">Insgesamt ({windowLabel})</div>
             <div className="text-[11px] text-text-tertiary">beide zusammen</div>
           </div>
         </div>

@@ -7,6 +7,7 @@ import AddTransactionTab from './admin/AddTransactionTab';
 import DeleteTab from './admin/DeleteTab';
 import SearchTab from './admin/SearchTab';
 import TeamSettingsTab from './admin/TeamSettingsTab';
+import TeamCatalogTab from './admin/TeamCatalogTab';
 import EventsSettingsTab from './admin/EventsSettingsTab';
 import ManagerTab from './admin/ManagerTab';
 
@@ -87,14 +88,21 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
       category: 'config',
       description: 'Team-Einstellungen und Konfiguration'
     },
-    { 
-      id: 'events', 
-      label: 'Events', 
+    {
+      id: 'events',
+      label: 'Events',
       icon: 'bell',
       category: 'config',
       description: 'Events & Benachrichtigungen verwalten'
     },
-    
+    {
+      id: 'fc26teams',
+      label: 'FC26-Teams',
+      icon: 'trophy',
+      category: 'config',
+      description: 'Team-Katalog & Star-Ratings bearbeiten'
+    },
+
     // System Administration
     { 
       id: 'manager', 
@@ -144,6 +152,8 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
         return <TeamSettingsTab />;
       case 'events':
         return <EventsSettingsTab />;
+      case 'fc26teams':
+        return <TeamCatalogTab />;
       case 'delete':
         return <DeleteTab />;
       case 'manager':
