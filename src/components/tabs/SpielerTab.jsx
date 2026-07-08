@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from '../icons/Icon';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 
@@ -151,8 +152,10 @@ export default function SpielerTab() {
                 : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 focus:ring-gray-300'
             }`}
           >
-            <i className="fas fa-futbol mr-2"></i>
-            Torschützen
+            <span className="inline-flex items-center justify-center gap-2">
+              <Icon name="football" size={16} strokeWidth={2} />
+              Torschützen
+            </span>
           </button>
           
           <button
@@ -163,8 +166,10 @@ export default function SpielerTab() {
                 : 'bg-gradient-to-r from-gray-100 to-gray-200 text-gray-700 hover:from-gray-200 hover:to-gray-300 focus:ring-gray-300'
             }`}
           >
-            <i className="fas fa-star mr-2"></i>
-            Spieler des Spiels
+            <span className="inline-flex items-center justify-center gap-2">
+              <Icon name="star" size={16} strokeWidth={2} />
+              Spieler des Spiels
+            </span>
           </button>
         </div>
       </div>

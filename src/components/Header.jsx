@@ -3,9 +3,11 @@ import logoFusta from '/assets/logo-fusta.png';
 import SeasonSelector from './SeasonSelector';
 import UserProfile from './UserProfile';
 import Icon from './icons/Icon';
+import { useTheme } from '../contexts/ThemeContext';
 
 export default function Header({ onNavigate }) {
   const [showUserProfile, setShowUserProfile] = useState(false);
+  const { isDark, toggleTheme } = useTheme();
 
   return (
     <>
@@ -31,6 +33,15 @@ export default function Header({ onNavigate }) {
                 <div className="w-2 h-2 bg-system-green rounded-full status-ping"></div>
                 <span className="text-caption1 text-text-secondary hidden sm:inline">Online</span>
               </div>
+              {/* Quick theme toggle */}
+              <button
+                onClick={toggleTheme}
+                className="w-9 h-9 bg-bg-tertiary hover:bg-bg-hover text-text-secondary rounded-full flex items-center justify-center transition-all press-scale hover:shadow-ios-sm"
+                aria-label={isDark ? 'Zu hellem Design wechseln' : 'Zu dunklem Design wechseln'}
+                title={isDark ? 'Heller Modus' : 'Dunkler Modus'}
+              >
+                <Icon name={isDark ? 'sun' : 'moon'} size={18} strokeWidth={2} />
+              </button>
               {/* User Profile Button */}
               <button
                 onClick={() => setShowUserProfile(true)}
