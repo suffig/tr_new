@@ -8,6 +8,7 @@ import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
 import Header from './components/Header';
 import BottomNavigation from './components/BottomNavigation';
+import ScrollToTop from './components/ScrollToTop';
 import LoadingSpinner, { FullScreenLoader } from './components/LoadingSpinner';
 import GlobalSearch from './components/GlobalSearch';
 import NotificationSystem from './components/NotificationSystem';
@@ -49,13 +50,15 @@ function App() {
     if (newTab === activeTab && !options.force) {
       // iOS pattern: tapping the active tab again scrolls back to top
       mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+      window.scrollTo({ top: 0, behavior: 'smooth' });
       return;
     }
 
     // Switch instantly — the tab content animates in via .tab-transition
     setActiveTab(newTab);
-    // Each tab starts at the top (main keeps its scroll position otherwise)
+    // Each tab starts at the top (the window keeps its scroll position otherwise)
     mainRef.current?.scrollTo({ top: 0 });
+    window.scrollTo({ top: 0 });
     if (navigator.vibrate) {
       try { navigator.vibrate(8); } catch { /* not supported */ }
     }
@@ -266,8 +269,11 @@ function App() {
           </Suspense>
         </main>
 
+        {/* Scroll-to-top (appears on long pages) */}
+        <ScrollToTop scrollRef={mainRef} />
+
         {/* Bottom Navigation */}
-        <BottomNavigation 
+        <BottomNavigation
           activeTab={activeTab}
           onTabChange={handleTabChange}
           user={user}

@@ -165,8 +165,8 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
               {showHints && (
                 <div className="mt-6 modern-card bg-red-50 border-red-200">
                   <div className="flex items-start">
-                    <div className="text-red-600 mr-3">
-                      <i className="fas fa-info-circle"></i>
+                    <div className="text-red-600 mr-3 flex-shrink-0">
+                      <Icon name="bulb" size={18} strokeWidth={2} />
                     </div>
                     <div>
                       <h4 className="font-semibold text-red-800 mb-1">Hinweis</h4>

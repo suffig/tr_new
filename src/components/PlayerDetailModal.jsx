@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { FIFADataService } from '../utils/fifaDataService';
 import { getTeamDisplay } from '../constants/teams';
+import Icon from './icons/Icon';
 
 const PlayerDetailModal = ({ player, isOpen, onClose }) => {
   const [fifaData, setFifaData] = useState(null);
@@ -58,7 +59,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
     return (
       <div className="basic-info-section mb-8">
         <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-3">
-          <i className="fas fa-user text-blue-400"></i>
+          <Icon name="user" size={16} className="text-blue-400" />
           Spieler-Informationen
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -147,7 +148,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
     return (
       <div className="fifa-attributes mb-8">
         <h4 className="text-xl font-semibold text-white mb-6 flex items-center gap-3">
-          <i className="fas fa-chart-bar text-blue-400"></i>
+          <Icon name="chart" size={16} className="text-blue-400" />
           FIFA Main Attributes
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -228,7 +229,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
     return (
       <div className="fifa-skills">
         <h4 className="text-xl font-semibold text-white mb-6 flex items-center gap-3">
-          <i className="fas fa-cogs text-blue-400"></i>
+          <Icon name="settings" size={16} className="text-blue-400" />
           Detailed Skills & Attributes
         </h4>
         <div className="space-y-3">
@@ -245,7 +246,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
                     ({group.skills.filter(skill => fifaData.skills[skill] !== undefined).length} skills)
                   </span>
                 </div>
-                <i className={`fas fa-chevron-${activeSkillGroup === index ? 'up' : 'down'} text-slate-400 transition-transform duration-200`}></i>
+                <Icon name={activeSkillGroup === index  ? 'chevronUp' : 'chevronDown'} size={16} className="text-slate-400 transition-transform duration-200" />
               </button>
               {activeSkillGroup === index && (
                 <div className="px-6 pb-6 border-t border-white/10">
@@ -277,7 +278,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
   const renderNoFIFAData = () => (
     <div className="text-center py-12">
       <div className="text-6xl text-slate-600 mb-6">
-        <i className="fas fa-search"></i>
+        <Icon name="search" size={16} />
       </div>
       <h3 className="text-xl font-semibold text-white mb-3">FIFA Data Not Available</h3>
       <p className="text-slate-400 mb-6 max-w-md mx-auto">
@@ -307,13 +308,13 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
             </div>
           </div>
           <p className="text-yellow-400 text-xs mt-3 flex items-center justify-center gap-2">
-            <i className="fas fa-exclamation-triangle"></i>
+            <Icon name="warning" size={16} />
             These are estimated values and may not reflect actual FIFA ratings.
           </p>
         </div>
       )}
       <div className="text-slate-500 text-sm">
-        <i className="fas fa-info-circle mr-2"></i>
+        <Icon name="bulb" size={16} className="mr-2" />
         FIFA ratings are sourced from <a href="https://sofifa.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">SoFIFA.com</a>
       </div>
     </div>
@@ -350,7 +351,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
             onClick={onClose}
             className="modal-close-btn w-10 h-10 bg-white/10 hover:bg-white/20 rounded-full flex items-center justify-center text-white transition-all duration-300 hover:scale-110 active:scale-95 animate-slide-in-right"
           >
-            <i className="fas fa-times"></i>
+            <Icon name="x" size={16} />
           </button>
         </div>
 
@@ -359,7 +360,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
           {loading ? (
             <div className="text-center py-12 animate-pulse-gentle">
               <div className="text-4xl text-blue-400 mb-4 animate-bounce-gentle">
-                <i className="fas fa-spinner fa-spin"></i>
+                <Icon name="spinner" size={16} className="animate-spin" />
               </div>
               <p className="text-slate-400">Loading FIFA data...</p>
             </div>
@@ -374,7 +375,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
                 <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
                   <div className="fifa-stats-section">
                     <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-3">
-                      <i className="fas fa-chart-bar text-yellow-400"></i>
+                      <Icon name="chart" size={16} className="text-yellow-400" />
                       FIFA Attribute & Statistiken
                       {fifaData.sofifaUrl && (
                         <a 
@@ -383,7 +384,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
                           rel="noopener noreferrer"
                           className="ml-auto bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-500/20 transition-all duration-300 border border-blue-500/20 hover:scale-105"
                         >
-                          <i className="fas fa-external-link-alt mr-2"></i>
+                          <Icon name="externalLink" size={16} className="mr-2" />
                           View on SoFIFA
                         </a>
                       )}

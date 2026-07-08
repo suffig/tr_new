@@ -16,6 +16,108 @@ const ICON_PATHS = {
       <path d="M8.6 10.5 3.8 9.1" />
     </>
   ),
+  // Plus (Hinzufügen)
+  plus: (
+    <>
+      <path d="M12 5v14" />
+      <path d="M5 12h14" />
+    </>
+  ),
+  // Chevron nach oben
+  chevronUp: <path d="m6 15 6-6 6 6" />,
+  // Spinner (offener Ring, mit animate-spin verwenden)
+  spinner: <path d="M21 12a9 9 0 1 1-6.2-8.6" />,
+  // Teilen
+  share: (
+    <>
+      <circle cx="18" cy="5" r="3" />
+      <circle cx="6" cy="12" r="3" />
+      <circle cx="18" cy="19" r="3" />
+      <path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4" />
+    </>
+  ),
+  // Bearbeiten (Stift)
+  edit: (
+    <>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </>
+  ),
+  // Auge (Ansehen)
+  eye: (
+    <>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  // Play
+  play: <path d="M7 4.5v15l12-7.5Z" />,
+  // Rückgängig
+  undo: (
+    <>
+      <path d="M3 7v6h6" />
+      <path d="M3.5 13a9 9 0 1 0 2.3-9.3L3 7" />
+    </>
+  ),
+  // Externer Link
+  externalLink: (
+    <>
+      <path d="M15 3h6v6" />
+      <path d="M10 14 21 3" />
+      <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5" />
+    </>
+  ),
+  // Verschieben (Vier-Pfeile)
+  move: (
+    <>
+      <path d="M12 2v20M2 12h20" />
+      <path d="m9 5 3-3 3 3M9 19l3 3 3-3M5 9l-3 3 3 3M19 9l3 3-3 3" />
+    </>
+  ),
+  // Hilfe (Fragezeichen)
+  help: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M9.6 9a2.5 2.5 0 0 1 4.86.8c0 1.7-2.46 2.2-2.46 2.2" />
+      <path d="M12 17h.01" />
+    </>
+  ),
+  // Stoppuhr
+  clock: (
+    <>
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 9v4l2.5 1.5" />
+      <path d="M9 2h6" />
+    </>
+  ),
+  // Kopieren
+  copy: (
+    <>
+      <rect x="9" y="9" width="11" height="11" rx="2" />
+      <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+    </>
+  ),
+  // Marken-Icons (gefüllt — path-fill überschreibt das svg fill="none")
+  facebook: <path fill="currentColor" stroke="none" d="M15.12 5.32H17V2.14A26.1 26.1 0 0 0 14.26 2c-2.72 0-4.58 1.66-4.58 4.7v2.62H6.61v3.56h3.07V22h3.68v-9.12h3.06l.46-3.56h-3.52V7.05c0-1.03.28-1.73 1.76-1.73Z" />,
+  twitter: <path fill="currentColor" stroke="none" d="M22 5.92a8.2 8.2 0 0 1-2.36.65 4.12 4.12 0 0 0 1.8-2.27 8.22 8.22 0 0 1-2.6 1 4.1 4.1 0 0 0-7 3.74 11.65 11.65 0 0 1-8.46-4.29 4.1 4.1 0 0 0 1.27 5.47A4.07 4.07 0 0 1 2.8 9.7v.05a4.1 4.1 0 0 0 3.29 4.02 4.1 4.1 0 0 1-1.85.07 4.11 4.11 0 0 0 3.83 2.85A8.23 8.23 0 0 1 2 18.4a11.62 11.62 0 0 0 6.29 1.84c7.55 0 11.67-6.25 11.67-11.67v-.53A8.3 8.3 0 0 0 22 5.92Z" />,
+  whatsapp: <path fill="currentColor" stroke="none" d="M12 2a10 10 0 0 0-8.5 15.3L2 22l4.8-1.5A10 10 0 1 0 12 2Zm5.3 14c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .2-3-.6s-3.4-2.9-3.5-3-.9-1.2-.9-2.3.6-1.6.8-1.8c.2-.2.4-.3.6-.3h.4c.2 0 .4 0 .6.5l.7 1.7c.1.2.1.4 0 .5l-.3.4-.3.3c-.1.1-.3.3-.1.5l.8 1.3c.5.8 1 1 1.3 1.2l.9.4c.2.1.4.1.5-.1l.6-.8c.2-.2.4-.2.6-.1l1.6.8c.2.1.4.2.4.3.1.2.1.6 0 .9Z" />,
+  telegram: <path fill="currentColor" stroke="none" d="M21.9 4.3 18.6 19.8c-.2 1-.9 1.3-1.8.8l-4.9-3.6-2.4 2.3c-.3.3-.5.5-.9.5l.3-4.9 8.9-8c.4-.3-.1-.5-.6-.2L6.3 13.6l-4.7-1.5c-1-.3-1-1 .2-1.5l18.4-7.1c.9-.3 1.6.2 1.3 1.6Z" />,
+  // Warnung (Dreieck mit Ausrufezeichen)
+  warning: (
+    <>
+      <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h16.9a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z" />
+      <path d="M12 9v4" />
+      <path d="M12 17h.01" />
+    </>
+  ),
+  // Logout (Tür mit Pfeil nach außen)
+  logout: (
+    <>
+      <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+      <path d="m16 17 5-5-5-5" />
+      <path d="M21 12H9" />
+    </>
+  ),
   // Sperren (Schild mit X)
   ban: (
     <>
@@ -174,6 +276,18 @@ const ICON_PATHS = {
   ),
   // Highlights
   star: <path d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />,
+  starFilled: <path fill="currentColor" stroke="none" d="m12 2 3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />,
+  // Würfel (Zufall)
+  dice: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="3" />
+      <circle cx="8.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="8.5" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="8.5" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
+      <circle cx="15.5" cy="15.5" r="1.2" fill="currentColor" stroke="none" />
+    </>
+  ),
   // System
   wrench: <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z" />,
   // Ziel / Vorhersage
@@ -241,6 +355,13 @@ const ICON_PATHS = {
   ),
   // Mond (Dark Mode)
   moon: <path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z" />,
+  // Sonne (Hell-Modus)
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
+    </>
+  ),
   // Smartphone
   phone: (
     <>
