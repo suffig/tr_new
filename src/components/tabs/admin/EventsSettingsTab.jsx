@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from '../../icons/Icon';
 import toast from 'react-hot-toast';
 import { triggerNotification } from '../../NotificationSystem';
 import { getTeamDisplay } from '../../../constants/teams';
@@ -251,9 +252,9 @@ export default function EventsSettingsTab() {
           <button
             onClick={sendCustomNotification}
             disabled={!customNotification.title || !customNotification.message}
-            className="w-full btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full btn-primary inline-flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <i className="fas fa-paper-plane mr-2"></i>
+            <Icon name="mail" size={16} strokeWidth={2.2} />
             Benachrichtigung senden
           </button>
         </div>

@@ -1,6 +1,7 @@
 import { useState, useMemo, useEffect } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import LoadingSpinner from './LoadingSpinner';
+import Icon from './icons/Icon';
 
 export default function DashboardWidgets() {
   const [selectedWidgets, setSelectedWidgets] = useState(() => {
@@ -30,14 +31,14 @@ export default function DashboardWidgets() {
 
   // Available widgets
   const availableWidgets = [
-    { id: 'quick-stats', name: 'Schnellstatistiken', icon: 'fas fa-chart-line' },
-    { id: 'recent-matches', name: 'Letzte Spiele', icon: 'fas fa-futbol' },
-    { id: 'top-scorers', name: 'Top Torschützen', icon: 'fas fa-crown' },
-    { id: 'team-comparison', name: 'Team Vergleich', icon: 'fas fa-balance-scale' },
-    { id: 'financial-overview', name: 'Finanzübersicht', icon: 'fas fa-euro-sign' },
-    { id: 'form-tracker', name: 'Formkurve', icon: 'fas fa-chart-area' },
-    { id: 'achievements', name: 'Achievements', icon: 'fas fa-trophy' },
-    { id: 'upcoming-events', name: 'Anstehende Events', icon: 'fas fa-calendar' }
+    { id: 'quick-stats', name: 'Schnellstatistiken', icon: 'trendingUp' },
+    { id: 'recent-matches', name: 'Letzte Spiele', icon: 'football' },
+    { id: 'top-scorers', name: 'Top Torschützen', icon: 'award' },
+    { id: 'team-comparison', name: 'Team Vergleich', icon: 'scale' },
+    { id: 'financial-overview', name: 'Finanzübersicht', icon: 'euro' },
+    { id: 'form-tracker', name: 'Formkurve', icon: 'chart' },
+    { id: 'achievements', name: 'Achievements', icon: 'trophy' },
+    { id: 'upcoming-events', name: 'Anstehende Events', icon: 'calendar' }
   ];
 
   // Calculate dashboard data
@@ -156,7 +157,7 @@ export default function DashboardWidgets() {
         return (
           <div className="modern-card p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center text-text-primary">
-              <i className="fas fa-chart-line text-blue-500 mr-2" />
+              <Icon name="trendingUp" size={16} className="text-blue-500 mr-2" />
               Schnellstatistiken
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -188,7 +189,7 @@ export default function DashboardWidgets() {
         return (
           <div className="modern-card p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center text-text-primary">
-              <i className="fas fa-futbol text-green-500 mr-2" />
+              <Icon name="football" size={16} className="text-green-500 mr-2" />
               Letzte Spiele
             </h3>
             <div className="space-y-3">
@@ -214,7 +215,7 @@ export default function DashboardWidgets() {
         return (
           <div className="bg-white rounded-lg shadow border p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center">
-              <i className="fas fa-crown text-yellow-500 mr-2" />
+              <Icon name="award" size={16} className="text-yellow-500 mr-2" />
               Top Torschützen
             </h3>
             <div className="space-y-3">
@@ -245,7 +246,7 @@ export default function DashboardWidgets() {
         return (
           <div className="bg-white rounded-lg shadow border p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center">
-              <i className="fas fa-balance-scale text-purple-500 mr-2" />
+              <Icon name="scale" size={16} className="text-purple-500 mr-2" />
               Team Vergleich
             </h3>
             <div className="space-y-4">
@@ -341,7 +342,7 @@ export default function DashboardWidgets() {
         return (
           <div className="bg-white rounded-lg shadow border p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center">
-              <i className="fas fa-euro-sign text-green-500 mr-2" />
+              <Icon name="euro" size={16} className="text-green-500 mr-2" />
               Finanzübersicht
             </h3>
             <div className="grid grid-cols-2 gap-4">
@@ -370,7 +371,7 @@ export default function DashboardWidgets() {
         return (
           <div className="bg-white rounded-lg shadow border p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center">
-              <i className="fas fa-chart-area text-indigo-500 mr-2" />
+              <Icon name="chart" size={16} className="text-indigo-500 mr-2" />
               Formkurve (Letzte 5 Spiele)
             </h3>
             <div className="space-y-4">
@@ -420,26 +421,26 @@ export default function DashboardWidgets() {
         return (
           <div className="bg-white rounded-lg shadow border p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center">
-              <i className="fas fa-trophy text-yellow-500 mr-2" />
+              <Icon name="trophy" size={16} className="text-yellow-500 mr-2" />
               Letzte Achievements
             </h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3 p-3 bg-yellow-50 rounded">
-                <i className="fas fa-star text-yellow-500" />
+                <Icon name="star" size={16} className="text-yellow-500" />
                 <div>
                   <div className="font-medium">Torjäger</div>
                   <div className="text-sm text-gray-600">10 Tore erreicht</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-blue-50 rounded">
-                <i className="fas fa-futbol text-blue-500" />
+                <Icon name="football" size={16} className="text-blue-500" />
                 <div>
                   <div className="font-medium">Spielmacher</div>
                   <div className="text-sm text-gray-600">50 Spiele gespielt</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-purple-50 rounded">
-                <i className="fas fa-crown text-purple-500" />
+                <Icon name="award" size={16} className="text-purple-500" />
                 <div>
                   <div className="font-medium">Champion</div>
                   <div className="text-sm text-gray-600">Siegesserie erreicht</div>
@@ -453,19 +454,19 @@ export default function DashboardWidgets() {
         return (
           <div className="bg-white rounded-lg shadow border p-6">
             <h3 className="text-lg font-bold mb-4 flex items-center">
-              <i className="fas fa-calendar text-orange-500 mr-2" />
+              <Icon name="calendar" size={16} className="text-orange-500 mr-2" />
               Anstehende Events
             </h3>
             <div className="space-y-3">
               <div className="flex items-center space-x-3 p-3 bg-orange-50 rounded">
-                <i className="fas fa-futbol text-orange-500" />
+                <Icon name="football" size={16} className="text-orange-500" />
                 <div>
                   <div className="font-medium">Nächstes Spiel</div>
                   <div className="text-sm text-gray-600">Bereit für das nächste Match</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-green-50 rounded">
-                <i className="fas fa-chart-line text-green-500" />
+                <Icon name="trendingUp" size={16} className="text-green-500" />
                 <div>
                   <div className="font-medium">Monatsstatistik</div>
                   <div className="text-sm text-gray-600">Auswertung verfügbar</div>
@@ -491,7 +492,7 @@ export default function DashboardWidgets() {
           onClick={() => setIsCustomizing(!isCustomizing)}
           className="btn-secondary"
         >
-          <i className="fas fa-cog mr-2" />
+          <Icon name="settings" size={16} className="mr-2" />
           Anpassen
         </button>
       </div>
@@ -523,7 +524,7 @@ export default function DashboardWidgets() {
                   onChange={() => toggleWidget(widget.id)}
                   className="rounded border-border-medium"
                 />
-                <i className={`${widget.icon} text-primary-green`} />
+                <Icon name={widget.icon} size={16} strokeWidth={2} className="text-primary-green" />
                 <span className="text-sm text-text-primary">{widget.name}</span>
               </label>
             ))}
@@ -547,7 +548,7 @@ export default function DashboardWidgets() {
           >
             {isCustomizing && (
               <div className="absolute top-2 right-2 z-10 bg-primary-green text-white text-xs px-2 py-1 rounded-full opacity-90">
-                <i className="fas fa-arrows-alt mr-1" />
+                <Icon name="move" size={16} className="mr-1" />
                 Drag
               </div>
             )}
@@ -558,7 +559,7 @@ export default function DashboardWidgets() {
 
       {selectedWidgets.length === 0 && (
         <div className="text-center py-8 text-text-muted">
-          <i className="fas fa-puzzle-piece text-4xl mb-4" />
+          <Icon name="grid" size={32} className="mb-4" />
           <p>Keine Widgets ausgewählt. Klicken Sie auf &quot;Anpassen&quot; um Widgets hinzuzufügen.</p>
         </div>
       )}

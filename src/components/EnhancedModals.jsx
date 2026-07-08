@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import Icon from './icons/Icon';
 import { useHapticFeedback } from './IOSComponents';
 
 export default function EnhancedModal({ 
@@ -354,15 +355,15 @@ export function ConfirmationModal({
   const typeConfig = {
     default: {
       confirmClass: 'bg-blue-600 hover:bg-blue-700 text-white',
-      icon: 'fas fa-question-circle text-blue-500'
+      icon: 'help', iconColor: 'text-blue-500'
     },
     danger: {
       confirmClass: 'bg-red-600 hover:bg-red-700 text-white',
-      icon: 'fas fa-exclamation-triangle text-red-500'
+      icon: 'warning', iconColor: 'text-red-500'
     },
     warning: {
       confirmClass: 'bg-yellow-600 hover:bg-yellow-700 text-white',
-      icon: 'fas fa-exclamation-circle text-yellow-500'
+      icon: 'warning', iconColor: 'text-yellow-500'
     }
   };
 
@@ -375,8 +376,8 @@ export function ConfirmationModal({
       showCloseButton={false}
     >
       <div className="p-6 text-center">
-        <div className="mb-4">
-          <i className={`${typeConfig[type].icon} text-4xl`} />
+        <div className="mb-4 flex justify-center">
+          <Icon name={typeConfig[type].icon} size={40} strokeWidth={1.8} className={typeConfig[type].iconColor} />
         </div>
         
         {title && <h3 className="text-lg font-semibold text-gray-900 mb-3">{title}</h3>}

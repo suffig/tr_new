@@ -6,6 +6,7 @@ import EnhancedDashboard from '../EnhancedDashboard';
 import HorizontalNavigation from '../HorizontalNavigation';
 import MatchDayOverview from '../MatchDayOverview';
 import QuickStatsWidget from '../QuickStatsWidget';
+import TeamLogo from '../TeamLogo';
 import { getTeamDisplay } from '../../constants/teams';
 import { 
   TrendLineChart, 
@@ -708,6 +709,134 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   };
 
   const winningStreaks = calculateWinningStreaks();
+
+  // Current streak: how many consecutive wins the most recent winner is on
+  const getCurrentStreak = () => {
+    if (!filteredMatches || filteredMatches.length === 0) return { team: null, count: 0 };
+    const sorted = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
+    let team = null, count = 0;
+    for (let i = sorted.length - 1; i >= 0; i--) {
+      const a = sorted[i].goalsa || 0, b = sorted[i].goalsb || 0;
+      const winner = a > b ? 'AEK' : (b > a ? 'Real' : null);
+      if (winner === null) break;
+      if (team === null) { team = winner; count = 1; }
+      else if (winner === team) count++;
+      else break;
+    }
+    return { team, count };
+  };
+
+  // Compact form pills (last N results, oldest → newest)
+  const renderFormPills = (form) => (
+    <div className="flex items-center gap-1">
+      {form.length === 0 ? (
+        <span className="text-xs text-text-tertiary">—</span>
+      ) : form.map((r, i) => (
+        <span
+          key={i}
+          className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center ${
+            r === 'W' ? 'bg-system-green/20 text-system-green' : 'bg-system-red/20 text-system-red'
+          }`}
+        >
+          {r === 'W' ? 'S' : 'N'}
+        </span>
+      ))}
+    </div>
+  );
+
+  // Head-to-head season banner for the dashboard
+  const renderH2HBanner = () => {
+    const h2h = headToHead;
+    const total = h2h.totalMatches || 0;
+    const current = getCurrentStreak();
+    const decided = h2h.aekWins + h2h.realWins;
+    const aekPct = decided > 0 ? Math.round((h2h.aekWins / decided) * 100) : 50;
+    const realPct = 100 - aekPct;
+
+    if (total === 0) {
+      return (
+        <div className="modern-card mb-2 text-center py-8">
+          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+            <Icon name="scale" size={28} strokeWidth={1.6} />
+          </div>
+          <h4 className="font-medium text-text-primary mb-1">Noch kein direkter Vergleich</h4>
+          <p className="text-sm text-text-muted">Sobald Spiele erfasst sind, erscheint hier die Saison-Bilanz.</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="modern-card mb-2 p-0 overflow-hidden">
+        <div className="p-4 border-b border-border-light flex items-center justify-between">
+          <h3 className="font-semibold text-text-primary inline-flex items-center gap-2">
+            <Icon name="scale" size={18} strokeWidth={2.2} className="text-system-purple" />
+            Direkter Vergleich
+          </h3>
+          <span className="text-xs text-text-tertiary">{total} {total === 1 ? 'Spiel' : 'Spiele'}</span>
+        </div>
+
+        <div className="p-5">
+          <div className="flex items-center justify-between gap-2">
+            <div className="flex flex-col items-center gap-1.5 w-24 min-w-0">
+              <TeamLogo team="aek" size="lg" />
+              <span className="text-xs font-semibold text-system-blue text-center truncate w-full">{getTeamDisplay('AEK')}</span>
+            </div>
+            <div className="text-center flex-shrink-0">
+              <div className="text-3xl font-extrabold tabular-nums leading-none">
+                <span className="text-system-blue">{h2h.aekWins}</span>
+                <span className="text-text-tertiary mx-2">:</span>
+                <span className="text-system-red">{h2h.realWins}</span>
+              </div>
+              <div className="text-[11px] text-text-tertiary mt-1">Siege</div>
+            </div>
+            <div className="flex flex-col items-center gap-1.5 w-24 min-w-0">
+              <TeamLogo team="real" size="lg" />
+              <span className="text-xs font-semibold text-system-red text-center truncate w-full">{getTeamDisplay('Real')}</span>
+            </div>
+          </div>
+
+          {/* Win share bar */}
+          <div className="mt-4 h-2 rounded-full overflow-hidden bg-bg-tertiary flex">
+            <div className="bg-system-blue h-full transition-all" style={{ width: `${aekPct}%` }} />
+            <div className="bg-system-red h-full transition-all" style={{ width: `${realPct}%` }} />
+          </div>
+          <div className="flex justify-between items-center text-[11px] text-text-tertiary mt-1">
+            <span className="text-system-blue font-medium">{aekPct}%</span>
+            <span>Tore {h2h.aekGoals} : {h2h.realGoals}</span>
+            <span className="text-system-red font-medium">{realPct}%</span>
+          </div>
+
+          {/* Current streak highlight */}
+          {current.count >= 2 && current.team && (
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-system-orange/10 text-system-orange py-2 text-sm font-semibold">
+              <span>🔥</span>
+              <span>{getTeamDisplay(current.team)} – {current.count} Siege in Folge</span>
+            </div>
+          )}
+
+          {/* Recent form */}
+          <div className="mt-4 grid grid-cols-2 gap-3">
+            <div className="bg-bg-tertiary rounded-xl p-3">
+              <div className="text-[11px] text-text-tertiary mb-1.5">Form {getTeamDisplay('AEK')}</div>
+              {renderFormPills(recentForm.aek)}
+            </div>
+            <div className="bg-bg-tertiary rounded-xl p-3">
+              <div className="text-[11px] text-text-tertiary mb-1.5">Form {getTeamDisplay('Real')}</div>
+              {renderFormPills(recentForm.real)}
+            </div>
+          </div>
+
+          {/* Record streaks */}
+          {(winningStreaks.aek.streak > 0 || winningStreaks.real.streak > 0) && (
+            <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-text-tertiary">
+              <Icon name="trophy" size={13} strokeWidth={2} className="text-system-orange" />
+              <span>Rekordserie: {getTeamDisplay('AEK')} {winningStreaks.aek.streak} · {getTeamDisplay('Real')} {winningStreaks.real.streak}</span>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
 
   const renderOverview = () => {
     // Calculate enhanced statistics for the selected time period
@@ -2361,6 +2490,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     switch (selectedView) {
       case 'dashboard': return (
         <div className="space-y-6">
+          {renderH2HBanner()}
           <QuickStatsWidget />
           <EnhancedDashboard onNavigate={onNavigate} />
         </div>

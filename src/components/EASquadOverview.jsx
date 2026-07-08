@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import EAPlayerCard from './EAPlayerCard';
 import { getTeamDisplay } from '../constants/teams';
+import Icon from './icons/Icon';
 
 const EASquadOverview = ({ players, loading, onPlayerClick }) => {
   const [viewMode, setViewMode] = useState('cards'); // 'cards' or 'table'
@@ -75,7 +76,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
                     : 'text-text-muted hover:text-text-primary'
                 }`}
               >
-                <i className="fas fa-th-large mr-1"></i>
+                <Icon name="grid" size={16} className="mr-1" />
                 Cards
               </button>
               <button
@@ -86,7 +87,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
                     : 'text-text-muted hover:text-text-primary'
                 }`}
               >
-                <i className="fas fa-table mr-1"></i>
+                <Icon name="grid" size={16} className="mr-1" />
                 Table
               </button>
             </div>
@@ -168,7 +169,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
         {viewMode === 'cards' ? (
           <>
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <i className="fas fa-th-large text-primary-blue"></i>
+              <Icon name="grid" size={16} className="text-primary-blue" />
               Player Cards ({filteredPlayers.length})
             </h3>
             {filteredPlayers.length > 0 ? (
@@ -185,7 +186,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
               </div>
             ) : (
               <div className="text-center py-8 text-text-muted">
-                <i className="fas fa-users text-4xl mb-4 opacity-50"></i>
+                <Icon name="users" size={32} className="mb-4 opacity-50" />
                 <p>No players found for the selected filters</p>
               </div>
             )}
@@ -193,7 +194,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
         ) : (
           <>
             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <i className="fas fa-table text-primary-blue"></i>
+              <Icon name="grid" size={16} className="text-primary-blue" />
               Player Statistics Table ({filteredPlayers.length})
             </h3>
             {filteredPlayers.length > 0 ? (
@@ -256,7 +257,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
               </div>
             ) : (
               <div className="text-center py-8 text-text-muted">
-                <i className="fas fa-table text-4xl mb-4 opacity-50"></i>
+                <Icon name="grid" size={32} className="mb-4 opacity-50" />
                 <p>No players found for the selected filters</p>
               </div>
             )}
@@ -267,7 +268,7 @@ const EASquadOverview = ({ players, loading, onPlayerClick }) => {
       {/* Mobile Optimization Notice */}
       <div className="modern-card bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 lg:hidden">
         <div className="flex items-start gap-3">
-          <i className="fas fa-mobile-alt text-blue-600 dark:text-blue-400 mt-1"></i>
+          <Icon name="phone" size={16} className="text-blue-600 dark:text-blue-400 mt-1" />
           <div>
             <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-1">Mobile Optimized</h4>
             <p className="text-sm text-blue-600 dark:text-blue-400">

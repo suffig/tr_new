@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import Icon from '../../icons/Icon';
 import SeasonManagerTab from './SeasonManagerTab';
 import FifaVersionManagerTab from './FifaVersionManagerTab';
 import VersionTeamSettingsTab from './VersionTeamSettingsTab';
@@ -10,26 +11,26 @@ const ManagerTab = () => {
   const managerTabs = [
     { 
       id: 'season', 
-      label: 'Saison-Manager', 
-      icon: 'fas fa-calendar-alt',
+      label: 'Saison-Manager',
+      icon: 'calendar',
       description: 'Verwalten Sie Legacy- und FC26-Daten'
     },
     { 
       id: 'fifa-versions', 
-      label: 'FIFA Versionen', 
-      icon: 'fas fa-gamepad',
+      label: 'FIFA Versionen',
+      icon: 'football',
       description: 'Verwalten und erstellen Sie FIFA Versionen'
     },
     { 
       id: 'version-teams', 
-      label: 'Versions-Teams', 
-      icon: 'fas fa-users-cog',
+      label: 'Versions-Teams',
+      icon: 'users',
       description: 'Konfigurieren Sie Team-Namen und Icons pro Version'
     },
     { 
       id: 'data-export', 
-      label: 'Daten-Export', 
-      icon: 'fas fa-download',
+      label: 'Daten-Export',
+      icon: 'save',
       description: 'Legacy-Daten exportieren und Finanzen kopieren'
     }
   ];
@@ -56,7 +57,7 @@ const ManagerTab = () => {
         <div className="p-6">
           <div className="flex items-center gap-4 mb-6">
             <div className="w-12 h-12 bg-system-green/12 text-system-green rounded-xl flex items-center justify-center">
-              <i className="fas fa-cogs text-xl"></i>
+              <Icon name="settings" size={24} strokeWidth={2} />
             </div>
             <div>
               <h2 className="text-2xl font-bold mb-1 text-text-primary">System-Manager</h2>
@@ -82,7 +83,7 @@ const ManagerTab = () => {
                     ? 'bg-system-green/15 text-system-green'
                     : 'bg-gray-100 text-gray-500'
                 }`}>
-                  <i className={`${tab.icon}`}></i>
+                  <Icon name={tab.icon} size={20} strokeWidth={2} />
                 </div>
                 <div className={`font-semibold mb-1 ${
                   activeManagerTab === tab.id ? 'text-system-green' : 'text-gray-900'
