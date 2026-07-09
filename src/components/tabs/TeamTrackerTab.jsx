@@ -1,5 +1,4 @@
 import { useState, useMemo } from 'react';
-import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../icons/Icon';
 import { getCatalog } from '../../utils/fc26Catalog';
@@ -21,37 +20,33 @@ const ACCENT = {
 const RATING_TIERS = [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5];
 const fmtRating = (r) => (r == null ? '—' : r.toFixed(1).replace('.', ','));
 
-// Achievement state for a person (all-time) — drives the unlock toast.
-// Mirrors the 12 achievements shown in the stats detail sheet.
+// Milestone state for a person (all-time) — used for the unlock toast.
 const MILESTONE_LABELS = {
-  first: 'Erstes Team', five: 'Erstes 5★-Team', collector10: 'Sammler (10 Teams)',
-  collector50: 'Großsammler (50 Teams)', tophunter: 'Top-Jäger (10 × ≥4,5★)',
-  national: 'Nationalstolz (5 Nationalteams)', women3: 'Frauenfußball (3 Teams)',
-  repeat5: 'Stammverein (1 Team 5×)', underdog: 'Underdog (0,5★-Team)',
-  allTiers: 'Alle Stern-Stufen', veteran: 'Veteran (100× bekommen)', complete5: '5★-Komplett',
+  first: 'Erstes Team', five: 'Erstes 5★-Team', collector: '10 Teams gesammelt',
+  tophunter: '10 Top-Teams', national: '5 Nationalteams', veteran: '100× bekommen', complete5: 'Alle 5★-Teams',
 };
 function computeMilestones(pulls, catalog, pid) {
-  const teamOf = new Map(catalog.map((t) => [t.name, t]));
+  const rating = new Map(catalog.map((t) => [t.name, t.rating]));
   const total5 = catalog.filter((t) => t.rating === 5).length;
-  const counts = new Map();
-  let total = 0;
-  for (const e of pulls) { if (e.person !== pid) continue; total += 1; counts.set(e.team, (counts.get(e.team) || 0) + 1); }
-  let five = 0, top = 0, nat = 0, women = 0, maxCount = 0;
-  const tiers = new Set();
-  for (const [name, c] of counts) {
-    if (c > maxCount) maxCount = c;
-    const t = teamOf.get(name); const r = t?.rating;
-    if (r === 5) five += 1;
-    if (r != null && r >= 4.5) top += 1;
-    if (r == null) nat += 1;
-    if (t?.women) women += 1;
-    if (r != null) tiers.add(r);
+  const seen = new Set();
+  let total = 0, unique = 0, five = 0, top = 0, nat = 0;
+  for (const e of pulls) {
+    if (e.person !== pid) continue;
+    total += 1;
+    if (!seen.has(e.team)) {
+      seen.add(e.team); unique += 1;
+      const r = rating.get(e.team);
+      if (r === 5) five += 1;
+      if (r != null && r >= 4.5) top += 1;
+      if (r == null) nat += 1;
+    }
   }
   return {
-    first: total >= 1, five: five >= 1, collector10: counts.size >= 10, collector50: counts.size >= 50,
-    tophunter: top >= 10, national: nat >= 5, women3: women >= 3, repeat5: maxCount >= 5,
-    underdog: tiers.has(0.5), allTiers: tiers.size >= RATING_TIERS.length,
-    veteran: total >= 100, complete5: total5 > 0 && five >= total5,
+    first: total >= 1, five: five >= 1, collector: unique >= 10, tophunter: top >= 10,
+    national: nat >= 5, veteran: total >= 100, complete5: total5 > 0 && five >= total5,
+  };
+}
+
   };
 }
 
@@ -429,133 +424,107 @@ function countsTotal(pulls, personId, sinceTs) {
 }
 
 function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel }) {
-  const [openDetails, setOpenDetails] = useState({});
-  const [achievePerson, setAchievePerson] = useState(null);
-
   const all = people.map((p) => ({ ...p, stats: statsFor(p.id) }));
   const combinedPulls = all.reduce((s, p) => s + p.stats.totalPulls, 0);
   const catalogTotal = catalog.length;
 
-  // One lookup for the whole view (previously duplicated three times)
-  const teamOf = useMemo(() => new Map(catalog.map((t) => [t.name, t])), [catalog]);
-  const ratingOf = (name) => teamOf.get(name)?.rating ?? null;
-  const total5star = useMemo(() => catalog.filter((t) => t.rating === 5).length, [catalog]);
-  const tierTotals = useMemo(() => {
-    const o = {};
-    catalog.forEach((t) => { if (t.rating != null) o[t.rating] = (o[t.rating] || 0) + 1; });
-    return o;
-  }, [catalog]);
-
-  const inWindow = (e) => !sinceTs || new Date(e.ts).getTime() >= sinceTs;
+  const ratingByNameQ = new Map(catalog.map((t) => [t.name, t.rating]));
   const topTeams = (s) => RATING_TIERS.filter((r) => r >= 4.5).reduce((sum, r) => sum + (s.dist[r] || 0), 0);
 
-  // Per-match duel (both get a team per match → compare quality), incl. streak
+  // Per-match duel: pair each person's rated pulls chronologically and compare
+  // ratings — since both get a team per match, this shows who got the better one.
   const duel = (() => {
     const rated = (pid) => pulls
-      .filter((e) => e.person === pid && inWindow(e) && ratingOf(e.team) != null)
+      .filter((e) => e.person === pid && (!sinceTs || new Date(e.ts).getTime() >= sinceTs) && ratingByNameQ.get(e.team) != null)
       .sort((a, b) => new Date(a.ts) - new Date(b.ts))
-      .map((e) => ratingOf(e.team));
+      .map((e) => ratingByNameQ.get(e.team));
     const A = rated('alexander'); const P = rated('philip');
     const n = Math.min(A.length, P.length);
     let aw = 0, pw = 0, dr = 0;
-    const winners = [];
-    for (let i = 0; i < n; i++) {
-      if (A[i] > P[i]) { aw++; winners.push('alexander'); }
-      else if (P[i] > A[i]) { pw++; winners.push('philip'); }
-      else { dr++; winners.push(null); }
-    }
-    let streakWho = null, streakLen = 0;
-    for (let i = winners.length - 1; i >= 0; i--) {
-      if (winners[i] == null) break;
-      if (streakWho == null) { streakWho = winners[i]; streakLen = 1; }
-      else if (winners[i] === streakWho) streakLen++;
-      else break;
-    }
-    return { aw, pw, dr, n, streakWho, streakLen };
+    for (let i = 0; i < n; i++) { if (A[i] > P[i]) aw++; else if (P[i] > A[i]) pw++; else dr++; }
+    return { aw, pw, dr, n };
   })();
 
-  // All-time metrics per person (achievements + completion)
-  const allTime = (pid) => {
-    const counts = new Map();
-    let total = 0;
-    for (const e of pulls) { if (e.person !== pid) continue; total += 1; counts.set(e.team, (counts.get(e.team) || 0) + 1); }
-    let five = 0, top = 0, nat = 0, women = 0, maxCount = 0, maxTeam = null;
-    const tiers = new Set();
-    for (const [name, c] of counts) {
-      if (c > maxCount) { maxCount = c; maxTeam = name; }
-      const t = teamOf.get(name); const r = t?.rating;
-      if (r === 5) five += 1;
-      if (r != null && r >= 4.5) top += 1;
-      if (r == null) nat += 1;
-      if (t?.women) women += 1;
-      if (r != null) tiers.add(r);
-    }
-    return { total, unique: counts.size, five, top, nat, women, maxCount, maxTeam, tiers };
+  // All-time collection completion (unique teams ever obtained)
+  const completion = (pid) => {
+    const set = new Set();
+    for (const e of pulls) if (e.person === pid) set.add(e.team);
+    return set.size;
   };
 
-  const achievementsFor = (pid) => {
+  // All-time metrics per person (for milestones)
+  const ratingByNameA = new Map(catalog.map((t) => [t.name, t.rating]));
+  const total5star = catalog.filter((t) => t.rating === 5).length;
+  const allTime = (pid) => {
+    const seen = new Set();
+    let total = 0, unique = 0, fivestar = 0, top = 0, nat = 0;
+    for (const e of pulls) {
+      if (e.person !== pid) continue;
+      total += 1;
+      if (!seen.has(e.team)) {
+        seen.add(e.team); unique += 1;
+        const r = ratingByNameA.get(e.team);
+        if (r === 5) fivestar += 1;
+        if (r != null && r >= 4.5) top += 1;
+        if (r == null) nat += 1;
+      }
+    }
+    return { total, unique, fivestar, top, nat };
+  };
+  const milestonesFor = (pid) => {
     const m = allTime(pid);
     return [
-      { id: 'first', icon: 'football', label: 'Erstes Team', desc: 'Bekomme dein allererstes Team.', value: Math.min(m.total, 1), target: 1 },
-      { id: 'five', icon: 'starFilled', label: 'Erstes 5★-Team', desc: 'Bekomme ein Team mit vollen 5 Sternen.', value: Math.min(m.five, 1), target: 1 },
-      { id: 'collector10', icon: 'trophy', label: 'Sammler', desc: 'Bekomme 10 verschiedene Teams.', value: m.unique, target: 10 },
-      { id: 'collector50', icon: 'award', label: 'Großsammler', desc: 'Bekomme 50 verschiedene Teams.', value: m.unique, target: 50 },
-      { id: 'tophunter', icon: 'trendingUp', label: 'Top-Jäger', desc: 'Bekomme 10 verschiedene Top-Teams (mindestens 4,5 Sterne).', value: m.top, target: 10 },
-      { id: 'national', icon: 'grid', label: 'Nationalstolz', desc: 'Bekomme 5 verschiedene Nationalmannschaften.', value: m.nat, target: 5 },
-      { id: 'women3', icon: 'users', label: 'Frauenfußball', desc: 'Bekomme 3 verschiedene Frauenteams.', value: m.women, target: 3 },
-      { id: 'repeat5', icon: 'swap', label: 'Stammverein', desc: 'Bekomme ein und dasselbe Team 5 Mal.', value: m.maxCount, target: 5, extra: m.maxTeam },
-      { id: 'underdog', icon: 'ban', label: 'Underdog', desc: 'Bekomme ein Team mit nur 0,5 Sternen.', value: m.tiers.has(0.5) ? 1 : 0, target: 1 },
-      { id: 'allTiers', icon: 'scale', label: 'Alle Stufen', desc: 'Sammle aus jeder Stern-Stufe (0,5 bis 5,0) mindestens ein Team.', value: m.tiers.size, target: RATING_TIERS.length },
-      { id: 'veteran', icon: 'clock', label: 'Veteran', desc: 'Bekomme insgesamt 100 Mal ein Team.', value: m.total, target: 100 },
-      { id: 'complete5', icon: 'starFilled', label: '5★-Komplett', desc: 'Sammle alle ' + total5star + ' Teams mit 5 Sternen.', value: m.five, target: total5star || 1 },
-    ].map((a) => ({ ...a, done: a.value >= a.target }));
+      { id: 'first', icon: 'football', label: 'Erstes Team', done: m.total >= 1, hint: `${Math.min(m.total, 1)}/1` },
+      { id: 'five', icon: 'starFilled', label: 'Erstes 5★-Team', done: m.fivestar >= 1, hint: `${Math.min(m.fivestar, 1)}/1` },
+      { id: 'collector', icon: 'trophy', label: '10 Teams gesammelt', done: m.unique >= 10, hint: `${m.unique}/10` },
+      { id: 'tophunter', icon: 'trendingUp', label: '10 Top-Teams (≥4,5★)', done: m.top >= 10, hint: `${m.top}/10` },
+      { id: 'national', icon: 'grid', label: '5 Nationalteams', done: m.nat >= 5, hint: `${m.nat}/5` },
+      { id: 'veteran', icon: 'award', label: '100 × bekommen', done: m.total >= 100, hint: `${m.total}/100` },
+      { id: 'complete5', icon: 'starFilled', label: `Alle 5★ (${total5star})`, done: total5star > 0 && m.fivestar >= total5star, hint: `${m.fivestar}/${total5star || '—'}` },
+    ];
   };
+
+  // Per-star-tier completion (unique owned all-time vs total teams in that tier)
+  const ratingByName = new Map(catalog.map((t) => [t.name, t.rating]));
+  const tierTotals = {};
+  catalog.forEach((t) => { if (t.rating != null) tierTotals[t.rating] = (tierTotals[t.rating] || 0) + 1; });
 
   const ownedPerTier = (pid) => {
     const seen = new Set(); const owned = {};
     for (const e of pulls) {
       if (e.person !== pid || seen.has(e.team)) continue;
       seen.add(e.team);
-      const r = ratingOf(e.team);
+      const r = ratingByName.get(e.team);
       if (r != null) owned[r] = (owned[r] || 0) + 1;
     }
     return owned;
   };
 
-  // Average star rating per MATCHDAY. A matchday is a session: it is dated by
-  // the FIRST team of the session, and every team within 24h of that first team
-  // belongs to the same matchday. Window-aware, last 6 matchdays.
-  const MATCHDAY_MS = 24 * 60 * 60 * 1000;
+  // Average star rating per person per MATCHDAY (only days that had teams,
+  // not every calendar day); respects the active time window, last 8 matchdays.
   const matchdays = (() => {
-    const evs = pulls
-      .filter((e) => inWindow(e) && ratingOf(e.team) != null)
-      .sort((a, b) => new Date(a.ts) - new Date(b.ts));
-    const sessions = [];
-    let cur = null;
-    for (const e of evs) {
-      const t = new Date(e.ts).getTime();
-      if (!cur || t >= cur.start + MATCHDAY_MS) {
-        cur = { start: t, sum: {}, cnt: {} };
-        sessions.push(cur);
-      }
-      const r = ratingOf(e.team);
-      cur.sum[e.person] = (cur.sum[e.person] || 0) + r;
-      cur.cnt[e.person] = (cur.cnt[e.person] || 0) + 1;
+    const byDay = new Map();
+    for (const e of pulls) {
+      if (sinceTs && new Date(e.ts).getTime() < sinceTs) continue;
+      const r = ratingByNameQ.get(e.team);
+      if (r == null) continue; // only rated teams contribute to a star average
+      const d = new Date(e.ts); d.setHours(0, 0, 0, 0);
+      const key = d.getTime();
+      if (!byDay.has(key)) byDay.set(key, { ts: key, sum: {}, cnt: {} });
+      const g = byDay.get(key);
+      g.sum[e.person] = (g.sum[e.person] || 0) + r;
+      g.cnt[e.person] = (g.cnt[e.person] || 0) + 1;
     }
-    return sessions.slice(-6).map((d) => ({
-      ts: d.start,
-      label: new Date(d.start).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
+    return [...byDay.values()].sort((a, b) => a.ts - b.ts).slice(-8).map((d) => ({
+      ts: d.ts,
+      label: new Date(d.ts).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }),
       avg: Object.fromEntries(people.map((p) => [p.id, d.cnt[p.id] ? d.sum[p.id] / d.cnt[p.id] : 0])),
     }));
   })();
-  const bestMatchday = matchdays.reduce((best, d) => {
-    const top = Math.max(...people.map((p) => d.avg[p.id] || 0));
-    return (!best || top > best.val) ? { day: d, val: top } : best;
-  }, null);
-
+  // Leader = better average rating (quality), not quantity (counts are equal)
   const avgA = all[0].stats.avgRating, avgP = all[1].stats.avgRating;
   const qualityLeader = (avgA == null || avgP == null) ? null : (avgA > avgP ? all[0] : (avgP > avgA ? all[1] : null));
-  const personName = (pid) => people.find((p) => p.id === pid)?.name || pid;
+
 
   if (combinedPulls === 0) {
     return (
@@ -567,73 +536,73 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
     );
   }
 
+  const maxDist = Math.max(1, ...all.flatMap((p) => Object.values(p.stats.dist)));
+
   return (
     <div className="space-y-3 animate-mobile-slide-in">
-      {/* Quality comparison (counts are always equal → compare team QUALITY) */}
+      {/* Quality comparison banner — beide bekommen pro Spiel ein Team,
+          also zählt die Team-QUALITÄT (Rating), nicht die Menge. */}
       <div className="modern-card">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2"><Icon name="scale" size={17} strokeWidth={2.2} className="text-system-purple" />Wer bekommt die besseren Teams?</h3>
-          <span className="text-[11px] text-text-tertiary whitespace-nowrap">{windowLabel} · {combinedPulls}</span>
+          <h3 className="font-semibold text-text-primary inline-flex items-center gap-2"><Icon name="scale" size={18} strokeWidth={2.2} className="text-system-purple" />Wer bekommt die besseren Teams?</h3>
+          <span className="text-xs text-text-tertiary">{windowLabel}</span>
         </div>
-
         <div className="flex items-center justify-between text-center">
           <div className="flex-1">
-            <div className="text-2xl font-bold text-system-blue tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />{avgA ? fmtRating(avgA) : '—'}</div>
+            <div className="text-2xl font-bold text-system-blue tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={16} strokeWidth={0} className="text-system-yellow" />{avgA ? fmtRating(avgA) : '—'}</div>
+
             <div className="text-[11px] text-text-tertiary">{all[0].name} · ⌀</div>
           </div>
           <div className="px-2 text-xs font-semibold text-text-tertiary">
             {qualityLeader ? <span className="inline-flex items-center gap-1 text-system-orange">🔥 {qualityLeader.name}</span> : 'Gleichstand'}
           </div>
           <div className="flex-1">
-            <div className="text-2xl font-bold text-system-red tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />{avgP ? fmtRating(avgP) : '—'}</div>
+            <div className="text-2xl font-bold text-system-red tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={16} strokeWidth={0} className="text-system-yellow" />{avgP ? fmtRating(avgP) : '—'}</div>
             <div className="text-[11px] text-text-tertiary">{all[1].name} · ⌀</div>
           </div>
         </div>
 
+        {/* Per-match duel: who got the higher-rated team */}
         {duel.n > 0 && (
           <div className="mt-3 pt-3 border-t border-border-light">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-medium text-text-secondary">Bessere-Team-Duelle</span>
-              <span className="text-[11px] text-text-tertiary">
-                {duel.n} Spiele{duel.dr ? ' · ' + duel.dr + '× gleich' : ''}
-                {duel.streakLen > 1 ? ' · 🔥 ' + personName(duel.streakWho) + ' ' + duel.streakLen + '×' : ''}
-              </span>
+              <span className="text-[11px] text-text-tertiary">{duel.n} Spiele{duel.dr ? ` · ${duel.dr} × gleich` : ''}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="w-8 text-right text-sm font-bold text-system-blue tabular-nums">{duel.aw}</span>
-              <div className="flex-1 h-4 rounded-full overflow-hidden bg-bg-tertiary flex text-[9px] font-bold text-white">
-                <div className="bg-system-blue h-full flex items-center justify-center" style={{ width: `${(duel.aw / duel.n) * 100}%` }}>{duel.aw > 0 ? Math.round((duel.aw / duel.n) * 100) + '%' : ''}</div>
+              <div className="flex-1 h-2.5 rounded-full overflow-hidden bg-bg-tertiary flex">
+                <div className="bg-system-blue h-full" style={{ width: `${(duel.aw / duel.n) * 100}%` }} />
                 <div className="bg-text-tertiary/40 h-full" style={{ width: `${(duel.dr / duel.n) * 100}%` }} />
-                <div className="bg-system-red h-full flex items-center justify-center" style={{ width: `${(duel.pw / duel.n) * 100}%` }}>{duel.pw > 0 ? Math.round((duel.pw / duel.n) * 100) + '%' : ''}</div>
+                <div className="bg-system-red h-full" style={{ width: `${(duel.pw / duel.n) * 100}%` }} />
+              </div>
+              <span className="w-8 text-sm font-bold text-system-red tabular-nums">{duel.pw}</span>
+            </div>
               </div>
               <span className="w-8 text-sm font-bold text-system-red tabular-nums">{duel.pw}</span>
             </div>
           </div>
         )}
 
+        {/* Quality metrics: Top-Teams (≥4,5★) + Gesamt-Sternwert */}
         <div className="mt-3 grid grid-cols-2 gap-2">
           {all.map((p) => {
             const a = ACCENT[p.accent]; const s = p.stats;
             const starSum = s.avgRating ? s.avgRating * s.ratedTotal : 0;
             return (
-              <div key={p.id} className="bg-bg-tertiary rounded-xl p-2.5">
-                <div className={`text-xs font-semibold ${a.text} mb-1 inline-flex items-center gap-1.5`}><span className={`w-2 h-2 rounded-full ${a.bar}`} />{p.name}</div>
-                <div className="flex justify-between text-[11px] text-text-tertiary"><span>Top-Teams ≥4,5★</span><span className="font-semibold text-text-primary tabular-nums">{topTeams(s)}</span></div>
-                <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5"><span>Sternwert</span><span className="font-semibold text-text-primary tabular-nums">{starSum.toFixed(1).replace('.', ',')}</span></div>
+              <div key={p.id} className="bg-bg-tertiary rounded-xl p-3">
+                <div className={`text-xs font-semibold ${a.text} mb-1.5 inline-flex items-center gap-1.5`}><span className={`w-2 h-2 rounded-full ${a.bar}`} />{p.name}</div>
+                <div className="flex justify-between text-[11px] text-text-tertiary"><span>Top-Teams (≥4,5★)</span><span className="font-semibold text-text-primary tabular-nums">{topTeams(s)}</span></div>
+                <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5"><span>Gesamt-Sternwert</span><span className="font-semibold text-text-primary tabular-nums">{starSum.toFixed(1).replace('.', ',')}</span></div>
+              </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Per person: key stats + labelled distribution + collapsible details */}
       {all.map((p) => {
         const a = ACCENT[p.accent]; const s = p.stats;
-        const maxDistVal = Math.max(1, ...Object.values(s.dist), s.nationals);
-        const denom = s.ratedTotal || 1;
-        const fiveQuota = s.ratedTotal ? Math.round(((s.dist[5] || 0) / s.ratedTotal) * 100) : 0;
-        const open = !!openDetails[p.id];
-        const doneCount = achievementsFor(p.id).filter((x) => x.done).length;
         return (
           <div key={p.id} className="modern-card">
             <div className="flex items-center gap-2 mb-3">
@@ -641,115 +610,103 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
               <h3 className={`font-semibold ${a.text}`}>{p.name}</h3>
               <span className="ml-auto text-xs text-text-tertiary">{s.totalPulls} bekommen · {s.unique} {s.unique === 1 ? 'Team' : 'Teams'}</span>
             </div>
-
             <div className="grid grid-cols-2 gap-2 mb-3">
-              <div className="bg-bg-tertiary rounded-xl p-2.5">
+              <div className="bg-bg-tertiary rounded-xl p-3">
                 <div className="text-[11px] text-text-tertiary mb-0.5">⌀ Rating</div>
-                <div className="font-bold text-system-yellow inline-flex items-center gap-1"><Icon name="starFilled" size={13} strokeWidth={0} />{s.avgRating ? fmtRating(s.avgRating) : '—'}</div>
+                <div className="font-bold text-system-yellow inline-flex items-center gap-1"><Icon name="starFilled" size={14} strokeWidth={0} />{s.avgRating ? fmtRating(s.avgRating) : '—'}</div>
               </div>
-              <div className="bg-bg-tertiary rounded-xl p-2.5">
+              <div className="bg-bg-tertiary rounded-xl p-3">
                 <div className="text-[11px] text-text-tertiary mb-0.5">Bestes Team</div>
                 <div className="font-semibold text-text-primary text-sm truncate">{s.best ? s.best.name : '—'}</div>
               </div>
-              <div className="bg-bg-tertiary rounded-xl p-2.5">
-                <div className="text-[11px] text-text-tertiary mb-0.5">5★-Quote</div>
-                <div className="font-bold text-text-primary tabular-nums">{fiveQuota}%</div>
-              </div>
-              <div className="bg-bg-tertiary rounded-xl p-2.5">
-                <div className="text-[11px] text-text-tertiary mb-0.5">Nationalteams</div>
-                <div className="font-bold text-text-primary tabular-nums">{s.nationals}</div>
-              </div>
             </div>
-
-            {/* Labelled distribution bars */}
+            {(s.mostTeam || s.last) && (
+              <div className="space-y-1 mb-3 text-xs text-text-secondary">
+                {s.mostTeam && <div>Am häufigsten: <span className="font-semibold text-text-primary">{s.mostTeam}</span> ({s.mostCount}×)</div>}
+                {s.worst && s.worst.name !== (s.best && s.best.name) && <div>Schwächstes: <span className="font-semibold text-text-primary">{s.worst.name}</span> ({fmtRating(s.worst.rating)})</div>}
+                {s.last && <div>Zuletzt: <span className="font-semibold text-text-primary">{s.last.team}</span> · {relTime(s.last.ts)}</div>}
+              </div>
+            )}
             <div className="space-y-1.5">
-              {RATING_TIERS.filter((r) => s.dist[r]).map((r) => {
-                const val = s.dist[r];
-                const pct = Math.round((val / denom) * 100);
-                return (
-                  <div key={r} className="flex items-center gap-2">
-                    <span className="w-11 inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary tabular-nums"><Icon name="starFilled" size={10} strokeWidth={0} className="text-system-yellow" />{fmtRating(r)}</span>
-                    <div className="flex-1 h-4 rounded-full bg-bg-tertiary overflow-hidden">
-                      <div className={`h-full ${a.bar} flex items-center justify-end pr-1.5 text-[9px] font-bold text-white`} style={{ width: `${Math.max(10, (val / maxDistVal) * 100)}%` }}>{val}</div>
-                    </div>
-                    <span className="w-9 text-right text-[11px] text-text-tertiary tabular-nums">{pct}%</span>
-                  </div>
-                );
-              })}
-              {s.nationals > 0 && (
-                <div className="flex items-center gap-2">
-                  <span className="w-11 inline-flex items-center gap-1 text-[11px] font-semibold text-text-secondary"><Icon name="trophy" size={10} strokeWidth={2} className="text-text-tertiary" />Nat.</span>
-                  <div className="flex-1 h-4 rounded-full bg-bg-tertiary overflow-hidden">
-                    <div className="h-full bg-text-tertiary flex items-center justify-end pr-1.5 text-[9px] font-bold text-white" style={{ width: `${Math.max(10, (s.nationals / maxDistVal) * 100)}%` }}>{s.nationals}</div>
-                  </div>
-                  <span className="w-9" />
+              {RATING_TIERS.filter((r) => s.dist[r]).map((r) => (
+                <div key={r} className="flex items-center gap-2">
+                  <span className="w-8 text-[11px] font-semibold text-text-secondary tabular-nums">{fmtRating(r)}</span>
+                  <div className="flex-1 h-2 rounded-full bg-bg-tertiary overflow-hidden"><div className={`h-full ${a.bar}`} style={{ width: `${(s.dist[r] / maxDist) * 100}%` }} /></div>
+                  <span className="w-6 text-right text-[11px] text-text-tertiary tabular-nums">{s.dist[r]}</span>
                 </div>
-              )}
+              ))}
             </div>
 
-            {/* Compact facts */}
-            <div className="mt-3 flex flex-wrap gap-1.5 text-[11px]">
-              {s.mostTeam && s.mostCount > 1 && <span className="px-2 py-1 rounded-lg bg-bg-tertiary"><span className="text-text-tertiary">Häufigste:</span> <span className="font-semibold text-text-primary">{s.mostTeam}</span> {s.mostCount}×</span>}
-              {s.worst && <span className="px-2 py-1 rounded-lg bg-bg-tertiary"><span className="text-text-tertiary">Schwächstes:</span> <span className="font-semibold text-text-primary">{s.worst.name}</span></span>}
-              {s.last && <span className="px-2 py-1 rounded-lg bg-bg-tertiary"><span className="text-text-tertiary">Zuletzt:</span> <span className="font-semibold text-text-primary">{s.last.team}</span> · {relTime(s.last.ts)}</span>}
-            </div>
-
-            {/* Collapsible: collection & per-tier completion */}
-            <button onClick={() => setOpenDetails((o) => ({ ...o, [p.id]: !o[p.id] }))} className="mt-3 w-full flex items-center justify-between py-2 text-xs font-medium text-text-secondary">
-              <span>Sammlung &amp; Vollständigkeit</span>
-              <span className={`transition-transform duration-200 ${open ? 'rotate-90' : ''}`}><Icon name="chevronRight" size={16} strokeWidth={2.2} /></span>
-            </button>
-            {open && (() => {
-              const done = new Set(pulls.filter((e) => e.person === p.id).map((e) => e.team)).size;
+            {/* All-time collection completion */}
+            {(() => {
+              const done = completion(p.id);
               const pct = catalogTotal ? Math.round((done / catalogTotal) * 100) : 0;
-              const owned = ownedPerTier(p.id);
-              const tiers = RATING_TIERS.filter((r) => tierTotals[r] && owned[r]);
               return (
-                <div className="pt-1">
-                  <div className="flex justify-between text-[11px] text-text-tertiary mb-1"><span>Sammlung gesamt</span><span className="tabular-nums">{done}/{catalogTotal} · {pct}%</span></div>
-                  <div className="h-2 rounded-full bg-bg-tertiary overflow-hidden mb-3"><div className={`h-full ${a.bar}`} style={{ width: `${Math.max(2, pct)}%` }} /></div>
-                  {tiers.length > 0 && (
-                    <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
-                      {tiers.map((r) => (
-                        <div key={r} className="flex items-center gap-1.5">
-                          <span className="w-10 inline-flex items-center gap-0.5 text-[11px] font-semibold text-text-secondary tabular-nums"><Icon name="starFilled" size={10} strokeWidth={0} className="text-system-yellow" />{fmtRating(r)}</span>
-                          <div className="flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden"><div className={`h-full ${a.bar}`} style={{ width: `${(owned[r] / tierTotals[r]) * 100}%` }} /></div>
-                          <span className="text-[10px] text-text-tertiary tabular-nums w-9 text-right">{owned[r]}/{tierTotals[r]}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
+                <div className="mt-3 pt-3 border-t border-border-light">
+                  <div className="flex justify-between text-[11px] text-text-tertiary mb-1">
+                    <span>Sammlung gesamt</span>
+                    <span className="tabular-nums">{done}/{catalogTotal} · {pct}%</span>
+                  </div>
+                  <div className="h-2 rounded-full bg-bg-tertiary overflow-hidden"><div className={`h-full ${a.bar}`} style={{ width: `${Math.max(2, pct)}%` }} /></div>
+                </div>
+              );
+            })()}
                 </div>
               );
             })()}
 
-            {/* Achievements entry */}
-            <button onClick={() => setAchievePerson(p.id)} className={`mt-2 w-full flex items-center justify-between px-3 py-2.5 rounded-xl ${a.chip}`}>
-              <span className="inline-flex items-center gap-2 text-sm font-semibold"><Icon name="award" size={16} strokeWidth={2.2} />Errungenschaften</span>
-              <span className="inline-flex items-center gap-1 text-xs font-semibold tabular-nums">{doneCount}/12<Icon name="chevronRight" size={15} strokeWidth={2.2} /></span>
-            </button>
+            {/* Per-tier completion (all-time) */}
+            {(() => {
+              const owned = ownedPerTier(p.id);
+              const tiers = RATING_TIERS.filter((r) => tierTotals[r] && owned[r]);
+              if (tiers.length === 0) return null;
+              return (
+                <div className="mt-3 pt-3 border-t border-border-light">
+                  <div className="text-[11px] text-text-tertiary mb-1.5">Vollständigkeit nach Sternen</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                    {tiers.map((r) => {
+                      const done = owned[r]; const total = tierTotals[r];
+                      return (
+                        <div key={r} className="flex items-center gap-1.5">
+                          <span className="w-10 inline-flex items-center gap-0.5 text-[11px] font-semibold text-text-secondary tabular-nums">
+                            <Icon name="starFilled" size={10} strokeWidth={0} className="text-system-yellow" />{fmtRating(r)}
+                          </span>
+                          <div className="flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden"><div className={`h-full ${a.bar}`} style={{ width: `${(done / total) * 100}%` }} /></div>
+                          <span className="text-[10px] text-text-tertiary tabular-nums w-9 text-right">{done}/{total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         );
       })}
 
-      {/* Average star rating per matchday — bars carry their value */}
+      {/* Average star rating per matchday */}
       {matchdays.length > 0 && (
         <div className="modern-card">
-          <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />Sterne-Ø pro Spieltag</h3>
-            {bestMatchday && bestMatchday.val > 0 && <span className="text-[10px] text-text-tertiary whitespace-nowrap">Bester: {bestMatchday.day.label} ({fmtRating(bestMatchday.val)}★)</span>}
-          </div>
-          <p className="text-[11px] text-text-tertiary mb-3">⌀ Team-Rating je Person und Spieltag</p>
-          <div className="flex items-end justify-between gap-2 h-32">
+          <h3 className="font-semibold text-text-primary mb-1 inline-flex items-center gap-2"><Icon name="starFilled" size={16} strokeWidth={0} className="text-system-yellow" />Sterne-Ø pro Spieltag</h3>
+          <p className="text-[11px] text-text-tertiary mb-3">Durchschnittliches Team-Rating je Person und Spieltag</p>
+          <div className="flex items-end justify-between gap-2 h-28">
             {matchdays.map((d, i) => (
               <div key={i} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                <div className="w-full flex items-end justify-center gap-1.5" style={{ height: '96px' }}>
+                <div className="w-full flex items-end justify-center gap-1" style={{ height: '84px' }}>
                   {people.map((p) => {
                     const v = d.avg[p.id] || 0;
                     return (
-                      <div key={p.id} className="relative flex-1 max-w-[16px] h-full flex flex-col justify-end items-center">
-                        {v > 0 && <span className="text-[8px] font-bold text-text-secondary tabular-nums mb-0.5 leading-none">{fmtRating(v)}</span>}
-                        <div className={`w-full rounded-t ${ACCENT[p.accent].bar}`} style={{ height: `${(v / 5) * 82}%` }} />
+                      <div key={p.id} className="relative flex-1 max-w-[14px] h-full flex items-end">
+                        <div className={`w-full rounded-t ${ACCENT[p.accent].bar}`} style={{ height: `${(v / 5) * 100}%` }} title={`${p.name}: ${v ? v.toFixed(1).replace('.', ',') : '—'}★`} />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
                       </div>
                     );
                   })}
@@ -766,53 +723,48 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
         </div>
       )}
 
-      {/* Achievement detail sheet */}
-      {achievePerson && createPortal((
-        <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-label="Errungenschaften">
-          <button className="absolute inset-0 bg-black/50" aria-label="Schließen" onClick={() => setAchievePerson(null)} />
-          <div
-            className="relative w-full max-w-md bg-bg-elevated rounded-t-3xl sm:rounded-3xl shadow-ios-floating p-4 flex flex-col animate-mobile-slide-in"
-            style={{ maxHeight: 'calc(100dvh - 2rem)', paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
-          >
-            <div className="flex items-center justify-between mb-3 flex-shrink-0">
-              <h3 className="text-base font-semibold text-text-primary inline-flex items-center gap-2">
-                <Icon name="award" size={18} strokeWidth={2.2} className="text-system-orange" />
-                Errungenschaften · {personName(achievePerson)}
-              </h3>
-              <button onClick={() => setAchievePerson(null)} className="w-8 h-8 rounded-full bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0" aria-label="Schließen">
-                <Icon name="x" size={18} strokeWidth={2.2} />
-              </button>
-            </div>
-            <div className="overflow-y-auto space-y-2 min-h-0">
-              {achievementsFor(achievePerson).map((x) => {
-                const pct = Math.min(100, Math.round((x.value / x.target) * 100));
-                const acc = ACCENT[people.find((p) => p.id === achievePerson)?.accent || 'blue'];
-                return (
-                  <div key={x.id} className={`flex gap-3 p-3 rounded-xl ${x.done ? acc.chip : 'bg-bg-tertiary'}`}>
-                    <span className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center ${x.done ? 'bg-bg-elevated/60' : 'bg-bg-secondary text-text-quaternary'}`}>
-                      <Icon name={x.icon} size={18} strokeWidth={x.done ? 2.2 : 1.8} />
-                    </span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center gap-1.5">
-                        <span className={`text-sm font-semibold ${x.done ? '' : 'text-text-primary'}`}>{x.label}</span>
-                        {x.done && <Icon name="check" size={13} strokeWidth={3} />}
-                      </div>
-                      <p className={`text-[11px] leading-snug ${x.done ? 'opacity-80' : 'text-text-tertiary'}`}>{x.desc}</p>
-                      {x.id === 'repeat5' && x.extra && <p className="text-[10px] text-text-tertiary mt-0.5">Bestes: {x.extra} ({x.value}×)</p>}
-                      <div className="mt-1.5 flex items-center gap-2">
-                        <div className="flex-1 h-1.5 rounded-full bg-bg-secondary overflow-hidden">
-                          <div className={`h-full ${x.done ? acc.bar : 'bg-text-tertiary/50'}`} style={{ width: `${Math.max(3, pct)}%` }} />
-                        </div>
-                        <span className="text-[10px] tabular-nums text-text-tertiary flex-shrink-0">{Math.min(x.value, x.target)}/{x.target}</span>
-                      </div>
+      {/* Milestones / achievements (all-time) */}
+      <div className="modern-card">
+        <h3 className="font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="award" size={18} strokeWidth={2.2} className="text-system-orange" />Meilensteine</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {people.map((p) => {
+            const a = ACCENT[p.accent];
+            const ms = milestonesFor(p.id);
+            const earned = ms.filter((x) => x.done).length;
+            return (
+              <div key={p.id} className="bg-bg-tertiary rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-semibold ${a.text} inline-flex items-center gap-1.5`}><span className={`w-2 h-2 rounded-full ${a.bar}`} />{p.name}</span>
+                  <span className="text-[11px] text-text-tertiary tabular-nums">{earned}/{ms.length}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {ms.map((x) => (
+                    <div
+                      key={x.id}
+                      title={`${x.label} — ${x.hint}`}
+                      className={`aspect-square rounded-lg flex items-center justify-center ${x.done ? `${a.chip}` : 'bg-bg-secondary text-text-quaternary opacity-60'}`}
+                    >
+                      <Icon name={x.icon} size={16} strokeWidth={x.done ? 2.2 : 1.8} />
                     </div>
-                  </div>
-                );
-              })}
-            </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-text-quaternary mt-2 text-center">Gesamt (alle Zeiträume) · gefüllt = erreicht</p>
+      </div>
+
+      <div className="modern-card flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="w-10 h-10 rounded-xl bg-system-purple/12 text-system-purple flex items-center justify-center"><Icon name="trophy" size={20} strokeWidth={2} /></span>
+          <div>
+            <div className="text-xs text-text-muted">Insgesamt ({windowLabel})</div>
+            <div className="text-[11px] text-text-tertiary">beide zusammen</div>
           </div>
         </div>
-      ), document.body)}
+        <div className="text-xl font-bold text-text-primary">{combinedPulls}</div>
+      </div>
     </div>
   );
 }
