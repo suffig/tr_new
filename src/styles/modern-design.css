@@ -72,8 +72,12 @@ button {
 }
 
 .tab-transition {
-  animation: pageEnter 0.35s cubic-bezier(0.23, 1, 0.32, 1) both;
-  will-change: opacity, transform;
+  /* `backwards` (not `both`) + no `will-change: transform` so the element does
+     NOT keep a transform after the entrance animation. A lingering transform
+     would make it the containing block for `position: fixed`, mis-positioning
+     every in-tab modal once the page is scrolled. */
+  animation: pageEnter 0.35s cubic-bezier(0.23, 1, 0.32, 1) backwards;
+  will-change: opacity;
 }
 
 /* Staggered entrance for lists/grids: apply to a container */

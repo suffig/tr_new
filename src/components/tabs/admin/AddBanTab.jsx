@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from '../../icons/Icon';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { supabaseDb } from '../../../utils/supabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
@@ -119,11 +120,11 @@ export default function AddBanTab() {
             Klicken Sie auf den Button, um eine neue Spielersperre zu erfassen.
           </p>
           
-          <button 
+          <button
             onClick={() => setShowModal(true)}
-            className="btn-primary"
+            className="btn-primary inline-flex items-center justify-center gap-2"
           >
-            <i className="fas fa-plus mr-2"></i>
+            <Icon name="plus" size={16} strokeWidth={2.2} />
             Neue Sperre erfassen
           </button>
         </div>
@@ -250,9 +251,9 @@ export default function AddBanTab() {
 
                 {selectedBanType && selectedBanType.fixedDuration && (
                   <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800">
-                      <i className="fas fa-info-circle mr-2"></i>
-                      Gelb-Rote Karten haben immer eine feste Sperre von 1 Spiel.
+                    <p className="text-sm text-blue-800 flex items-start gap-2">
+                      <Icon name="bulb" size={16} strokeWidth={2} className="flex-shrink-0 mt-0.5" />
+                      <span>Gelb-Rote Karten haben immer eine feste Sperre von 1 Spiel.</span>
                     </p>
                   </div>
                 )}
@@ -326,8 +327,8 @@ export default function AddBanTab() {
 
       <div className="mt-6 modern-card bg-yellow-50 border-yellow-200">
         <div className="flex items-start">
-          <div className="text-yellow-600 mr-3">
-            <i className="fas fa-info-circle"></i>
+          <div className="text-yellow-600 mr-3 flex-shrink-0">
+            <Icon name="bulb" size={18} strokeWidth={2} />
           </div>
           <div>
             <h4 className="font-semibold text-yellow-800 mb-1">Hinweis</h4>

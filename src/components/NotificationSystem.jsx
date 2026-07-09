@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
+import Icon from './icons/Icon';
 
 // Enhanced push-up notification system for FIFA Tracker
 export default function NotificationSystem({ onNavigate }) {
@@ -284,7 +285,7 @@ export default function NotificationSystem({ onNavigate }) {
                 className="ml-2 flex-shrink-0 text-text-tertiary hover:text-text-secondary transition-colors duration-200 p-1 rounded-full hover:bg-bg-tertiary icon-bounce-hover"
                 aria-label="Benachrichtigung schließen"
               >
-                <i className="fas fa-times text-xs" />
+                <Icon name="x" size={12} />
               </button>
             </div>
           </div>
@@ -301,7 +302,7 @@ export default function NotificationSystem({ onNavigate }) {
             onClick={clearAll}
             className="text-caption1 text-text-secondary hover:text-text-primary bg-bg-elevated backdrop-blur-sm px-3 py-1.5 rounded-ios shadow-sm border border-border-light hover:shadow-md transition-all duration-200 btn-spring-press"
           >
-            <i className="fas fa-trash-alt mr-1 text-xs" />
+            <Icon name="trash" size={12} className="mr-1" />
             Alle löschen
           </button>
         </div>

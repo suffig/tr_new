@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Icon from './icons/Icon';
 
 // iOS-style toggle switch
 export function IOSToggle({ checked, onChange, disabled = false, size = 'md', color = 'blue' }) {
@@ -265,10 +266,10 @@ export function IOSToast({ message, type = 'info', isVisible, onHide, duration =
   }, [isVisible, duration, onHide]);
 
   const typeConfig = {
-    success: { icon: 'fas fa-check-circle', color: 'text-green-600 bg-green-50' },
-    error: { icon: 'fas fa-exclamation-circle', color: 'text-red-600 bg-red-50' },
-    warning: { icon: 'fas fa-exclamation-triangle', color: 'text-yellow-600 bg-yellow-50' },
-    info: { icon: 'fas fa-info-circle', color: 'text-blue-600 bg-blue-50' }
+    success: { icon: 'check', color: 'text-green-600 bg-green-50' },
+    error: { icon: 'warning', color: 'text-red-600 bg-red-50' },
+    warning: { icon: 'warning', color: 'text-yellow-600 bg-yellow-50' },
+    info: { icon: 'bulb', color: 'text-blue-600 bg-blue-50' }
   };
 
   return (
@@ -280,7 +281,7 @@ export function IOSToast({ message, type = 'info', isVisible, onHide, duration =
         flex items-center space-x-3 px-4 py-3 rounded-full shadow-lg border backdrop-blur-sm
         ${typeConfig[type].color}
       `}>
-        <i className={`${typeConfig[type].icon} text-lg`} />
+        <Icon name={typeConfig[type].icon} size={18} strokeWidth={2.2} />
         <span className="font-medium">{message}</span>
       </div>
     </div>

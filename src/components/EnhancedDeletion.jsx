@@ -2,6 +2,7 @@ import { useState, useCallback, useRef } from 'react';
 import { ConfirmationModal } from './EnhancedModals';
 import { useHapticFeedback, IOSToast } from './IOSComponents';
 import { triggerNotification } from './NotificationSystem';
+import Icon from './icons/Icon';
 
 export default function EnhancedDeletionSystem({ onDelete, type, data, className = "" }) {
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -203,7 +204,7 @@ export default function EnhancedDeletionSystem({ onDelete, type, data, className
           </>
         ) : (
           <>
-            <i className="fas fa-trash" />
+            <Icon name="trash" size={16} />
             <span>Löschen</span>
           </>
         )}
@@ -216,7 +217,7 @@ export default function EnhancedDeletionSystem({ onDelete, type, data, className
             <div className="text-center">
               <div className="mb-4">
                 <div className="w-16 h-16 mx-auto bg-red-100 rounded-full flex items-center justify-center">
-                  <i className="fas fa-trash text-2xl text-red-600" />
+                  <Icon name="trash" size={24} className="text-red-600" />
                 </div>
               </div>
               
@@ -253,7 +254,7 @@ export default function EnhancedDeletionSystem({ onDelete, type, data, className
           <div className="bg-gray-900 text-white rounded-lg p-4 shadow-lg max-w-md mx-auto">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
-                <i className="fas fa-check-circle text-green-400" />
+                <Icon name="check" size={16} className="text-green-400" />
                 <span className="text-sm">
                   {getDeletionSuccessMessage(type, recentlyDeleted.data)}
                 </span>
@@ -365,7 +366,7 @@ export function BatchDeletionManager({ items, onDelete, className = "" }) {
           </>
         ) : (
           <>
-            <i className="fas fa-trash" />
+            <Icon name="trash" size={16} />
             <span>Alle löschen ({items.length})</span>
           </>
         )}
@@ -417,9 +418,12 @@ export function BatchDeletionManager({ items, onDelete, className = "" }) {
                 <div className={`w-16 h-16 mx-auto rounded-full flex items-center justify-center ${
                   failedItems.length === 0 ? 'bg-green-100' : 'bg-yellow-100'
                 }`}>
-                  <i className={`text-2xl ${
-                    failedItems.length === 0 ? 'fas fa-check text-green-600' : 'fas fa-exclamation-triangle text-yellow-600'
-                  }`} />
+                  <Icon
+                    name={failedItems.length === 0 ? 'check' : 'warning'}
+                    size={28}
+                    strokeWidth={2.2}
+                    className={failedItems.length === 0 ? 'text-green-600' : 'text-yellow-600'}
+                  />
                 </div>
               </div>
               

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import Icon from '../../icons/Icon';
 import SeasonSelector from '../../SeasonSelector';
 import { 
   getAvailableSeasons, 
@@ -99,7 +100,7 @@ const SeasonManagerTab = () => {
       <div className="flex items-center gap-6 mb-6">
         <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl 
                         flex items-center justify-center text-white shadow-lg border border-emerald-300">
-          <i className="fas fa-calendar-alt text-2xl"></i>
+          <Icon name="calendar" size={28} strokeWidth={2} />
         </div>
         <div>
           <h2 className="text-3xl font-bold text-gray-800 mb-1">Saison-Manager</h2>
@@ -111,8 +112,8 @@ const SeasonManagerTab = () => {
       <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 rounded-2xl p-6 border border-emerald-200 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg">
-              <i className="fas fa-calendar-check text-white text-xl"></i>
+            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg text-white">
+              <Icon name="calendar" size={24} strokeWidth={2} />
             </div>
             <div>
               <h3 className="text-xl font-bold text-gray-800 mb-1">Aktuelle Saison</h3>

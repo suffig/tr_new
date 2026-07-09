@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from '../../icons/Icon';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import EnhancedSearch from '../../EnhancedSearch';
 import LoadingSpinner from '../../LoadingSpinner';
@@ -26,7 +27,7 @@ export default function SearchTab({ onNavigate }) {
     { 
       id: 'players', 
       label: 'Spieler', 
-      icon: 'fas fa-users',
+      icon: 'users',
       data: players || [],
       searchFields: ['name', 'position', 'team', 'value'],
       filterOptions: [
@@ -62,7 +63,7 @@ export default function SearchTab({ onNavigate }) {
     {
       id: 'matches',
       label: 'Spiele',
-      icon: 'fas fa-futbol',
+      icon: 'football',
       data: matches || [],
       searchFields: ['date', 'goalsa', 'goalsb', 'goalscorers', 'manofthematch', 'teama', 'teamb'],
       filterOptions: [],
@@ -132,7 +133,7 @@ export default function SearchTab({ onNavigate }) {
     {
       id: 'transactions',
       label: 'Transaktionen',
-      icon: 'fas fa-euro-sign',
+      icon: 'euro',
       data: transactions || [],
       searchFields: ['type', 'description', 'amount', 'date'],
       filterOptions: [
@@ -162,7 +163,7 @@ export default function SearchTab({ onNavigate }) {
     {
       id: 'bans',
       label: 'Sperren',
-      icon: 'fas fa-ban',
+      icon: 'ban',
       data: bans || [],
       searchFields: ['player_name', 'team', 'type', 'reason'],
       filterOptions: [
@@ -220,7 +221,9 @@ export default function SearchTab({ onNavigate }) {
     if (results.length === 0) {
       return (
         <div className="p-6 text-center text-text-secondary">
-          <i className={`${currentSearchType.icon} text-4xl mb-2`}></i>
+          <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+            <Icon name={currentSearchType.icon} size={28} strokeWidth={1.6} />
+          </div>
           <p>Keine {currentSearchType.label.toLowerCase()} gefunden</p>
         </div>
       );
@@ -371,7 +374,7 @@ export default function SearchTab({ onNavigate }) {
     <div className="p-4 pb-20 space-y-4">
       {/* Header */}
       <div>
-        <h3 className="text-lg font-semibold text-text-primary mb-1">🔍 Globale Suche</h3>
+        <h3 className="text-lg font-semibold text-text-primary mb-1 inline-flex items-center gap-2"><Icon name="search" size={18} strokeWidth={2.2} className="text-system-blue" />Globale Suche</h3>
         <p className="text-text-muted text-sm">
           Durchsuche alle Daten zentral an einem Ort
         </p>
@@ -394,7 +397,7 @@ export default function SearchTab({ onNavigate }) {
             title={type.label}
             aria-label={type.label}
           >
-            <i className={type.icon}></i>
+            <Icon name={type.icon} size={16} strokeWidth={2} />
             <span className="font-medium hidden sm:inline">{type.label}</span>
             <span className="text-xs opacity-75">({type.data.length})</span>
           </button>

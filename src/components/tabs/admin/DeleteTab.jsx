@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from '../../icons/Icon';
 import { useSupabaseQuery, useSupabaseMutation } from '../../../hooks/useSupabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
 import { deleteMatch } from '../../../services/matchService';
@@ -31,10 +32,10 @@ export default function DeleteTab() {
   const { remove: removeTransaction } = useSupabaseMutation('transactions');
 
   const sections = [
-    { id: 'players', label: 'Spieler löschen', icon: 'fas fa-users' },
-    { id: 'matches', label: 'Spiele löschen (Einzel & Bulk)', icon: 'fas fa-futbol' },
-    { id: 'bans', label: 'Sperren löschen', icon: 'fas fa-ban' },
-    { id: 'transactions', label: 'Transaktionen löschen', icon: 'fas fa-euro-sign' },
+    { id: 'players', label: 'Spieler löschen', icon: 'users' },
+    { id: 'matches', label: 'Spiele löschen (Einzel & Bulk)', icon: 'football' },
+    { id: 'bans', label: 'Sperren löschen', icon: 'ban' },
+    { id: 'transactions', label: 'Transaktionen löschen', icon: 'euro' },
   ];
 
   // Clear search when switching sections
@@ -378,7 +379,7 @@ export default function DeleteTab() {
               disabled={loading}
               className="btn-secondary btn-sm text-accent-red hover:bg-red-50 disabled:opacity-50"
             >
-              <i className="fas fa-trash mr-1"></i>
+              <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
             </button>
           </div>
@@ -428,7 +429,7 @@ export default function DeleteTab() {
               disabled={loading}
               className="btn-primary btn-sm bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
             >
-              <i className="fas fa-trash mr-1"></i>
+              <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               {selectedMatches.size} Spiele löschen
             </button>
           )}
@@ -458,7 +459,7 @@ export default function DeleteTab() {
                     </p>
                     {match.manofthematch && (
                       <p className="text-xs text-text-muted mt-1">
-                        <i className="fas fa-star mr-1"></i>
+                        <Icon name="star" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
                         SdS: {match.manofthematch}
                       </p>
                     )}
@@ -469,7 +470,7 @@ export default function DeleteTab() {
                     disabled={loading}
                     className="btn-secondary btn-sm text-accent-red hover:bg-red-50 disabled:opacity-50"
                   >
-                    <i className="fas fa-trash mr-1"></i>
+                    <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
                     Einzeln löschen
                   </button>
                 </div>
@@ -528,7 +529,7 @@ export default function DeleteTab() {
               disabled={loading}
               className="btn-secondary btn-sm text-accent-red hover:bg-red-50 disabled:opacity-50"
             >
-              <i className="fas fa-trash mr-1"></i>
+              <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
             </button>
           </div>
@@ -576,7 +577,7 @@ export default function DeleteTab() {
                 )}
                 {getMatchContext(transaction) && (
                   <p className="text-xs text-blue-600 mt-1">
-                    <i className="fas fa-futbol mr-1"></i>
+                    <Icon name="football" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
                     {getMatchContext(transaction)}
                   </p>
                 )}
@@ -587,7 +588,7 @@ export default function DeleteTab() {
               disabled={loading}
               className="btn-secondary btn-sm text-accent-red hover:bg-red-50 disabled:opacity-50"
             >
-              <i className="fas fa-trash mr-1"></i>
+              <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
             </button>
           </div>
@@ -634,8 +635,10 @@ export default function DeleteTab() {
                 : 'bg-bg-tertiary text-text-secondary hover:text-text-primary hover:bg-bg-hover'
             }`}
           >
-            <i className={`${section.icon} mr-2`}></i>
-            {section.label}
+            <span className="inline-flex items-center gap-2">
+              <Icon name={section.icon} size={16} strokeWidth={2} />
+              {section.label}
+            </span>
           </button>
         ))}
       </div>
@@ -650,22 +653,22 @@ export default function DeleteTab() {
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-red focus:border-transparent text-text-primary bg-bg-secondary"
           />
-          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-            <i className="fas fa-search text-text-muted"></i>
+          <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
+            <Icon name="search" size={16} strokeWidth={2} />
           </div>
           {searchQuery && (
             <button
               onClick={() => setSearchQuery('')}
               className="absolute inset-y-0 right-0 pr-3 flex items-center text-text-muted hover:text-text-primary"
             >
-              <i className="fas fa-times"></i>
+              <Icon name="x" size={16} strokeWidth={2.2} />
             </button>
           )}
         </div>
         <div className="flex justify-between items-center mt-2">
           {searchQuery && (
-            <p className="text-xs text-text-muted">
-              <i className="fas fa-filter mr-1"></i>
+            <p className="text-xs text-text-muted inline-flex items-center gap-1">
+              <Icon name="filter" size={13} strokeWidth={2} />
               Gefiltert nach: &ldquo;{searchQuery}&rdquo;
             </p>
           )}
@@ -689,8 +692,8 @@ export default function DeleteTab() {
       {/* Warning */}
       <div className="mt-6 modern-card bg-red-50 border-red-200">
         <div className="flex items-start">
-          <div className="text-red-600 mr-3">
-            <i className="fas fa-exclamation-triangle"></i>
+          <div className="text-red-600 mr-3 flex-shrink-0">
+            <Icon name="warning" size={18} strokeWidth={2} />
           </div>
           <div>
             <h4 className="font-semibold text-red-800 mb-1">Achtung</h4>
