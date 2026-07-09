@@ -10,9 +10,9 @@ export const TEAMS = [
 
 // FC26 TEAMS (with Dynamo Dresden and Schalke 04)
 export const TEAMS_FC26 = [
-  { value: 'AEK', label: 'Dynamo Dresden', short: 'Dynamo', color: 'blue', icon: 'dynamo' },
-  { value: 'Real', label: 'Schalke 04', short: 'S04', color: 'red', icon: 'real' },
-  { value: 'Ehemalige', label: 'Ehemalige', short: 'Ehem.', color: 'gray', icon: '⚫' },
+  { value: 'AEK', label: 'Dynamo Dresden', color: 'blue', icon: 'dynamo' },
+  { value: 'Real', label: 'Schalke 04', color: 'red', icon: 'real' },
+  { value: 'Ehemalige', label: 'Ehemalige', color: 'gray', icon: '⚫' },
 ];
 
 /**
