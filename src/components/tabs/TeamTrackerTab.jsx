@@ -55,6 +55,9 @@ function computeMilestones(pulls, catalog, pid) {
   };
 }
 
+  };
+}
+
 function relTime(ts) {
   const d = Date.now() - new Date(ts).getTime();
   const min = Math.floor(d / 60000);
@@ -431,7 +434,6 @@ function countsTotal(pulls, personId, sinceTs) {
 function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel }) {
   const [openDetails, setOpenDetails] = useState({});
   const [achievePerson, setAchievePerson] = useState(null);
-
   const all = people.map((p) => ({ ...p, stats: statsFor(p.id) }));
   const combinedPulls = all.reduce((s, p) => s + p.stats.totalPulls, 0);
   const catalogTotal = catalog.length;
@@ -474,6 +476,13 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
     return { aw, pw, dr, n, streakWho, streakLen };
   })();
 
+  // Helper: unique completion (all-time unique teams)
+  const completion = (pid) => {
+    const set = new Set();
+    for (const e of pulls) if (e.person === pid) set.add(e.team);
+    return set.size;
+  };
+
   // All-time metrics per person (achievements + completion)
   const allTime = (pid) => {
     const counts = new Map();
@@ -511,6 +520,19 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
     ].map((a) => ({ ...a, done: a.value >= a.target }));
   };
 
+  // Milestones-for-display: map computeMilestones -> array with hints/icons (used by the milestones card)
+  const milestonesFor = (pid) => {
+    const m = computeMilestones(pulls, catalog, pid);
+    return [
+      { id: 'first', icon: 'football', label: MILESTONE_LABELS.first, done: !!m.first, hint: `${m.first ? 1 : 0}/1` },
+      { id: 'five', icon: 'starFilled', label: MILESTONE_LABELS.five, done: !!m.five, hint: `${m.five ? 1 : 0}/1` },
+      { id: 'collector10', icon: 'trophy', label: '10 Teams gesammelt', done: !!m.collector10, hint: `${m.collector10 ? 10 : 0}/10` },
+      { id: 'tophunter', icon: 'trendingUp', label: MILESTONE_LABELS.tophunter, done: !!m.tophunter, hint: `${m.tophunter ? 10 : 0}/10` },
+      { id: 'national', icon: 'grid', label: MILESTONE_LABELS.national, done: !!m.national, hint: `${m.national ? 5 : 0}/5` },
+      { id: 'veteran', icon: 'award', label: MILESTONE_LABELS.veteran, done: !!m.veteran, hint: `${m.veteran ? 100 : 0}/100` },
+      { id: 'complete5', icon: 'starFilled', label: MILESTONE_LABELS.complete5, done: !!m.complete5, hint: `${m.complete5 ? total5star : 0}/${total5star || '—'}` },
+    ];
+  };
   const ownedPerTier = (pid) => {
     const seen = new Set(); const owned = {};
     for (const e of pulls) {
@@ -567,31 +589,27 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
     );
   }
 
+  const maxDist = Math.max(1, ...all.flatMap((p) => Object.values(p.stats.dist)));
+
   return (
     <div className="space-y-3 animate-mobile-slide-in">
-      {/* Quality comparison (counts are always equal → compare team QUALITY) */}
-      <div className="modern-card">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2"><Icon name="scale" size={17} strokeWidth={2.2} className="text-system-purple" />Wer bekommt die besseren Teams?</h3>
-          <span className="text-[11px] text-text-tertiary whitespace-nowrap">{windowLabel} · {combinedPulls}</span>
-        </div>
-
-        <div className="flex items-center justify-between text-center">
-          <div className="flex-1">
-            <div className="text-2xl font-bold text-system-blue tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />{avgA ? fmtRating(avgA) : '—'}</div>
             <div className="text-[11px] text-text-tertiary">{all[0].name} · ⌀</div>
           </div>
           <div className="px-2 text-xs font-semibold text-text-tertiary">
             {qualityLeader ? <span className="inline-flex items-center gap-1 text-system-orange">🔥 {qualityLeader.name}</span> : 'Gleichstand'}
           </div>
           <div className="flex-1">
-            <div className="text-2xl font-bold text-system-red tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />{avgP ? fmtRating(avgP) : '—'}</div>
+            <div className="text-2xl font-bold text-system-red tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={16} strokeWidth={0} className="text-system-yellow" />{avgP ? fmtRating(avgP) : '—'}</div>
             <div className="text-[11px] text-text-tertiary">{all[1].name} · ⌀</div>
           </div>
         </div>
 
+        {/* Per-match duel: who got the higher-rated team */}
         {duel.n > 0 && (
           <div className="mt-3 pt-3 border-t border-border-light">
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-xs font-medium text-text-secondary">Bessere-Team-Duelle</span>
+<div className="mt-3 pt-3 border-t border-border-light">
             <div className="flex items-center justify-between mb-1.5">
               <span className="text-xs font-medium text-text-secondary">Bessere-Team-Duelle</span>
               <span className="text-[11px] text-text-tertiary">
@@ -609,24 +627,29 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
               <span className="w-8 text-sm font-bold text-system-red tabular-nums">{duel.pw}</span>
             </div>
           </div>
+              </div>
+              <span className="w-8 text-sm font-bold text-system-red tabular-nums">{duel.pw}</span>
+            </div>
+          </div>
         )}
 
+        {/* Quality metrics: Top-Teams (≥4,5★) + Gesamt-Sternwert */}
         <div className="mt-3 grid grid-cols-2 gap-2">
           {all.map((p) => {
             const a = ACCENT[p.accent]; const s = p.stats;
             const starSum = s.avgRating ? s.avgRating * s.ratedTotal : 0;
             return (
-              <div key={p.id} className="bg-bg-tertiary rounded-xl p-2.5">
-                <div className={`text-xs font-semibold ${a.text} mb-1 inline-flex items-center gap-1.5`}><span className={`w-2 h-2 rounded-full ${a.bar}`} />{p.name}</div>
-                <div className="flex justify-between text-[11px] text-text-tertiary"><span>Top-Teams ≥4,5★</span><span className="font-semibold text-text-primary tabular-nums">{topTeams(s)}</span></div>
-                <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5"><span>Sternwert</span><span className="font-semibold text-text-primary tabular-nums">{starSum.toFixed(1).replace('.', ',')}</span></div>
+              <div key={p.id} className="bg-bg-tertiary rounded-xl p-3">
+                <div className={`text-xs font-semibold ${a.text} mb-1.5 inline-flex items-center gap-1.5`}><span className={`w-2 h-2 rounded-full ${a.bar}`} />{p.name}</div>
+                <div className="flex justify-between text-[11px] text-text-tertiary"><span>Top-Teams (≥4,5★)</span><span className="font-semibold text-text-primary tabular-nums">{topTeams(s)}</span></div>
+                <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5"><span>Gesamt-Sternwert</span><span className="font-semibold text-text-primary tabular-nums">{starSum.toFixed(1).replace('.', ',')}</span></div>
+              </div>
               </div>
             );
           })}
         </div>
       </div>
 
-      {/* Per person: key stats + labelled distribution + collapsible details */}
       {all.map((p) => {
         const a = ACCENT[p.accent]; const s = p.stats;
         const maxDistVal = Math.max(1, ...Object.values(s.dist), s.nationals);
@@ -641,7 +664,6 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
               <h3 className={`font-semibold ${a.text}`}>{p.name}</h3>
               <span className="ml-auto text-xs text-text-tertiary">{s.totalPulls} bekommen · {s.unique} {s.unique === 1 ? 'Team' : 'Teams'}</span>
             </div>
-
             <div className="grid grid-cols-2 gap-2 mb-3">
               <div className="bg-bg-tertiary rounded-xl p-2.5">
                 <div className="text-[11px] text-text-tertiary mb-0.5">⌀ Rating</div>
@@ -722,6 +744,35 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
                 </div>
               );
             })()}
+                </div>
+              );
+            })()}
+
+            {/* Per-tier completion (all-time) */}
+            {(() => {
+              const owned = ownedPerTier(p.id);
+              const tiers = RATING_TIERS.filter((r) => tierTotals[r] && owned[r]);
+              if (tiers.length === 0) return null;
+              return (
+                <div className="mt-3 pt-3 border-t border-border-light">
+                  <div className="text-[11px] text-text-tertiary mb-1.5">Vollständigkeit nach Sternen</div>
+                  <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">
+                    {tiers.map((r) => {
+                      const done = owned[r]; const total = tierTotals[r];
+                      return (
+                        <div key={r} className="flex items-center gap-1.5">
+                          <span className="w-10 inline-flex items-center gap-0.5 text-[11px] font-semibold text-text-secondary tabular-nums">
+                            <Icon name="starFilled" size={10} strokeWidth={0} className="text-system-yellow" />{fmtRating(r)}
+                          </span>
+                          <div className="flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden"><div className={`h-full ${a.bar}`} style={{ width: `${(done / total) * 100}%` }} /></div>
+                          <span className="text-[10px] text-text-tertiary tabular-nums w-9 text-right">{done}/{total}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Achievements entry */}
             <button onClick={() => setAchievePerson(p.id)} className={`mt-2 w-full flex items-center justify-between px-3 py-2.5 rounded-xl ${a.chip}`}>
@@ -765,6 +816,52 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
           </div>
         </div>
       )}
+                      </div>
+                    );
+                  })}
+                </div>
+      {/* Milestones / achievements (all-time) */}
+      <div className="modern-card">
+        <h3 className="font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="award" size={18} strokeWidth={2.2} className="text-system-orange" />Meilensteine</h3>
+        <div className="grid grid-cols-2 gap-3">
+          {people.map((p) => {
+            const a = ACCENT[p.accent];
+            const ms = milestonesFor(p.id);
+            const earned = ms.filter((x) => x.done).length;
+            return (
+              <div key={p.id} className="bg-bg-tertiary rounded-xl p-3">
+                <div className="flex items-center justify-between mb-2">
+                  <span className={`text-xs font-semibold ${a.text} inline-flex items-center gap-1.5`}><span className={`w-2 h-2 rounded-full ${a.bar}`} />{p.name}</span>
+                  <span className="text-[11px] text-text-tertiary tabular-nums">{earned}/{ms.length}</span>
+                </div>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {ms.map((x) => (
+                    <div
+                      key={x.id}
+                      title={`${x.label} — ${x.hint}`}
+                      className={`aspect-square rounded-lg flex items-center justify-center ${x.done ? `${a.chip}` : 'bg-bg-secondary text-text-quaternary opacity-60'}`}
+                    >
+                      <Icon name={x.icon} size={16} strokeWidth={x.done ? 2.2 : 1.8} />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-[10px] text-text-quaternary mt-2 text-center">Gesamt (alle Zeiträume) · gefüllt = erreicht</p>
+      </div>
+
+      <div className="modern-card flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <span className="w-10 h-10 rounded-xl bg-system-purple/12 text-system-purple flex items-center justify-center"><Icon name="trophy" size={20} strokeWidth={2} /></span>
+          <div>
+            <div className="text-xs text-text-muted">Insgesamt ({windowLabel})</div>
+            <div className="text-[11px] text-text-tertiary">beide zusammen</div>
+          </div>
+        </div>
+        <div className="text-xl font-bold text-text-primary">{combinedPulls}</div>
+      </div>
 
       {/* Achievement detail sheet */}
       {achievePerson && createPortal((
