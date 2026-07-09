@@ -197,7 +197,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
             onClick={() => setShowExportImport(true)}
             className="flex items-center justify-center space-x-2 btn-soft btn-soft-orange py-3 px-4 rounded-xl text-sm"
           >
-            <span>📦</span>
+            <Icon name="share" size={16} strokeWidth={2} />
             <span>Export/Import</span>
           </button>
           <button
@@ -214,7 +214,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
             }}
             className="flex items-center justify-center space-x-2 btn-soft btn-soft-teal py-3 px-4 rounded-xl text-sm"
           >
-            <span>📈</span>
+            <Icon name="trendingUp" size={16} strokeWidth={2} />
             <span>Kader-Analyse</span>
           </button>
         </div>

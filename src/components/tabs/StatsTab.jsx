@@ -931,7 +931,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <div className="mobile-grid mobile-grid-1 md:grid-cols-3 gap-4">
           <div className="mobile-overview-card team-aek animate-mobile-slide-in hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-blue uppercase tracking-wide">🔵 {getTeamDisplay('AEK')}</div>
+              <div className="text-caption1 font-semibold text-system-blue uppercase tracking-wide">{getTeamDisplay('AEK')}</div>
               <div className="w-8 h-8 bg-system-blue/10 rounded-full flex items-center justify-center">
                 <span className="text-system-blue text-sm font-bold">A</span>
               </div>
@@ -952,7 +952,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           
           <div className="mobile-overview-card team-real animate-mobile-slide-in hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-red uppercase tracking-wide">🔴 {getTeamDisplay('Real')}</div>
+              <div className="text-caption1 font-semibold text-system-red uppercase tracking-wide">{getTeamDisplay('Real')}</div>
               <div className="w-8 h-8 bg-system-red/10 rounded-full flex items-center justify-center">
                 <span className="text-system-red text-sm font-bold">R</span>
               </div>
