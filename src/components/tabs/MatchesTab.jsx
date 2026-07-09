@@ -253,11 +253,14 @@ export default function MatchesTab({ showHints = false }) {
         const draws = allMatches.length - aekWins - realWins;
         const totalGoalsA = allMatches.reduce((s, m) => s + (m.goalsa || 0), 0);
         const totalGoalsB = allMatches.reduce((s, m) => s + (m.goalsb || 0), 0);
-        const recent5 = [...allMatches]
-          .sort((a, b) => b.id - a.id)
-          .slice(0, 5)
-          .reverse()
-          .map(m => (m.goalsa || 0) > (m.goalsb || 0) ? 'AEK' : (m.goalsb || 0) > (m.goalsa || 0) ? 'Real' : 'D');
+        const last5 = [...allMatches].sort((a, b) => b.id - a.id).slice(0, 5).reverse();
+        const resultFor = (m, side) => {
+          const a = m.goalsa || 0, b = m.goalsb || 0;
+          if (a === b) return 'D';
+          return side === 'AEK' ? (a > b ? 'W' : 'L') : (b > a ? 'W' : 'L');
+        };
+        const formAek = last5.map(m => resultFor(m, 'AEK'));
+        const formReal = last5.map(m => resultFor(m, 'Real'));
         const aekName = getTeamDisplay('AEK');
         const realName = getTeamDisplay('Real');
         return (
@@ -280,21 +283,29 @@ export default function MatchesTab({ showHints = false }) {
                 <div className="text-[11px] font-semibold text-red-400 leading-tight text-center">{realName}</div>
               </div>
             </div>
-            {/* Bottom: last 5 results */}
-            <div className="border-t border-border-light px-3 py-2 flex items-center gap-2">
-              <span className="text-[10px] text-text-muted font-medium shrink-0">Letzte {recent5.length}</span>
-              <div className="flex gap-1 flex-1 justify-center">
-                {recent5.map((r, i) => (
-                  <div
-                    key={i}
-                    className={`flex-1 max-w-[36px] h-6 rounded-lg flex items-center justify-center text-white text-[10px] font-bold ${
-                      r === 'AEK' ? 'bg-blue-500' : r === 'Real' ? 'bg-red-500' : 'bg-gray-400'
-                    }`}
-                  >
-                    {r === 'AEK' ? aekName.split(' ')[0][0] + (aekName.split(' ')[1]?.[0] ?? '') : r === 'Real' ? realName.split(' ')[0][0] + (realName.split(' ')[1]?.[0] ?? '') : 'U'}
-                  </div>
-                ))}
+            {/* Bottom: Formkurve pro Team (letzte 5, alt -> neu) */}
+            <div className="border-t border-border-light px-3 py-2 space-y-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[10px] text-text-muted font-medium uppercase tracking-wide">Formkurve (letzte 5)</span>
+                <span className="text-[9px] text-text-tertiary">alt → neu</span>
               </div>
+              {[{ name: aekName, form: formAek }, { name: realName, form: formReal }].map((row, ri) => (
+                <div key={ri} className="flex items-center gap-2">
+                  <span className="text-[10px] text-text-secondary font-medium w-24 truncate shrink-0">{row.name}</span>
+                  <div className="flex gap-1">
+                    {row.form.length === 0 && <span className="text-[10px] text-text-tertiary">—</span>}
+                    {row.form.map((r, i) => (
+                      <span
+                        key={i}
+                        title={r === 'W' ? 'Sieg' : r === 'D' ? 'Unentschieden' : 'Niederlage'}
+                        className={`w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center ${r === 'W' ? 'bg-system-green' : r === 'D' ? 'bg-gray-400' : 'bg-system-red'}`}
+                      >
+                        {r === 'W' ? 'S' : r === 'D' ? 'U' : 'N'}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         );
