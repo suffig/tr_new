@@ -5,6 +5,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay, getTeamShort } from '../../constants/teams';
+import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
 export default function MatchesTab({ showHints = false }) {
@@ -183,6 +184,36 @@ export default function MatchesTab({ showHints = false }) {
       else next.add(matchId);
       return next;
     });
+  };
+
+  // Spieltag als Text teilen (Web-Share-API mit Zwischenablage-Fallback)
+  const shareMatchday = async (dateGroup) => {
+    const aek = getTeamShort('AEK');
+    const real = getTeamShort('Real');
+    const dateStr = new Date(dateGroup.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' });
+    const ordered = [...dateGroup.matches].sort((a, b) => a.id - b.id);
+    let sumA = 0, sumB = 0;
+    const lines = ordered.map((m, i) => {
+      const a = m.goalsa || 0, b = m.goalsb || 0;
+      sumA += a; sumB += b;
+      return `${i + 1}. ${aek} ${a}:${b} ${real}`;
+    });
+    const text =
+      `⚽ FUSTA · Spieltag ${dateStr}\n\n` +
+      `${lines.join('\n')}\n\n` +
+      `Tagesbilanz: ${aek} ${sumA}:${sumB} ${real}`;
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: 'FUSTA Spieltag', text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast.success('Spieltag in die Zwischenablage kopiert');
+      }
+    } catch (err) {
+      if (err && err.name === 'AbortError') return; // Nutzer hat abgebrochen
+      try { await navigator.clipboard.writeText(text); toast.success('Spieltag kopiert'); }
+      catch { toast.error('Teilen nicht möglich'); }
+    }
   };
 
   // Group matches by date
@@ -474,9 +505,18 @@ export default function MatchesTab({ showHints = false }) {
                   <h3 className="text-sm font-semibold text-text-secondary">
                     {new Date(dateGroup.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
                   </h3>
-                  <span className="text-xs text-text-tertiary">
-                    {dateGroup.matches.length} Spiel{dateGroup.matches.length !== 1 ? 'e' : ''}
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-text-tertiary">
+                      {dateGroup.matches.length} Spiel{dateGroup.matches.length !== 1 ? 'e' : ''}
+                    </span>
+                    <button
+                      onClick={() => shareMatchday(dateGroup)}
+                      aria-label="Spieltag teilen"
+                      className="w-8 h-8 rounded-full flex items-center justify-center text-text-tertiary hover:text-system-green hover:bg-system-green/10 active:scale-90 transition-all"
+                    >
+                      <Icon name="share" size={15} strokeWidth={2.2} />
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
