@@ -12,7 +12,7 @@ import EventsSettingsTab from './admin/EventsSettingsTab';
 import ManagerTab from './admin/ManagerTab';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false, user }) { // eslint-disable-line no-unused-vars
-  const [activeSubTab, setActiveSubTab] = useState('search');
+  const [activeSubTab, setActiveSubTab] = useState('matches');
   const [navOpen, setNavOpen] = useState(false);
 
   // Security check - only allow access for authorized user

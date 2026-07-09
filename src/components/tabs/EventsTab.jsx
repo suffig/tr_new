@@ -5,63 +5,40 @@ export default function EventsTab() {
   const [activeEvents, setActiveEvents] = useState([]);
   const [upcomingEvents, setUpcomingEvents] = useState([]);
 
-  // Mock data for now - this would be replaced with actual data management
+  // Beispiel-Events (Platzhalter, bis eine echte Event-Verwaltung angebunden ist)
   useEffect(() => {
-    const mockActiveEvents = [
+    const y = new Date().getFullYear();
+    const sampleActiveEvents = [
       {
         id: 1,
-        name: 'Weihnachtsevent 2024',
-        type: 'seasonal',
-        description: 'Festliche FIFA-Matches mit speziellen Preisen',
-        startDate: '2024-12-01',
-        endDate: '2024-12-31',
-        icon: '🎄',
-        status: 'active',
-        participants: 12,
-        prizes: ['Glühwein für alle', 'FIFA-Pokal', 'Weihnachtsgeld']
-      },
-      {
-        id: 2,
-        name: 'Slot Machine Challenge',
+        name: 'Blackjack-Nacht',
         type: 'gambling',
-        description: 'Drehe das Glücksrad nach jedem Sieg',
-        startDate: '2024-01-01',
-        endDate: '2024-12-31',
-        icon: '🎰',
+        description: 'Kartenspiele mit Echtgeld-Einsatz nach jedem Match',
+        startDate: `${y}-01-01`,
+        endDate: `${y}-12-31`,
+        icon: '🃏',
         status: 'active',
-        participants: 8,
+        participants: 2,
         currentJackpot: '145.50€'
       }
     ];
 
-    const mockUpcomingEvents = [
+    const sampleUpcomingEvents = [
       {
-        id: 3,
-        name: 'Oster-Tournament',
-        type: 'tournament',
-        description: 'K.O.-Turnier um den goldenen Fußball',
-        startDate: '2024-04-01',
-        endDate: '2024-04-07',
-        icon: '🐰',
-        status: 'upcoming',
-        plannedParticipants: 16,
-        prizes: ['Goldener Fußball', 'Schokoladen-Set']
-      },
-      {
-        id: 4,
-        name: 'Summer League',
+        id: 2,
+        name: 'Sommer-Liga',
         type: 'league',
         description: 'Liga-Modus über den ganzen Sommer',
-        startDate: '2024-06-01',
-        endDate: '2024-08-31',
+        startDate: `${y}-06-01`,
+        endDate: `${y}-08-31`,
         icon: '☀️',
         status: 'upcoming',
-        plannedParticipants: 20
+        plannedParticipants: 2
       }
     ];
 
-    setActiveEvents(mockActiveEvents);
-    setUpcomingEvents(mockUpcomingEvents);
+    setActiveEvents(sampleActiveEvents);
+    setUpcomingEvents(sampleUpcomingEvents);
   }, []);
 
   const EventCard = ({ event, isUpcoming = false }) => (
@@ -184,8 +161,8 @@ export default function EventsTab() {
       {/* Active Events */}
       {activeEvents.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
-            <span className="mr-2">🔥</span>
+          <h2 className="text-lg font-semibold text-text-primary mb-4 inline-flex items-center gap-2">
+            <Icon name="zap" size={18} strokeWidth={2.2} className="text-system-orange" />
             Aktive Events
           </h2>
           <div className="space-y-4">
@@ -199,8 +176,8 @@ export default function EventsTab() {
       {/* Upcoming Events */}
       {upcomingEvents.length > 0 && (
         <div>
-          <h2 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
-            <span className="mr-2">📅</span>
+          <h2 className="text-lg font-semibold text-text-primary mb-4 inline-flex items-center gap-2">
+            <Icon name="calendar" size={18} strokeWidth={2.2} className="text-system-blue" />
             Geplante Events
           </h2>
           <div className="space-y-4">
@@ -214,7 +191,9 @@ export default function EventsTab() {
       {/* Empty State */}
       {activeEvents.length === 0 && upcomingEvents.length === 0 && (
         <div className="text-center py-12">
-          <div className="text-4xl mb-4">🎪</div>
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-system-purple/12 text-system-purple flex items-center justify-center">
+            <Icon name="sparkles" size={26} strokeWidth={1.8} />
+          </div>
           <h3 className="text-lg font-medium text-text-primary mb-2">
             Keine Events verfügbar
           </h3>
@@ -225,17 +204,11 @@ export default function EventsTab() {
       )}
 
       {/* Info Box */}
-      <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-        <div className="flex items-start space-x-3">
-          <div className="text-blue-500 text-xl flex-shrink-0">💡</div>
-          <div>
-            <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
-              Event-Verwaltung
-            </div>
-            <div className="text-xs text-blue-700 dark:text-blue-300">
-              Events können in der Verwaltung konfiguriert und individualisiert werden. 
-              Hier werden Slot Machine Events, saisonale Turniere und spezielle Challenges verwaltet.
-            </div>
+      <div className="mt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl p-4">
+        <div className="flex items-start gap-3">
+          <Icon name="bulb" size={18} strokeWidth={2} className="text-blue-500 flex-shrink-0 mt-0.5" />
+          <div className="text-xs text-blue-700 dark:text-blue-300">
+            Events lassen sich in der Verwaltung konfigurieren.
           </div>
         </div>
       </div>
