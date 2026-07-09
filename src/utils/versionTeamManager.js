@@ -45,7 +45,11 @@ const DEFAULT_TEAMS_FC26 = {
   },
   Real: {
     label: 'Schalke 04',
+    label: 'Schalke 04',
     short: 'S04',
+    color: 'red',
+    icon: 'real',
+    customIcon: null
     color: 'red',
     icon: 'real',
     customIcon: null
