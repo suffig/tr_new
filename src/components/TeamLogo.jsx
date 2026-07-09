@@ -31,7 +31,7 @@ export default function TeamLogo({ team, size = 'md', className = '', version = 
         return `${import.meta.env.BASE_URL}aek_logo_transparent.png`;
       case 'real':
         if (fifaVersion === 'FC26') {
-          return `${import.meta.env.BASE_URL}schalke_logo.svg`;
+          return `${import.meta.env.BASE_URL}schalke_logo_transparent.png`;
         }
         return `${import.meta.env.BASE_URL}real_logo_transparent.png`;
       default:
