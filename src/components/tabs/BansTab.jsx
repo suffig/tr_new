@@ -211,8 +211,8 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                               <span className={`inline-block px-2 py-1 rounded text-xs font-medium border transition-all group-hover:scale-105 ${getBanTypeColor(ban.type)}`}>
                                 {ban.type}
                               </span>
-                              <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200 transition-all group-hover:scale-105">
-                                ✅ Beendet
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200 transition-all group-hover:scale-105">
+                                <Icon name="check" size={12} strokeWidth={2.6} />Beendet
                               </span>
                             </div>
 
@@ -279,8 +279,8 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
                               </span>
                             ) : (
-                              <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200 transition-all group-hover:scale-105">
-                                ✅ Beendet
+                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200 transition-all group-hover:scale-105">
+                                <Icon name="check" size={12} strokeWidth={2.6} />Beendet
                               </span>
                             )}
                           </div>
@@ -327,7 +327,9 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
             </div>
           ) : (
             <div className="text-center py-12">
-              <div className="text-4xl mb-4">🚫</div>
+              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
+                <Icon name="check" size={26} strokeWidth={2} />
+              </div>
               <h3 className="text-lg font-medium text-text-primary mb-2">
                 {selectedType === 'completed' ? 'Keine beendeten Sperren' : `Keine ${selectedType} Sperren`}
               </h3>

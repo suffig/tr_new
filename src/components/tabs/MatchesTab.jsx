@@ -612,7 +612,10 @@ export default function MatchesTab({ showHints = false }) {
                                     <span className="font-semibold"><span className="text-system-yellow-dark">{match.yellowb || 0}</span> / <span className="text-system-red">{match.redb || 0}</span></span>
                                   </div>
                                 </div>
-                                <div className="text-[11px] text-text-tertiary text-center mt-1.5">🟨 gelb / 🟥 rot</div>
+                                <div className="text-[11px] text-text-tertiary mt-1.5 flex items-center justify-center gap-3">
+                                  <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-system-yellow-dark" />gelb</span>
+                                  <span className="inline-flex items-center gap-1"><span className="w-2 h-2 rounded-sm bg-system-red" />rot</span>
+                                </div>
                               </div>
                             </div>
 
