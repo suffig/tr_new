@@ -180,7 +180,12 @@ export default function TeamTrackerTab() {
     return (
       <div key={t.name} className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl ${cnt > 0 ? accent.chip : 'bg-bg-tertiary'}`}>
         <div className="min-w-0">
-          <div className={`text-sm font-medium truncate ${cnt > 0 ? '' : 'text-text-primary'}`}>{t.name}</div>
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className={`text-sm font-medium truncate ${cnt > 0 ? '' : 'text-text-primary'}`}>{t.name}</span>
+            {t.national && (
+              <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-system-blue/12 text-system-blue">National</span>
+            )}
+          </div>
           <div className="mt-0.5"><StarRating rating={t.rating} /></div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
