@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from './icons/Icon';
 import { triggerNotification } from './NotificationSystem';
 
 export default function SocialSharing() {
@@ -144,7 +145,7 @@ export default function SocialSharing() {
                   onClick={() => setShareModalOpen(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  <i className="fas fa-times text-xl" />
+                  <Icon name="x" size={20} />
                 </button>
               </div>
 
@@ -160,7 +161,7 @@ export default function SocialSharing() {
                     onClick={() => handleShare('native', shareContent)}
                     className="flex items-center justify-center space-x-2 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                   >
-                    <i className="fas fa-share text-gray-600" />
+                    <Icon name="share" size={18} className="text-gray-600" />
                     <span className="text-sm">System</span>
                   </button>
                 )}
@@ -169,7 +170,7 @@ export default function SocialSharing() {
                   onClick={() => handleShare('twitter', shareContent)}
                   className="flex items-center justify-center space-x-2 p-3 border border-blue-300 bg-blue-50 text-blue-700 rounded-lg hover:bg-blue-100 transition-colors"
                 >
-                  <i className="fab fa-twitter" />
+                  <Icon name="twitter" size={18} />
                   <span className="text-sm">Twitter</span>
                 </button>
 
@@ -177,7 +178,7 @@ export default function SocialSharing() {
                   onClick={() => handleShare('facebook', shareContent)}
                   className="flex items-center justify-center space-x-2 p-3 border border-blue-600 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
-                  <i className="fab fa-facebook-f" />
+                  <Icon name="facebook" size={18} />
                   <span className="text-sm">Facebook</span>
                 </button>
 
@@ -185,7 +186,7 @@ export default function SocialSharing() {
                   onClick={() => handleShare('whatsapp', shareContent)}
                   className="flex items-center justify-center space-x-2 p-3 border border-green-300 bg-green-50 text-green-700 rounded-lg hover:bg-green-100 transition-colors"
                 >
-                  <i className="fab fa-whatsapp" />
+                  <Icon name="whatsapp" size={18} />
                   <span className="text-sm">WhatsApp</span>
                 </button>
 
@@ -193,7 +194,7 @@ export default function SocialSharing() {
                   onClick={() => handleShare('telegram', shareContent)}
                   className="flex items-center justify-center space-x-2 p-3 border border-blue-400 bg-blue-400 text-white rounded-lg hover:bg-blue-500 transition-colors"
                 >
-                  <i className="fab fa-telegram" />
+                  <Icon name="telegram" size={18} />
                   <span className="text-sm">Telegram</span>
                 </button>
 
@@ -201,7 +202,7 @@ export default function SocialSharing() {
                   onClick={() => handleShare('copy', shareContent)}
                   className="flex items-center justify-center space-x-2 p-3 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
                 >
-                  <i className="fas fa-copy text-gray-600" />
+                  <Icon name="copy" size={18} className="text-gray-600" />
                   <span className="text-sm">Kopieren</span>
                 </button>
               </div>
@@ -273,7 +274,7 @@ export function ShareButton({ type, data, className = "", children }) {
         onClick={handleShare}
         className={`inline-flex items-center space-x-2 text-sm text-gray-600 hover:text-gray-800 transition-colors ${className}`}
       >
-        <i className="fas fa-share" />
+        <Icon name="share" size={16} />
         {children && <span>{children}</span>}
       </button>
 
@@ -347,7 +348,7 @@ function SocialShareModal({ type, data, onClose }) {
         <div className="flex items-center justify-between mb-4">
           <h3 className="font-bold">Teilen</h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <i className="fas fa-times" />
+            <Icon name="x" size={18} />
           </button>
         </div>
         
@@ -356,19 +357,19 @@ function SocialShareModal({ type, data, onClose }) {
             onClick={() => handleShare('twitter')}
             className="p-3 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100"
           >
-            <i className="fab fa-twitter text-xl" />
+            <Icon name="twitter" size={20} />
           </button>
           <button
             onClick={() => handleShare('whatsapp')}
             className="p-3 bg-green-50 text-green-600 rounded-lg hover:bg-green-100"
           >
-            <i className="fab fa-whatsapp text-xl" />
+            <Icon name="whatsapp" size={20} />
           </button>
           <button
             onClick={() => handleShare('copy')}
             className="p-3 bg-gray-50 text-gray-600 rounded-lg hover:bg-gray-100"
           >
-            <i className="fas fa-copy text-xl" />
+            <Icon name="copy" size={20} />
           </button>
         </div>
       </div>

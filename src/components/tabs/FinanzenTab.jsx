@@ -14,6 +14,13 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
   const [expandedMatches, setExpandedMatches] = useState(null); // null = not yet initialized
   const [showExportImport, setShowExportImport] = useState(false);
   const [currentView, setCurrentView] = useState('overview');
+  // Transaction list: discreet filters + "show only the latest" by default
+  const [txFilters, setTxFilters] = useState({ team: 'all', type: 'all', search: '' });
+  const [txFiltersOpen, setTxFiltersOpen] = useState(false);
+  const [txShowAll, setTxShowAll] = useState(false);
+  const [showAllNonMatch, setShowAllNonMatch] = useState(false);
+  const TX_PREVIEW_COUNT = 10;
+  const NON_MATCH_PREVIEW = 5;
   
   const { data: finances, loading: financesLoading } = useSupabaseQuery('finances', '*');
   const { data: transactions, loading: transactionsLoading } = useSupabaseQuery(
@@ -158,6 +165,26 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
     return { matchGroups, nonMatchTransactions };
   };
 
+  // Distinct transaction types present in the data (for the type filter)
+  const transactionTypes = [...new Set((transactions || []).map(t => t.type).filter(Boolean))];
+
+  // Apply the discreet filters (team / type / free-text) to the transaction list
+  const getFilteredTransactions = () => {
+    let list = transactions || [];
+    if (txFilters.team !== 'all') list = list.filter(t => t.team === txFilters.team);
+    if (txFilters.type !== 'all') list = list.filter(t => t.type === txFilters.type);
+    const q = txFilters.search.trim().toLowerCase();
+    if (q) {
+      list = list.filter(t =>
+        (t.info || '').toLowerCase().includes(q) ||
+        (t.type || '').toLowerCase().includes(q)
+      );
+    }
+    return list;
+  };
+
+  const txFiltersActive = txFilters.team !== 'all' || txFilters.type !== 'all' || !!txFilters.search.trim();
+
   // Define views for horizontal navigation
   const views = [
     { id: 'overview', label: 'Übersicht', iconName: 'wallet' },
@@ -176,6 +203,82 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
   const totalCapital = calculateTotalCapital();
 
   const { matchGroups, nonMatchTransactions } = groupTransactionsByMatch();
+
+  // Dedicated single-team view: hero stat card + the team's recent transactions
+  const renderTeamFinanceView = (team) => {
+    const fin = getTeamFinances(team);
+    const isAek = team === 'AEK';
+    const accent = isAek ? 'text-system-blue' : 'text-system-red';
+    const accentBg = isAek ? 'bg-system-blue/12' : 'bg-system-red/12';
+    const squadValue = getTeamSquadValue(team);
+    const total = fin.balance + squadValue * 1000000;
+    const txns = getTeamTransactions(team);
+
+    return (
+      <>
+        {/* Hero card */}
+        <div className="modern-card mb-4">
+          <div className="flex items-center gap-3 mb-4">
+            <span className={`w-12 h-12 rounded-xl ${accentBg} flex items-center justify-center`}>
+              <TeamLogo team={team.toLowerCase()} size="md" />
+            </span>
+            <div>
+              <h3 className={`font-bold ${accent}`}>{getTeamDisplay(team)}</h3>
+              <div className="text-xs text-text-muted">Kontostand</div>
+            </div>
+          </div>
+          <div className={`text-3xl font-bold ${getAmountColorClass(fin.balance)} mb-4`}>{formatCurrency(fin.balance)}</div>
+          <div className="grid grid-cols-3 gap-2">
+            <div className="bg-bg-tertiary rounded-xl p-3 text-center">
+              <div className={`font-bold text-sm ${accent}`}>{formatPlayerValue(squadValue)}</div>
+              <div className="text-[11px] text-text-tertiary mt-0.5">Kaderwert</div>
+            </div>
+            <div className="bg-bg-tertiary rounded-xl p-3 text-center">
+              <div className={`font-bold text-sm ${(fin.debt || 0) > 0 ? 'text-system-red' : 'text-text-secondary'}`}>{formatCurrency(fin.debt || 0)}</div>
+              <div className="text-[11px] text-text-tertiary mt-0.5">Schulden</div>
+            </div>
+            <div className="bg-bg-tertiary rounded-xl p-3 text-center">
+              <div className="font-bold text-sm text-text-primary">{formatCurrency(total)}</div>
+              <div className="text-[11px] text-text-tertiary mt-0.5">Gesamt</div>
+            </div>
+          </div>
+        </div>
+
+        {/* Recent transactions for this team */}
+        <div className="modern-card p-0 overflow-hidden mb-6">
+          <div className="p-4 border-b border-border-light flex items-center justify-between">
+            <h3 className="font-semibold text-text-primary">Letzte Transaktionen</h3>
+            <span className="text-xs text-text-tertiary">{txns.length}</span>
+          </div>
+          {txns.length > 0 ? (
+            <div className="divide-y divide-border-light">
+              {txns.slice(0, 12).map((t) => (
+                <div key={t.id} className="flex items-center justify-between gap-3 p-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <span className="text-lg flex-shrink-0">{getTransactionIcon(t.type)}</span>
+                    <div className="min-w-0">
+                      <div className="text-sm font-medium text-text-primary truncate">{t.info || t.type || 'Transaktion'}</div>
+                      <div className="text-xs text-text-muted">{t.date ? new Date(t.date).toLocaleDateString('de-DE') : t.type}</div>
+                    </div>
+                  </div>
+                  <div className={`font-bold text-sm whitespace-nowrap ${(t.amount || 0) >= 0 ? 'text-system-green' : 'text-system-red'}`}>
+                    {(t.amount || 0) > 0 ? '+' : ''}{formatCurrency(t.amount || 0)}
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-6 text-center text-text-muted">
+              <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+                <Icon name="swap" size={24} strokeWidth={1.6} />
+              </div>
+              <p className="text-sm">Noch keine Transaktionen</p>
+            </div>
+          )}
+        </div>
+      </>
+    );
+  };
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
@@ -202,168 +305,174 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
       {/* Conditional Content Based on currentView */}
       {currentView === 'transactions' ? (
-        <div className="space-y-4">
-          {/* Transactions List */}
-          <div className="bg-bg-primary border border-border-light rounded-lg shadow-sm">
-            <div className="p-4 border-b border-border-light">
-              <h3 className="text-lg font-semibold text-text-primary">Alle Transaktionen</h3>
-            </div>
-            <div className="divide-y divide-border-light">
-              {(transactions || []).map((transaction) => (
-                <div key={transaction.id} className="p-4 hover:bg-bg-secondary transition-colors duration-200">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="text-lg">{getTransactionIcon(transaction.type)}</span>
-                        <span className="font-medium text-text-primary">
-                          {transaction.type || 'Transaktion'}
-                        </span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${transaction.team === 'AEK' ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}`}>
-                          {transaction.team}
-                        </span>
-                        <span className="text-xs bg-bg-tertiary px-2 py-1 rounded border border-border-light text-text-secondary">
-                          {new Date(transaction.date).toLocaleDateString('de-DE')}
-                        </span>
-                      </div>
-                      <p className="text-sm text-text-secondary truncate mt-1">
-                        {transaction.info || 'Keine Beschreibung'}
-                      </p>
+        (() => {
+          const filtered = getFilteredTransactions();
+          const visible = txShowAll ? filtered : filtered.slice(0, TX_PREVIEW_COUNT);
+          return (
+            <div className="space-y-3">
+              {/* Header row with a discreet filter toggle */}
+              <div className="flex items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="text-lg font-semibold text-text-primary leading-tight">Transaktionen</h3>
+                  <p className="text-xs text-text-tertiary">
+                    {filtered.length} {filtered.length === 1 ? 'Buchung' : 'Buchungen'}
+                    {txFiltersActive ? ' (gefiltert)' : ''}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setTxFiltersOpen((o) => !o)}
+                  aria-expanded={txFiltersOpen}
+                  className={`flex-shrink-0 inline-flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium transition-colors ${
+                    txFiltersActive || txFiltersOpen
+                      ? 'bg-system-blue/12 text-system-blue'
+                      : 'bg-bg-tertiary text-text-secondary'
+                  }`}
+                >
+                  <Icon name="filter" size={16} strokeWidth={2.2} />
+                  <span>Filter</span>
+                  {txFiltersActive && <span className="w-1.5 h-1.5 rounded-full bg-system-blue" />}
+                </button>
+              </div>
+
+              {/* Collapsible filter panel — hidden by default */}
+              {txFiltersOpen && (
+                <div className="modern-card space-y-3 animate-mobile-slide-in">
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary">
+                      <Icon name="search" size={16} strokeWidth={2} />
+                    </span>
+                    <input
+                      type="text"
+                      value={txFilters.search}
+                      onChange={(e) => setTxFilters((f) => ({ ...f, search: e.target.value }))}
+                      placeholder="Suche nach Info oder Typ…"
+                      className="form-input !pl-10"
+                    />
+                  </div>
+                  <div>
+                    <div className="section-label mb-1.5">Team</div>
+                    <div className="flex flex-wrap gap-2">
+                      {[
+                        { id: 'all', label: 'Alle' },
+                        { id: 'AEK', label: getTeamDisplay('AEK') },
+                        { id: 'Real', label: getTeamDisplay('Real') },
+                      ].map((opt) => (
+                        <button
+                          key={opt.id}
+                          onClick={() => setTxFilters((f) => ({ ...f, team: opt.id }))}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            txFilters.team === opt.id ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'
+                          }`}
+                        >
+                          {opt.label}
+                        </button>
+                      ))}
                     </div>
-                    <div className="text-right ml-4">
-                      <div className={`font-bold ${
-                        (transaction.amount || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                  </div>
+                  {transactionTypes.length > 0 && (
+                    <div>
+                      <div className="section-label mb-1.5">Typ</div>
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          onClick={() => setTxFilters((f) => ({ ...f, type: 'all' }))}
+                          className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                            txFilters.type === 'all' ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'
+                          }`}
+                        >
+                          Alle
+                        </button>
+                        {transactionTypes.map((type) => (
+                          <button
+                            key={type}
+                            onClick={() => setTxFilters((f) => ({ ...f, type }))}
+                            className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                              txFilters.type === type ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'
+                            }`}
+                          >
+                            <span>{getTransactionIcon(type)}</span>{type}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {txFiltersActive && (
+                    <button
+                      onClick={() => setTxFilters({ team: 'all', type: 'all', search: '' })}
+                      className="text-xs text-system-red font-medium"
+                    >
+                      Filter zurücksetzen
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Transactions List */}
+              <div className="modern-card p-0 overflow-hidden">
+                <div className="divide-y divide-border-light">
+                  {visible.map((transaction) => (
+                    <div key={transaction.id} className="flex items-center justify-between gap-3 p-3 hover:bg-bg-tertiary/40 transition-colors">
+                      <div className="flex items-center gap-3 min-w-0">
+                        <span className="text-lg flex-shrink-0">{getTransactionIcon(transaction.type)}</span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium text-text-primary truncate">
+                            {transaction.info || transaction.type || 'Transaktion'}
+                          </div>
+                          <div className="flex items-center gap-1.5 text-xs text-text-muted mt-0.5">
+                            <span className={`font-medium ${transaction.team === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
+                              {transaction.team}
+                            </span>
+                            <span>·</span>
+                            <span className="truncate">{new Date(transaction.date).toLocaleDateString('de-DE')}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className={`font-bold text-sm whitespace-nowrap ${
+                        (transaction.amount || 0) >= 0 ? 'text-system-green' : 'text-system-red'
                       }`}>
                         {(transaction.amount || 0) > 0 ? '+' : ''}{formatCurrency(transaction.amount || 0)}
                       </div>
                     </div>
-                  </div>
+                  ))}
+                  {filtered.length === 0 && (
+                    <div className="p-8 text-center text-text-muted">
+                      <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+                        <Icon name="swap" size={28} strokeWidth={1.6} />
+                      </div>
+                      <p className="text-sm">{txFiltersActive ? 'Keine Treffer für diese Filter' : 'Keine Transaktionen gefunden'}</p>
+                    </div>
+                  )}
                 </div>
-              ))}
-              {transactions?.length === 0 && (
-                <div className="p-6 text-center text-text-secondary">
-                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
-                    <Icon name="swap" size={28} strokeWidth={1.6} />
-                  </div>
-                  <p>Keine Transaktionen gefunden</p>
-                </div>
+              </div>
+
+              {/* Show all / show less toggle */}
+              {filtered.length > TX_PREVIEW_COUNT && (
+                <button
+                  onClick={() => setTxShowAll((s) => !s)}
+                  className="w-full py-2.5 rounded-xl bg-bg-tertiary text-text-secondary text-sm font-medium"
+                >
+                  {txShowAll ? 'Weniger anzeigen' : `Alle ${filtered.length} anzeigen`}
+                </button>
               )}
             </div>
-          </div>
-        </div>
+          );
+        })()
       ) : currentView === 'aek' ? (
         <>
-          {/* AEK-only View */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="modern-card text-center border-l-4 border-blue-400 financial-card">
-              <div className="flex items-center justify-center mb-2">
-                <TeamLogo team="aek" size="lg" className="mr-2" />
-                <h3 className="font-semibold text-blue-600">{getTeamDisplay('AEK')}</h3>
-              </div>
-              <div className="space-y-1 text-sm">
-                <div>Kontostand: <span className={`font-bold ${getAmountColorClass(aekFinances.balance)} animate-numberCount`}>{formatCurrency(aekFinances.balance)}</span></div>
-                <div>Kaderwert: <span className="font-bold text-blue-600">{formatPlayerValue(getTeamSquadValue('AEK'))}</span></div>
-                <div>Schulden: <span className={`font-bold ${getAmountColorClass(-(aekFinances.debt || 0))} animate-numberCount`}>{formatCurrency(aekFinances.debt || 0)}</span></div>
-              </div>
-            </div>
-            
-            <div className="modern-card text-center border-l-4 border-primary-green">
-              <div className="flex items-center justify-center mb-2">
-                <span className="text-2xl mr-2">💰</span>
-                <h3 className="font-semibold text-primary-green">AEK Gesamt</h3>
-              </div>
-              <div className="text-2xl font-bold text-text-primary">
-                {formatCurrency(aekFinances.balance + (getTeamSquadValue('AEK') * 1000000))}
-              </div>
-              <div className="text-sm text-text-muted">Gesamtkapital (Bargeld + Kaderwert)</div>
-            </div>
-          </div>
-
-          {/* AEK Team-specific Details */}
-          <div className="modern-card mb-6">
-            <h3 className="font-bold text-lg mb-4 flex items-center">
-              <TeamLogo team="aek" size="lg" className="mr-2" />
-              {getTeamDisplay('AEK')} - Details
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-blue-600">{formatCurrency(aekFinances.balance)}</div>
-                <div className="text-sm text-text-muted">Aktueller Kontostand</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-600">{getTeamTransactions('AEK').filter(t => t.amount > 0).length}</div>
-                  <div className="text-sm text-text-muted">Einnahmen</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-red-600">{getTeamTransactions('AEK').filter(t => t.amount < 0).length}</div>
-                  <div className="text-sm text-text-muted">Ausgaben</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {renderTeamFinanceView('AEK')}
         </>
       ) : currentView === 'real' ? (
         <>
-          {/* Real-only View */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-            <div className="modern-card text-center border-l-4 border-red-400 financial-card">
-              <div className="flex items-center justify-center mb-2">
-                <TeamLogo team="real" size="lg" className="mr-2" />
-                <h3 className="font-semibold text-red-600">{getTeamDisplay('Real')}</h3>
-              </div>
-              <div className="space-y-1 text-sm">
-                <div>Kontostand: <span className={`font-bold ${getAmountColorClass(realFinances.balance)} animate-numberCount`}>{formatCurrency(realFinances.balance)}</span></div>
-                <div>Kaderwert: <span className="font-bold text-red-600">{formatPlayerValue(getTeamSquadValue('Real'))}</span></div>
-                <div>Schulden: <span className={`font-bold ${getAmountColorClass(-(realFinances.debt || 0))} animate-numberCount`}>{formatCurrency(realFinances.debt || 0)}</span></div>
-              </div>
-            </div>
-            
-            <div className="modern-card text-center border-l-4 border-primary-green">
-              <div className="flex items-center justify-center mb-2">
-                <span className="text-2xl mr-2">💰</span>
-                <h3 className="font-semibold text-primary-green">Real Gesamt</h3>
-              </div>
-              <div className="text-2xl font-bold text-text-primary">
-                {formatCurrency(realFinances.balance + (getTeamSquadValue('Real') * 1000000))}
-              </div>
-              <div className="text-sm text-text-muted">Gesamtkapital (Bargeld + Kaderwert)</div>
-            </div>
-          </div>
-
-          {/* Real Team-specific Details */}
-          <div className="modern-card mb-6">
-            <h3 className="font-bold text-lg mb-4 flex items-center">
-              <TeamLogo team="real" size="lg" className="mr-2" />
-              {getTeamDisplay('Real')} - Details
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-red-600">{formatCurrency(realFinances.balance)}</div>
-                <div className="text-sm text-text-muted">Aktueller Kontostand</div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="text-center">
-                  <div className="text-xl font-bold text-green-600">{getTeamTransactions('Real').filter(t => t.amount > 0).length}</div>
-                  <div className="text-sm text-text-muted">Einnahmen</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-xl font-bold text-red-600">{getTeamTransactions('Real').filter(t => t.amount < 0).length}</div>
-                  <div className="text-sm text-text-muted">Ausgaben</div>
-                </div>
-              </div>
-            </div>
-          </div>
+          {renderTeamFinanceView('Real')}
         </>
       ) : currentView === 'analysis' ? (
         <>
           {/* Echtgeld-Schulden Overview */}
           <div className="modern-card mb-6">
-            <h3 className="font-bold text-lg mb-4 flex items-center">
-              <span className="mr-2">💳</span>
-              Echtgeld-Schulden Übersicht
+            <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2">
+              <Icon name="swap" size={18} strokeWidth={2.2} className="text-system-green" />Echtgeld-Schulden Übersicht
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div className={`p-4 rounded-lg border-2 ${(aekFinances.debt || 0) > 0 ? 'border-red-400 bg-red-50' : 'border-green-400 bg-green-50'}`}>
+              <div className={`p-4 rounded-xl border ${(aekFinances.debt || 0) > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <TeamLogo team="aek" size="sm" />
@@ -378,7 +487,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                 </div>
                 <div className="text-xs text-text-muted mt-1">Offene Echtgeld-Schulden</div>
               </div>
-              <div className={`p-4 rounded-lg border-2 ${(realFinances.debt || 0) > 0 ? 'border-red-400 bg-red-50' : 'border-green-400 bg-green-50'}`}>
+              <div className={`p-4 rounded-xl border ${(realFinances.debt || 0) > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <TeamLogo team="real" size="sm" />
@@ -403,9 +512,8 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
           {/* Echtgeld Formula Explanation */}
           <div className="modern-card mb-6">
-            <h3 className="font-bold text-lg mb-3 flex items-center">
-              <span className="mr-2">📐</span>
-              Echtgeld-Berechnung Formel
+            <h3 className="font-bold text-lg mb-3 inline-flex items-center gap-2">
+              <Icon name="bulb" size={18} strokeWidth={2.2} className="text-system-green" />Echtgeld-Berechnung Formel
             </h3>
             <div className="bg-bg-secondary rounded-lg p-4 text-sm space-y-2">
               <p className="text-text-primary font-medium">Für den Verlierer eines Spiels gilt:</p>
@@ -427,9 +535,8 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
           {/* Financial Metrics */}
           <div className="modern-card mb-6">
-            <h3 className="font-bold text-lg mb-4 flex items-center">
-              <span className="mr-2">📊</span>
-              Finanz-Kennzahlen
+            <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2">
+              <Icon name="chart" size={18} strokeWidth={2.2} className="text-system-green" />Finanz-Kennzahlen
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="text-center p-3 bg-bg-secondary rounded-lg">
@@ -455,6 +562,25 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         </>
       ) : (
         <>
+          {/* Real-money debt alert — only shows when a team owes real money */}
+          {((aekFinances.debt || 0) > 0 || (realFinances.debt || 0) > 0) && (
+            <button
+              onClick={() => setCurrentView('analysis')}
+              className="w-full mb-4 flex items-center gap-3 p-3 rounded-2xl bg-system-red/10 text-left"
+            >
+              <span className="w-9 h-9 rounded-xl bg-system-red/15 text-system-red flex items-center justify-center flex-shrink-0">
+                <Icon name="swap" size={18} strokeWidth={2.1} />
+              </span>
+              <span className="flex-1 min-w-0 text-sm text-text-primary">
+                <span className="font-semibold">Echtgeld-Schulden offen:</span>{' '}
+                {(aekFinances.debt || 0) > 0 && `${getTeamDisplay('AEK')} ${aekFinances.debt}€`}
+                {(aekFinances.debt || 0) > 0 && (realFinances.debt || 0) > 0 && ' · '}
+                {(realFinances.debt || 0) > 0 && `${getTeamDisplay('Real')} ${realFinances.debt}€`}
+              </span>
+              <Icon name="chevronRight" size={18} strokeWidth={2.2} className="text-system-red flex-shrink-0" />
+            </button>
+          )}
+
           {/* Compact team comparison */}
       <div className="modern-card mb-4 p-0 overflow-hidden">
         <div className="grid grid-cols-2 divide-x divide-border-light">
@@ -510,9 +636,9 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <button
             onClick={() => setShowExportImport(true)}
-            className="flex items-center justify-center space-x-2 btn-soft btn-soft-green py-3 px-4 rounded-xl text-sm"
+            className="flex items-center justify-center gap-2 btn-soft btn-soft-green py-3 px-4 rounded-xl text-sm"
           >
-            <span>📥</span>
+            <Icon name="save" size={16} strokeWidth={2} />
             <span>Export/Import</span>
           </button>
           <button
@@ -529,9 +655,9 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                 { duration: 5000 }
               );
             }}
-            className="flex items-center justify-center space-x-2 btn-soft btn-soft-blue py-3 px-4 rounded-xl text-sm"
+            className="flex items-center justify-center gap-2 btn-soft btn-soft-blue py-3 px-4 rounded-xl text-sm"
           >
-            <span>📊</span>
+            <Icon name="trendingUp" size={16} strokeWidth={2} />
             <span>Finanz-Analyse</span>
           </button>
           <button
@@ -551,9 +677,9 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                 { duration: 6000 }
               );
             }}
-            className="flex items-center justify-center space-x-2 btn-soft btn-soft-purple py-3 px-4 rounded-xl text-sm"
+            className="flex items-center justify-center gap-2 btn-soft btn-soft-purple py-3 px-4 rounded-xl text-sm"
           >
-            <span>📋</span>
+            <Icon name="clipboard" size={16} strokeWidth={2} />
             <span>Letzte Aktivitäten</span>
           </button>
         </div>
@@ -577,30 +703,32 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                 <div key={match.id} className="modern-card p-0 overflow-hidden">
                   <button
                     onClick={() => toggleMatchTransactions(match.id)}
-                    className="w-full p-4 flex items-center justify-between cursor-pointer hover:bg-bg-tertiary/40 transition-colors"
+                    className="w-full p-3 sm:p-4 flex items-center gap-2 cursor-pointer hover:bg-bg-tertiary/40 transition-colors"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
+                    <div className="flex items-center gap-2 min-w-0 flex-shrink-0">
                       <TeamLogo team="aek" size="sm" />
-                      <div className="text-left">
-                        <div className="text-base font-bold text-text-primary">
-                          {match.goalsa || 0} : {match.goalsb || 0}
+                      <div className="text-center">
+                        <div className="text-base font-bold text-text-primary leading-none">
+                          {match.goalsa || 0}:{match.goalsb || 0}
                         </div>
-                        <div className="text-xs text-text-tertiary">
-                          {new Date(match.date).toLocaleDateString('de-DE')}
+                        <div className="text-[10px] text-text-tertiary mt-0.5">
+                          {new Date(match.date).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })}
                         </div>
                       </div>
                       <TeamLogo team="real" size="sm" />
                     </div>
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <div className="text-right text-xs leading-tight">
-                        <div className={aekNet >= 0 ? 'text-system-green font-semibold' : 'text-system-red font-semibold'}>
-                          {getTeamDisplay('AEK')} {aekNet > 0 ? '+' : ''}{formatCurrency(aekNet)}
+                    <div className="flex items-center gap-2 flex-1 min-w-0 justify-end">
+                      <div className="text-right text-xs leading-tight min-w-0">
+                        <div className={`flex items-center justify-end gap-1 font-semibold ${aekNet >= 0 ? 'text-system-green' : 'text-system-red'}`}>
+                          <TeamLogo team="aek" size="xs" />
+                          <span className="whitespace-nowrap">{aekNet > 0 ? '+' : ''}{formatCurrency(aekNet)}</span>
                         </div>
-                        <div className={realNet >= 0 ? 'text-system-green font-semibold' : 'text-system-red font-semibold'}>
-                          {getTeamDisplay('Real')} {realNet > 0 ? '+' : ''}{formatCurrency(realNet)}
+                        <div className={`flex items-center justify-end gap-1 font-semibold mt-0.5 ${realNet >= 0 ? 'text-system-green' : 'text-system-red'}`}>
+                          <TeamLogo team="real" size="xs" />
+                          <span className="whitespace-nowrap">{realNet > 0 ? '+' : ''}{formatCurrency(realNet)}</span>
                         </div>
                       </div>
-                      <span className={`text-text-tertiary transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`}>
+                      <span className={`flex-shrink-0 text-text-tertiary transition-transform duration-200 ${isCollapsed ? '' : 'rotate-90'}`}>
                         <Icon name="chevronRight" size={18} strokeWidth={2.2} />
                       </span>
                     </div>
@@ -669,7 +797,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             </div>
 
             <div className="p-4 space-y-2">
-              {nonMatchTransactions.map((transaction) => (
+              {(showAllNonMatch ? nonMatchTransactions : nonMatchTransactions.slice(0, NON_MATCH_PREVIEW)).map((transaction) => (
                 <div key={transaction.id} className="bg-bg-tertiary rounded-xl p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
@@ -693,6 +821,14 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                   </div>
                 </div>
               ))}
+              {nonMatchTransactions.length > NON_MATCH_PREVIEW && (
+                <button
+                  onClick={() => setShowAllNonMatch((s) => !s)}
+                  className="w-full py-2 rounded-xl bg-bg-secondary text-text-secondary text-sm font-medium mt-1"
+                >
+                  {showAllNonMatch ? 'Weniger anzeigen' : `Alle ${nonMatchTransactions.length} anzeigen`}
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -703,8 +839,8 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         <>
           <div className="mt-6 modern-card bg-blue-50 border-blue-200">
             <div className="flex items-start">
-              <div className="text-blue-600 mr-3">
-                <i className="fas fa-info-circle"></i>
+              <div className="text-blue-600 mr-3 flex-shrink-0">
+                <Icon name="bulb" size={18} strokeWidth={2} />
               </div>
               <div>
                 <h4 className="font-semibold text-blue-800 mb-1">Hinweis zu Marktwerten</h4>
@@ -718,8 +854,8 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
           <div className="mt-6 modern-card bg-blue-50 border-blue-200">
             <div className="flex items-start">
-              <div className="text-blue-600 mr-3">
-                <i className="fas fa-info-circle"></i>
+              <div className="text-blue-600 mr-3 flex-shrink-0">
+                <Icon name="bulb" size={18} strokeWidth={2} />
               </div>
               <div>
                 <h4 className="font-semibold text-blue-800 mb-1">Transaktionen verwalten</h4>

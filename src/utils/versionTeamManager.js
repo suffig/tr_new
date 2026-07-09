@@ -11,21 +11,24 @@ const VERSION_ICONS_STORAGE_KEY = 'fifa_version_icons';
 
 // Default team configurations for FC25 (Legacy)
 const DEFAULT_TEAMS_FC25 = {
-  AEK: { 
-    label: 'AEK Athen', 
-    color: 'blue', 
+  AEK: {
+    label: 'AEK Athen',
+    short: 'AEK',
+    color: 'blue',
     icon: 'aek',
     customIcon: null
   },
-  Real: { 
-    label: 'Real Madrid', 
-    color: 'red', 
+  Real: {
+    label: 'Real Madrid',
+    short: 'Real',
+    color: 'red',
     icon: 'real',
     customIcon: null
   },
-  Ehemalige: { 
-    label: 'Ehemalige', 
-    color: 'gray', 
+  Ehemalige: {
+    label: 'Ehemalige',
+    short: 'Ehem.',
+    color: 'gray',
     icon: '⚫',
     customIcon: null
   }
@@ -35,19 +38,22 @@ const DEFAULT_TEAMS_FC25 = {
 const DEFAULT_TEAMS_FC26 = {
   AEK: {
     label: 'Dynamo Dresden',
+    short: 'Dynamo',
     color: 'blue',
     icon: 'dynamo',
     customIcon: null
   },
   Real: {
-    label: 'Glasgow Rangers',
+    label: 'Schalke 04',
+    short: 'S04',
     color: 'red',
     icon: 'real',
     customIcon: null
   },
-  Ehemalige: { 
-    label: 'Ehemalige', 
-    color: 'gray', 
+  Ehemalige: {
+    label: 'Ehemalige',
+    short: 'Ehem.',
+    color: 'gray',
     icon: '⚫',
     customIcon: null
   }
@@ -274,19 +280,39 @@ export const getVersionTeamDisplay = (teamValue, version = null) => {
     const team = teams[teamValue];
     
     if (!team) {
-      return { value: teamValue, label: teamValue, color: 'gray', icon: '⚽' };
+      return { value: teamValue, label: teamValue, short: deriveShort(teamValue), color: 'gray', icon: '⚽' };
     }
-    
+
     return {
       value: teamValue,
       label: team.label,
+      short: team.short || deriveShort(team.label),
       color: team.color,
       icon: team.customIcon || team.icon
     };
   } catch (error) {
     console.error('Error getting version team display:', error);
-    return { value: teamValue, label: teamValue, color: 'gray', icon: '⚽' };
+    return { value: teamValue, label: teamValue, short: deriveShort(teamValue), color: 'gray', icon: '⚽' };
   }
+};
+
+/**
+ * Derive a compact short code from a full team label.
+ * "Schalke 04" -> "S04", "Dynamo Dresden" -> "Dynamo", "Real Madrid" -> "Real".
+ * @param {string} label - Full team label
+ * @returns {string} Short code
+ */
+export const deriveShort = (label) => {
+  const parts = String(label || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '';
+  if (parts.length === 1) return parts[0];
+  const last = parts[parts.length - 1];
+  // Names ending in a number (e.g. "Schalke 04", "Bayer 04") -> initial + number
+  if (/^\d+$/.test(last)) {
+    return (parts[0].charAt(0).toUpperCase()) + last;
+  }
+  // Otherwise use the first word ("Dynamo Dresden" -> "Dynamo")
+  return parts[0];
 };
 
 /**
@@ -300,6 +326,7 @@ export const getVersionTeamsArray = (version = null) => {
     return Object.entries(teams).map(([value, config]) => ({
       value,
       label: config.label,
+      short: config.short || deriveShort(config.label),
       color: config.color,
       icon: config.customIcon || config.icon
     }));

@@ -3,16 +3,16 @@ import { getCurrentFifaVersion, BUILT_IN_FIFA_VERSIONS } from '../utils/fifaVers
 
 // Legacy TEAMS constant for backward compatibility (FC25 defaults)
 export const TEAMS = [
-  { value: 'AEK', label: 'AEK Athen', color: 'blue', icon: 'aek' },
-  { value: 'Real', label: 'Real Madrid', color: 'red', icon: 'real' },
-  { value: 'Ehemalige', label: 'Ehemalige', color: 'gray', icon: '⚫' },
+  { value: 'AEK', label: 'AEK Athen', short: 'AEK', color: 'blue', icon: 'aek' },
+  { value: 'Real', label: 'Real Madrid', short: 'Real', color: 'red', icon: 'real' },
+  { value: 'Ehemalige', label: 'Ehemalige', short: 'Ehem.', color: 'gray', icon: '⚫' },
 ];
 
-// FC26 TEAMS (with Dynamo Dresden and Glasgow Rangers)
+// FC26 TEAMS (with Dynamo Dresden and Schalke 04)
 export const TEAMS_FC26 = [
-  { value: 'AEK', label: 'Dynamo Dresden', color: 'blue', icon: 'dynamo' },
-  { value: 'Real', label: 'Glasgow Rangers', color: 'red', icon: 'real' },
-  { value: 'Ehemalige', label: 'Ehemalige', color: 'gray', icon: '⚫' },
+  { value: 'AEK', label: 'Dynamo Dresden', short: 'Dynamo', color: 'blue', icon: 'dynamo' },
+  { value: 'Real', label: 'Schalke 04', short: 'S04', color: 'red', icon: 'real' },
+  { value: 'Ehemalige', label: 'Ehemalige', short: 'Ehem.', color: 'gray', icon: '⚫' },
 ];
 
 /**
@@ -44,6 +44,25 @@ export const getTeamDisplay = (teamValue, version = null) => {
     // Fallback to legacy implementation
     const team = TEAMS.find(t => t.value === teamValue);
     return team ? team.label : teamValue;
+  }
+};
+
+/**
+ * Get a compact short code for a team (version-aware).
+ * Example (FC26): 'Real' -> 'S04', 'AEK' -> 'Dynamo'.
+ * Use this instead of fragile label.split(' ') shortening.
+ * @param {string} teamValue - Team value
+ * @param {string} version - FIFA version (optional, defaults to current)
+ * @returns {string} Short team code
+ */
+export const getTeamShort = (teamValue, version = null) => {
+  try {
+    const teamDisplay = getVersionTeamDisplay(teamValue, version);
+    return teamDisplay.short || teamDisplay.label;
+  } catch (error) {
+    console.error('Error getting team short:', error);
+    const team = TEAMS.find(t => t.value === teamValue);
+    return team ? (team.short || team.label) : teamValue;
   }
 };
 

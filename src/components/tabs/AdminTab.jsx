@@ -7,6 +7,7 @@ import AddTransactionTab from './admin/AddTransactionTab';
 import DeleteTab from './admin/DeleteTab';
 import SearchTab from './admin/SearchTab';
 import TeamSettingsTab from './admin/TeamSettingsTab';
+import TeamCatalogTab from './admin/TeamCatalogTab';
 import EventsSettingsTab from './admin/EventsSettingsTab';
 import ManagerTab from './admin/ManagerTab';
 
@@ -19,7 +20,9 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
     return (
       <div className="flex items-center justify-center min-h-[50vh] p-4">
         <div className="modern-card p-8 text-center max-w-md">
-          <div className="text-6xl mb-4" aria-hidden="true">🔒</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-red/12 text-system-red flex items-center justify-center" aria-hidden="true">
+            <Icon name="ban" size={32} strokeWidth={1.8} />
+          </div>
           <h3 className="text-xl font-bold mb-2 text-text-primary">Zugriff verweigert</h3>
           <p className="text-text-secondary mb-4">
             Sie haben keine Berechtigung, auf den Admin-Bereich zuzugreifen.
@@ -42,7 +45,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
     { 
       id: 'search', 
       label: 'Suche', 
-      icon: 'fas fa-search', 
+      icon: 'search',
       category: 'quick',
       description: 'Globale Suche durch alle Daten'
     },
@@ -51,28 +54,28 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
     { 
       id: 'matches', 
       label: 'Spiele', 
-      icon: 'fas fa-futbol', 
+      icon: 'football',
       category: 'data',
       description: 'Neue Spiele hinzufügen und verwalten'
     },
     { 
       id: 'players', 
       label: 'Spieler', 
-      icon: 'fas fa-users', 
+      icon: 'users',
       category: 'data',
       description: 'Spieler hinzufügen und bearbeiten'
     },
     { 
       id: 'transactions', 
       label: 'Finanzen', 
-      icon: 'fas fa-euro-sign', 
+      icon: 'euro',
       category: 'data',
       description: 'Transaktionen und Finanzen verwalten'
     },
     { 
       id: 'bans', 
       label: 'Sperren', 
-      icon: 'fas fa-ban', 
+      icon: 'ban',
       category: 'data',
       description: 'Spielersperren hinzufügen und verwalten'
     },
@@ -81,30 +84,37 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
     { 
       id: 'settings', 
       label: 'Teams', 
-      icon: 'fas fa-cog', 
+      icon: 'settings',
       category: 'config',
       description: 'Team-Einstellungen und Konfiguration'
     },
-    { 
-      id: 'events', 
-      label: 'Events', 
-      icon: 'fas fa-bell', 
+    {
+      id: 'events',
+      label: 'Events',
+      icon: 'bell',
       category: 'config',
       description: 'Events & Benachrichtigungen verwalten'
     },
-    
+    {
+      id: 'fc26teams',
+      label: 'FC26-Teams',
+      icon: 'trophy',
+      category: 'config',
+      description: 'Team-Katalog & Star-Ratings bearbeiten'
+    },
+
     // System Administration
     { 
       id: 'manager', 
       label: 'System', 
-      icon: 'fas fa-tools', 
+      icon: 'wrench',
       category: 'system',
       description: 'System-Manager für Saisons und Versionen'
     },
     { 
       id: 'delete', 
       label: 'Daten löschen', 
-      icon: 'fas fa-trash', 
+      icon: 'trash', 
       category: 'system',
       description: 'Daten löschen und bereinigen'
     },
@@ -142,6 +152,8 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
         return <TeamSettingsTab />;
       case 'events':
         return <EventsSettingsTab />;
+      case 'fc26teams':
+        return <TeamCatalogTab />;
       case 'delete':
         return <DeleteTab />;
       case 'manager':
@@ -161,7 +173,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
         <div className="p-6 flex justify-between items-center">
           <div className="flex items-center gap-4">
             <div className="w-12 h-12 bg-system-green/12 text-system-green rounded-xl flex items-center justify-center">
-              <i className="fas fa-cogs text-xl"></i>
+              <Icon name="settings" size={24} strokeWidth={2} />
             </div>
             <div>
               <h2 className="text-2xl font-bold mb-1 text-text-primary">
@@ -177,7 +189,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
             className="flex items-center gap-2 px-4 py-2 btn-soft btn-soft-red rounded-xl"
             aria-label="Abmelden"
           >
-            <i className="fas fa-sign-out-alt"></i>
+            <Icon name="logout" size={16} strokeWidth={2} />
             <span className="text-sm font-medium">Logout</span>
           </button>
         </div>
@@ -193,7 +205,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
             aria-expanded={navOpen}
           >
             <span className="flex-shrink-0 w-10 h-10 rounded-lg bg-system-green/12 text-system-green flex items-center justify-center">
-              <i className={currentTab.icon}></i>
+              <Icon name={currentTab.icon} size={20} strokeWidth={2} />
             </span>
             <span className="flex-1 min-w-0">
               <span className="block text-[11px] uppercase tracking-wide text-text-tertiary">Bereich</span>
@@ -227,7 +239,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
                         <span className={`flex-shrink-0 w-9 h-9 rounded-lg flex items-center justify-center ${
                           activeSubTab === tab.id ? 'bg-system-green/15 text-system-green' : 'bg-bg-tertiary text-text-tertiary'
                         }`}>
-                          <i className={tab.icon}></i>
+                          <Icon name={tab.icon} size={18} strokeWidth={2} />
                         </span>
                         <div className="flex-1 min-w-0">
                           <div className={`font-medium text-sm ${activeSubTab === tab.id ? 'text-system-green' : 'text-text-primary'}`}>

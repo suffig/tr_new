@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from '../../icons/Icon';
 import { supabaseDb } from '../../../utils/supabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
 import toast from 'react-hot-toast';
@@ -133,11 +134,11 @@ export default function AddTransactionTab() {
             Klicken Sie auf den Button, um eine neue Transaktion zu erfassen.
           </p>
           
-          <button 
+          <button
             onClick={() => setShowModal(true)}
-            className="btn-primary"
+            className="btn-primary inline-flex items-center justify-center gap-2"
           >
-            <i className="fas fa-plus mr-2"></i>
+            <Icon name="plus" size={16} strokeWidth={2.2} />
             Neue Transaktion erfassen
           </button>
         </div>
@@ -314,8 +315,8 @@ export default function AddTransactionTab() {
 
       <div className="mt-6 modern-card bg-blue-50 border-blue-200">
         <div className="flex items-start">
-          <div className="text-blue-600 mr-3">
-            <i className="fas fa-info-circle"></i>
+          <div className="text-blue-600 mr-3 flex-shrink-0">
+            <Icon name="bulb" size={18} strokeWidth={2} />
           </div>
           <div>
             <h4 className="font-semibold text-blue-800 mb-1">Hinweis</h4>

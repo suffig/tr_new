@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FIFADataService } from '../utils/fifaDataService';
+import Icon from './icons/Icon';
 
 const EAPlayerCard = ({ player, size = 'medium', showDetails = true, onPlayerClick }) => {
   const [fifaData, setFifaData] = useState(null);
@@ -94,7 +95,7 @@ const EAPlayerCard = ({ player, size = 'medium', showDetails = true, onPlayerCli
     return (
       <div className={`${sizeClasses.card} ea-card-loading rounded-lg flex items-center justify-center`}>
         <div className="text-gray-400">
-          <i className="fas fa-spinner fa-spin"></i>
+          <Icon name="spinner" size={16} className="animate-spin" />
         </div>
       </div>
     );

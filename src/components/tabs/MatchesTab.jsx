@@ -1,10 +1,10 @@
 ﻿import Icon from '../icons/Icon';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
-import { getTeamDisplay } from '../../constants/teams';
+import { getTeamDisplay, getTeamShort } from '../../constants/teams';
 import '../../styles/match-animations.css';
 
 export default function MatchesTab({ showHints = false }) {
@@ -215,8 +215,8 @@ export default function MatchesTab({ showHints = false }) {
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-accent-red mb-4">
-          <i className="fas fa-exclamation-triangle text-2xl"></i>
+        <div className="text-accent-red mb-4 flex justify-center">
+          <Icon name="warning" size={28} strokeWidth={2} />
         </div>
         <p className="text-text-muted mb-4">Fehler beim Laden der Spiele</p>
         <button onClick={refetch} className="btn-primary">
@@ -497,7 +497,7 @@ export default function MatchesTab({ showHints = false }) {
                           <div className="flex flex-col items-center gap-1 w-16 flex-shrink-0">
                             <TeamLogo team={match.teama || 'AEK'} size="md" />
                             <div className={`text-[11px] font-semibold text-center leading-tight truncate w-full ${winner === 'aek' ? 'text-system-blue' : 'text-text-tertiary'}`}>
-                              {getTeamDisplay(match.teama || 'AEK').split(' ')[0]}
+                              {getTeamShort(match.teama || 'AEK')}
                             </div>
                           </div>
 
@@ -517,7 +517,7 @@ export default function MatchesTab({ showHints = false }) {
                           <div className="flex flex-col items-center gap-1 w-16 flex-shrink-0">
                             <TeamLogo team={match.teamb || 'Real'} size="md" />
                             <div className={`text-[11px] font-semibold text-center leading-tight truncate w-full ${winner === 'real' ? 'text-system-red' : 'text-text-tertiary'}`}>
-                              {getTeamDisplay(match.teamb || 'Real').split(' ').pop()}
+                              {getTeamShort(match.teamb || 'Real')}
                             </div>
                           </div>
 
@@ -604,11 +604,11 @@ export default function MatchesTab({ showHints = false }) {
                                 </h4>
                                 <div className="grid grid-cols-2 gap-2 text-sm">
                                   <div className="flex items-center justify-between bg-bg-secondary rounded-lg px-2.5 py-1.5">
-                                    <span className="text-xs text-text-secondary">{getTeamDisplay('AEK').split(' ')[0]}</span>
+                                    <span className="text-xs text-text-secondary">{getTeamShort('AEK')}</span>
                                     <span className="font-semibold"><span className="text-system-yellow-dark">{match.yellowa || 0}</span> / <span className="text-system-red">{match.reda || 0}</span></span>
                                   </div>
                                   <div className="flex items-center justify-between bg-bg-secondary rounded-lg px-2.5 py-1.5">
-                                    <span className="text-xs text-text-secondary">{getTeamDisplay('Real').split(' ').pop()}</span>
+                                    <span className="text-xs text-text-secondary">{getTeamShort('Real')}</span>
                                     <span className="font-semibold"><span className="text-system-yellow-dark">{match.yellowb || 0}</span> / <span className="text-system-red">{match.redb || 0}</span></span>
                                   </div>
                                 </div>
@@ -623,12 +623,12 @@ export default function MatchesTab({ showHints = false }) {
                               </h4>
                               <div className="grid grid-cols-2 gap-2">
                                 {[
-                                  { team: 'aek', label: getTeamDisplay('AEK'), prize: match.prizeaek || 0 },
-                                  { team: 'real', label: getTeamDisplay('Real'), prize: match.prizereal || 0 },
+                                  { team: 'aek', short: getTeamShort('AEK'), prize: match.prizeaek || 0 },
+                                  { team: 'real', short: getTeamShort('Real'), prize: match.prizereal || 0 },
                                 ].map((side) => (
                                   <div key={side.team} className="bg-bg-secondary rounded-lg px-3 py-2">
                                     <div className="flex items-center gap-1.5 text-xs text-text-secondary mb-0.5">
-                                      <TeamLogo team={side.team} size="xs" /> {side.label.split(' ')[0]}
+                                      <TeamLogo team={side.team} size="xs" /> {side.short}
                                     </div>
                                     <div className={`font-bold text-sm ${side.prize > 0 ? 'text-system-green' : side.prize < 0 ? 'text-system-red' : 'text-text-secondary'}`}>
                                       {side.prize > 0 ? '+' : ''}{side.prize.toLocaleString('de-DE')} €
@@ -648,8 +648,8 @@ export default function MatchesTab({ showHints = false }) {
         </div>
       ) : (
         <div className="text-center py-12">
-          <div className="text-text-muted mb-4">
-            <i className="fas fa-futbol text-4xl opacity-50"></i>
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+            <Icon name="football" size={28} strokeWidth={1.6} />
           </div>
           <h3 className="text-lg font-medium text-text-primary mb-2">
             Keine Spiele gefunden
@@ -664,8 +664,8 @@ export default function MatchesTab({ showHints = false }) {
       {showHints && (
         <div className="mt-6 modern-card bg-blue-50 border-blue-200">
           <div className="flex items-start">
-            <div className="text-blue-600 mr-3">
-              <i className="fas fa-info-circle"></i>
+            <div className="text-blue-600 mr-3 flex-shrink-0">
+              <Icon name="bulb" size={18} strokeWidth={2} />
             </div>
             <div>
               <h4 className="font-semibold text-blue-800 mb-1">Hinweis</h4>
