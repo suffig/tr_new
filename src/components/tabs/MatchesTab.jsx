@@ -1,5 +1,5 @@
 ﻿import Icon from '../icons/Icon';
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
@@ -215,8 +215,8 @@ export default function MatchesTab({ showHints = false }) {
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-accent-red mb-4">
-          <i className="fas fa-exclamation-triangle text-2xl"></i>
+        <div className="text-accent-red mb-4 flex justify-center">
+          <Icon name="warning" size={28} strokeWidth={2} />
         </div>
         <p className="text-text-muted mb-4">Fehler beim Laden der Spiele</p>
         <button onClick={refetch} className="btn-primary">
@@ -648,8 +648,8 @@ export default function MatchesTab({ showHints = false }) {
         </div>
       ) : (
         <div className="text-center py-12">
-          <div className="text-text-muted mb-4">
-            <i className="fas fa-futbol text-4xl opacity-50"></i>
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+            <Icon name="football" size={28} strokeWidth={1.6} />
           </div>
           <h3 className="text-lg font-medium text-text-primary mb-2">
             Keine Spiele gefunden
@@ -664,8 +664,8 @@ export default function MatchesTab({ showHints = false }) {
       {showHints && (
         <div className="mt-6 modern-card bg-blue-50 border-blue-200">
           <div className="flex items-start">
-            <div className="text-blue-600 mr-3">
-              <i className="fas fa-info-circle"></i>
+            <div className="text-blue-600 mr-3 flex-shrink-0">
+              <Icon name="bulb" size={18} strokeWidth={2} />
             </div>
             <div>
               <h4 className="font-semibold text-blue-800 mb-1">Hinweis</h4>

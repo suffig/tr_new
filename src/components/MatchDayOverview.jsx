@@ -1,5 +1,6 @@
 ﻿import { useState, useMemo } from 'react';
 import { getTeamDisplay } from '../constants/teams';
+import Icon from './icons/Icon';
 
 export default function MatchDayOverview({ matches }) {
   const [selectedDate, setSelectedDate] = useState(null);
@@ -295,7 +296,7 @@ export default function MatchDayOverview({ matches }) {
             {/* Special Events */}
             {selectedDateStats.specialEvents.length > 0 && (
               <div className="mb-4">
-                <h4 className="font-semibold text-text-primary mb-2">🌟 Besondere Ereignisse</h4>
+                <h4 className="font-semibold text-text-primary mb-2 inline-flex items-center gap-2"><Icon name="sparkles" size={16} strokeWidth={2.2} className="text-system-yellow" />Besondere Ereignisse</h4>
                 <div className="space-y-2">
                   {selectedDateStats.specialEvents.map((event, index) => (
                     <div
@@ -351,7 +352,7 @@ export default function MatchDayOverview({ matches }) {
 
           {/* Match Details */}
           <div className="modern-card">
-            <h4 className="font-semibold text-text-primary mb-4">⚽ Spiele im Detail</h4>
+            <h4 className="font-semibold text-text-primary mb-4 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Spiele im Detail</h4>
             <div className="space-y-4">
               {matchesByDate[selectedDate].map((match) => (
                 <div key={match.id} className="p-4 bg-bg-secondary rounded-lg border border-border-light">
@@ -472,7 +473,7 @@ export default function MatchDayOverview({ matches }) {
           {/* Game Analysis */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="modern-card">
-              <h4 className="font-semibold text-text-primary mb-4">📊 Spielanalyse</h4>
+              <h4 className="font-semibold text-text-primary mb-4 inline-flex items-center gap-2"><Icon name="chart" size={16} strokeWidth={2.2} className="text-system-blue" />Spielanalyse</h4>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-text-secondary">Durchschnittliche Tordifferenz:</span>
@@ -496,7 +497,7 @@ export default function MatchDayOverview({ matches }) {
             </div>
 
             <div className="modern-card">
-              <h4 className="font-semibold text-text-primary mb-4">👤 Top-Torschützen des Tages</h4>
+              <h4 className="font-semibold text-text-primary mb-4 inline-flex items-center gap-2"><Icon name="user" size={16} strokeWidth={2.2} className="text-system-purple" />Top-Torschützen des Tages</h4>
               <div className="space-y-2">
                 {Object.entries(selectedDateStats.playerGoals)
                   .sort(([,a], [,b]) => b - a)

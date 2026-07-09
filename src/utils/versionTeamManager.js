@@ -40,7 +40,7 @@ const DEFAULT_TEAMS_FC26 = {
     customIcon: null
   },
   Real: {
-    label: 'Glasgow Rangers',
+    label: 'Schalke 04',
     color: 'red',
     icon: 'real',
     customIcon: null

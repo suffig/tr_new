@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import Icon from './icons/Icon';
 
 export default function ColorCustomization() {
   const [customColors, setCustomColors] = useState({
@@ -277,7 +278,7 @@ export default function ColorCustomization() {
         {/* Enhanced Preview Section */}
         <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200">
           <h5 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <i className="fas fa-eye text-blue-500"></i>
+            <Icon name="eye" size={16} className="text-blue-500" />
             Live-Vorschau
           </h5>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">

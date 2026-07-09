@@ -542,7 +542,8 @@ button:active {
     width: 95vw;
     max-width: 95vw;
     margin: 10px auto;
-    max-height: calc(100vh - 2rem); /* Reduced from 6rem to 2rem to prevent cut-off */
+    max-height: calc(100vh - 2rem); /* fallback */
+    max-height: calc(100dvh - 2rem); /* dynamic viewport – URL-bar safe on mobile */
     overflow-y: auto;
   }
   
@@ -582,7 +583,8 @@ button:active {
   }
 
   .modal-mobile-safe {
-    max-height: calc(100vh - 2rem) !important;
+    max-height: calc(100vh - 2rem) !important; /* fallback */
+    max-height: calc(100dvh - 1rem) !important; /* dynamic viewport – URL-bar safe */
     overflow-y: auto;
   }
 

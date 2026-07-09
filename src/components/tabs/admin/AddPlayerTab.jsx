@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import Icon from '../../icons/Icon';
 import { supabaseDb } from '../../../utils/supabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
 import { POSITIONS } from '../../../utils/errorHandling';
@@ -99,20 +100,21 @@ export default function AddPlayerTab() {
 
       <div className="modern-card">
         <div className="text-center py-8">
-          <div className="text-4xl mb-4">👤</div>
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
+            <Icon name="user" size={32} strokeWidth={1.8} />
+          </div>
           <h4 className="text-lg font-medium text-text-primary mb-2">
-            <i className="fas fa-user-plus mr-2"></i>
             Spieler hinzufügen
           </h4>
           <p className="text-text-muted mb-6">
             Klicken Sie auf den Button, um einen neuen Spieler zu erfassen.
           </p>
-          
-          <button 
+
+          <button
             onClick={() => setShowModal(true)}
-            className="btn-primary"
+            className="btn-primary inline-flex items-center justify-center gap-2"
           >
-            <i className="fas fa-plus mr-2"></i>
+            <Icon name="plus" size={16} strokeWidth={2.2} />
             Neuen Spieler erfassen
           </button>
         </div>
@@ -294,8 +296,8 @@ export default function AddPlayerTab() {
 
       <div className="mt-6 modern-card bg-green-50 border-green-200">
         <div className="flex items-start">
-          <div className="text-green-600 mr-3">
-            <i className="fas fa-info-circle"></i>
+          <div className="text-green-600 mr-3 flex-shrink-0">
+            <Icon name="bulb" size={18} strokeWidth={2} />
           </div>
           <div>
             <h4 className="font-semibold text-green-800 mb-1">Hinweis</h4>

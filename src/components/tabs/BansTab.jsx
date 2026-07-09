@@ -93,7 +93,8 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
           {activeBans.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                🔴 Aktive Sperren ({activeBans.length})
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                Aktive Sperren ({activeBans.length})
               </h3>
               <div className="space-y-4">
                 {activeBans.map((ban) => {
@@ -119,8 +120,8 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                               <span className={`inline-block px-2 py-1 rounded text-xs font-medium border transition-all group-hover:scale-105 ${getBanTypeColor(ban.type)}`}>
                                 {ban.type}
                               </span>
-                              <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200 transition-all group-hover:scale-105">
-                                🔴 Aktiv - {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
+                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200 transition-all group-hover:scale-105">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
                               </span>
                             </div>
 
@@ -165,8 +166,8 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
               {showHints && (
                 <div className="mt-6 modern-card bg-red-50 border-red-200">
                   <div className="flex items-start">
-                    <div className="text-red-600 mr-3">
-                      <i className="fas fa-info-circle"></i>
+                    <div className="text-red-600 mr-3 flex-shrink-0">
+                      <Icon name="bulb" size={18} strokeWidth={2} />
                     </div>
                     <div>
                       <h4 className="font-semibold text-red-800 mb-1">Hinweis</h4>
@@ -184,7 +185,8 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
           {(selectedType === 'all' && completedBans.length > 0) && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                ✅ Beendete Sperren ({completedBans.length})
+                <Icon name="check" size={18} strokeWidth={2.4} className="text-system-green" />
+                Beendete Sperren ({completedBans.length})
               </h3>
               <div className="space-y-4">
                 {completedBans.map((ban) => {
@@ -273,8 +275,8 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                               {ban.type}
                             </span>
                             {isActive ? (
-                              <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200 transition-all group-hover:scale-105">
-                                🔴 Aktiv - {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
+                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200 transition-all group-hover:scale-105">
+                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
                               </span>
                             ) : (
                               <span className="inline-block px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200 transition-all group-hover:scale-105">
