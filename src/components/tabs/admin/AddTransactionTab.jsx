@@ -116,24 +116,20 @@ export default function AddTransactionTab() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary mb-2">
+        <h3 className="text-lg font-semibold text-text-primary">
           Neue Transaktion hinzufügen
         </h3>
-        <p className="text-text-muted text-sm">
-          Erfassen Sie eine neue finanzielle Transaktion.
-        </p>
       </div>
 
       <div className="modern-card">
         <div className="text-center py-8">
-          <div className="text-4xl mb-4">💰</div>
-          <h4 className="text-lg font-medium text-text-primary mb-2">
+          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
+            <Icon name="euro" size={32} strokeWidth={1.8} />
+          </div>
+          <h4 className="text-lg font-medium text-text-primary mb-6">
             Transaktion hinzufügen
           </h4>
-          <p className="text-text-muted mb-6">
-            Klicken Sie auf den Button, um eine neue Transaktion zu erfassen.
-          </p>
-          
+
           <button
             onClick={() => setShowModal(true)}
             className="btn-primary inline-flex items-center justify-center gap-2"

@@ -162,22 +162,6 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                 })}
               </div>
               
-              {/* Info Card - Moved under active bans as requested */}
-              {showHints && (
-                <div className="mt-6 modern-card bg-red-50 border-red-200">
-                  <div className="flex items-start">
-                    <div className="text-red-600 mr-3 flex-shrink-0">
-                      <Icon name="bulb" size={18} strokeWidth={2} />
-                    </div>
-                    <div>
-                      <h4 className="font-semibold text-red-800 mb-1">Hinweis</h4>
-                      <p className="text-red-700 text-sm">
-                        Um neue Sperren hinzuzufügen oder zu verwalten, nutzen Sie den Verwaltungsbereich.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           )}
           

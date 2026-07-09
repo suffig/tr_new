@@ -90,12 +90,9 @@ export default function AddPlayerTab() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary mb-2">
+        <h3 className="text-lg font-semibold text-text-primary">
           Neuen Spieler hinzufügen
         </h3>
-        <p className="text-text-muted text-sm">
-          Fügen Sie einen neuen Spieler zur Datenbank hinzu.
-        </p>
       </div>
 
       <div className="modern-card">
@@ -103,12 +100,9 @@ export default function AddPlayerTab() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
             <Icon name="user" size={32} strokeWidth={1.8} />
           </div>
-          <h4 className="text-lg font-medium text-text-primary mb-2">
+          <h4 className="text-lg font-medium text-text-primary mb-6">
             Spieler hinzufügen
           </h4>
-          <p className="text-text-muted mb-6">
-            Klicken Sie auf den Button, um einen neuen Spieler zu erfassen.
-          </p>
 
           <button
             onClick={() => setShowModal(true)}

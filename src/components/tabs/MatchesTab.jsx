@@ -8,7 +8,7 @@ import { getTeamDisplay, getTeamShort } from '../../constants/teams';
 import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
-export default function MatchesTab({ showHints = false }) {
+export default function MatchesTab() {
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
   const [timeFilter, setTimeFilter] = useState('4weeks'); // '1week', '4weeks', '3months', 'all'
@@ -711,23 +711,6 @@ export default function MatchesTab({ showHints = false }) {
           <p className="text-text-muted">
             Es wurden noch keine Spiele hinzugefügt.
           </p>
-        </div>
-      )}
-
-      {/* Info Card - Only show on admin page */}
-      {showHints && (
-        <div className="mt-6 modern-card bg-blue-50 border-blue-200">
-          <div className="flex items-start">
-            <div className="text-blue-600 mr-3 flex-shrink-0">
-              <Icon name="bulb" size={18} strokeWidth={2} />
-            </div>
-            <div>
-              <h4 className="font-semibold text-blue-800 mb-1">Hinweis</h4>
-              <p className="text-blue-700 text-sm">
-                Klicken Sie auf ein Spiel, um detaillierte Informationen wie Torschützen, Karten und Preisgelder anzuzeigen. Neue Spiele können im Verwaltungsbereich hinzugefügt werden.
-              </p>
-            </div>
-          </div>
         </div>
       )}
 
