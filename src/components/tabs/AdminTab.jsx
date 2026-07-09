@@ -1,5 +1,6 @@
 ﻿import Icon from '../icons/Icon';
 import { useState } from 'react';
+import { ADMIN_EMAIL } from '../../constants/navigation';
 import AddMatchTab from './admin/AddMatchTab';
 import AddBanTab from './admin/AddBanTab';
 import AddPlayerTab from './admin/AddPlayerTab';
@@ -16,7 +17,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
   const [navOpen, setNavOpen] = useState(false);
 
   // Security check - only allow access for authorized user
-  if (!user || user.email !== 'philip-melchert@live.de') {
+  if (!user || user.email !== ADMIN_EMAIL) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] p-4">
         <div className="modern-card p-8 text-center max-w-md">
