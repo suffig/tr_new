@@ -1,6 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import LoadingSpinner from './LoadingSpinner';
+import Icon from './icons/Icon';
 
 export default function PlayerComparison() {
   const [selectedPlayers, setSelectedPlayers] = useState([]);
@@ -133,7 +134,7 @@ export default function PlayerComparison() {
           onClick={() => setIsModalOpen(true)}
           className="btn-primary"
         >
-          <i className="fas fa-chart-bar mr-2" />
+          <Icon name="chart" size={16} className="mr-2" />
           Vergleichsmodus
         </button>
       </div>
@@ -152,7 +153,7 @@ export default function PlayerComparison() {
               placeholder="Name oder Team eingeben..."
               className="input-field pl-10"
             />
-            <i className="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+            <Icon name="search" size={16} className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
           </div>
         </div>
         
@@ -327,7 +328,7 @@ export default function PlayerComparison() {
                   onClick={() => setIsModalOpen(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
-                  <i className="fas fa-times text-xl" />
+                  <Icon name="x" size={20} />
                 </button>
               </div>
             </div>

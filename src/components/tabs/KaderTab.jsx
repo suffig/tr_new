@@ -115,8 +115,8 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-accent-red mb-4">
-          <i className="fas fa-exclamation-triangle text-2xl"></i>
+        <div className="text-accent-red mb-4 flex justify-center">
+          <Icon name="warning" size={28} strokeWidth={2} />
         </div>
         <p className="text-text-muted mb-4">Fehler beim Laden des Kaders</p>
         <button onClick={refetch} className="btn-primary">
@@ -287,8 +287,8 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-xs text-blue-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                      <i className="fas fa-info-circle mr-1"></i>
+                                    <div className="text-xs text-blue-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1">
+                                      <Icon name="bulb" size={12} strokeWidth={2} />
                                       Click for FIFA statistics
                                     </div>
                                   </div>
@@ -303,7 +303,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                                   className="text-blue-400 hover:text-blue-300 transition-colors p-2 rounded-full hover:bg-blue-400/10"
                                   title="FIFA Statistics"
                                 >
-                                  <i className="fas fa-chart-bar text-sm"></i>
+                                  <Icon name="chart" size={16} strokeWidth={2} />
                                 </button>
                                 <button
                                   onClick={(e) => {
@@ -313,7 +313,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                                   className="text-text-muted hover:text-primary-green transition-colors p-1"
                                   title="Bearbeiten"
                                 >
-                                  <i className="fas fa-edit text-sm"></i>
+                                  <Icon name="edit" size={16} strokeWidth={2} />
                                 </button>
                               </div>
                             </div>
@@ -361,7 +361,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                   onClick={() => setEditingPlayer(null)}
                   className="text-text-muted hover:text-text-primary"
                 >
-                  <i className="fas fa-times"></i>
+                  <Icon name="x" size={18} strokeWidth={2.2} />
                 </button>
               </div>
               
