@@ -39,7 +39,7 @@ export default function ScrollToTop({ scrollRef, threshold = 400 }) {
       className={`fixed right-4 z-40 w-11 h-11 rounded-full bg-bg-elevated/90 backdrop-blur-md border border-border-light shadow-ios-floating text-text-secondary flex items-center justify-center transition-all duration-300 press-scale ${
         visible ? 'opacity-100 translate-y-0 pointer-events-auto' : 'opacity-0 translate-y-3 pointer-events-none'
       }`}
-      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)' }}
+      style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 148px)' }}
     >
       <Icon name="chevronUp" size={22} strokeWidth={2.2} />
     </button>

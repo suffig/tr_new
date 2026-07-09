@@ -7,6 +7,7 @@ import { OfflineIndicator } from './hooks/useOfflineManager.jsx';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
 import Header from './components/Header';
+import Icon from './components/icons/Icon';
 import BottomNavigation from './components/BottomNavigation';
 import ScrollToTop from './components/ScrollToTop';
 import LoadingSpinner, { FullScreenLoader } from './components/LoadingSpinner';
@@ -279,6 +280,18 @@ function App() {
 
         {/* Scroll-to-top (appears on long pages) */}
         <ScrollToTop scrollRef={mainRef} />
+
+        {/* Quick-Add FAB: springt zu "Match hinzufügen" (nur Admin, außerhalb der Verwaltung) */}
+        {user?.email === ADMIN_EMAIL && activeTab !== 'admin' && (
+          <button
+            onClick={() => handleTabChange('admin')}
+            aria-label="Neues Spiel hinzufügen"
+            className="fixed right-4 z-40 w-14 h-14 rounded-full bg-system-green text-white shadow-ios-floating flex items-center justify-center press-scale active:scale-90 transition-transform"
+            style={{ bottom: 'calc(env(safe-area-inset-bottom, 0px) + 84px)' }}
+          >
+            <Icon name="plus" size={28} strokeWidth={2.6} />
+          </button>
+        )}
 
         {/* Bottom Navigation */}
         <BottomNavigation
