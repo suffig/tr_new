@@ -59,21 +59,6 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
     return baseClass;
   };
 
-  // Team analysis functions
-  const generatePlayerReport = () => {
-    if (!players || players.length === 0) {
-      toast.error('Keine Spieler für Report verfügbar');
-      return;
-    }
-
-    const report = players.slice(0, 8).map(p =>
-      `${p.name} (${p.team}): ${p.goals || 0} Tore, Wert: ${formatCurrencyInMillions(p.value || 0)}`
-    ).join('\n');
-    const more = players.length > 8 ? `\n… und ${players.length - 8} weitere` : '';
-
-    toast.success(`📊 Spieler-Report:\n\n${report}${more}`, { duration: 6000 });
-  };
-
   const getTeamColor = (teamName) => {
     if (teamName === "AEK") return "text-blue-600";
     if (teamName === "Real") return "text-red-600";
@@ -179,20 +164,10 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       <CollapsibleCard
         title="Kader-Management"
         icon="zap"
-        subtitle="Report, Export/Import & Analyse"
+        subtitle="Export/Import & Analyse"
         className="mb-6"
       >
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-          {/* Existing Actions */}
-          <button
-            onClick={generatePlayerReport}
-            className="flex items-center justify-center gap-2 btn-soft btn-soft-blue py-3 px-4 rounded-xl text-sm"
-          >
-            <Icon name="chart" size={16} strokeWidth={2.2} />
-            <span>Spieler-Report</span>
-          </button>
-          
-          {/* Enhanced Features */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <button
             onClick={() => setShowExportImport(true)}
             className="flex items-center justify-center space-x-2 btn-soft btn-soft-orange py-3 px-4 rounded-xl text-sm"

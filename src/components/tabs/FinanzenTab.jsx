@@ -7,7 +7,6 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import CollapsibleCard from '../CollapsibleCard';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay } from '../../constants/teams';
-import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
 export default function FinanzenTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
@@ -628,61 +627,18 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
       {/* Financial Management Actions */}
       <CollapsibleCard
-        title="Finanz-Management"
+        title="Daten"
         icon="briefcase"
-        subtitle="Export/Import, Analyse & Aktivitäten"
+        subtitle="Sichern & wiederherstellen"
         className="mb-6"
       >
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          <button
-            onClick={() => setShowExportImport(true)}
-            className="flex items-center justify-center gap-2 btn-soft btn-soft-green py-3 px-4 rounded-xl text-sm"
-          >
-            <Icon name="save" size={16} strokeWidth={2} />
-            <span>Export/Import</span>
-          </button>
-          <button
-            onClick={() => {
-              const totalBalance = aekFinances.balance + realFinances.balance;
-              const totalSquadValue = (getTeamSquadValue('AEK') + getTeamSquadValue('Real')) * 1000000;
-              const liquidity = totalBalance > 0 ? (totalBalance / totalCapital) * 100 : 0;
-              
-              toast.success(
-                `💰 Finanz-Analyse:\n\n` +
-                `Bargeld: ${formatCurrency(totalBalance)}\n` +
-                `Kaderwerte: ${formatCurrency(totalSquadValue)}\n` +
-                `Liquidität: ${liquidity.toFixed(1)}%`,
-                { duration: 5000 }
-              );
-            }}
-            className="flex items-center justify-center gap-2 btn-soft btn-soft-blue py-3 px-4 rounded-xl text-sm"
-          >
-            <Icon name="trendingUp" size={16} strokeWidth={2} />
-            <span>Finanz-Analyse</span>
-          </button>
-          <button
-            onClick={() => {
-              const recentTransactions = transactions?.slice(0, 5) || [];
-              if (recentTransactions.length === 0) {
-                toast.error('Keine Transaktionen vorhanden');
-                return;
-              }
-              
-              const summary = recentTransactions.map(t => 
-                `${t.type}: ${formatCurrency(t.amount)} (${t.team || 'Unbekannt'})`
-              ).join('\n');
-              
-              toast.success(
-                `📋 Letzte Transaktionen:\n\n${summary}`,
-                { duration: 6000 }
-              );
-            }}
-            className="flex items-center justify-center gap-2 btn-soft btn-soft-purple py-3 px-4 rounded-xl text-sm"
-          >
-            <Icon name="clipboard" size={16} strokeWidth={2} />
-            <span>Letzte Aktivitäten</span>
-          </button>
-        </div>
+        <button
+          onClick={() => setShowExportImport(true)}
+          className="w-full flex items-center justify-center gap-2 btn-soft btn-soft-green py-3 px-4 rounded-xl text-sm"
+        >
+          <Icon name="save" size={16} strokeWidth={2} />
+          <span>Export / Import</span>
+        </button>
       </CollapsibleCard>
 
       {/* Match-grouped Transactions */}

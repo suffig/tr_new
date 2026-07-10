@@ -281,8 +281,8 @@ function App() {
         {/* Scroll-to-top (appears on long pages) */}
         <ScrollToTop scrollRef={mainRef} />
 
-        {/* Quick-Add FAB: springt zu "Match hinzufügen" (nur Admin, außerhalb der Verwaltung) */}
-        {user?.email === ADMIN_EMAIL && activeTab !== 'admin' && (
+        {/* Quick-Add FAB: springt zu "Match hinzufügen" (nur Admin, nur auf der Spiele-Seite) */}
+        {user?.email === ADMIN_EMAIL && activeTab === 'matches' && (
           <button
             onClick={() => handleTabChange('admin')}
             aria-label="Neues Spiel hinzufügen"
