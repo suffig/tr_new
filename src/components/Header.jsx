@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import logoFusta from '/assets/logo-fusta.png';
-import SeasonSelector from './SeasonSelector';
 import UserProfile from './UserProfile';
 import Icon from './icons/Icon';
 import { useTheme } from '../contexts/ThemeContext';
@@ -25,9 +24,8 @@ export default function Header({ onNavigate }) {
             <h1 className="text-title3 font-extrabold tracking-tight text-text-primary truncate hidden min-[400px]:block">FUSTA</h1>
           </div>
 
-          {/* Season selector and status */}
+          {/* Status + actions */}
           <div className="flex items-center gap-3 flex-shrink-0">
-            <SeasonSelector showInHeader={true} />
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-system-green rounded-full status-ping"></div>

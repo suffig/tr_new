@@ -1,44 +1,14 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
+import { getAvailableSeasons, switchToSeason, SEASONS } from '../utils/seasonManager.js';
 import Icon from './icons/Icon';
 
 export default function UserProfile({ onClose, onNavigate }) {
   const { user } = useAuth();
   const { isDark, setManualTheme } = useTheme();
-  const [preferences, setPreferences] = useState({
-    favoriteTeam: localStorage.getItem('userFavoriteTeam') || '',
-    notifications: localStorage.getItem('userNotifications') !== 'false',
-    compactView: localStorage.getItem('compactView') === 'true',
-  });
-
-  // Default favourite team based on the logged-in account
-  useEffect(() => {
-    if (user?.email && !localStorage.getItem('userFavoriteTeam')) {
-      let fav = '';
-      if (user.email === 'philip-melchert@live.de') fav = 'Real';
-      else if (user.email === 'alexander.lueckmann@web.de') fav = 'AEK';
-      if (fav) {
-        localStorage.setItem('userFavoriteTeam', fav);
-        setPreferences((prev) => ({ ...prev, favoriteTeam: fav }));
-      }
-    }
-  }, [user?.email]);
-
-  const teams = [
-    { value: '', label: 'Kein Favorit' },
-    { value: 'AEK', label: 'AEK' },
-    { value: 'Real', label: 'Real' },
-    { value: 'Ehemalige', label: 'Ehemalige' },
-  ];
-
-  const setPref = (key, value) => {
-    setPreferences((prev) => ({ ...prev, [key]: value }));
-    const lsKey = key === 'favoriteTeam' ? 'userFavoriteTeam'
-      : key === 'notifications' ? 'userNotifications' : 'compactView';
-    localStorage.setItem(lsKey, value.toString());
-    window.dispatchEvent(new CustomEvent('userPreferencesChanged', { detail: { [key]: value } }));
-  };
+  const [seasons, setSeasons] = useState([]);
+  useEffect(() => { setSeasons(getAvailableSeasons()); }, []);
 
   const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString('de-DE') : '—';
   const email = user?.email || '—';
@@ -76,39 +46,38 @@ export default function UserProfile({ onClose, onNavigate }) {
           <div>
             <div className="section-label">Einstellungen</div>
             <div className="modern-card p-0 overflow-hidden divide-y divide-separator">
-              {/* Favourite team */}
-              <div className="flex items-center justify-between gap-3 p-4">
-                <div className="flex items-center gap-3 min-w-0">
-                  <span className="w-9 h-9 rounded-xl bg-system-green/12 text-system-green flex items-center justify-center flex-shrink-0">
-                    <Icon name="trophy" size={18} strokeWidth={2.1} />
-                  </span>
-                  <span className="text-sm font-medium text-text-primary">Lieblingsverein</span>
-                </div>
-                <select
-                  value={preferences.favoriteTeam}
-                  onChange={(e) => setPref('favoriteTeam', e.target.value)}
-                  className="bg-bg-tertiary border border-border-light rounded-lg text-sm text-text-primary px-2 py-1.5 focus:outline-none"
-                >
-                  {teams.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-                </select>
-              </div>
-
               {/* Dark mode */}
               <SettingRow icon="moon" iconClass="bg-system-indigo/12 text-system-indigo" title="Dunkler Modus" subtitle="Schont die Augen bei wenig Licht">
                 <AppleSwitch checked={isDark} onChange={(v) => setManualTheme(v ? 'dark' : 'light')} />
               </SettingRow>
-
-              {/* Notifications */}
-              <SettingRow icon="bell" iconClass="bg-system-orange/12 text-system-orange" title="Benachrichtigungen" subtitle="Push-Nachrichten für Spiele & Events">
-                <AppleSwitch checked={preferences.notifications} onChange={(v) => setPref('notifications', v)} />
-              </SettingRow>
-
-              {/* Compact view */}
-              <SettingRow icon="phone" iconClass="bg-system-teal/12 text-system-teal" title="Kompakte Ansicht" subtitle="Mehr Inhalt auf kleinen Bildschirmen">
-                <AppleSwitch checked={preferences.compactView} onChange={(v) => setPref('compactView', v)} />
-              </SettingRow>
             </div>
           </div>
+
+          {/* Season / FIFA version */}
+          {seasons.length > 0 && (
+            <div>
+              <div className="section-label">Saison</div>
+              <div className="modern-card">
+                <div className="grid grid-cols-2 gap-2">
+                  {seasons.map((s) => {
+                    const short = s.id === SEASONS.LEGACY ? 'FC25' : 'FC26';
+                    return (
+                      <button
+                        key={s.id}
+                        onClick={() => { if (!s.isActive) switchToSeason(s.id); }}
+                        disabled={s.isActive}
+                        className={`flex flex-col items-center gap-0.5 py-2.5 rounded-xl text-sm font-semibold transition-colors ${s.isActive ? 'bg-system-green text-white' : 'bg-bg-tertiary text-text-secondary hover:text-text-primary'}`}
+                      >
+                        <span>{short}</span>
+                        <span className={`text-[10px] font-medium ${s.isActive ? 'text-white/80' : 'text-text-tertiary'}`}>{s.name}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+                <p className="text-[11px] text-text-tertiary text-center mt-2">Wechsel lädt die App neu · Daten je Saison getrennt</p>
+              </div>
+            </div>
+          )}
 
           {/* Quick actions */}
           <div>
