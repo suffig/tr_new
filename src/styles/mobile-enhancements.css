@@ -14,6 +14,12 @@ button {
   border-radius: 12px;
 }
 
+/* Header icon buttons stay compact — don't inflate the top bar with the 48px min */
+header button {
+  min-height: 0;
+  min-width: 0;
+}
+
 .btn:active,
 button:active {
   transform: scale(0.96);

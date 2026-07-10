@@ -250,7 +250,7 @@ function App() {
 
   return (
     <ThemeProvider>
-      <div className="flex flex-col min-h-screen bg-bg-primary transition-colors duration-ios safe-area-all app-aurora">
+      <div className="flex flex-col h-[100dvh] overflow-hidden bg-bg-primary transition-colors duration-ios safe-area-x app-aurora">
         {/* Header */}
         <Header onNavigate={handleTabChange} />
         
@@ -268,7 +268,7 @@ function App() {
         )}
         
         {/* Main Content */}
-        <main ref={mainRef} className="flex-1 overflow-y-auto ios-scroll-smooth pb-28" role="main">
+        <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain ios-scroll-smooth pb-28" role="main">
           <Suspense fallback={<LoadingSpinner message="Lade Tab..." />}>
             <ErrorBoundary>
               <div key={activeTab} className="tab-transition">

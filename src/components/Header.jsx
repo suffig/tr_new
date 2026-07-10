@@ -10,8 +10,8 @@ export default function Header({ onNavigate }) {
 
   return (
     <>
-      <header className="glass-ios border-b border-separator sticky top-0 z-40 safe-area-top safe-area-x">
-        <div className="px-4 py-3 flex items-center justify-between gap-2">
+      <header className="glass-ios border-b border-separator z-40 safe-area-top safe-area-x flex-shrink-0">
+        <div className="px-4 py-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0 flex-shrink">
             <div className="w-8 h-8 flex-shrink-0 bg-gradient-to-br from-system-green to-system-blue rounded-ios flex items-center justify-center logo-glow">
               <img
