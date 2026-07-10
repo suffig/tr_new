@@ -434,7 +434,7 @@ export default function SpielersaufenTab() {
               ))}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-gray-400">Eigener:</span>
-                <input type="number" min="1" max="20" value={data.settings.mentionsPerShot}
+                <input type="number" inputMode="decimal" min="1" max="20" value={data.settings.mentionsPerShot}
                   onChange={e => setMPS(e.target.value)}
                   className="w-14 h-10 text-center border border-gray-300 rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-amber-400" />
               </div>

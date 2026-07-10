@@ -1380,7 +1380,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         {editingSchnapsTarget ? (
                           <>
                             <input
-                              type="number"
+                              type="number" inputMode="decimal"
                               min="1"
                               max="200"
                               value={schnapsTargetInput}
@@ -1848,7 +1848,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <h6 className="text-xs font-medium text-blue-700 mb-1 inline-flex items-center gap-1"><Icon name="euro" size={12} strokeWidth={2.4} />Eigener Betrag:</h6>
                   <div className="flex gap-1">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       min="0"
                       step="0.01"
                       value={customAmounts.alexander}
@@ -1929,7 +1929,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <h6 className="text-xs font-medium text-green-700 mb-1 inline-flex items-center gap-1"><Icon name="euro" size={12} strokeWidth={2.4} />Eigener Betrag:</h6>
                   <div className="flex gap-1">
                     <input
-                      type="number"
+                      type="number" inputMode="decimal"
                       min="0"
                       step="0.01"
                       value={customAmounts.philip}

@@ -195,7 +195,7 @@ export default function AddPlayerTab() {
                     Marktwert (Millionen €) *
                   </label>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     min="0"
                     step="0.1"
                     value={formData.value}
@@ -216,7 +216,7 @@ export default function AddPlayerTab() {
                     Anzahl Tore
                   </label>
                   <input
-                    type="number"
+                    type="number" inputMode="decimal"
                     min="0"
                     value={formData.goals}
                     onChange={(e) => handleInputChange('goals', e.target.value)}

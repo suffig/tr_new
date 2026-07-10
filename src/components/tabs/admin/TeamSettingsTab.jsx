@@ -208,7 +208,7 @@ export default function TeamSettingsTab() {
               <div>
                 <label className="block text-sm font-medium mb-1">Alter</label>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   min="18"
                   max="80"
                   value={managers.aek.age}
@@ -220,7 +220,7 @@ export default function TeamSettingsTab() {
               <div>
                 <label className="block text-sm font-medium mb-1">Gewicht (kg)</label>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   min="40"
                   max="200"
                   value={managers.aek.weight}
@@ -254,7 +254,7 @@ export default function TeamSettingsTab() {
               <div>
                 <label className="block text-sm font-medium mb-1">Alter</label>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   min="18"
                   max="80"
                   value={managers.real.age}
@@ -266,7 +266,7 @@ export default function TeamSettingsTab() {
               <div>
                 <label className="block text-sm font-medium mb-1">Gewicht (kg)</label>
                 <input
-                  type="number"
+                  type="number" inputMode="decimal"
                   min="40"
                   max="200"
                   value={managers.real.weight}

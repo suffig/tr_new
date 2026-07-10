@@ -411,7 +411,7 @@ function PlayerForm({ player, onSave, onCancel }) {
           Marktwert (in Millionen €)
         </label>
         <input
-          type="number"
+          type="number" inputMode="decimal"
           min="0"
           step="0.1"
           value={formData.value}

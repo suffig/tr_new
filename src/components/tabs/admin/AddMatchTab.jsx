@@ -774,7 +774,7 @@ export default function AddMatchTab() {
                         Preisgeld {getTeamDisplay('AEK')} (€)
                       </label>
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         value={formData.prizeaek}
                         className="form-input bg-gray-100"
                         placeholder="Automatisch berechnet"
@@ -787,7 +787,7 @@ export default function AddMatchTab() {
                         Preisgeld {getTeamDisplay('Real')} (€)
                       </label>
                       <input
-                        type="number"
+                        type="number" inputMode="decimal"
                         value={formData.prizereal}
                         className="form-input bg-gray-100"
                         placeholder="Automatisch berechnet"
