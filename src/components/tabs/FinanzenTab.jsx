@@ -622,7 +622,10 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             <div className="text-[11px] text-text-tertiary">Bargeld + Kaderwerte</div>
           </div>
         </div>
-        <div className="text-xl font-bold text-text-primary">{formatCurrency(totalCapital)}</div>
+        <div className="text-right">
+          <div className="text-xl font-bold text-text-primary">{formatCurrency(totalCapital)}</div>
+          <div className="text-[11px] text-text-tertiary">davon Bargeld: {formatCurrency(aekFinances.balance + realFinances.balance)}</div>
+        </div>
       </div>
 
       {/* Financial Management Actions */}
