@@ -218,15 +218,6 @@ export default function TeamTrackerTab() {
 
   return (
     <div className="p-4 pb-28 mobile-safe-bottom">
-      <div className="page-header animate-mobile-slide-in">
-        <div className="page-header-row">
-          <div>
-            <h2 className="page-title">Teams</h2>
-            <p className="page-subtitle">Bekommene FC26-Mannschaften &amp; Ratings</p>
-          </div>
-          <div className="page-icon tile-indigo"><Icon name="trophy" size={22} strokeWidth={2} /></div>
-        </div>
-      </div>
 
       {/* Mode segmented control */}
       <div className="flex gap-1 p-1 bg-bg-tertiary rounded-2xl mb-4 overflow-x-auto scrollbar-hide">

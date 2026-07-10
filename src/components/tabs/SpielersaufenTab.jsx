@@ -377,24 +377,15 @@ export default function SpielersaufenTab() {
   return (
     <div className="p-4 pb-28 mobile-safe-bottom">
 
-      {/* ── Top header ─────────────────────────────────────────────────────── */}
-      <div className="page-header">
-        <div className="page-header-row">
-          <div className="min-w-0">
-            <h2 className="page-title">Spielersaufen</h2>
-            <p className="page-subtitle truncate">Nennungen → Shots · jede {data.settings.mentionsPerShot}. Nennung/Teilnehmer</p>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            {data.currentGame.active && (
-              <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2.5 py-1.5 rounded-full text-xs font-bold border border-green-300">
-                <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                {totalShotsAll()} 🥃
-              </div>
-            )}
-            <div className="page-icon tile-orange"><Icon name="mic" size={22} strokeWidth={2} /></div>
+      {/* Active-game shots indicator (kept — live status) */}
+      {data.currentGame.active && (
+        <div className="flex justify-end mb-3">
+          <div className="flex items-center gap-1 bg-green-100 text-green-700 px-2.5 py-1.5 rounded-full text-xs font-bold border border-green-300">
+            <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+            {totalShotsAll()} 🥃
           </div>
         </div>
-      </div>
+      )}
 
       {/* ── Game-active banner (shown on non-counter sections) ─────────────── */}
       {data.currentGame.active && section !== 'counter' && (

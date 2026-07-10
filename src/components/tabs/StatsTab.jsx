@@ -2509,19 +2509,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
-      {/* Enhanced Header with iOS 26 Design */}
-      <div className="page-header animate-mobile-slide-in">
-        <div className="page-header-row">
-          <div>
-            <h2 className="page-title">Statistiken</h2>
-            <p className="page-subtitle">Umfassende Liga-Analyse</p>
-          </div>
-          <div className="page-icon tile-purple"><Icon name="chart" size={22} strokeWidth={2} /></div>
-        </div>
-        <div className="hidden">
-          <div className="h-full bg-gradient-info w-3/4 rounded-full animate-pulse-gentle"></div>
-        </div>
-      </div>
 
       {/* Discreet time-period selector */}
       <div className="mb-4 inline-flex items-center gap-2 bg-bg-tertiary rounded-xl pl-3 pr-2 py-1.5 text-text-secondary">
