@@ -268,14 +268,28 @@ export default function MatchesTab() {
         const draws = allMatches.length - aekWins - realWins;
         const totalGoalsA = allMatches.reduce((s, m) => s + (m.goalsa || 0), 0);
         const totalGoalsB = allMatches.reduce((s, m) => s + (m.goalsb || 0), 0);
-        const last5 = [...allMatches].sort((a, b) => b.id - a.id).slice(0, 5).reverse();
+        const last10 = [...allMatches].sort((a, b) => b.id - a.id).slice(0, 10).reverse();
         const resultFor = (m, side) => {
           const a = m.goalsa || 0, b = m.goalsb || 0;
           if (a === b) return 'D';
           return side === 'AEK' ? (a > b ? 'W' : 'L') : (b > a ? 'W' : 'L');
         };
-        const formAek = last5.map(m => resultFor(m, 'AEK'));
-        const formReal = last5.map(m => resultFor(m, 'Real'));
+        const formAek = last10.map(m => resultFor(m, 'AEK'));
+        const formReal = last10.map(m => resultFor(m, 'Real'));
+        // Current win streak (consecutive wins by the same team, newest first; a draw ends it)
+        const streak = (() => {
+          const ordered = [...allMatches].sort((a, b) => b.id - a.id);
+          let who = null, len = 0;
+          for (const m of ordered) {
+            const a = m.goalsa || 0, b = m.goalsb || 0;
+            if (a === b) break;
+            const w = a > b ? 'AEK' : 'Real';
+            if (who === null) { who = w; len = 1; }
+            else if (w === who) len += 1;
+            else break;
+          }
+          return who ? { who, len } : null;
+        })();
         const aekName = getTeamDisplay('AEK');
         const realName = getTeamDisplay('Real');
         return (
@@ -298,22 +312,31 @@ export default function MatchesTab() {
                 <div className="text-[11px] font-semibold text-red-400 leading-tight text-center">{realName}</div>
               </div>
             </div>
-            {/* Bottom: Formkurve pro Team (letzte 5, alt -> neu) */}
+            {/* Current win streak highlight */}
+            {streak && streak.len >= 2 && (
+              <div className="px-3 pb-2 -mt-1 flex justify-center">
+                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-system-orange bg-system-orange/10 rounded-full px-2.5 py-1">
+                  <Icon name="zap" size={12} strokeWidth={2.4} />
+                  {(streak.who === 'AEK' ? aekName : realName)} · {streak.len} Siege in Folge
+                </span>
+              </div>
+            )}
+            {/* Bottom: Formkurve pro Team (letzte 10, alt -> neu) */}
             <div className="border-t border-border-light px-3 py-2 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-text-muted font-medium uppercase tracking-wide">Formkurve (letzte 5)</span>
+                <span className="text-[10px] text-text-muted font-medium uppercase tracking-wide">Formkurve (letzte 10)</span>
                 <span className="text-[9px] text-text-tertiary">alt → neu</span>
               </div>
               {[{ name: aekName, form: formAek }, { name: realName, form: formReal }].map((row, ri) => (
                 <div key={ri} className="flex items-center gap-2">
-                  <span className="text-[10px] text-text-secondary font-medium w-24 truncate shrink-0">{row.name}</span>
-                  <div className="flex gap-1">
+                  <span className="text-[10px] text-text-secondary font-medium w-20 truncate shrink-0">{row.name}</span>
+                  <div className="flex gap-1 flex-wrap">
                     {row.form.length === 0 && <span className="text-[10px] text-text-tertiary">—</span>}
                     {row.form.map((r, i) => (
                       <span
                         key={i}
                         title={r === 'W' ? 'Sieg' : r === 'D' ? 'Unentschieden' : 'Niederlage'}
-                        className={`w-5 h-5 rounded-full text-white text-[9px] font-bold flex items-center justify-center ${r === 'W' ? 'bg-system-green' : r === 'D' ? 'bg-gray-400' : 'bg-system-red'}`}
+                        className={`w-4 h-4 rounded-full text-white text-[8px] font-bold flex items-center justify-center ${r === 'W' ? 'bg-system-green' : r === 'D' ? 'bg-gray-400' : 'bg-system-red'}`}
                       >
                         {r === 'W' ? 'S' : r === 'D' ? 'U' : 'N'}
                       </span>
