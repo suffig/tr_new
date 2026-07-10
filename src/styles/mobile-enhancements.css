@@ -1,5 +1,14 @@
 /* Mobile Responsiveness Enhancements for TR1 FIFA Tracker - Enhanced */
 
+/* Touch devices have no hover: content that is only revealed on :hover would
+   stay invisible forever. Reveal any hover-opacity content on touch so the info
+   (e.g. formation player-name tooltips) is actually reachable by tapping. */
+@media (hover: none) {
+  .group-hover\:opacity-100 {
+    opacity: 1 !important;
+  }
+}
+
 /* Enhanced touch targets and spacing */
 .btn,
 button {

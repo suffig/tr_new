@@ -185,11 +185,6 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                         {team.players.map((player) => (
                           <div key={player.id} className="bg-bg-tertiary rounded-lg p-3 hover:bg-bg-secondary transition-colors cursor-pointer relative group"
                                onClick={() => handleShowPlayerDetail(player)}>
-                            {/* FIFA Indicator */}
-                            <div className="absolute top-2 right-2 text-xs bg-blue-600 text-white px-2 py-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity">
-                              🎮 FIFA
-                            </div>
-                            
                             <div className="flex items-center justify-between">
                               <div className="flex-1">
                                 <div className="flex items-center space-x-3">
@@ -211,10 +206,6 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                                           {formatCurrencyInMillions(player.value)}
                                         </span>
                                       )}
-                                    </div>
-                                    <div className="text-xs text-blue-400 mt-1 opacity-0 group-hover:opacity-100 transition-opacity inline-flex items-center gap-1">
-                                      <Icon name="bulb" size={12} strokeWidth={2} />
-                                      Click for FIFA statistics
                                     </div>
                                   </div>
                                 </div>
