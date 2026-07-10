@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from './icons/Icon';
+import { getTeamDisplay } from '../constants/teams';
 
 // Enhanced push-up notification system for FIFA Tracker
 export default function NotificationSystem({ onNavigate }) {
@@ -27,44 +28,29 @@ export default function NotificationSystem({ onNavigate }) {
 
     // Show browser notification if enabled and document is hidden (iOS compatible)
     if (isEnabled && document.hidden) {
-      try {
-        // iOS Safari has different behavior, so we use a more compatible approach
-        const notificationOptions = {
-          body: notification.message,
-          icon: '/tr_new/assets/icon-180.png', // Updated path for subdir
-          badge: '/tr_new/assets/icon-180.png',
-          tag: `fifa-tracker-${type}-${id}`,
-          requireInteraction: type === 'match-result' || type === 'match-created', // Keep match notifications visible
-          silent: false,
-          timestamp: Date.now(),
-          data: {
-            type,
-            matchId: data?.matchId,
-            url: getNotificationUrl(type, data)
-          }
-        };
+      const base = import.meta.env.BASE_URL || '/';
+      const notificationOptions = {
+        body: notification.message,
+        icon: `${base}assets/icon-180.png`,
+        badge: `${base}assets/icon-180.png`,
+        tag: `fifa-tracker-${type}`,
+        renotify: true,
+        data: { type, matchId: data?.matchId, url: getNotificationUrl(type, data) },
+      };
+      if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) {
+        notificationOptions.vibrate = [200, 100, 200];
+      }
 
-        // Only add vibrate for non-iOS devices
-        if (!/iPad|iPhone|iPod/.test(navigator.userAgent)) {
-          notificationOptions.vibrate = [200, 100, 200];
-        }
-
-        const browserNotification = new Notification(notification.title, notificationOptions);
-        
-        // Handle notification click for navigation
-        browserNotification.onclick = () => {
-          window.focus();
-          // Navigate to appropriate page
-          if (type === 'match-created' && data?.matchId) {
-            // This would need to be handled by the main app navigation
-            window.dispatchEvent(new CustomEvent('notification-navigate', {
-              detail: { type, data }
-            }));
-          }
-          browserNotification.close();
-        };
-      } catch (error) {
-        console.warn('Failed to show browser notification:', error);
+      // iOS PWAs REQUIRE ServiceWorkerRegistration.showNotification — `new Notification()`
+      // throws there. Prefer the service worker; fall back to the constructor on desktop.
+      if ('serviceWorker' in navigator && navigator.serviceWorker.ready) {
+        navigator.serviceWorker.ready
+          .then((reg) => reg.showNotification(notification.title, notificationOptions))
+          .catch(() => {
+            try { new Notification(notification.title, notificationOptions); } catch { /* ignore */ }
+          });
+      } else {
+        try { new Notification(notification.title, notificationOptions); } catch { /* ignore */ }
       }
     }
 
@@ -109,6 +95,8 @@ export default function NotificationSystem({ onNavigate }) {
       case 'match-created':
       case 'match-result':
         return `/tr_new/#matches${data?.matchId ? `?match=${data.matchId}` : ''}`;
+      case 'transaction':
+        return '/tr_new/#finances';
       case 'player-ban':
         return `/tr_new/#bans${data?.banId ? `?ban=${data.banId}` : ''}`;
       case 'financial-milestone':
@@ -123,7 +111,9 @@ export default function NotificationSystem({ onNavigate }) {
   const getNotificationTitle = (type, data) => {
     switch (type) {
       case 'match-created':
-        return '⚽ Neues Spiel erstellt';
+        return '⚽ Neues Spiel eingetragen';
+      case 'transaction':
+        return '💸 Neue Transaktion';
       case 'match-result':
         return `🏆 Spielergebnis: AEK ${data.goalsa} - ${data.goalsb} Real`;
       case 'player-ban':
@@ -142,9 +132,16 @@ export default function NotificationSystem({ onNavigate }) {
   const getNotificationMessage = (type, data) => {
     switch (type) {
       case 'match-created': {
-        const matchResult = `AEK ${data.goalsa || 0} - ${data.goalsb || 0} Real`;
-        const motmText = data.manofthematch ? ` • SdS: ${data.manofthematch}` : '';
-        return `${matchResult} vom ${new Date(data.date).toLocaleDateString('de-DE')}${motmText}`;
+        const a = getTeamDisplay('AEK'), b = getTeamDisplay('Real');
+        const score = `${a} ${data.goalsa || 0}:${data.goalsb || 0} ${b}`;
+        const motmText = data.manofthematch ? ` · SdS: ${data.manofthematch}` : '';
+        return `${score}${motmText}`;
+      }
+      case 'transaction': {
+        const team = data.team ? `${getTeamDisplay(data.team)} · ` : '';
+        const n = typeof data.amount === 'number' ? data.amount : Number(data.amount) || 0;
+        const amt = `${n > 0 ? '+' : ''}${n.toLocaleString('de-DE')} €`;
+        return `${team}${data.type || 'Transaktion'}: ${amt}`;
       }
       case 'match-result':
         return data.manofthematch ? `Spieler des Spiels: ${data.manofthematch}` : 'Spiel beendet';

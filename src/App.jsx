@@ -3,6 +3,7 @@ import * as React from 'react';
 import { getVisibleTabs, ADMIN_EMAIL } from './constants/navigation.js';
 import { Toaster } from 'react-hot-toast';
 import { useAuth } from './hooks/useAuth.js';
+import { useRealtimeNotifications } from './hooks/useRealtimeNotifications.js';
 import { OfflineIndicator } from './hooks/useOfflineManager.jsx';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
@@ -28,6 +29,7 @@ const AdminTab = lazy(() => import('./components/tabs/AdminTab'));
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
+  useRealtimeNotifications(); // cross-device push for new matches & transactions
   // QoL: remember the last tab across reloads (PWA re-opens where you left off)
   const [activeTab, setActiveTab] = useState(() => {
     try { return localStorage.getItem('fusta_active_tab') || 'matches'; } catch { return 'matches'; }

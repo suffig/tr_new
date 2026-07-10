@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../hooks/useAuth';
 import { useTheme } from '../contexts/ThemeContext';
 import { getAvailableSeasons, switchToSeason, SEASONS } from '../utils/seasonManager.js';
+import { isPushSupported, getPushEnabled, enablePush, disablePush } from '../utils/notifications.js';
 import Icon from './icons/Icon';
 
 export default function UserProfile({ onClose, onNavigate }) {
@@ -9,6 +10,11 @@ export default function UserProfile({ onClose, onNavigate }) {
   const { isDark, setManualTheme } = useTheme();
   const [seasons, setSeasons] = useState([]);
   useEffect(() => { setSeasons(getAvailableSeasons()); }, []);
+  const [pushOn, setPushOn] = useState(getPushEnabled());
+  const togglePush = async (v) => {
+    if (v) setPushOn(await enablePush());
+    else { disablePush(); setPushOn(false); }
+  };
 
   const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString('de-DE') : '—';
   const email = user?.email || '—';
@@ -50,6 +56,13 @@ export default function UserProfile({ onClose, onNavigate }) {
               <SettingRow icon="moon" iconClass="bg-system-indigo/12 text-system-indigo" title="Dunkler Modus" subtitle="Schont die Augen bei wenig Licht">
                 <AppleSwitch checked={isDark} onChange={(v) => setManualTheme(v ? 'dark' : 'light')} />
               </SettingRow>
+
+              {/* Push notifications */}
+              {isPushSupported() && (
+                <SettingRow icon="bell" iconClass="bg-system-orange/12 text-system-orange" title="Push-Benachrichtigungen" subtitle="Bei neuen Spielen & Transaktionen">
+                  <AppleSwitch checked={pushOn} onChange={togglePush} />
+                </SettingRow>
+              )}
             </div>
           </div>
 
