@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../icons/Icon';
@@ -92,10 +92,13 @@ function StarRating({ rating, size = 13 }) {
 
 export default function TeamTrackerTab() {
   const [pulls, setPulls] = useState(loadPulls);
-  const [person, setPerson] = useState('alexander');
-  const [windowId, setWindowId] = useState('all');
+  const [person, setPerson] = useState(() => { try { return localStorage.getItem('fusta_teams_person') || 'alexander'; } catch { return 'alexander'; } });
+  const [windowId, setWindowId] = useState(() => { try { return localStorage.getItem('fusta_teams_window') || 'all'; } catch { return 'all'; } });
+  useEffect(() => { try { localStorage.setItem('fusta_teams_person', person); } catch { /* ignore */ } }, [person]);
+  useEffect(() => { try { localStorage.setItem('fusta_teams_window', windowId); } catch { /* ignore */ } }, [windowId]);
   const [search, setSearch] = useState('');
   const [ratingFilter, setRatingFilter] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all'); // all | clubs | national | women
   const [openTier, setOpenTier] = useState(5);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
@@ -160,14 +163,17 @@ export default function TeamTrackerTab() {
   const curStats = useMemo(() => statsFor(current.id), [pulls, current.id, sinceTs]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const q = search.trim().toLowerCase();
-  const filterActive = !!q || ratingFilter !== 'all';
+  const filterActive = !!q || ratingFilter !== 'all' || typeFilter !== 'all';
   const matchesFilter = (t) => {
     if (q && !t.name.toLowerCase().includes(q)) return false;
+    if (typeFilter === 'clubs' && t.national) return false;
+    if (typeFilter === 'national' && !t.national) return false;
+    if (typeFilter === 'women' && !t.women) return false;
     if (ratingFilter === 'none') return t.rating == null;
     if (ratingFilter !== 'all' && t.rating !== ratingFilter) return false;
     return true;
   };
-  const flatFiltered = useMemo(() => (filterActive ? catalog.filter(matchesFilter) : []), [q, ratingFilter, catalog]); // eslint-disable-line react-hooks/exhaustive-deps
+  const flatFiltered = useMemo(() => (filterActive ? catalog.filter(matchesFilter) : []), [q, ratingFilter, typeFilter, catalog]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const teamsByTier = useMemo(() => {
     const groups = {}; RATING_TIERS.forEach((r) => { groups[r] = []; }); groups.none = [];
@@ -359,23 +365,32 @@ export default function TeamTrackerTab() {
                 className="w-full pl-11 pr-3 py-3 bg-bg-secondary border border-border-light rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none" />
             </div>
             <button onClick={() => setFiltersOpen((o) => !o)}
-              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium ${ratingFilter !== 'all' || filtersOpen ? 'bg-system-blue/12 text-system-blue' : 'bg-bg-tertiary text-text-secondary'}`}>
+              className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium ${ratingFilter !== 'all' || typeFilter !== 'all' || filtersOpen ? 'bg-system-blue/12 text-system-blue' : 'bg-bg-tertiary text-text-secondary'}`}>
               <Icon name="filter" size={16} strokeWidth={2.2} />
-              {ratingFilter !== 'all' && <span className="w-1.5 h-1.5 rounded-full bg-system-blue" />}
+              {(ratingFilter !== 'all' || typeFilter !== 'all') && <span className="w-1.5 h-1.5 rounded-full bg-system-blue" />}
             </button>
           </div>
 
           {filtersOpen && (
-            <div className="modern-card mb-3 animate-mobile-slide-in">
-              <div className="section-label mb-1.5">Nach Rating filtern</div>
-              <div className="flex flex-wrap gap-2">
-                <button onClick={() => setRatingFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === 'all' ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>Alle</button>
-                {RATING_TIERS.map((r) => (
-                  <button key={r} onClick={() => setRatingFilter(r)} className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === r ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>
-                    <Icon name="starFilled" size={11} strokeWidth={0} className={ratingFilter === r ? '' : 'text-system-yellow'} />{fmtRating(r)}
-                  </button>
-                ))}
-                <button onClick={() => setRatingFilter('none')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === 'none' ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>Nationalteams</button>
+            <div className="modern-card mb-3 animate-mobile-slide-in space-y-3">
+              <div>
+                <div className="section-label mb-1.5">Typ</div>
+                <div className="flex flex-wrap gap-2">
+                  {[['all', 'Alle'], ['clubs', 'Vereine'], ['national', 'Nationalteams'], ['women', 'Frauen']].map(([id, label]) => (
+                    <button key={id} onClick={() => setTypeFilter(id)} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${typeFilter === id ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>{label}</button>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <div className="section-label mb-1.5">Nach Rating filtern</div>
+                <div className="flex flex-wrap gap-2">
+                  <button onClick={() => setRatingFilter('all')} className={`px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === 'all' ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>Alle</button>
+                  {RATING_TIERS.map((r) => (
+                    <button key={r} onClick={() => setRatingFilter(r)} className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium ${ratingFilter === r ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>
+                      <Icon name="starFilled" size={11} strokeWidth={0} className={ratingFilter === r ? '' : 'text-system-yellow'} />{fmtRating(r)}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}

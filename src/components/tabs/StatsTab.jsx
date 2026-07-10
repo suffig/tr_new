@@ -1,5 +1,5 @@
 ﻿import Icon from '../icons/Icon';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import EnhancedDashboard from '../EnhancedDashboard';
@@ -534,8 +534,10 @@ class StatsCalculator {
 }
 
 export default function StatsTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
-  const [selectedView, setSelectedView] = useState('dashboard');
-  const [timePeriod, setTimePeriod] = useState('all'); // New time period filter
+  const [selectedView, setSelectedView] = useState(() => { try { return localStorage.getItem('fusta_stats_view') || 'dashboard'; } catch { return 'dashboard'; } });
+  const [timePeriod, setTimePeriod] = useState(() => { try { return localStorage.getItem('fusta_stats_period') || 'all'; } catch { return 'all'; } });
+  useEffect(() => { try { localStorage.setItem('fusta_stats_view', selectedView); } catch { /* ignore */ } }, [selectedView]);
+  useEffect(() => { try { localStorage.setItem('fusta_stats_period', timePeriod); } catch { /* ignore */ } }, [timePeriod]);
   
   const { data: matches, loading: matchesLoading } = useSupabaseQuery('matches', '*');
   const { data: players, loading: playersLoading } = useSupabaseQuery('players', '*');
