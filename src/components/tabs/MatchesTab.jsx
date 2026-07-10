@@ -11,7 +11,7 @@ import '../../styles/match-animations.css';
 export default function MatchesTab() {
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
-  const [timeFilter, setTimeFilter] = useState('4weeks'); // '1week', '4weeks', '3months', 'all'
+  const [timeFilter, setTimeFilter] = useState('all'); // '1week', '4weeks', '3months', 'all'
   const [dateFilter, setDateFilter] = useState('');
   const [resultFilter, setResultFilter] = useState('all'); // 'all', 'aek-wins', 'real-wins'
   const [goalFilter, setGoalFilter] = useState('all'); // 'all', 'high-scoring', 'low-scoring'
@@ -339,11 +339,11 @@ export default function MatchesTab() {
         const resultLabels = { 'all': 'Alle', 'aek-wins': `${getTeamDisplay('AEK')} Siege`, 'real-wins': `${getTeamDisplay('Real')} Siege` };
         const goalLabels = { 'all': 'Alle', 'high-scoring': 'Torreich', 'low-scoring': 'Torarm' };
         const activeChips = [];
-        if (timeFilter !== '4weeks') activeChips.push({ key: 'time', label: timeLabels[timeFilter], clear: () => setTimeFilter('4weeks') });
+        if (timeFilter !== 'all') activeChips.push({ key: 'time', label: timeLabels[timeFilter], clear: () => setTimeFilter('all') });
         if (resultFilter !== 'all') activeChips.push({ key: 'result', label: resultLabels[resultFilter], clear: () => setResultFilter('all') });
         if (goalFilter !== 'all') activeChips.push({ key: 'goal', label: goalLabels[goalFilter], clear: () => setGoalFilter('all') });
         if (dateFilter) activeChips.push({ key: 'date', label: new Date(dateFilter).toLocaleDateString('de-DE'), clear: () => setDateFilter('') });
-        const resetAll = () => { setTimeFilter('4weeks'); setDateFilter(''); setResultFilter('all'); setGoalFilter('all'); };
+        const resetAll = () => { setTimeFilter('all'); setDateFilter(''); setResultFilter('all'); setGoalFilter('all'); };
         return (
           <div className="mb-4">
             <div className="flex items-center justify-between gap-3">
@@ -684,19 +684,30 @@ export default function MatchesTab() {
               </div>
           ))}
         </div>
-      ) : (
-        <div className="text-center py-12">
-          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
-            <Icon name="football" size={28} strokeWidth={1.6} />
+      ) : (() => {
+        const hasAny = (allMatches?.length || 0) > 0;
+        const clearFilters = () => { setTimeFilter('all'); setDateFilter(''); setResultFilter('all'); setGoalFilter('all'); setActiveView('overview'); };
+        return (
+          <div className="text-center py-12">
+            <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+              <Icon name={hasAny ? 'filter' : 'football'} size={28} strokeWidth={1.6} />
+            </div>
+            <h3 className="text-lg font-medium text-text-primary mb-2">
+              {hasAny ? 'Keine Spiele im Filter' : 'Noch keine Spiele'}
+            </h3>
+            <p className="text-text-muted mb-4">
+              {hasAny
+                ? `${allMatches.length} Spiele vorhanden – keins passt zum aktuellen Filter.`
+                : 'Trage im Verwaltungsbereich das erste Spiel ein.'}
+            </p>
+            {hasAny && (
+              <button onClick={clearFilters} className="btn-brand inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm">
+                <Icon name="undo" size={16} strokeWidth={2.2} />Alle Spiele anzeigen
+              </button>
+            )}
           </div>
-          <h3 className="text-lg font-medium text-text-primary mb-2">
-            Keine Spiele gefunden
-          </h3>
-          <p className="text-text-muted">
-            Es wurden noch keine Spiele hinzugefügt.
-          </p>
-        </div>
-      )}
+        );
+      })()}
 
     </div>
   );

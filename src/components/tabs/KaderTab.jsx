@@ -145,41 +145,6 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
 
-      {/* Enhanced Quick Actions Panel */}
-      <CollapsibleCard
-        title="Kader-Management"
-        icon="zap"
-        subtitle="Export/Import & Analyse"
-        className="mb-6"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <button
-            onClick={() => setShowExportImport(true)}
-            className="flex items-center justify-center space-x-2 btn-soft btn-soft-orange py-3 px-4 rounded-xl text-sm"
-          >
-            <Icon name="share" size={16} strokeWidth={2} />
-            <span>Export/Import</span>
-          </button>
-          <button
-            onClick={() => {
-              const totalValue = (getTeamSquadValue('AEK') + getTeamSquadValue('Real') + getTeamSquadValue('Ehemalige'));
-              const avgValue = players?.length ? totalValue / players.length : 0;
-              toast.success(
-                `📈 Kader-Analyse:\n\n` +
-                `Gesamtwert: ${formatCurrencyInMillions(totalValue)}\n` +
-                `Durchschnitt: ${formatCurrencyInMillions(avgValue)}\n` +
-                `Spieler gesamt: ${players?.length || 0}`,
-                { duration: 5000 }
-              );
-            }}
-            className="flex items-center justify-center space-x-2 btn-soft btn-soft-teal py-3 px-4 rounded-xl text-sm"
-          >
-            <Icon name="trendingUp" size={16} strokeWidth={2} />
-            <span>Kader-Analyse</span>
-          </button>
-        </div>
-      </CollapsibleCard>
-
       {/* Team Accordions */}
       <div className="space-y-4">
             {teams.map((team) => (
@@ -295,6 +260,41 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
               </div>
             ))}
           </div>
+
+      {/* Kader-Management — unter den Kadern (Hauptinhalt zuerst) */}
+      <CollapsibleCard
+        title="Kader-Management"
+        icon="zap"
+        subtitle="Export/Import & Analyse"
+        className="mt-6"
+      >
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <button
+            onClick={() => setShowExportImport(true)}
+            className="flex items-center justify-center space-x-2 btn-soft btn-soft-orange py-3 px-4 rounded-xl text-sm"
+          >
+            <Icon name="share" size={16} strokeWidth={2} />
+            <span>Export/Import</span>
+          </button>
+          <button
+            onClick={() => {
+              const totalValue = (getTeamSquadValue('AEK') + getTeamSquadValue('Real') + getTeamSquadValue('Ehemalige'));
+              const avgValue = players?.length ? totalValue / players.length : 0;
+              toast.success(
+                `📈 Kader-Analyse:\n\n` +
+                `Gesamtwert: ${formatCurrencyInMillions(totalValue)}\n` +
+                `Durchschnitt: ${formatCurrencyInMillions(avgValue)}\n` +
+                `Spieler gesamt: ${players?.length || 0}`,
+                { duration: 5000 }
+              );
+            }}
+            className="flex items-center justify-center space-x-2 btn-soft btn-soft-teal py-3 px-4 rounded-xl text-sm"
+          >
+            <Icon name="trendingUp" size={16} strokeWidth={2} />
+            <span>Kader-Analyse</span>
+          </button>
+        </div>
+      </CollapsibleCard>
 
       {/* New Feature Modals */}
       {showExportImport && (
