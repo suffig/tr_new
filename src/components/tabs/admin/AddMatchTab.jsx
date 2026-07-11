@@ -50,6 +50,8 @@ const makeEmptyForm = () => ({
 export default function AddMatchTab() {
   const { data: players } = useSupabaseQuery('players', '*');
   const { data: finances } = useSupabaseQuery('finances', '*');
+  const { data: seasons } = useSupabaseQuery('seasons', '*');
+  const activeSeason = (seasons || []).find((s) => s.is_active);
   const [showModal, setShowModal] = useState(false);
   const [drafts, setDrafts] = useState(loadDraftsFromStorage);
   const [editingDraftId, setEditingDraftId] = useState(null);
@@ -225,7 +227,8 @@ export default function AddMatchTab() {
         reda: parseInt(formData.reda) || 0,
         yellowb: parseInt(formData.yellowb) || 0,
         redb: parseInt(formData.redb) || 0,
-        manofthematch: formData.manofthematch || null
+        manofthematch: formData.manofthematch || null,
+        season_id: activeSeason?.id ?? null
       });
       
       // Match is now on the DB — drop the draft it came from (if any)

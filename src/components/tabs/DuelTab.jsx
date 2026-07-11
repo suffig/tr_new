@@ -4,6 +4,7 @@ import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
+import SeasonView from './SeasonView';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { getTeamDisplay } from '../../constants/teams';
 
@@ -388,6 +389,7 @@ export default function DuelTab() {
 
   const views = [
     { id: 'duell', label: 'Duell', iconName: 'zap' },
+    { id: 'saison', label: 'Saison', iconName: 'calendar' },
     { id: 'erfolge', label: 'Erfolge', iconName: 'trophy' },
     { id: 'rueckblick', label: 'Rückblick', iconName: 'star' },
   ];
@@ -411,6 +413,8 @@ export default function DuelTab() {
             {achievements.map((a) => <AchievementCard key={a.id} a={a} />)}
           </div>
         </div>
+      ) : view === 'saison' ? (
+        <SeasonView matches={matches} players={players} aekName={aekName} realName={realName} />
       ) : view === 'rueckblick' ? (
         <WrappedView d={d} aekName={aekName} realName={realName} />
       ) : !d.total ? (
