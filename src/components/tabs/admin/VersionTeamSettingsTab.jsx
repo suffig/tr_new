@@ -11,8 +11,9 @@ import {
 import { 
   getCurrentFifaVersion, 
   getAvailableFifaVersions,
-  getFifaVersionDisplayName 
+  getFifaVersionDisplayName
 } from '../../../utils/fifaVersionManager.js';
+import { pushTeamsToDB } from '../../../utils/fifaVersionsSync.js';
 
 const VersionTeamSettingsTab = () => {
   const [currentVersion, setCurrentVersion] = useState('');
@@ -111,6 +112,7 @@ const VersionTeamSettingsTab = () => {
       const success = await uploadTeamIcon(teamKey, file, selectedVersion);
       
       if (success) {
+        await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion));
         toast.success('Icon erfolgreich hochgeladen');
         loadTeamsForVersion(selectedVersion);
       } else {
@@ -130,6 +132,7 @@ const VersionTeamSettingsTab = () => {
       const success = await removeTeamIcon(teamKey, selectedVersion);
       
       if (success) {
+        await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion));
         toast.success('Icon entfernt');
         loadTeamsForVersion(selectedVersion);
       } else {
@@ -147,8 +150,9 @@ const VersionTeamSettingsTab = () => {
     try {
       setLoading(true);
       const success = setVersionTeams(teams, selectedVersion);
-      
+
       if (success) {
+        await pushTeamsToDB(selectedVersion, teams);
         toast.success('Team-Einstellungen gespeichert');
         setHasChanges(false);
       } else {
@@ -173,6 +177,7 @@ const VersionTeamSettingsTab = () => {
       const success = copyTeamsBetweenVersions(copyFromVersion, selectedVersion);
       
       if (success) {
+        await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion));
         toast.success(`Team-Einstellungen von ${getFifaVersionDisplayName(copyFromVersion)} kopiert`);
         loadTeamsForVersion(selectedVersion);
         setShowCopyModal(false);
@@ -197,6 +202,7 @@ const VersionTeamSettingsTab = () => {
       const success = resetVersionTeams(selectedVersion);
       
       if (success) {
+        await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion));
         toast.success('Team-Einstellungen zurückgesetzt');
         loadTeamsForVersion(selectedVersion);
       } else {

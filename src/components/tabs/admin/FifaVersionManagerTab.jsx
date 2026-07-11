@@ -8,6 +8,8 @@ import {
   setCurrentFifaVersion,
   getFifaVersionDisplayName
 } from '../../../utils/fifaVersionManager';
+import { getVersionTeams } from '../../../utils/versionTeamManager';
+import { pushVersionToDB, setActiveVersionInDB, deleteVersionFromDB } from '../../../utils/fifaVersionsSync';
 
 const FifaVersionManagerTab = () => {
   const [versions, setVersions] = useState([]);
@@ -93,7 +95,9 @@ const FifaVersionManagerTab = () => {
       };
 
       await addCustomFifaVersion(versionId, metadata);
-      
+      // Share the new version (with its current default team config) across devices.
+      await pushVersionToDB(versionId, { name: metadata.displayName, teams: getVersionTeams(versionId) });
+
       // Reset form
       setNewVersionData({ version: '', displayName: '', description: '' });
       setShowAddForm(false);
@@ -113,6 +117,7 @@ const FifaVersionManagerTab = () => {
 
     try {
       await removeCustomFifaVersion(version);
+      await deleteVersionFromDB(version);
       toast.success(`Version ${version} erfolgreich entfernt!`);
     } catch (error) {
       toast.error(error.message);
@@ -122,6 +127,7 @@ const FifaVersionManagerTab = () => {
   const handleSwitchVersion = async (version) => {
     try {
       setCurrentFifaVersion(version);
+      await setActiveVersionInDB(version);
       toast.success(`Zu Version ${getFifaVersionDisplayName(version)} gewechselt!`);
       
       // Reload page to ensure all components pick up the new version

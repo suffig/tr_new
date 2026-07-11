@@ -6,6 +6,7 @@ import { useAuth } from './hooks/useAuth.js';
 import { useRealtimeNotifications } from './hooks/useRealtimeNotifications.js';
 import { useKeyboardAvoidance } from './hooks/useKeyboardAvoidance.js';
 import { usePullToRefresh } from './hooks/usePullToRefresh.js';
+import { hydrateFifaVersionsFromDB } from './utils/fifaVersionsSync.js';
 import { OfflineIndicator } from './hooks/useOfflineManager.jsx';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
@@ -56,6 +57,12 @@ function App() {
   useEffect(() => {
     try { localStorage.setItem('fusta_active_tab', activeTab); } catch { /* ignore */ }
   }, [activeTab]);
+
+  // Pull the shared FIFA-version registry from the DB once per session so both
+  // devices agree on the version list, the active version and team names/logos.
+  useEffect(() => {
+    if (user) hydrateFifaVersionsFromDB();
+  }, [user]);
 
   // Check if we're in demo mode (event-driven instead of 1s polling)
   useEffect(() => {
