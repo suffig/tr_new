@@ -362,8 +362,10 @@ function WrappedView({ d, aekName, realName }) {
 }
 
 export default function DuelTab() {
-  const { data: matches, loading: mLoading } = useSupabaseQuery('matches', '*');
-  const { data: players } = useSupabaseQuery('players', '*');
+  // skipFifaFilter → all matches across every FIFA version (all-time rivalry);
+  // the Saison sub-view then splits them back out per version.
+  const { data: matches, loading: mLoading } = useSupabaseQuery('matches', '*', { skipFifaFilter: true });
+  const { data: players } = useSupabaseQuery('players', '*', { skipFifaFilter: true });
   const { data: managers } = useSupabaseQuery('manager', '*');
 
   const aekName = managers?.find((m) => m.id === 1)?.name || 'Alexander';

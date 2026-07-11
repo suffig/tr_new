@@ -28,7 +28,6 @@ export class MatchBusinessLogic {
       yellowb = 0,
       redb = 0,
       manofthematch,
-      season_id = null,
       editId = null
     } = matchData;
 
@@ -80,10 +79,6 @@ export class MatchBusinessLogic {
         prizeaek,
         prizereal
       };
-
-      // Only stamp the season when one is active — keeps inserts backward
-      // compatible if the season_id column does not exist yet.
-      if (season_id != null) insertObj.season_id = season_id;
 
       const matchResult = await supabaseDb.insert('matches', insertObj);
       if (matchResult.error) {
