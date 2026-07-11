@@ -1,4 +1,5 @@
-import { useMemo, useState } from 'react';
+import { useMemo, useState, useRef, useEffect } from 'react';
+import toast from 'react-hot-toast';
 import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import LoadingSpinner from '../LoadingSpinner';
@@ -230,6 +231,135 @@ function StatCard({ iconName, iconClass, label, children }) {
   );
 }
 
+// Shareable season-recap image drawn on a canvas (portrait 1080x1350).
+function WrappedView({ d, aekName, realName }) {
+  const canvasRef = useRef(null);
+
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas || !d.total) return;
+    const W = 1080, H = 1350;
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    const cx = W / 2;
+    const font = (size, weight = '700') => `${weight} ${size}px -apple-system, "Segoe UI", Roboto, sans-serif`;
+
+    // Background + accent orbs
+    ctx.fillStyle = '#0A1119'; ctx.fillRect(0, 0, W, H);
+    const orb = (x, y, r, color, alpha) => {
+      const g = ctx.createRadialGradient(x, y, 0, x, y, r);
+      g.addColorStop(0, color); g.addColorStop(1, 'rgba(10,17,25,0)');
+      ctx.globalAlpha = alpha; ctx.fillStyle = g;
+      ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.globalAlpha = 1;
+    };
+    orb(170, 170, 460, '#3D9BFF', 0.28);
+    orb(920, 240, 460, '#FF453A', 0.24);
+
+    const at = (t, x, y, size, color, weight = '700', align = 'center') => {
+      ctx.fillStyle = color; ctx.textAlign = align; ctx.font = font(size, weight);
+      ctx.fillText(t, x, y);
+    };
+
+    // Header
+    at('DAS DUELL', cx, 160, 78, '#FFFFFF', '800');
+    at('FUSTA · Rückblick', cx, 214, 34, '#8A93A0', '600');
+
+    // Scoreboard
+    const lx = 285, rx = W - 285;
+    at(aekName, lx, 360, 42, '#3D9BFF', '700');
+    at(realName, rx, 360, 42, '#FF453A', '700');
+    at(String(d.aekW), lx, 510, 150, '#3D9BFF', '800');
+    at(String(d.realW), rx, 510, 150, '#FF453A', '800');
+    at(':', cx, 505, 100, '#5A6472', '700');
+    at(`${d.total} Spiele · ${d.draws} Remis`, cx, 585, 34, '#8A93A0', '600');
+
+    // Stat rows
+    let y = 720;
+    const rowH = 104;
+    const row = (label, value, valueColor = '#FFFFFF') => {
+      ctx.strokeStyle = 'rgba(255,255,255,0.08)'; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(90, y - 54); ctx.lineTo(W - 90, y - 54); ctx.stroke();
+      at(label, 90, y, 34, '#8A93A0', '600', 'left');
+      at(value, W - 90, y, 40, valueColor, '700', 'right');
+      y += rowH;
+    };
+    row('Torverhältnis', `${d.aekG} : ${d.realG}`);
+    row('Ø Tore / Spiel', ((d.aekG + d.realG) / d.total).toFixed(1));
+    if (d.biggest.margin >= 0) {
+      row('Höchster Sieg', `${d.biggest.score}  ${d.biggest.winner === 'AEK' ? aekName : realName}`,
+        d.biggest.winner === 'AEK' ? '#3D9BFF' : '#FF453A');
+    }
+    if (d.topScorer) row('Torschützenkönig', `${d.topScorer.name} (${d.topScorer.goals})`);
+    const pd = d.prizeA - d.prizeR;
+    row('Preisgeld-Saldo', pd === 0 ? '±0 €' : `${pd > 0 ? '+' : ''}${pd.toLocaleString('de-DE')} € ${pd > 0 ? aekName : realName}`,
+      pd === 0 ? '#8A93A0' : pd > 0 ? '#3D9BFF' : '#FF453A');
+    if (d.streak) row('Aktuelle Serie', `${d.streak.len}× ${d.streak.who === 'AEK' ? aekName : realName}`,
+      d.streak.who === 'AEK' ? '#3D9BFF' : '#FF453A');
+
+    // Footer
+    at(new Date().toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }), 90, H - 70, 30, '#5A6472', '600', 'left');
+    at('FUSTA', W - 90, H - 70, 34, '#2FD97C', '800', 'right');
+  }, [d, aekName, realName]);
+
+  const filename = `fusta-rueckblick-${new Date().toISOString().slice(0, 10)}.png`;
+
+  const save = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement('a');
+    link.download = filename;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+    toast.success('Rückblick gespeichert');
+  };
+
+  const share = async () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    try {
+      const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
+      const file = new File([blob], filename, { type: 'image/png' });
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ files: [file], title: 'FUSTA Rückblick' });
+      } else {
+        save();
+      }
+    } catch { /* user cancelled */ }
+  };
+
+  if (!d.total) {
+    return (
+      <div className="text-center py-16">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
+          <Icon name="star" size={30} strokeWidth={1.8} />
+        </div>
+        <p className="text-text-muted">Noch kein Rückblick möglich.</p>
+        <p className="text-footnote text-text-tertiary mt-1">Nach den ersten Spielen entsteht hier eure teilbare Grafik.</p>
+      </div>
+    );
+  }
+
+  const canShare = typeof navigator !== 'undefined' && !!navigator.canShare;
+
+  return (
+    <div className="space-y-4">
+      <div className="modern-card p-3">
+        <canvas ref={canvasRef} className="w-full h-auto rounded-xl" style={{ aspectRatio: '1080 / 1350' }} />
+      </div>
+      <div className="flex gap-3">
+        <button onClick={save} className="flex-1 btn-primary inline-flex items-center justify-center gap-2">
+          <Icon name="chevronDown" size={16} strokeWidth={2.4} /> Speichern
+        </button>
+        {canShare && (
+          <button onClick={share} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-bg-tertiary text-text-primary font-medium">
+            <Icon name="zap" size={16} strokeWidth={2.4} /> Teilen
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
 export default function DuelTab() {
   const { data: matches, loading: mLoading } = useSupabaseQuery('matches', '*');
   const { data: players } = useSupabaseQuery('players', '*');
@@ -259,6 +389,7 @@ export default function DuelTab() {
   const views = [
     { id: 'duell', label: 'Duell', iconName: 'zap' },
     { id: 'erfolge', label: 'Erfolge', iconName: 'trophy' },
+    { id: 'rueckblick', label: 'Rückblick', iconName: 'star' },
   ];
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
@@ -280,6 +411,8 @@ export default function DuelTab() {
             {achievements.map((a) => <AchievementCard key={a.id} a={a} />)}
           </div>
         </div>
+      ) : view === 'rueckblick' ? (
+        <WrappedView d={d} aekName={aekName} realName={realName} />
       ) : !d.total ? (
         <div className="text-center py-16">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-orange/12 text-system-orange flex items-center justify-center">
