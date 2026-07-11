@@ -20,6 +20,7 @@ import AddToHomeHint from './components/AddToHomeHint';
 
 // Lazy load tab components for better performance
 const MatchesTab = lazy(() => import('./components/tabs/MatchesTab'));
+const DuelTab = lazy(() => import('./components/tabs/DuelTab'));
 const KaderTab = lazy(() => import('./components/tabs/KaderTab'));
 const BansTab = lazy(() => import('./components/tabs/BansTab'));
 const FinanzenTab = lazy(() => import('./components/tabs/FinanzenTab'));
@@ -201,6 +202,8 @@ function App() {
     switch (activeTab) {
       case 'matches':
         return <MatchesTab {...props} />;
+      case 'duell':
+        return <DuelTab {...props} />;
       case 'bans':
         return <BansTab {...props} />;
       case 'finanzen':

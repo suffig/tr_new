@@ -7,6 +7,7 @@ export const ADMIN_EMAIL = 'philip-melchert@live.de';
 
 export const BASE_TABS = [
   { id: 'matches', icon: 'football', label: 'Spiele', ariaLabel: 'Zu Spiele-Übersicht wechseln' },
+  { id: 'duell', icon: 'zap', label: 'Duell', ariaLabel: 'Zum Duell-Dashboard wechseln' },
   { id: 'bans', icon: 'ban', label: 'Bans', ariaLabel: 'Zu Bans-Übersicht wechseln' },
   { id: 'finanzen', icon: 'euro', label: 'Finanzen', ariaLabel: 'Zu Finanzen-Übersicht wechseln' },
   { id: 'squad', icon: 'users', label: 'Kader', ariaLabel: 'Zu Kader-Übersicht wechseln' },
