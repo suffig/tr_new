@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import { useAuth } from './hooks/useAuth.js';
 import { useRealtimeNotifications } from './hooks/useRealtimeNotifications.js';
 import { useKeyboardAvoidance } from './hooks/useKeyboardAvoidance.js';
+import { usePullToRefresh } from './hooks/usePullToRefresh.js';
 import { OfflineIndicator } from './hooks/useOfflineManager.jsx';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
@@ -40,6 +41,14 @@ function App() {
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
   const mainRef = useRef(null);
+
+  // Pull-to-refresh on the app's main scroll container: broadcast a refresh that
+  // every Supabase query listens for, then hold the spinner briefly for feedback.
+  const handlePullRefresh = React.useCallback(async () => {
+    window.dispatchEvent(new CustomEvent('fusta-refresh'));
+    await new Promise((resolve) => setTimeout(resolve, 800));
+  }, []);
+  const { pull, refreshing, threshold } = usePullToRefresh(mainRef, handlePullRefresh);
 
   // Persist the active tab so a reload / PWA relaunch restores it
   useEffect(() => {
@@ -271,6 +280,37 @@ function App() {
           </div>
         )}
         
+        {/* Pull-to-refresh indicator (touch only) */}
+        {(pull > 0 || refreshing) && (
+          <div className="pointer-events-none fixed left-0 right-0 z-40 flex justify-center"
+               style={{ top: 'calc(env(safe-area-inset-top, 0px) + 52px)' }}>
+            <div
+              className="flex items-center gap-2 rounded-full bg-bg-secondary/95 backdrop-blur px-4 py-2 shadow-ios-floating border border-border-light"
+              style={{
+                opacity: Math.min(pull / threshold, 1),
+                transform: `translateY(${Math.min(pull, threshold) * 0.4}px) scale(${0.85 + 0.15 * Math.min(pull / threshold, 1)})`,
+              }}
+            >
+              {refreshing ? (
+                <>
+                  <span className="w-4 h-4 border-2 border-border-light border-t-system-green rounded-full animate-spin" />
+                  <span className="text-footnote font-medium text-text-secondary">Aktualisiere…</span>
+                </>
+              ) : pull >= threshold ? (
+                <>
+                  <Icon name="chevronUp" size={16} strokeWidth={2.4} className="text-system-green" />
+                  <span className="text-footnote font-medium text-text-secondary">Loslassen zum Aktualisieren</span>
+                </>
+              ) : (
+                <>
+                  <Icon name="chevronDown" size={16} strokeWidth={2.4} className="text-text-tertiary" />
+                  <span className="text-footnote font-medium text-text-tertiary">Zum Aktualisieren ziehen</span>
+                </>
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Main Content */}
         <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain ios-scroll-smooth pb-28" role="main">
           <Suspense fallback={<LoadingSpinner message="Lade Tab..." />}>

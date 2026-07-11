@@ -42,6 +42,13 @@ export function useSupabaseQuery(table, query = '*', options = {}, dependencies 
     fetchData();
   }, [fetchData]);
 
+  // Global pull-to-refresh: every query re-fetches when the app broadcasts it.
+  useEffect(() => {
+    const onGlobalRefresh = () => fetchData();
+    window.addEventListener('fusta-refresh', onGlobalRefresh);
+    return () => window.removeEventListener('fusta-refresh', onGlobalRefresh);
+  }, [fetchData]);
+
   const refetch = useCallback(() => {
     fetchData();
   }, [fetchData]);
