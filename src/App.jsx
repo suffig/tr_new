@@ -16,6 +16,7 @@ import ScrollToTop from './components/ScrollToTop';
 import LoadingSpinner, { FullScreenLoader } from './components/LoadingSpinner';
 import GlobalSearch from './components/GlobalSearch';
 import NotificationSystem from './components/NotificationSystem';
+import AddToHomeHint from './components/AddToHomeHint';
 
 // Lazy load tab components for better performance
 const MatchesTab = lazy(() => import('./components/tabs/MatchesTab'));
@@ -324,6 +325,9 @@ function App() {
 
         {/* Scroll-to-top (appears on long pages) */}
         <ScrollToTop scrollRef={mainRef} />
+
+        {/* One-time iOS "Add to Home Screen" hint (Safari, not-yet-installed) */}
+        <AddToHomeHint />
 
         {/* Quick-Add FAB: springt zu "Match hinzufügen" (nur Admin, nur auf der Spiele-Seite) */}
         {user?.email === ADMIN_EMAIL && activeTab === 'matches' && (
