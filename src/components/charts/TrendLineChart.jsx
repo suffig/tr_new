@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import * as d3 from 'd3';
+import * as d3 from '../../utils/d3';
 
 /**
  * Interactive Line Chart for showing performance trends over time
