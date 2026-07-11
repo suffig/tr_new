@@ -37,9 +37,8 @@
     
     <!-- Font Awesome - For icons -->
     <link rel="stylesheet" href="assets/fonts/fontawesome-icons.css">
-    
-    <!-- Supabase CDN - Load before app starts -->
-    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js" crossorigin="anonymous"></script>
+    <!-- Supabase is bundled via the npm import in src/utils/supabase.js;
+         no separate CDN <script> needed (removed to avoid a redundant load). -->
 </head>
 <body>
     <div id="root"></div>

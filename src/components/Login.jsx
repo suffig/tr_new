@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { supabase, switchToFallbackMode } from '../utils/supabase';
+import { supabase, switchToFallbackMode, usingFallback } from '../utils/supabase';
 import { ErrorHandler, FormValidator } from '../utils/errorHandling';
 import logoFusta from '/assets/logo-fusta.png';
 
@@ -27,8 +27,9 @@ export default function Login() {
     // Check if already in fallback mode
     const checkFallbackStatus = () => {
       try {
-        if (window.location.hostname === 'localhost' || 
-            document.querySelector('script[src*="supabase"]') === null) {
+        // Demo mode on local dev, or when the real client already fell back
+        // (e.g. Supabase unreachable). No longer depends on a CDN <script>.
+        if (window.location.hostname === 'localhost' || usingFallback) {
           setIsDemoMode(true);
         }
       } catch (error) {
@@ -77,8 +78,10 @@ export default function Login() {
         return;
       }
 
-      // Force switch to fallback mode when in demo mode or CDN is blocked
-      if (isDemoMode || !window.supabase || document.querySelector('script[src*="supabase"]') === null) {
+      // Force fallback only when we already know we're offline/demo. Real
+      // production logins fall through to the try/catch below, which switches
+      // to fallback on an actual 'Failed to fetch'. (No CDN <script> check.)
+      if (isDemoMode || usingFallback || window.location.hostname === 'localhost') {
         console.warn('🔄 Force switching to fallback mode for demo');
         await switchToFallbackMode();
         setIsDemoMode(true);

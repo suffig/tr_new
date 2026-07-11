@@ -585,13 +585,14 @@ const createDatabaseOperations = (client) => {
 export const supabaseDb = createDatabaseOperations(supabase);
 // Initialize and detect if CDN is blocked immediately
 const initializeSupabase = async () => {
-  // Check if CDN is blocked by looking for blocked resources
-  const cdnBlocked = document.querySelector('script[src*="supabase"]') === null ||
-                     window.location.hostname === 'localhost' ||
-                     window.location.hostname.includes('127.0.0.1');
-  
-  if (cdnBlocked) {
-    console.warn('🚫 Supabase CDN detected as blocked, switching to fallback immediately');
+  // Local dev runs in demo/fallback mode (no live Supabase). In production the
+  // real bundled client is used; genuine connection failures fall back later
+  // via the 'Failed to fetch' handling.
+  const localDev = window.location.hostname === 'localhost' ||
+                   window.location.hostname.includes('127.0.0.1');
+
+  if (localDev) {
+    console.warn('🧪 Local dev detected, switching to demo/fallback mode');
     switchToFallbackMode();
   }
 };
