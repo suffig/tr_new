@@ -1,9 +1,10 @@
 -- FUSTA · FC-Versionen geraeteuebergreifend teilen.
--- In Supabase (SQL-Editor) ausfuehren. Nicht-destruktiv.
+-- In Supabase (SQL-Editor) ausfuehren.
 --
--- Speichert die Versions-Registry (Liste, aktive Version, Team-Konfig inkl.
--- base64-Logos) zentral. Die App liest beim Start daraus und schreibt beim
--- Anlegen/Umschalten/Team-Bearbeiten zurueck; localStorage bleibt Offline-Fallback.
+-- NICHT-DESTRUKTIV: legt nur die NEUE Tabelle public.fifa_versions an, aktiviert
+-- darauf RLS + eine Policy und seedet zwei Zeilen. Es werden KEINE bestehenden
+-- Tabellen/Daten (matches, players, ...) veraendert oder geloescht.
+-- Kein DROP/DELETE/TRUNCATE -> die frueher gezeigte "destructive"-Warnung faellt weg.
 
 create table if not exists public.fifa_versions (
   id         text primary key,                 -- 'FC25','FC26','FC27', ...
@@ -14,8 +15,20 @@ create table if not exists public.fifa_versions (
 );
 
 alter table public.fifa_versions enable row level security;
-drop policy if exists "fifa_versions full access" on public.fifa_versions;
-create policy "fifa_versions full access" on public.fifa_versions for all using (true) with check (true);
+
+-- Policy nur anlegen, falls sie noch nicht existiert (idempotent, ohne DROP).
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where schemaname = 'public'
+      and tablename  = 'fifa_versions'
+      and policyname = 'fifa_versions full access'
+  ) then
+    create policy "fifa_versions full access"
+      on public.fifa_versions for all using (true) with check (true);
+  end if;
+end $$;
 
 -- Seed der beiden bestehenden Versionen mit den aktuellen Defaults (FC26 aktiv).
 insert into public.fifa_versions (id, name, is_active, teams) values
