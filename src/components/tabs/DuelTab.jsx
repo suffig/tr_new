@@ -39,7 +39,7 @@ function computeDuel(matches, resolveName) {
         const isObj = typeof g === 'object' && g !== null;
         const name = resolveName(isObj ? (g.player ?? g.player_id) : g);
         const cnt = isObj ? (g.count || 1) : 1;
-        if (name) scorers[name] = (scorers[name] || 0) + cnt;
+        if (name && !String(name).startsWith('Eigentore')) scorers[name] = (scorers[name] || 0) + cnt;
       }
     }
   }
@@ -77,7 +77,7 @@ function matchPlayerGoals(match, resolveName) {
       const isObj = typeof g === 'object' && g !== null;
       const name = resolveName(isObj ? (g.player ?? g.player_id) : g);
       const cnt = isObj ? (g.count || 1) : 1;
-      if (name) tally[name] = (tally[name] || 0) + cnt;
+      if (name && !String(name).startsWith('Eigentore')) tally[name] = (tally[name] || 0) + cnt;
     }
   }
   return tally;
