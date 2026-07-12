@@ -16,7 +16,6 @@ import { supabase, usingFallback } from './supabase';
 import { BUILT_IN_FIFA_VERSIONS } from './fifaVersionManager';
 
 const K_CUSTOM = 'fifa_custom_versions';
-const K_CURRENT = 'fifa_current_version';
 const K_TEAMS = 'fifa_version_teams';
 
 const TABLE = 'fifa_versions';
@@ -30,20 +29,19 @@ export async function hydrateFifaVersionsFromDB() {
 
     const custom = {};
     const teams = {};
-    let current = null;
     for (const row of data) {
       if (!BUILT_IN_FIFA_VERSIONS[row.id]) custom[row.id] = row.id;
       if (row.teams && Object.keys(row.teams).length) teams[row.id] = row.teams;
-      if (row.is_active) current = row.id;
     }
 
+    // Sync only the shared registry: the version LIST + per-version team config.
+    // The ACTIVE version stays a per-device choice on purpose — otherwise pulling
+    // the DB's active version on every load would revert a local season switch.
     localStorage.setItem(K_CUSTOM, JSON.stringify(custom));
     localStorage.setItem(K_TEAMS, JSON.stringify(teams));
-    if (current) localStorage.setItem(K_CURRENT, current);
 
-    // Let mounted components refresh (mirrors events fired by the managers).
-    window.dispatchEvent(new CustomEvent('fifaVersionsHydrated', { detail: { current } }));
-    if (current) window.dispatchEvent(new CustomEvent('fifaVersionChanged', { detail: { version: current } }));
+    // Let mounted components refresh team names/logos (does not change the season).
+    window.dispatchEvent(new CustomEvent('fifaVersionsHydrated', { detail: {} }));
     window.dispatchEvent(new CustomEvent('versionTeamsChanged', { detail: {} }));
     return true;
   } catch {
