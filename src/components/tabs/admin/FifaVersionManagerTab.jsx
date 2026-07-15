@@ -10,9 +10,11 @@ import {
 } from '../../../utils/fifaVersionManager';
 import { getVersionTeams } from '../../../utils/versionTeamManager';
 import { pushVersionToDB, setActiveVersionInDB, deleteVersionFromDB } from '../../../utils/fifaVersionsSync';
+import NewSeasonModal from '../../admin/NewSeasonModal';
 
 const FifaVersionManagerTab = () => {
   const [versions, setVersions] = useState([]);
+  const [showNewSeason, setShowNewSeason] = useState(false);
   const [currentVersion, setCurrentVersionState] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
   const [newVersionData, setNewVersionData] = useState({
@@ -168,15 +170,27 @@ const FifaVersionManagerTab = () => {
           </div>
         </div>
         
-        <button
-          onClick={() => setShowAddForm(!showAddForm)}
-          className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg 
-                     transition-colors flex items-center gap-2"
-        >
-          <span className="text-lg">+</span>
-          Neue Version
-        </button>
+        <div className="flex flex-col items-end gap-1">
+          <button
+            onClick={() => setShowNewSeason(true)}
+            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg
+                       transition-colors flex items-center gap-2"
+          >
+            <span className="text-lg">+</span>
+            Neue Saison anlegen
+          </button>
+          <button
+            onClick={() => setShowAddForm(!showAddForm)}
+            className="text-xs text-gray-500 hover:text-gray-700 underline"
+          >
+            Nur Version (erweitert)
+          </button>
+        </div>
       </div>
+
+      {showNewSeason && (
+        <NewSeasonModal onClose={() => setShowNewSeason(false)} onCreated={loadVersions} />
+      )}
 
       {/* Current Version Status */}
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border">
