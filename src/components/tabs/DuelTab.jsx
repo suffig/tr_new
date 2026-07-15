@@ -5,6 +5,7 @@ import TeamLogo from '../TeamLogo';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import SeasonView from './SeasonView';
+import RecordsView from './RecordsView';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { getTeamDisplay } from '../../constants/teams';
 
@@ -381,7 +382,8 @@ export default function DuelTab() {
   }, [players]);
 
   const d = useMemo(() => computeDuel(matches, resolveName), [matches, resolveName]);
-  const [view, setView] = useState('duell');
+  const [view, setView] = useState('uebersicht');
+  const [mode, setMode] = useState('alltime'); // Übersicht: All-Time vs. Saison
   const achievements = useMemo(
     () => computeAchievements(matches, resolveName, { aek: aekName, real: realName }),
     [matches, resolveName, aekName, realName]
@@ -390,10 +392,10 @@ export default function DuelTab() {
   if (mLoading) return <LoadingSpinner message="Lade Duell…" />;
 
   const views = [
-    { id: 'duell', label: 'Duell', iconName: 'zap' },
-    { id: 'saison', label: 'Saison', iconName: 'calendar' },
-    { id: 'erfolge', label: 'Erfolge', iconName: 'trophy' },
-    { id: 'rueckblick', label: 'Rückblick', iconName: 'star' },
+    { id: 'uebersicht', label: 'Übersicht', iconName: 'zap' },
+    { id: 'rekorde', label: 'Rekorde', iconName: 'trophy' },
+    { id: 'erfolge', label: 'Erfolge', iconName: 'star' },
+    { id: 'rueckblick', label: 'Rückblick', iconName: 'calendar' },
   ];
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
@@ -406,7 +408,9 @@ export default function DuelTab() {
     <div className="p-4 pb-24 space-y-4">
       <HorizontalNavigation views={views} selectedView={view} onViewChange={setView} />
 
-      {view === 'erfolge' ? (
+      {view === 'rekorde' ? (
+        <RecordsView matches={matches} players={players} aekName={aekName} realName={realName} />
+      ) : view === 'erfolge' ? (
         <div>
           <div className="text-footnote text-text-muted mb-3">
             {unlockedCount} von {achievements.length} freigeschaltet
@@ -415,20 +419,33 @@ export default function DuelTab() {
             {achievements.map((a) => <AchievementCard key={a.id} a={a} />)}
           </div>
         </div>
-      ) : view === 'saison' ? (
-        <SeasonView matches={matches} players={players} aekName={aekName} realName={realName} />
       ) : view === 'rueckblick' ? (
         <WrappedView d={d} aekName={aekName} realName={realName} />
-      ) : !d.total ? (
-        <div className="text-center py-16">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-orange/12 text-system-orange flex items-center justify-center">
-            <Icon name="zap" size={30} strokeWidth={1.8} />
-          </div>
-          <p className="text-text-muted">Noch keine Spiele erfasst.</p>
-          <p className="text-footnote text-text-tertiary mt-1">Sobald ihr spielt, entsteht hier eure Bilanz.</p>
-        </div>
       ) : (
+        /* Übersicht: All-Time ↔ Saison */
         <>
+          <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl">
+            {[['alltime', 'All-Time'], ['saison', 'Saison']].map(([m, label]) => (
+              <button key={m} onClick={() => setMode(m)}
+                className={`flex-1 py-1.5 rounded-lg text-footnote font-semibold transition-colors ${
+                  mode === m ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'
+                }`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          {mode === 'saison' ? (
+            <SeasonView matches={matches} players={players} aekName={aekName} realName={realName} />
+          ) : !d.total ? (
+            <div className="text-center py-16">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-orange/12 text-system-orange flex items-center justify-center">
+                <Icon name="zap" size={30} strokeWidth={1.8} />
+              </div>
+              <p className="text-text-muted">Noch keine Spiele erfasst.</p>
+              <p className="text-footnote text-text-tertiary mt-1">Sobald ihr spielt, entsteht hier eure Bilanz.</p>
+            </div>
+          ) : (
+            <>
       {/* Hero scoreboard */}
       <div className="modern-card p-5">
         <div className="flex items-stretch">
@@ -557,6 +574,8 @@ export default function DuelTab() {
           </div>
         </StatCard>
       </div>
+            </>
+          )}
         </>
       )}
     </div>
