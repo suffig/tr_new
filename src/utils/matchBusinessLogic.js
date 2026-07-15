@@ -143,6 +143,11 @@ export class MatchBusinessLogic {
         console.warn('Failed to update alcohol calculator:', alcoholError);
       }
 
+      // Nach dem kompletten Vorgang (Match + Spieler-Tore + Finanzen) einmal
+      // global refreshen, damit alle offenen Views (Duell, Stats, Finanzen, …)
+      // ohne Tab-Wechsel/Reload aktuell sind.
+      try { window.dispatchEvent(new CustomEvent('fusta-refresh')); } catch { /* SSR/no-window */ }
+
       return { success: true, matchId, message: `Match ${teama} vs ${teamb} (${goalsa}:${goalsb}) erfolgreich hinzugefügt` };
 
     } catch (error) {

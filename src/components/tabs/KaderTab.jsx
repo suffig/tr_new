@@ -77,6 +77,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       toast.success(`Spieler ${playerData.name} erfolgreich aktualisiert`);
       setEditingPlayer(null);
       refetch();
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
     } catch (error) {
       toast.error('Fehler beim Aktualisieren des Spielers: ' + error.message);
     }

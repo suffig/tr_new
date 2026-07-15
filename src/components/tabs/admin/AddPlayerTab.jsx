@@ -75,8 +75,9 @@ export default function AddPlayerTab() {
       });
       setShowModal(false);
       
-      // Show success message
+      // Show success message + refresh other views (Kader, Stats, Duell)
       toast.success(`Spieler "${formData.name}" erfolgreich hinzugefügt!`);
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
     } catch (error) {
       console.error('Player submission error:', error);
       toast.error(error.message || 'Fehler beim Hinzufügen des Spielers');

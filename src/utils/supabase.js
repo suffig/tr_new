@@ -472,8 +472,10 @@ const createDatabaseOperations = (client) => {
             console.log(`✅ Real database insert successful for ${table}`);
             return result;
           } catch (dbError) {
-            console.warn(`❌ Real database insert failed for ${table}, simulating:`, dbError);
-            // Fall through to simulation
+            // Real mode: surface the error instead of faking a success with
+            // simulated data (which would silently drop the write).
+            console.error(`❌ Real database insert failed for ${table}:`, dbError);
+            return { data: null, error: dbError instanceof Error ? dbError : new Error(String(dbError)) };
           }
         }
       } catch (authError) {
@@ -511,8 +513,8 @@ const createDatabaseOperations = (client) => {
             console.log(`✅ Real database update successful for ${table}`);
             return result;
           } catch (dbError) {
-            console.warn(`❌ Real database update failed for ${table}, simulating:`, dbError);
-            // Fall through to simulation
+            console.error(`❌ Real database update failed for ${table}:`, dbError);
+            return { data: null, error: dbError instanceof Error ? dbError : new Error(String(dbError)) };
           }
         }
       } catch (authError) {
@@ -551,8 +553,8 @@ const createDatabaseOperations = (client) => {
             console.log(`✅ Real database delete successful for ${table}`);
             return result;
           } catch (dbError) {
-            console.warn(`❌ Real database delete failed for ${table}, simulating:`, dbError);
-            // Fall through to simulation
+            console.error(`❌ Real database delete failed for ${table}:`, dbError);
+            return { data: null, error: dbError instanceof Error ? dbError : new Error(String(dbError)) };
           }
         }
       } catch (authError) {
