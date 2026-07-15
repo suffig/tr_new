@@ -62,12 +62,23 @@ function computeDuel(matches, resolveName) {
     return a === b ? 'D' : (a > b ? 'AEK' : 'Real');
   });
 
-  let topScorer = null;
-  for (const [name, goals] of Object.entries(scorers)) {
-    if (!topScorer || goals > topScorer.goals) topScorer = { name, goals };
-  }
+  const topScorers = Object.entries(scorers)
+    .sort((a, b) => b[1] - a[1]).slice(0, 5).map(([name, goals]) => ({ name, goals }));
+  const topScorer = topScorers[0] || null;
 
-  return { total: list.length, aekW, realW, draws, aekG, realG, prizeA, prizeR, biggest, streak, last10, topScorer };
+  // Per-season head-to-head split (oldest → newest).
+  const bySeason = {};
+  for (const x of list) {
+    const v = x.fifa_version || 'FC25';
+    const a = x.goalsa || 0, b = x.goalsb || 0;
+    const s = bySeason[v] || (bySeason[v] = { aekW: 0, realW: 0, draws: 0 });
+    if (a > b) s.aekW++; else if (b > a) s.realW++; else s.draws++;
+  }
+  const seasonH2H = Object.entries(bySeason)
+    .sort((p, q) => (parseInt(String(p[0]).replace(/\D/g, ''), 10) || 0) - (parseInt(String(q[0]).replace(/\D/g, ''), 10) || 0))
+    .map(([v, s], i) => ({ version: v, number: i + 1, ...s }));
+
+  return { total: list.length, aekW, realW, draws, aekG, realG, prizeA, prizeR, biggest, streak, last10, topScorer, topScorers, seasonH2H };
 }
 
 // Sum goals per player within a single match (both goalslist formats).
@@ -574,6 +585,60 @@ export default function DuelTab() {
           </div>
         </StatCard>
       </div>
+
+      {/* Top-Torschützen (all-time) */}
+      {d.topScorers.length > 0 && (
+        <div className="modern-card p-4">
+          <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
+            <Icon name="star" size={15} strokeWidth={2.2} className="text-system-orange" />
+            Top-Torschützen
+          </div>
+          <div className="space-y-1.5">
+            {d.topScorers.map((s, i) => (
+              <div key={s.name} className="flex items-center gap-3">
+                <span className={`w-5 text-center text-sm font-bold ${i === 0 ? 'text-system-yellow' : i === 2 ? 'text-system-orange' : 'text-text-tertiary'}`}>{i + 1}</span>
+                <span className="flex-1 text-sm font-medium text-text-primary truncate">{s.name}</span>
+                <div className="w-16 h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                  <div className="h-full bg-system-orange/70" style={{ width: `${(s.goals / d.topScorers[0].goals) * 100}%` }} />
+                </div>
+                <span className="text-sm font-bold tabular-nums w-6 text-right">{s.goals}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Head-to-Head je Saison */}
+      {d.seasonH2H.length > 0 && (
+        <div className="modern-card p-4">
+          <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
+            <Icon name="calendar" size={15} strokeWidth={2.2} className="text-system-blue" />
+            Bilanz je Saison
+          </div>
+          <div className="space-y-2.5">
+            {d.seasonH2H.map((s) => {
+              const tot = s.aekW + s.realW + s.draws || 1;
+              return (
+                <div key={s.version}>
+                  <div className="flex items-center justify-between text-[11px] mb-0.5">
+                    <span className="text-text-secondary font-medium">Saison {s.number} · {s.version}</span>
+                    <span className="tabular-nums">
+                      <span className="text-system-blue font-semibold">{s.aekW}</span>
+                      <span className="text-text-tertiary"> · {s.draws} · </span>
+                      <span className="text-system-red font-semibold">{s.realW}</span>
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden bg-bg-tertiary flex">
+                    <div className="bg-system-blue h-full" style={{ width: `${(s.aekW / tot) * 100}%` }} />
+                    <div className="bg-text-tertiary/40 h-full" style={{ width: `${(s.draws / tot) * 100}%` }} />
+                    <div className="bg-system-red h-full" style={{ width: `${(s.realW / tot) * 100}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
             </>
           )}
         </>
