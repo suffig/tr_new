@@ -103,8 +103,8 @@ const SeasonManagerTab = () => {
           <Icon name="calendar" size={28} strokeWidth={2} />
         </div>
         <div>
-          <h2 className="text-3xl font-bold text-gray-800 mb-1">Saison-Manager</h2>
-          <p className="text-gray-600 text-lg">Verwalten Sie Legacy- und FC26-Daten</p>
+          <h2 className="text-3xl font-bold text-text-primary mb-1">Saison-Manager</h2>
+          <p className="text-text-secondary text-lg">Verwalten Sie Legacy- und FC26-Daten</p>
         </div>
       </div>
 
@@ -116,11 +116,11 @@ const SeasonManagerTab = () => {
               <Icon name="calendar" size={24} strokeWidth={2} />
             </div>
             <div>
-              <h3 className="text-xl font-bold text-gray-800 mb-1">Aktuelle Saison</h3>
+              <h3 className="text-xl font-bold text-text-primary mb-1">Aktuelle Saison</h3>
               <p className="text-2xl font-bold text-emerald-600">
                 {SEASON_NAMES[currentSeason]}
               </p>
-              <p className="text-gray-600 text-sm mt-1">
+              <p className="text-text-secondary text-sm mt-1">
                 Alle Aktionen werden in dieser Saison gespeichert
               </p>
             </div>
@@ -136,7 +136,7 @@ const SeasonManagerTab = () => {
 
       {/* Season Overview */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800">Datenübersicht pro Saison</h3>
+        <h3 className="text-lg font-semibold text-text-primary">Datenübersicht pro Saison</h3>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {seasons.map(season => {
@@ -148,8 +148,8 @@ const SeasonManagerTab = () => {
                 key={season.id}
                 className={`p-6 rounded-xl border-2 ${
                   season.isActive 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-200 bg-white'
+                    ? 'border-blue-500 bg-system-blue/10' 
+                    : 'border-border-light bg-bg-secondary'
                 }`}
               >
                 <div className="flex items-center justify-between mb-4">
@@ -161,13 +161,13 @@ const SeasonManagerTab = () => {
                       {season.icon}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-gray-800">{season.name}</h4>
-                      <p className="text-sm text-gray-600">{season.description}</p>
+                      <h4 className="font-semibold text-text-primary">{season.name}</h4>
+                      <p className="text-sm text-text-secondary">{season.description}</p>
                     </div>
                   </div>
                   
                   {season.isActive && (
-                    <span className="px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium">
+                    <span className="px-3 py-1 bg-system-blue/10 text-system-blue rounded-full text-sm font-medium">
                       Aktiv
                     </span>
                   )}
@@ -176,44 +176,44 @@ const SeasonManagerTab = () => {
                 {/* Data Statistics */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Gesamt Einträge:</span>
-                    <span className="font-medium text-gray-800">{totalItems}</span>
+                    <span className="text-text-secondary">Gesamt Einträge:</span>
+                    <span className="font-medium text-text-primary">{totalItems}</span>
                   </div>
                   
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-gray-600">⚽ Spiele:</span>
+                      <span className="text-text-secondary">⚽ Spiele:</span>
                       <span className="font-medium">{counts.matches || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">👥 Spieler:</span>
+                      <span className="text-text-secondary">👥 Spieler:</span>
                       <span className="font-medium">{counts.players || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">🚫 Sperren:</span>
+                      <span className="text-text-secondary">🚫 Sperren:</span>
                       <span className="font-medium">{counts.bans || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-gray-600">💰 Transaktionen:</span>
+                      <span className="text-text-secondary">💰 Transaktionen:</span>
                       <span className="font-medium">{counts.transactions || 0}</span>
                     </div>
                   </div>
 
                   {counts.alcoholCalculator > 0 && (
-                    <div className="flex justify-between text-sm pt-2 border-t border-gray-200">
-                      <span className="text-gray-600">🍺 Alkohol-Tracker:</span>
-                      <span className="font-medium text-green-600">Konfiguriert</span>
+                    <div className="flex justify-between text-sm pt-2 border-t border-border-light">
+                      <span className="text-text-secondary">🍺 Alkohol-Tracker:</span>
+                      <span className="font-medium text-system-green">Konfiguriert</span>
                     </div>
                   )}
                 </div>
 
                 {/* Actions */}
-                <div className="mt-4 pt-4 border-t border-gray-200">
+                <div className="mt-4 pt-4 border-t border-border-light">
                   <div className="flex gap-2">
                     <button
                       onClick={() => handleExportSeason(season.id)}
                       disabled={!season.hasData || isLoading}
-                      className="flex-1 px-3 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 
+                      className="flex-1 px-3 py-2 bg-bg-tertiary hover:bg-bg-tertiary text-text-secondary 
                                  rounded-lg text-sm transition-colors disabled:opacity-50 
                                  disabled:cursor-not-allowed"
                     >
@@ -222,7 +222,7 @@ const SeasonManagerTab = () => {
                     
                     {season.hasData && (
                       <div className="flex-1 px-3 py-2 text-center text-sm">
-                        <span className="text-green-600 font-medium">✓ Daten vorhanden</span>
+                        <span className="text-system-green font-medium">✓ Daten vorhanden</span>
                       </div>
                     )}
                   </div>
@@ -251,9 +251,9 @@ const SeasonManagerTab = () => {
       </div>
 
       {/* Technical Details */}
-      <div className="bg-gray-50 rounded-xl p-6">
-        <h4 className="font-semibold text-gray-800 mb-3">Technische Details</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+      <div className="bg-bg-tertiary rounded-xl p-6">
+        <h4 className="font-semibold text-text-primary mb-3">Technische Details</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-text-secondary">
           <div>
             <strong>Speicher-System:</strong><br />
             • Lokaler Browser-Speicher<br />

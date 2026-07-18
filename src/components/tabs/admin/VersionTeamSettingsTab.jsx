@@ -219,11 +219,11 @@ const VersionTeamSettingsTab = () => {
   return (
     <div className="p-4 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-xl p-6 border">
+      <div className="bg-bg-tertiary rounded-xl p-6 border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">Versions-spezifische Team-Einstellungen</h3>
-            <p className="text-gray-600 mt-1">
+            <h3 className="text-lg font-semibold text-text-primary">Versions-spezifische Team-Einstellungen</h3>
+            <p className="text-text-secondary mt-1">
               Konfigurieren Sie Team-Namen und Icons für verschiedene FIFA Versionen
             </p>
           </div>
@@ -232,8 +232,8 @@ const VersionTeamSettingsTab = () => {
       </div>
 
       {/* Version Selector */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h4 className="font-semibold text-gray-800 mb-4">Version auswählen</h4>
+      <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
+        <h4 className="font-semibold text-text-primary mb-4">Version auswählen</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {versions.map(version => (
             <button
@@ -241,14 +241,14 @@ const VersionTeamSettingsTab = () => {
               onClick={() => handleVersionSelect(version.id)}
               className={`p-4 rounded-lg border-2 transition-all ${
                 selectedVersion === version.id
-                  ? 'border-blue-500 bg-blue-50 text-blue-700'
-                  : 'border-gray-200 hover:border-gray-300 text-gray-700'
+                  ? 'border-blue-500 bg-system-blue/10 text-system-blue'
+                  : 'border-border-light hover:border-border-light text-text-secondary'
               }`}
             >
               <div className="text-sm font-semibold">{version.id}</div>
               <div className="text-xs mt-1">{version.name}</div>
               {version.id === currentVersion && (
-                <div className="text-xs text-green-600 font-medium mt-1">Aktiv</div>
+                <div className="text-xs text-system-green font-medium mt-1">Aktiv</div>
               )}
             </button>
           ))}
@@ -257,21 +257,21 @@ const VersionTeamSettingsTab = () => {
 
       {/* Team Configuration */}
       {selectedVersion && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
+        <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
           <div className="flex items-center justify-between mb-6">
-            <h4 className="font-semibold text-gray-800">
+            <h4 className="font-semibold text-text-primary">
               Team-Konfiguration für {getFifaVersionDisplayName(selectedVersion)}
             </h4>
             <div className="flex gap-2">
               <button
                 onClick={() => setShowCopyModal(true)}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-3 py-1 text-sm bg-bg-tertiary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 Kopieren von...
               </button>
               <button
                 onClick={handleReset}
-                className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 transition-colors"
+                className="px-3 py-1 text-sm bg-bg-tertiary text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 Zurücksetzen
               </button>
@@ -280,9 +280,9 @@ const VersionTeamSettingsTab = () => {
 
           <div className="space-y-6">
             {Object.entries(teams).map(([teamKey, teamConfig]) => (
-              <div key={teamKey} className="border border-gray-200 rounded-lg p-4">
+              <div key={teamKey} className="border border-border-light rounded-lg p-4">
                 <div className="flex items-center gap-4 mb-4">
-                  <div className="w-12 h-12 rounded-lg border-2 border-gray-200 flex items-center justify-center overflow-hidden">
+                  <div className="w-12 h-12 rounded-lg border-2 border-border-light flex items-center justify-center overflow-hidden">
                     {teamConfig.customIcon ? (
                       <img 
                         src={teamConfig.customIcon} 
@@ -297,33 +297,33 @@ const VersionTeamSettingsTab = () => {
                     )}
                   </div>
                   <div className="flex-1">
-                    <h5 className="font-medium text-gray-800">{teamKey}</h5>
-                    <p className="text-sm text-gray-600">{teamConfig.label}</p>
+                    <h5 className="font-medium text-text-primary">{teamKey}</h5>
+                    <p className="text-sm text-text-secondary">{teamConfig.label}</p>
                   </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       Team-Name
                     </label>
                     <input
                       type="text"
                       value={teamConfig.label}
                       onChange={(e) => handleTeamChange(teamKey, 'label', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       placeholder="Team-Name eingeben"
                     />
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       Farbe
                     </label>
                     <select
                       value={teamConfig.color}
                       onChange={(e) => handleTeamChange(teamKey, 'color', e.target.value)}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="blue">Blau</option>
                       <option value="red">Rot</option>
@@ -336,7 +336,7 @@ const VersionTeamSettingsTab = () => {
                   </div>
 
                   <div className="md:col-span-2">
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
                       Icon hochladen
                     </label>
                     <div className="flex gap-2">
@@ -344,18 +344,18 @@ const VersionTeamSettingsTab = () => {
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleIconUpload(teamKey, e.target.files[0])}
-                        className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="flex-1 px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                       />
                       {teamConfig.customIcon && (
                         <button
                           onClick={() => handleRemoveIcon(teamKey)}
-                          className="px-3 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          className="px-3 py-2 bg-system-red/100 text-white rounded-lg hover:bg-red-600 transition-colors"
                         >
                           Entfernen
                         </button>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs text-text-muted mt-1">
                       Maximale Dateigröße: 2MB. Unterstützte Formate: JPG, PNG, GIF
                     </p>
                   </div>
@@ -366,7 +366,7 @@ const VersionTeamSettingsTab = () => {
 
           {/* Save Button */}
           {hasChanges && (
-            <div className="mt-6 pt-6 border-t border-gray-200">
+            <div className="mt-6 pt-6 border-t border-border-light">
               <button
                 onClick={saveChanges}
                 disabled={loading}
@@ -382,16 +382,16 @@ const VersionTeamSettingsTab = () => {
       {/* Copy Modal */}
       {showCopyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h4 className="font-semibold text-gray-800 mb-4">Team-Einstellungen kopieren</h4>
-            <p className="text-gray-600 mb-4">
+          <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4">
+            <h4 className="font-semibold text-text-primary mb-4">Team-Einstellungen kopieren</h4>
+            <p className="text-text-secondary mb-4">
               Von welcher Version möchten Sie die Team-Einstellungen kopieren?
             </p>
             
             <select
               value={copyFromVersion}
               onChange={(e) => setCopyFromVersion(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-border-light rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
               <option value="">Version auswählen...</option>
               {versions
@@ -409,7 +409,7 @@ const VersionTeamSettingsTab = () => {
                   setShowCopyModal(false);
                   setCopyFromVersion('');
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-border-light text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 Abbrechen
               </button>

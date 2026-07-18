@@ -285,7 +285,7 @@ function App() {
         {isDemoMode && activeTab === 'admin' && user?.email === ADMIN_EMAIL && (
           <div className="bg-system-yellow/20 border-system-yellow/40 text-system-yellow px-4 py-3 text-center" role="alert">
             <div className="flex items-center justify-center gap-2">
-              <span className="text-lg">⚠️</span>
+              <Icon name="warning" size={16} strokeWidth={2.2} />
               <span className="text-footnote font-medium">Demo-Modus aktiv - Supabase CDN blockiert</span>
             </div>
           </div>

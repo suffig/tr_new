@@ -74,23 +74,23 @@ const ManagerTab = () => {
                 className={`rounded-xl p-4 text-left transition-all duration-200 border ${
                   activeManagerTab === tab.id
                     ? 'bg-system-green/10 border-system-green/40 shadow-sm'
-                    : 'bg-white hover:bg-gray-50 border-gray-200 hover:border-gray-300'
+                    : 'bg-bg-secondary hover:bg-bg-tertiary border-border-light hover:border-border-light'
                 }`}
                 title={tab.description}
               >
                 <div className={`w-10 h-10 rounded-lg flex items-center justify-center mb-3 ${
                   activeManagerTab === tab.id
                     ? 'bg-system-green/15 text-system-green'
-                    : 'bg-gray-100 text-gray-500'
+                    : 'bg-bg-tertiary text-text-muted'
                 }`}>
                   <Icon name={tab.icon} size={20} strokeWidth={2} />
                 </div>
                 <div className={`font-semibold mb-1 ${
-                  activeManagerTab === tab.id ? 'text-system-green' : 'text-gray-900'
+                  activeManagerTab === tab.id ? 'text-system-green' : 'text-text-primary'
                 }`}>
                   {tab.label}
                 </div>
-                <div className="text-xs text-gray-500">
+                <div className="text-xs text-text-muted">
                   {tab.description}
                 </div>
               </button>

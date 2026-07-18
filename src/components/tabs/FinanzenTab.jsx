@@ -84,9 +84,9 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
   // Helper function to get color class for positive/negative amounts
   const getAmountColorClass = (amount) => {
-    if (amount > 0) return 'text-green-600';
-    if (amount < 0) return 'text-red-600';
-    return 'text-gray-600';
+    if (amount > 0) return 'text-system-green';
+    if (amount < 0) return 'text-system-red';
+    return 'text-text-secondary';
   };
 
   const getTransactionIcon = (type) => {
@@ -458,40 +458,40 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
               <Icon name="swap" size={18} strokeWidth={2.2} className="text-system-green" />Echtgeld-Schulden Übersicht
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div className={`p-4 rounded-xl border ${(aekFinances.debt || 0) > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}>
+              <div className={`p-4 rounded-xl border ${(aekFinances.debt || 0) > 0 ? "border-system-red/30 bg-system-red/10" : "border-system-green/30 bg-system-green/10"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <TeamLogo team="aek" size="sm" />
                     <span className="font-semibold text-text-primary">{getTeamDisplay('AEK')}</span>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${(aekFinances.debt || 0) > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${(aekFinances.debt || 0) > 0 ? 'bg-system-red/10 text-system-red' : 'bg-system-green/10 text-system-green'}`}>
                     {(aekFinances.debt || 0) > 0 ? '⚠️ Schulden' : '✅ Schuldenfrei'}
                   </span>
                 </div>
-                <div className={`text-2xl font-bold ${(aekFinances.debt || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                <div className={`text-2xl font-bold ${(aekFinances.debt || 0) > 0 ? 'text-system-red' : 'text-system-green'}`}>
                   {(aekFinances.debt || 0) > 0 ? `-${aekFinances.debt}€` : '0€'}
                 </div>
                 <div className="text-xs text-text-muted mt-1">Offene Echtgeld-Schulden</div>
               </div>
-              <div className={`p-4 rounded-xl border ${(realFinances.debt || 0) > 0 ? "border-red-200 bg-red-50" : "border-green-200 bg-green-50"}`}>
+              <div className={`p-4 rounded-xl border ${(realFinances.debt || 0) > 0 ? "border-system-red/30 bg-system-red/10" : "border-system-green/30 bg-system-green/10"}`}>
                 <div className="flex items-center justify-between mb-2">
                   <div className="flex items-center gap-2">
                     <TeamLogo team="real" size="sm" />
                     <span className="font-semibold text-text-primary">{getTeamDisplay('Real')}</span>
                   </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${(realFinances.debt || 0) > 0 ? 'bg-red-100 text-red-700' : 'bg-green-100 text-green-700'}`}>
+                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${(realFinances.debt || 0) > 0 ? 'bg-system-red/10 text-system-red' : 'bg-system-green/10 text-system-green'}`}>
                     {(realFinances.debt || 0) > 0 ? '⚠️ Schulden' : '✅ Schuldenfrei'}
                   </span>
                 </div>
-                <div className={`text-2xl font-bold ${(realFinances.debt || 0) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                <div className={`text-2xl font-bold ${(realFinances.debt || 0) > 0 ? 'text-system-red' : 'text-system-green'}`}>
                   {(realFinances.debt || 0) > 0 ? `-${realFinances.debt}€` : '0€'}
                 </div>
                 <div className="text-xs text-text-muted mt-1">Offene Echtgeld-Schulden</div>
               </div>
             </div>
             {((aekFinances.debt || 0) === 0 && (realFinances.debt || 0) === 0) && (
-              <div className="text-center py-3 bg-green-50 rounded-lg border border-green-200">
-                <span className="text-green-700 font-medium">🎉 Beide Teams sind schuldenfrei!</span>
+              <div className="text-center py-3 bg-system-green/10 rounded-lg border border-system-green/30">
+                <span className="text-system-green font-medium">🎉 Beide Teams sind schuldenfrei!</span>
               </div>
             )}
           </div>
@@ -526,11 +526,11 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             </h3>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
               <div className="text-center p-3 bg-bg-secondary rounded-lg">
-                <div className="text-xl font-bold text-blue-600">{formatCurrency(aekFinances.balance)}</div>
+                <div className="text-xl font-bold text-system-blue">{formatCurrency(aekFinances.balance)}</div>
                 <div className="text-xs text-text-muted">{getTeamDisplay('AEK')} Bargeld</div>
               </div>
               <div className="text-center p-3 bg-bg-secondary rounded-lg">
-                <div className="text-xl font-bold text-red-600">{formatCurrency(realFinances.balance)}</div>
+                <div className="text-xl font-bold text-system-red">{formatCurrency(realFinances.balance)}</div>
                 <div className="text-xs text-text-muted">{getTeamDisplay('Real')} Bargeld</div>
               </div>
               <div className="text-center p-3 bg-bg-secondary rounded-lg">
@@ -783,14 +783,14 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
       {/* Info Cards - Only show on admin page */}
       {showHints && (
         <>
-          <div className="mt-6 modern-card bg-blue-50 border-blue-200">
+          <div className="mt-6 modern-card bg-system-blue/10 border-system-blue/30">
             <div className="flex items-start">
-              <div className="text-blue-600 mr-3 flex-shrink-0">
+              <div className="text-system-blue mr-3 flex-shrink-0">
                 <Icon name="bulb" size={18} strokeWidth={2} />
               </div>
               <div>
-                <h4 className="font-semibold text-blue-800 mb-1">Hinweis zu Marktwerten</h4>
-                <p className="text-blue-700 text-sm">
+                <h4 className="font-semibold text-system-blue mb-1">Hinweis zu Marktwerten</h4>
+                <p className="text-system-blue text-sm">
                   Spieler-Marktwerte werden in der Datenbank in Millionen Euro gespeichert (z.B. 12.5 = 12,5M €).
                   Für die Gesamtkapital-Berechnung werden diese automatisch in Euro umgerechnet.
                 </p>
@@ -798,14 +798,14 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             </div>
           </div>
 
-          <div className="mt-6 modern-card bg-blue-50 border-blue-200">
+          <div className="mt-6 modern-card bg-system-blue/10 border-system-blue/30">
             <div className="flex items-start">
-              <div className="text-blue-600 mr-3 flex-shrink-0">
+              <div className="text-system-blue mr-3 flex-shrink-0">
                 <Icon name="bulb" size={18} strokeWidth={2} />
               </div>
               <div>
-                <h4 className="font-semibold text-blue-800 mb-1">Transaktionen verwalten</h4>
-                <p className="text-blue-700 text-sm">
+                <h4 className="font-semibold text-system-blue mb-1">Transaktionen verwalten</h4>
+                <p className="text-system-blue text-sm">
                   Um neue Transaktionen hinzuzufügen, nutzen Sie den Verwaltungsbereich.
                 </p>
               </div>

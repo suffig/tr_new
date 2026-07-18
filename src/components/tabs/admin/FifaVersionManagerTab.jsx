@@ -142,10 +142,10 @@ const FifaVersionManagerTab = () => {
   };
 
   const getVersionTypeColor = (version) => {
-    if (version.isLegacy) return 'bg-gray-100 text-gray-700';
-    if (version.isCurrent) return 'bg-blue-100 text-blue-700';
-    if (version.isCustom) return 'bg-purple-100 text-purple-700';
-    return 'bg-gray-100 text-gray-700';
+    if (version.isLegacy) return 'bg-bg-tertiary text-text-secondary';
+    if (version.isCurrent) return 'bg-system-blue/10 text-system-blue';
+    if (version.isCustom) return 'bg-system-blue/10 text-system-blue';
+    return 'bg-bg-tertiary text-text-secondary';
   };
 
   const getVersionTypeLabel = (version) => {
@@ -160,20 +160,20 @@ const FifaVersionManagerTab = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-600 rounded-xl 
+          <div className="w-12 h-12 bg-system-blue rounded-xl 
                           flex items-center justify-center text-white text-xl font-bold">
             🎮
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-gray-800">FIFA Versionen-Manager</h2>
-            <p className="text-gray-600">Verwalten und erstellen Sie FIFA Versionen für zukunftssichere Datenorganisation</p>
+            <h2 className="text-2xl font-bold text-text-primary">FIFA Versionen-Manager</h2>
+            <p className="text-text-secondary">Verwalten und erstellen Sie FIFA Versionen für zukunftssichere Datenorganisation</p>
           </div>
         </div>
         
         <div className="flex flex-col items-end gap-1">
           <button
             onClick={() => setShowNewSeason(true)}
-            className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg
+            className="px-4 py-2 bg-system-blue hover:bg-system-blue/90 text-white rounded-lg
                        transition-colors flex items-center gap-2"
           >
             <span className="text-lg">+</span>
@@ -181,7 +181,7 @@ const FifaVersionManagerTab = () => {
           </button>
           <button
             onClick={() => setShowAddForm(!showAddForm)}
-            className="text-xs text-gray-500 hover:text-gray-700 underline"
+            className="text-xs text-text-muted hover:text-text-secondary underline"
           >
             Nur Version (erweitert)
           </button>
@@ -193,19 +193,19 @@ const FifaVersionManagerTab = () => {
       )}
 
       {/* Current Version Status */}
-      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-xl p-6 border">
+      <div className="bg-bg-tertiary rounded-xl p-6 border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">Aktuelle FIFA Version</h3>
+            <h3 className="text-lg font-semibold text-text-primary">Aktuelle FIFA Version</h3>
             <div className="flex items-center gap-3 mt-1">
-              <p className="text-3xl font-bold text-purple-600">
+              <p className="text-3xl font-bold text-system-blue">
                 {currentVersion}
               </p>
-              <p className="text-lg text-gray-600">
+              <p className="text-lg text-text-secondary">
                 ({getFifaVersionDisplayName(currentVersion)})
               </p>
             </div>
-            <p className="text-gray-600 text-sm mt-1">
+            <p className="text-text-secondary text-sm mt-1">
               Alle neuen Daten werden in dieser Version gespeichert
             </p>
           </div>
@@ -217,13 +217,13 @@ const FifaVersionManagerTab = () => {
 
       {/* Add Version Form */}
       {showAddForm && (
-        <div className="bg-white rounded-xl border border-gray-200 p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Neue FIFA Version hinzufügen</h3>
+        <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
+          <h3 className="text-lg font-semibold text-text-primary mb-4">Neue FIFA Version hinzufügen</h3>
           
           <form onSubmit={handleAddVersion} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Version Identifier *
                 </label>
                 <input
@@ -231,17 +231,17 @@ const FifaVersionManagerTab = () => {
                   value={newVersionData.version}
                   onChange={(e) => setNewVersionData(prev => ({ ...prev, version: e.target.value }))}
                   placeholder="z.B. FC27, EA25, FIFA28"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 
-                           focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 
+                           focus:ring-system-blue focus:border-system-blue"
                   required
                 />
-                <p className="text-xs text-gray-500 mt-1">
+                <p className="text-xs text-text-muted mt-1">
                   Format: Buchstaben gefolgt von optionalen Zahlen (FC27, EA25, etc.)
                 </p>
               </div>
               
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Anzeigename
                 </label>
                 <input
@@ -249,14 +249,14 @@ const FifaVersionManagerTab = () => {
                   value={newVersionData.displayName}
                   onChange={(e) => setNewVersionData(prev => ({ ...prev, displayName: e.target.value }))}
                   placeholder="z.B. FIFA Club 27"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 
-                           focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 
+                           focus:ring-system-blue focus:border-system-blue"
                 />
               </div>
             </div>
             
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
+              <label className="block text-sm font-medium text-text-secondary mb-2">
                 Beschreibung
               </label>
               <textarea
@@ -264,8 +264,8 @@ const FifaVersionManagerTab = () => {
                 onChange={(e) => setNewVersionData(prev => ({ ...prev, description: e.target.value }))}
                 placeholder="Beschreibung der neuen Version..."
                 rows={3}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 
-                         focus:ring-purple-500 focus:border-purple-500"
+                className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 
+                         focus:ring-system-blue focus:border-system-blue"
               />
             </div>
             
@@ -273,7 +273,7 @@ const FifaVersionManagerTab = () => {
               <button
                 type="submit"
                 disabled={loading}
-                className="px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white rounded-lg 
+                className="px-4 py-2 bg-system-blue hover:bg-system-blue/90 text-white rounded-lg 
                          transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? 'Wird hinzugefügt...' : 'Version hinzufügen'}
@@ -281,7 +281,7 @@ const FifaVersionManagerTab = () => {
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 bg-gray-200 hover:bg-gray-300 text-gray-700 rounded-lg 
+                className="px-4 py-2 bg-bg-tertiary hover:bg-bg-tertiary text-text-secondary rounded-lg 
                          transition-colors"
               >
                 Abbrechen
@@ -293,7 +293,7 @@ const FifaVersionManagerTab = () => {
 
       {/* Versions List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-800">Verfügbare FIFA Versionen</h3>
+        <h3 className="text-lg font-semibold text-text-primary">Verfügbare FIFA Versionen</h3>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {versions.map(version => (
@@ -301,23 +301,23 @@ const FifaVersionManagerTab = () => {
               key={version.id}
               className={`p-6 rounded-xl border-2 ${
                 version.isActive 
-                  ? 'border-purple-500 bg-purple-50' 
-                  : 'border-gray-200 bg-white'
+                  ? 'border-system-blue bg-bg-tertiary' 
+                  : 'border-border-light bg-bg-secondary'
               }`}
             >
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-xl font-bold text-gray-800">{version.id}</h4>
-                      <span className="text-sm text-gray-600">({version.name})</span>
+                      <h4 className="text-xl font-bold text-text-primary">{version.id}</h4>
+                      <span className="text-sm text-text-secondary">({version.name})</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getVersionTypeColor(version)}`}>
                         {getVersionTypeLabel(version)}
                       </span>
                       {version.isActive && (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 rounded-full text-xs font-medium">
+                        <span className="px-2 py-1 bg-system-green/10 text-system-green rounded-full text-xs font-medium">
                           Aktiv
                         </span>
                       )}
@@ -332,12 +332,12 @@ const FifaVersionManagerTab = () => {
 
               {/* Version Details */}
               <div className="space-y-2 mb-4">
-                <p className="text-sm text-gray-600">
+                <p className="text-sm text-text-secondary">
                   {version.description || version.metadata?.description || 'Keine Beschreibung verfügbar'}
                 </p>
                 
                 {version.createdAt && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-text-muted">
                     Erstellt: {new Date(version.createdAt).toLocaleDateString('de-DE')}
                   </p>
                 )}
@@ -348,7 +348,7 @@ const FifaVersionManagerTab = () => {
                 {!version.isActive && (
                   <button
                     onClick={() => handleSwitchVersion(version.id)}
-                    className="flex-1 px-3 py-2 bg-purple-100 hover:bg-purple-200 text-purple-700 
+                    className="flex-1 px-3 py-2 bg-system-blue/10 hover:bg-system-blue/20 text-system-blue 
                              rounded-lg text-sm transition-colors"
                   >
                     Aktivieren
@@ -359,7 +359,7 @@ const FifaVersionManagerTab = () => {
                   <button
                     onClick={() => handleRemoveVersion(version.id)}
                     disabled={version.isActive}
-                    className="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg 
+                    className="px-3 py-2 bg-red-100 hover:bg-red-200 text-system-red rounded-lg 
                              text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Löschen
@@ -368,7 +368,7 @@ const FifaVersionManagerTab = () => {
                 
                 {version.isActive && (
                   <div className="flex-1 px-3 py-2 text-center text-sm">
-                    <span className="text-green-600 font-medium">✓ Aktive Version</span>
+                    <span className="text-system-green font-medium">✓ Aktive Version</span>
                   </div>
                 )}
               </div>
@@ -395,9 +395,9 @@ const FifaVersionManagerTab = () => {
       </div>
 
       {/* Technical Details */}
-      <div className="bg-gray-50 rounded-xl p-6">
-        <h4 className="font-semibold text-gray-800 mb-3">Technische Details</h4>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+      <div className="bg-bg-tertiary rounded-xl p-6">
+        <h4 className="font-semibold text-text-primary mb-3">Technische Details</h4>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-text-secondary">
           <div>
             <strong>Version-Management:</strong><br />
             • Dynamisches Hinzufügen neuer Versionen<br />

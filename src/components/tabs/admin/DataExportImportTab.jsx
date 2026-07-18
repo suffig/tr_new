@@ -177,8 +177,8 @@ const DataExportImportTab = () => {
       <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-6 border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-800">Daten Export & Import</h3>
-            <p className="text-gray-600 mt-1">
+            <h3 className="text-lg font-semibold text-text-primary">Daten Export & Import</h3>
+            <p className="text-text-secondary mt-1">
               Legacy-Daten downloaden und Finanzdaten zwischen Versionen kopieren
             </p>
           </div>
@@ -187,8 +187,8 @@ const DataExportImportTab = () => {
       </div>
 
       {/* Data Overview */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h4 className="font-semibold text-gray-800 mb-4">Datenübersicht</h4>
+      <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
+        <h4 className="font-semibold text-text-primary mb-4">Datenübersicht</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Legacy Data */}
           {dataStats.legacy && (
@@ -205,9 +205,9 @@ const DataExportImportTab = () => {
           {/* Version Data */}
           {versions.map(version => (
             dataStats[version.id] && (
-              <div key={version.id} className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <h5 className="font-medium text-blue-800 mb-2">{version.name}</h5>
-                <div className="space-y-1 text-sm text-blue-700">
+              <div key={version.id} className="bg-system-blue/10 border border-system-blue/30 rounded-lg p-4">
+                <h5 className="font-medium text-system-blue mb-2">{version.name}</h5>
+                <div className="space-y-1 text-sm text-system-blue">
                   <div>Matches: {dataStats[version.id].matches}</div>
                   <div>Spieler: {dataStats[version.id].players}</div>
                   <div>Transaktionen: {dataStats[version.id].transactions}</div>
@@ -219,8 +219,8 @@ const DataExportImportTab = () => {
       </div>
 
       {/* Export Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <h4 className="font-semibold text-gray-800 mb-4">Daten exportieren</h4>
+      <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
+        <h4 className="font-semibold text-text-primary mb-4">Daten exportieren</h4>
         
         <div className="space-y-4">
           {/* Legacy Export */}
@@ -243,10 +243,10 @@ const DataExportImportTab = () => {
           {/* Version Exports */}
           {versions.map(version => (
             dataStats[version.id] && (
-              <div key={version.id} className="flex items-center justify-between p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <div key={version.id} className="flex items-center justify-between p-4 bg-system-blue/10 border border-system-blue/30 rounded-lg">
                 <div>
-                  <h5 className="font-medium text-blue-800">{version.name}</h5>
-                  <p className="text-sm text-blue-600">Versionsspezifische Daten</p>
+                  <h5 className="font-medium text-system-blue">{version.name}</h5>
+                  <p className="text-sm text-system-blue">Versionsspezifische Daten</p>
                 </div>
                 <button
                   onClick={() => handleExportVersion(version.id)}
@@ -262,9 +262,9 @@ const DataExportImportTab = () => {
       </div>
 
       {/* Finance Copy Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-semibold text-gray-800">Finanzdaten kopieren</h4>
+          <h4 className="font-semibold text-text-primary">Finanzdaten kopieren</h4>
           <button
             onClick={() => setShowCopyModal(true)}
             className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
@@ -273,8 +273,8 @@ const DataExportImportTab = () => {
           </button>
         </div>
         
-        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-          <p className="text-green-800 text-sm">
+        <div className="bg-system-green/10 border border-system-green/30 rounded-lg p-4">
+          <p className="text-system-green text-sm">
             Kopieren Sie Transaktionen und Finanzstände zwischen verschiedenen FIFA Versionen.
             Dies ist nützlich beim Wechsel zwischen Versionen oder beim Übertragen historischer Daten.
           </p>
@@ -282,19 +282,19 @@ const DataExportImportTab = () => {
       </div>
 
       {/* Import Section */}
-      <div className="bg-white rounded-xl border border-gray-200 p-6">
+      <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-semibold text-gray-800">Daten importieren</h4>
+          <h4 className="font-semibold text-text-primary">Daten importieren</h4>
           <button
             onClick={() => setShowImportModal(true)}
-            className="px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors"
+            className="px-4 py-2 bg-system-blue text-white rounded-lg hover:bg-system-blue/90 transition-colors"
           >
             Daten importieren
           </button>
         </div>
         
-        <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-          <p className="text-purple-800 text-sm">
+        <div className="bg-bg-tertiary border border-border-light rounded-lg p-4">
+          <p className="text-system-blue text-sm">
             Importieren Sie zuvor exportierte Daten in eine bestimmte FIFA Version.
             Unterstützt sowohl Legacy- als auch Versionsdatenformate.
           </p>
@@ -304,18 +304,18 @@ const DataExportImportTab = () => {
       {/* Copy Financial Data Modal */}
       {showCopyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h4 className="font-semibold text-gray-800 mb-4">Finanzdaten kopieren</h4>
+          <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4">
+            <h4 className="font-semibold text-text-primary mb-4">Finanzdaten kopieren</h4>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Von Version
                 </label>
                 <select
                   value={copyFromVersion}
                   onChange={(e) => setCopyFromVersion(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
                   <option value="">Version auswählen...</option>
                   {versionsWithFinances.map(version => (
@@ -327,13 +327,13 @@ const DataExportImportTab = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Zu Version
                 </label>
                 <select
                   value={copyToVersion}
                   onChange={(e) => setCopyToVersion(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
                 >
                   <option value="">Version auswählen...</option>
                   {versions.map(version => (
@@ -350,9 +350,9 @@ const DataExportImportTab = () => {
                   id="overwrite"
                   checked={overwriteFinances}
                   onChange={(e) => setOverwriteFinances(e.target.checked)}
-                  className="h-4 w-4 text-green-600 focus:ring-green-500 border-gray-300 rounded"
+                  className="h-4 w-4 text-system-green focus:ring-green-500 border-border-light rounded"
                 />
-                <label htmlFor="overwrite" className="ml-2 text-sm text-gray-700">
+                <label htmlFor="overwrite" className="ml-2 text-sm text-text-secondary">
                   Bestehende Daten überschreiben
                 </label>
               </div>
@@ -361,7 +361,7 @@ const DataExportImportTab = () => {
             <div className="flex gap-3 mt-6">
               <button
                 onClick={() => setShowCopyModal(false)}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-border-light text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 Abbrechen
               </button>
@@ -380,30 +380,30 @@ const DataExportImportTab = () => {
       {/* Import Data Modal */}
       {showImportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-xl p-6 max-w-md w-full mx-4">
-            <h4 className="font-semibold text-gray-800 mb-4">Daten importieren</h4>
+          <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4">
+            <h4 className="font-semibold text-text-primary mb-4">Daten importieren</h4>
             
             <div className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Datei auswählen
                 </label>
                 <input
                   type="file"
                   accept=".json"
                   onChange={(e) => setImportFile(e.target.files[0])}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-system-blue focus:border-system-blue"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
+                <label className="block text-sm font-medium text-text-secondary mb-2">
                   Ziel-Version
                 </label>
                 <select
                   value={importTargetVersion}
                   onChange={(e) => setImportTargetVersion(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-system-blue focus:border-system-blue"
                 >
                   <option value="">Version auswählen...</option>
                   {versions.map(version => (
@@ -421,14 +421,14 @@ const DataExportImportTab = () => {
                   setShowImportModal(false);
                   setImportFile(null);
                 }}
-                className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                className="flex-1 px-4 py-2 border border-border-light text-text-secondary rounded-lg hover:bg-bg-tertiary transition-colors"
               >
                 Abbrechen
               </button>
               <button
                 onClick={handleImportData}
                 disabled={!importFile || !importTargetVersion || loading}
-                className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-2 bg-system-blue text-white rounded-lg hover:bg-system-blue/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Importiere...' : 'Importieren'}
               </button>

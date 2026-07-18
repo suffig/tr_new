@@ -457,15 +457,15 @@ export default function DuelTab() {
             </div>
           ) : (
             <>
-      {/* Hero scoreboard */}
-      <div className="modern-card p-5">
+      {/* Hero scoreboard — broadcast look: team-colour gradient + big numerals */}
+      <div className="modern-card p-5 relative overflow-hidden bg-gradient-to-br from-system-blue/15 via-transparent to-system-red/15">
         <div className="flex items-stretch">
           <div className="flex-1 flex flex-col items-center text-center">
             <TeamLogo team="aek" size="md" />
             <div className="mt-2 text-footnote font-semibold text-system-blue truncate max-w-full">{aekName}</div>
             <div className="text-[11px] text-text-tertiary truncate max-w-full">{getTeamDisplay('AEK')}</div>
-            <div className="mt-1 text-[40px] leading-none font-extrabold text-system-blue">{d.aekW}</div>
-            <div className="text-[11px] text-text-tertiary">Siege</div>
+            <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-blue">{d.aekW}</div>
+            <div className="text-[10px] uppercase tracking-widest text-text-tertiary">Siege</div>
           </div>
 
           <div className="flex flex-col items-center justify-center px-2">
@@ -478,8 +478,8 @@ export default function DuelTab() {
             <TeamLogo team="real" size="md" />
             <div className="mt-2 text-footnote font-semibold text-system-red truncate max-w-full">{realName}</div>
             <div className="text-[11px] text-text-tertiary truncate max-w-full">{getTeamDisplay('Real')}</div>
-            <div className="mt-1 text-[40px] leading-none font-extrabold text-system-red">{d.realW}</div>
-            <div className="text-[11px] text-text-tertiary">Siege</div>
+            <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-red">{d.realW}</div>
+            <div className="text-[10px] uppercase tracking-widest text-text-tertiary">Siege</div>
           </div>
         </div>
 
