@@ -1,7 +1,7 @@
 ﻿import { useState, Suspense, lazy, useEffect, useRef } from 'react';
 import * as React from 'react';
 import { getVisibleTabs, ADMIN_EMAIL } from './constants/navigation.js';
-import { Toaster } from 'react-hot-toast';
+import toast, { Toaster } from 'react-hot-toast';
 import { useAuth } from './hooks/useAuth.js';
 import { useRealtimeNotifications } from './hooks/useRealtimeNotifications.js';
 import { useKeyboardAvoidance } from './hooks/useKeyboardAvoidance.js';
@@ -62,6 +62,26 @@ function App() {
   // devices agree on the version list, the active version and team names/logos.
   useEffect(() => {
     if (user) hydrateFifaVersionsFromDB();
+  }, [user]);
+
+  // Spieltag-Reminder: einmal am Spieltag beim Öffnen erinnern.
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const md = localStorage.getItem('fusta_next_matchday');
+      if (!md) return;
+      const today = new Date().toISOString().slice(0, 10);
+      if (md === today && localStorage.getItem('fusta_matchday_notified') !== today) {
+        localStorage.setItem('fusta_matchday_notified', today);
+        // Kurz verzögert, damit der Toast nicht im Mount-Trubel des App-Starts
+        // untergeht (StrictMode-Doppelmount im Dev räumt frühe Toasts weg).
+        setTimeout(() => {
+          toast('🎮 Heute ist Spieltag! Möge das bessere Team gewinnen.', { duration: 8000 });
+        }, 1500);
+      } else if (md < today) {
+        localStorage.removeItem('fusta_next_matchday'); // abgelaufen → aufräumen
+      }
+    } catch { /* ignore */ }
   }, [user]);
 
   // Check if we're in demo mode (event-driven instead of 1s polling)

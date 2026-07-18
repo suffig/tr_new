@@ -16,6 +16,18 @@ export default function UserProfile({ onClose, onNavigate }) {
     else { disablePush(); setPushOn(false); }
   };
 
+  // Nächster Spieltag (Reminder beim Öffnen der App am Spieltag)
+  const [matchday, setMatchday] = useState(() => {
+    try { return localStorage.getItem('fusta_next_matchday') || ''; } catch { return ''; }
+  });
+  const saveMatchday = (v) => {
+    setMatchday(v);
+    try {
+      if (v) localStorage.setItem('fusta_next_matchday', v);
+      else { localStorage.removeItem('fusta_next_matchday'); localStorage.removeItem('fusta_matchday_notified'); }
+    } catch { /* ignore */ }
+  };
+
   const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString('de-DE') : '—';
   const email = user?.email || '—';
 
@@ -91,6 +103,22 @@ export default function UserProfile({ onClose, onNavigate }) {
               </div>
             </div>
           )}
+
+          {/* Nächster Spieltag */}
+          <div>
+            <div className="section-label">Nächster Spieltag</div>
+            <div className="modern-card p-3">
+              <input
+                type="date"
+                value={matchday}
+                onChange={(e) => saveMatchday(e.target.value)}
+                className="form-input"
+              />
+              <p className="text-[11px] text-text-tertiary text-center mt-2">
+                {matchday ? 'Am Spieltag begrüßt dich die App mit einem Reminder.' : 'Datum setzen → Reminder beim Öffnen am Spieltag.'}
+              </p>
+            </div>
+          </div>
 
           {/* Quick actions */}
           <div>

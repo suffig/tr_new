@@ -27,6 +27,11 @@ export function checkMilestones(matches, names = { aek: 'Alexander', real: 'Phil
   if (!Array.isArray(matches) || matches.length === 0) return;
   if (window.__fustaMilestonesChecked) return;
   window.__fustaMilestonesChecked = true;
+  // Verzögert feuern, damit Start-Toasts nicht im Mount-Trubel verschwinden.
+  setTimeout(() => runChecks(matches, names), 1500);
+}
+
+function runChecks(matches, names) {
 
   const snap = computeSnapshot(matches);
   let old = null;
