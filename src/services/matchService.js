@@ -1,334 +1,176 @@
-// Match Service - Modern ES6 module for match operations
+// Match Service - comprehensive match deletion with financial reversal.
+//
+// IMPORTANT API CONTRACT (supabaseDb):
+//   select(table, cols, { eq: {...} })  — filters MUST live in options.eq
+//   update(table, data, id)             — third arg is the ROW ID
+//   delete(table, id)                   — second arg is the ROW ID
+// A previous version passed filter objects directly (e.g. { team: 'AEK' }) —
+// those filters were silently dropped / matched nothing, so edits & deletions
+// reversed finances against wrong data or not at all. Do not regress this.
 import { supabaseDb } from '../utils/supabase';
 
+/** Types that live on `finances.debt` (everything else affects `balance`). */
+const DEBT_TYPES = ['Echtgeld-Ausgleich', 'Echtgeld-Ausgleich (getilgt)'];
+
+/** Fetch a single finance row (id + fields) for a team, or null. */
+async function getFinanceRow(team) {
+  const { data, error } = await supabaseDb.select('finances', '*', { eq: { team } });
+  if (error || !data || data.length === 0) return null;
+  return data[0];
+}
+
+/** Reverse one transaction from the team's finances (clamped at 0). */
+async function reverseTransaction(trans) {
+  const fin = await getFinanceRow(trans.team);
+  if (!fin) {
+    console.warn(`No finance row for team ${trans.team} — cannot reverse ${trans.type}`);
+    return;
+  }
+  if (DEBT_TYPES.includes(trans.type)) {
+    // 'Echtgeld-Ausgleich' added +amount to the loser's debt;
+    // '(getilgt)' reduced the winner's debt by |amount| (amount is negative).
+    // Reversal for both: debt_new = debt - amount, clamped ≥ 0.
+    const newDebt = Math.max(0, (fin.debt || 0) - trans.amount);
+    await supabaseDb.update('finances', { debt: newDebt }, fin.id);
+  } else {
+    const newBalance = Math.max(0, (fin.balance || 0) - trans.amount);
+    await supabaseDb.update('finances', { balance: newBalance }, fin.id);
+  }
+}
+
 /**
- * Comprehensive match deletion with complete data integrity
- * This ensures all related data is properly cleaned up when deleting a match
+ * Comprehensive match deletion with financial + stats reversal.
+ * Also used by the edit flow (delete old state, then re-book the edited match).
  */
 export async function deleteMatch(id) {
-  try {
-    console.log(`Starting deletion of match ${id}`);
-    
-    // Input validation and type conversion
-    if (id === null || id === undefined) {
-      throw new Error('No match ID provided for deletion');
-    }
-    
-    console.log(`Processing match ID for deletion: ${id} (type: ${typeof id})`);
-    
-    // Convert various ID types to a valid format for Supabase
-    let matchId;
-    if (typeof id === 'string') {
-      if (id.trim() === '') {
-        throw new Error('Empty string provided as match ID');
-      }
-      matchId = parseInt(id, 10);
-      // Check if parseInt returned NaN
-      if (isNaN(matchId)) {
-        throw new Error(`Invalid match ID string: "${id}" cannot be converted to number`);
-      }
-    } else if (typeof id === 'bigint') {
-      // For very large BigInt values, check if conversion to Number loses precision
-      const numberValue = Number(id);
-      if (BigInt(numberValue) === id) {
-        // Safe to convert - no precision loss
-        matchId = numberValue;
-      } else {
-        // Keep as BigInt for very large values - Supabase can handle this
-        matchId = id;
-      }
-    } else if (typeof id === 'number') {
-      matchId = id;
-    } else {
-      throw new Error(`Unsupported match ID type: ${typeof id}. Expected string, number, or bigint.`);
-    }
-    
-    // Validate the final ID - handle both Number and BigInt types
-    const isValidNumber = typeof matchId === 'number' && Number.isInteger(matchId) && matchId > 0;
-    const isValidBigInt = typeof matchId === 'bigint' && matchId > 0n;
-    
-    if (!isValidNumber && !isValidBigInt) {
-      throw new Error(`Invalid match ID after conversion: ${matchId} (type: ${typeof matchId}). Must be a positive integer.`);
-    }
-    
-    console.log(`Converted match ID: ${matchId} (type: ${typeof matchId})`);
-    
-    // 1. Fetch match data for validation and cleanup
-    const { data: matchesArray, error: matchError } = await supabaseDb.select('matches', 
-      'date,prizeaek,prizereal,goalslista,goalslistb,manofthematch,yellowa,reda,yellowb,redb', 
-      { id: matchId });
-
-    if (matchError) {
-      console.error('Error fetching match:', matchError);
-      throw matchError;
-    }
-
-    if (!matchesArray || matchesArray.length === 0) {
-      const errorMsg = `Match with ID ${matchId} not found in database`;
-      console.error(errorMsg);
-      throw new Error(errorMsg);
-    }
-
-    const match = matchesArray[0];
-    
-    // Validate match data
-    if (!match.date) {
-      console.warn(`Match ${matchId} has no date - this may cause issues with transaction cleanup`);
-    }
-
-    console.log(`Deleting match data:`, match);
-
-    // 2. Fetch all transactions for this match BEFORE deleting them (needed for financial reversals)
-    console.log(`Fetching transactions for match ${matchId} before deletion`);
-    const { data: allMatchTransactions, error: fetchTransError } = await supabaseDb.select('transactions', 
-      'team,amount,type', 
-      { match_id: matchId });
-    
-    if (fetchTransError) {
-      console.error('Error fetching transactions:', fetchTransError);
-      throw fetchTransError;
-    }
-    
-    // Use ALL match transactions for financial reversal - don't filter by type
-    const matchTransactions = allMatchTransactions || [];
-    console.log(`Found ${matchTransactions.length} transactions to reverse:`, matchTransactions.map(t => `${t.type}: ${t.amount} (${t.team})`));
-
-    // 3. Reverse financial changes (balance/debt changes, never under 0!)
-    console.log(`Reversing financial changes for ${matchTransactions?.length || 0} transactions`);
-    
-    if (matchTransactions && matchTransactions.length > 0) {
-      for (const trans of matchTransactions) {
-        if (trans.type === 'Echtgeld-Ausgleich') {
-          // For debt transactions, we need to reduce the debt
-          const { data: teamFinances, error: finError } = await supabaseDb.select('finances', 'debt', { team: trans.team });
-          
-          if (finError) {
-            console.error(`Error fetching finances for team ${trans.team}:`, finError);
-            continue;
-          }
-          
-          const teamFin = teamFinances && teamFinances.length > 0 ? teamFinances[0] : null;
-          const oldDebt = teamFin?.debt || 0;
-          let newDebt = oldDebt - trans.amount;
-          if (newDebt < 0) newDebt = 0;
-          
-          await supabaseDb.update('finances', { debt: newDebt }, { team: trans.team });
-        } else {
-          // For other transactions, reverse the balance change
-          const { data: teamFinances, error: finError } = await supabaseDb.select('finances', 'balance', { team: trans.team });
-          
-          if (finError) {
-            console.error(`Error fetching finances for team ${trans.team}:`, finError);
-            continue;
-          }
-          
-          const teamFin = teamFinances && teamFinances.length > 0 ? teamFinances[0] : null;
-          const oldBalance = teamFin?.balance || 0;
-          let newBalance = oldBalance - trans.amount;
-          if (newBalance < 0) newBalance = 0;
-          
-          await supabaseDb.update('finances', { balance: newBalance }, { team: trans.team });
-        }
-      }
-    }
-
-    // Also handle prize money from match data (in case transactions weren't recorded properly)
-    if (typeof match.prizeaek === "number" && match.prizeaek !== 0) {
-      const { data: aekFinances, error: aekFinError } = await supabaseDb.select('finances', 'balance', { team: 'AEK' });
-      
-      if (aekFinError) {
-        console.error('Error fetching AEK finances:', aekFinError);
-      } else if (aekFinances && aekFinances.length > 0) {
-        const aekFin = aekFinances[0];
-        let newBal = (aekFin?.balance || 0) - match.prizeaek;
-        if (newBal < 0) newBal = 0;
-        await supabaseDb.update('finances', { balance: newBal }, { team: 'AEK' });
-      }
-    }
-    if (typeof match.prizereal === "number" && match.prizereal !== 0) {
-      const { data: realFinances, error: realFinError } = await supabaseDb.select('finances', 'balance', { team: 'Real' });
-      
-      if (realFinError) {
-        console.error('Error fetching Real finances:', realFinError);
-      } else if (realFinances && realFinances.length > 0) {
-        const realFin = realFinances[0];
-        let newBal = (realFin?.balance || 0) - match.prizereal;
-        if (newBal < 0) newBal = 0;
-        await supabaseDb.update('finances', { balance: newBal }, { team: 'Real' });
-      }
-    }
-
-    // 4. Delete the transactions
-    console.log(`Deleting ${matchTransactions?.length || 0} transactions for match ${matchId}`);
-    const { error: transactionError } = await supabaseDb.delete('transactions', { match_id: matchId });
-    
-    if (transactionError) {
-      console.error('Error deleting transactions:', transactionError);
-      throw transactionError;
-    }
-
-    // Verify transactions were actually deleted
-    const { data: remainingTransactions, error: verifyError } = await supabaseDb.select('transactions', 'id', { match_id: matchId });
-    
-    if (verifyError) {
-      console.warn('Could not verify transaction deletion:', verifyError);
-    } else if (remainingTransactions && remainingTransactions.length > 0) {
-      console.error(`❌ Failed to delete ${remainingTransactions.length} transactions for match ${matchId}`);
-      throw new Error(`Transaction deletion incomplete: ${remainingTransactions.length} transactions still exist`);
-    } else {
-      console.log(`✅ Successfully deleted all transactions for match ${matchId}`);
-    }
-
-    // 5. Subtract goals from player statistics
-    const removeGoals = async (goalslist, team) => {
-      if (!goalslist || !Array.isArray(goalslist)) return;
-      
-      // Count goals per player - handle both new object format and old string array format
-      const goalCounts = {};
-      
-      if (goalslist.length > 0 && typeof goalslist[0] === 'object' && goalslist[0].player !== undefined) {
-        // New object format: [{"count": 4, "player": "Walker"}]
-        goalslist.forEach(goal => {
-          if (goal.player) {
-            goalCounts[goal.player] = (goalCounts[goal.player] || 0) + (goal.count || 1);
-          }
-        });
-      } else {
-        // Old string array format: ["Walker", "Walker", "Messi"]
-        for (const playerName of goalslist) {
-          if (!playerName) continue;
-          goalCounts[playerName] = (goalCounts[playerName] || 0) + 1;
-        }
-      }
-      
-      // Remove each player's goal count
-      for (const [playerName, count] of Object.entries(goalCounts)) {
-        const { data: players, error: playerError } = await supabaseDb.select('players', 'goals', { name: playerName, team: team });
-        
-        if (playerError) {
-          console.error(`Error fetching player ${playerName} for goal removal:`, playerError);
-          continue;
-        }
-        
-        if (!players || players.length === 0) {
-          console.warn(`Player ${playerName} not found in team ${team} for goal removal`);
-          continue;
-        }
-        
-        const player = players[0];
-        let newGoals = (player?.goals || 0) - count;
-        if (newGoals < 0) newGoals = 0;
-        
-        const { error: updateError } = await supabaseDb.update('players', { goals: newGoals }, { name: playerName, team: team });
-        if (updateError) {
-          console.error(`Error updating goals for player ${playerName}:`, updateError);
-        } else {
-          console.log(`✅ Updated goals for ${playerName} (${team}): ${player.goals} → ${newGoals}`);
-        }
-      }
-    };
-    await removeGoals(match.goalslista, "AEK");
-    await removeGoals(match.goalslistb, "Real");
-
-    // 6. Reverse "Spieler des Spiels" (Man of the Match) statistics
-    if (match.manofthematch) {
-      let sdsTeam = null;
-      
-      // Helper function to check if player is in goals list - handle both object and string array formats
-      const checkPlayerInGoals = (goalsList, playerName) => {
-        if (!goalsList || !goalsList.length) return false;
-        // Handle object format: [{"count": 1, "player": "Kante"}]
-        if (typeof goalsList[0] === 'object' && goalsList[0].player !== undefined) {
-          return goalsList.some(goal => goal.player === playerName);
-        }
-        // Handle string array format: ["Kante", "Walker"]
-        return goalsList.includes(playerName);
-      };
-      
-      if (checkPlayerInGoals(match.goalslista, match.manofthematch)) sdsTeam = "AEK";
-      else if (checkPlayerInGoals(match.goalslistb, match.manofthematch)) sdsTeam = "Real";
-      else {
-        // Fallback: check if player is in AEK or Real team
-        const { data: players, error: playerError } = await supabaseDb.select('players', 'team', { name: match.manofthematch });
-        
-        if (playerError) {
-          console.error(`Error fetching player ${match.manofthematch} for team lookup:`, playerError);
-        } else if (players && players.length > 0) {
-          sdsTeam = players[0].team;
-        } else {
-          console.warn(`Player ${match.manofthematch} not found for SdS team determination`);
-        }
-      }
-      if (sdsTeam) {
-        const { data: sdsEntries, error: sdsError } = await supabaseDb.select('spieler_des_spiels', 'count', { name: match.manofthematch, team: sdsTeam });
-        
-        if (sdsError) {
-          console.error(`Error fetching SdS entry for ${match.manofthematch}:`, sdsError);
-        } else if (sdsEntries && sdsEntries.length > 0) {
-          const sds = sdsEntries[0];
-          const newCount = Math.max(0, sds.count - 1);
-          
-          const { error: updateError } = await supabaseDb.update('spieler_des_spiels', { count: newCount }, { name: match.manofthematch, team: sdsTeam });
-          if (updateError) {
-            console.error(`Error updating SdS count for ${match.manofthematch}:`, updateError);
-          } else {
-            console.log(`✅ Updated SdS count for ${match.manofthematch} (${sdsTeam}): ${sds.count} → ${newCount}`);
-          }
-        } else {
-          console.warn(`SdS entry for ${match.manofthematch} in team ${sdsTeam} not found`);
-        }
-      }
-    }
-
-    // 7. Cards handling
-    if (match.yellowa > 0 || match.reda > 0 || match.yellowb > 0 || match.redb > 0) {
-      console.log(`Match had cards: AEK(${match.yellowa}Y,${match.reda}R) Real(${match.yellowb}Y,${match.redb}R)`);
-      // Note: Individual player card statistics would be decremented here if they exist
-    }
-
-    // 8. Delete the match record
-    console.log(`Deleting match ${matchId} from matches table`);
-    const { error: deleteError } = await supabaseDb.delete('matches', { id: matchId });
-    if (deleteError) {
-      console.error('Error deleting match:', deleteError);
-      throw deleteError;
-    }
-    
-    // Verify the match was actually deleted
-    const { data: remainingMatch, error: verifyMatchError } = await supabaseDb.select('matches', 'id', { id: matchId });
-    
-    if (verifyMatchError) {
-      console.warn('Could not verify match deletion:', verifyMatchError);
-    } else if (remainingMatch && remainingMatch.length > 0) {
-      console.error(`❌ Failed to delete match ${matchId}`);
-      throw new Error(`Match deletion failed: match ${matchId} still exists`);
-    } else {
-      console.log(`✅ Successfully deleted match ${matchId}`);
-    }
-    
-    console.log(`✅ Successfully deleted match ${matchId} and all related data`);
-    
-    // Summary of what was deleted
-    console.log(`📋 Deletion Summary for Match ${matchId}:`);
-    console.log(`   - Match record: deleted`);
-    console.log(`   - Transactions: ${matchTransactions.length} deleted`);
-    console.log(`   - Player goals: updated for ${match.goalslista?.length || 0} AEK + ${match.goalslistb?.length || 0} Real goals`);
-    console.log(`   - Player of the match: ${match.manofthematch ? 'updated' : 'none'}`);
-    console.log(`   - Prize money: AEK ${match.prizeaek || 0}, Real ${match.prizereal || 0} (reversed)`);
-    console.log(`   - Match date: ${match.date}`);
-    
-  } catch (error) {
-    const safeMatchId = typeof matchId !== 'undefined' ? matchId : id || 'unknown';
-    console.error(`Failed to delete match ${safeMatchId}:`, error);
-    console.error('Error details:', {
-      matchId: typeof matchId !== 'undefined' ? matchId : 'undefined',
-      matchIdType: typeof matchId,
-      originalId: id,
-      originalIdType: typeof id,
-      errorMessage: error.message,
-      errorStack: error.stack
-    });
-    
-    throw error;
+  // --- ID normalisation & validation -------------------------------------
+  if (id === null || id === undefined) throw new Error('No match ID provided for deletion');
+  let matchId;
+  if (typeof id === 'string') {
+    matchId = parseInt(id, 10);
+    if (isNaN(matchId)) throw new Error(`Invalid match ID string: "${id}"`);
+  } else if (typeof id === 'bigint') {
+    const n = Number(id);
+    matchId = BigInt(n) === id ? n : id;
+  } else if (typeof id === 'number') {
+    matchId = id;
+  } else {
+    throw new Error(`Unsupported match ID type: ${typeof id}`);
   }
+  const validNumber = typeof matchId === 'number' && Number.isInteger(matchId) && matchId > 0;
+  const validBigInt = typeof matchId === 'bigint' && matchId > 0n;
+  if (!validNumber && !validBigInt) throw new Error(`Invalid match ID: ${matchId}`);
+
+  // --- 1. Load the match --------------------------------------------------
+  const { data: matchRows, error: matchError } = await supabaseDb.select(
+    'matches',
+    '*',
+    { eq: { id: matchId } }
+  );
+  if (matchError) throw matchError;
+  if (!matchRows || matchRows.length === 0) {
+    throw new Error(`Match with ID ${matchId} not found in database`);
+  }
+  const match = matchRows[0];
+
+  // --- 2. Load this match's transactions ---------------------------------
+  const { data: transRows, error: transError } = await supabaseDb.select(
+    'transactions',
+    '*',
+    { eq: { match_id: matchId } }
+  );
+  if (transError) throw transError;
+  const matchTransactions = transRows || [];
+  console.log(`deleteMatch(${matchId}): reversing ${matchTransactions.length} transactions`);
+
+  // --- 3. Reverse financial effects --------------------------------------
+  const prizeReversedFor = new Set();
+  for (const trans of matchTransactions) {
+    await reverseTransaction(trans);
+    if (trans.type === 'Preisgeld') prizeReversedFor.add(trans.team);
+  }
+
+  // Fallback ONLY when no Preisgeld transaction was recorded for a team
+  // (e.g. legacy rows). Unconditional double-reversal was a bug.
+  if (!prizeReversedFor.has('AEK') && typeof match.prizeaek === 'number' && match.prizeaek !== 0) {
+    await reverseTransaction({ team: 'AEK', type: 'Preisgeld', amount: match.prizeaek });
+  }
+  if (!prizeReversedFor.has('Real') && typeof match.prizereal === 'number' && match.prizereal !== 0) {
+    await reverseTransaction({ team: 'Real', type: 'Preisgeld', amount: match.prizereal });
+  }
+
+  // --- 4. Delete the transactions (by their real row ids) -----------------
+  for (const trans of matchTransactions) {
+    const { error: delError } = await supabaseDb.delete('transactions', trans.id);
+    if (delError) throw delError;
+  }
+  const { data: remaining } = await supabaseDb.select('transactions', 'id', { eq: { match_id: matchId } });
+  if (remaining && remaining.length > 0) {
+    throw new Error(`Transaction deletion incomplete: ${remaining.length} rows remain for match ${matchId}`);
+  }
+
+  // --- 5. Subtract player goals (own goals are never player stats) --------
+  const parseList = (raw) => {
+    try {
+      if (typeof raw === 'string') return JSON.parse(raw) || [];
+      if (Array.isArray(raw)) return raw;
+    } catch { /* ignore */ }
+    return [];
+  };
+  const removeGoals = async (goalslist, team) => {
+    const goalCounts = {};
+    for (const g of parseList(goalslist)) {
+      const name = typeof g === 'object' && g !== null ? g.player : g;
+      const cnt = typeof g === 'object' && g !== null ? (g.count || 1) : 1;
+      if (!name || String(name).startsWith('Eigentore_')) continue;
+      goalCounts[name] = (goalCounts[name] || 0) + cnt;
+    }
+    for (const [playerName, count] of Object.entries(goalCounts)) {
+      const { data: players } = await supabaseDb.select('players', '*', { eq: { name: playerName, team } });
+      if (!players || players.length === 0) {
+        console.warn(`Player ${playerName} (${team}) not found for goal removal`);
+        continue;
+      }
+      const player = players[0];
+      const newGoals = Math.max(0, (player.goals || 0) - count);
+      await supabaseDb.update('players', { goals: newGoals }, player.id);
+    }
+  };
+  await removeGoals(match.goalslista, 'AEK');
+  await removeGoals(match.goalslistb, 'Real');
+
+  // --- 6. Reverse "Spieler des Spiels" ------------------------------------
+  if (match.manofthematch) {
+    let sdsTeam = null;
+    const inList = (raw) => parseList(raw).some((g) =>
+      (typeof g === 'object' && g !== null ? g.player : g) === match.manofthematch);
+    if (inList(match.goalslista)) sdsTeam = 'AEK';
+    else if (inList(match.goalslistb)) sdsTeam = 'Real';
+    else {
+      const { data: players } = await supabaseDb.select('players', 'team', { eq: { name: match.manofthematch } });
+      if (players && players.length > 0) sdsTeam = players[0].team;
+    }
+    if (sdsTeam) {
+      const { data: sdsRows } = await supabaseDb.select('spieler_des_spiels', '*', {
+        eq: { name: match.manofthematch, team: sdsTeam },
+      });
+      if (sdsRows && sdsRows.length > 0) {
+        const sds = sdsRows[0];
+        await supabaseDb.update('spieler_des_spiels', { count: Math.max(0, (sds.count || 0) - 1) }, sds.id);
+      }
+    }
+  }
+
+  // --- 7. Delete the match record -----------------------------------------
+  const { error: deleteError } = await supabaseDb.delete('matches', matchId);
+  if (deleteError) throw deleteError;
+  const { data: still } = await supabaseDb.select('matches', 'id', { eq: { id: matchId } });
+  if (still && still.length > 0) {
+    throw new Error(`Match deletion failed: match ${matchId} still exists`);
+  }
+
+  console.log(`✅ deleteMatch(${matchId}) complete — transactions, finances, goals, SdS reversed`);
+
+  // Keep open views (Finanzen, Duell, Stats) in sync without a tab switch.
+  try { window.dispatchEvent(new CustomEvent('fusta-refresh')); } catch { /* no window */ }
 }
