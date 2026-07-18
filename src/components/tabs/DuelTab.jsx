@@ -81,6 +81,45 @@ function computeDuel(matches, resolveName) {
   return { total: list.length, aekW, realW, draws, aekG, realG, prizeA, prizeR, biggest, streak, last10, topScorer, topScorers, seasonH2H };
 }
 
+// Elo over all matches (K=24, Start 1000) — a form barometer for the rivalry.
+function computeElo(matches) {
+  const chrono = [...(matches || [])].sort((p, q) => (p.id || 0) - (q.id || 0) || String(p.date).localeCompare(String(q.date)));
+  let a = 1000, r = 1000;
+  const series = [{ a, r }];
+  for (const m of chrono) {
+    const ga = m.goalsa || 0, gb = m.goalsb || 0;
+    const expA = 1 / (1 + Math.pow(10, (r - a) / 400));
+    const scoreA = ga > gb ? 1 : ga < gb ? 0 : 0.5;
+    const delta = 24 * (scoreA - expA);
+    a += delta; r -= delta;
+    series.push({ a: Math.round(a), r: Math.round(r) });
+  }
+  return { series, aek: Math.round(a), real: Math.round(r) };
+}
+
+// "Abendform": win split by game number within an evening (same date, by id).
+// Game 1 = sober, game 3+ = later in the evening — the beer curve, basically.
+function computeEvenings(matches) {
+  const byDate = {};
+  for (const m of (matches || [])) {
+    const key = String(m.date || '?');
+    (byDate[key] = byDate[key] || []).push(m);
+  }
+  const buckets = { 1: { aekW: 0, realW: 0, draws: 0 }, 2: { aekW: 0, realW: 0, draws: 0 }, 3: { aekW: 0, realW: 0, draws: 0 } };
+  for (const games of Object.values(byDate)) {
+    games.sort((p, q) => (p.id || 0) - (q.id || 0));
+    games.forEach((m, i) => {
+      const pos = Math.min(i + 1, 3); // 3 == "Spiel 3+"
+      const a = m.goalsa || 0, b = m.goalsb || 0;
+      if (a > b) buckets[pos].aekW++; else if (b > a) buckets[pos].realW++; else buckets[pos].draws++;
+    });
+  }
+  return [1, 2, 3].map((pos) => {
+    const s = buckets[pos];
+    return { pos, label: pos === 3 ? 'Spiel 3+' : `Spiel ${pos}`, ...s, games: s.aekW + s.realW + s.draws };
+  }).filter((b) => b.games > 0);
+}
+
 // Sum goals per player within a single match (both goalslist formats).
 function matchPlayerGoals(match, resolveName) {
   const tally = {};
@@ -399,6 +438,8 @@ export default function DuelTab() {
     () => computeAchievements(matches, resolveName, { aek: aekName, real: realName }),
     [matches, resolveName, aekName, realName]
   );
+  const elo = useMemo(() => computeElo(matches), [matches]);
+  const evenings = useMemo(() => computeEvenings(matches), [matches]);
 
   if (mLoading) return <LoadingSpinner message="Lade Duell…" />;
 
@@ -637,6 +678,74 @@ export default function DuelTab() {
               );
             })}
           </div>
+        </div>
+      )}
+      {/* Formbarometer: Elo-Verlauf beider Personen */}
+      {elo.series.length > 2 && (() => {
+        const all = elo.series.flatMap((p) => [p.a, p.r]);
+        const min = Math.min(...all), max = Math.max(...all);
+        const span = Math.max(1, max - min);
+        const W = 300, H = 64;
+        const pts = (key) => elo.series.map((p, i) =>
+          `${(i / (elo.series.length - 1)) * W},${H - 6 - ((p[key] - min) / span) * (H - 12)}`).join(' ');
+        const leader = elo.aek === elo.real ? null : (elo.aek > elo.real ? 'AEK' : 'Real');
+        return (
+          <div className="modern-card p-4">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center gap-2 text-footnote font-medium text-text-muted">
+                <Icon name="chart" size={15} strokeWidth={2.2} className="text-system-green" />
+                Formbarometer (Elo)
+              </div>
+              <span className="text-[11px] tabular-nums">
+                <span className="text-system-blue font-bold">{elo.aek}</span>
+                <span className="text-text-tertiary"> : </span>
+                <span className="text-system-red font-bold">{elo.real}</span>
+              </span>
+            </div>
+            <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16" preserveAspectRatio="none">
+              <polyline points={pts('a')} fill="none" strokeWidth="2" stroke="currentColor" className="text-system-blue" />
+              <polyline points={pts('r')} fill="none" strokeWidth="2" stroke="currentColor" className="text-system-red" />
+            </svg>
+            <div className="text-[11px] text-text-tertiary mt-1">
+              {leader ? `${leader === 'AEK' ? aekName : realName} ist aktuell in Form` : 'Aktuell exakt gleichauf'} · K=24, Start 1000
+            </div>
+          </div>
+        );
+      })()}
+
+      {/* Abendform: Siegquote nach Spiel-Nummer des Abends */}
+      {evenings.length > 1 && (
+        <div className="modern-card p-4">
+          <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
+            <Icon name="beer" size={15} strokeWidth={2.2} className="text-system-orange" />
+            Abendform
+          </div>
+          <div className="space-y-2.5">
+            {evenings.map((b) => {
+              const tot = b.games || 1;
+              return (
+                <div key={b.pos}>
+                  <div className="flex items-center justify-between text-[11px] mb-0.5">
+                    <span className="text-text-secondary font-medium">{b.label}</span>
+                    <span className="tabular-nums">
+                      <span className="text-system-blue font-semibold">{b.aekW}</span>
+                      <span className="text-text-tertiary"> · {b.draws} · </span>
+                      <span className="text-system-red font-semibold">{b.realW}</span>
+                      <span className="text-text-tertiary"> ({b.games})</span>
+                    </span>
+                  </div>
+                  <div className="h-2 rounded-full overflow-hidden bg-bg-tertiary flex">
+                    <div className="bg-system-blue h-full" style={{ width: `${(b.aekW / tot) * 100}%` }} />
+                    <div className="bg-text-tertiary/40 h-full" style={{ width: `${(b.draws / tot) * 100}%` }} />
+                    <div className="bg-system-red h-full" style={{ width: `${(b.realW / tot) * 100}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-[11px] text-text-tertiary mt-2">
+            Wer wird im Laufe des Abends stärker? Spiel 1 = nüchtern, Spiel 3+ = später am Abend.
+          </p>
         </div>
       )}
             </>

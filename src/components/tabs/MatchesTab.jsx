@@ -5,6 +5,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay, getTeamShort } from '../../constants/teams';
+import { checkMilestones } from '../../utils/milestoneAlerts';
 import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
@@ -23,7 +24,12 @@ export default function MatchesTab() {
     { order: { column: 'date', ascending: false } }
   );
   const { data: players, loading: playersLoading } = useSupabaseQuery('players', '*');
-  
+
+  // Rekord-/Meilenstein-Alarme + Monats-Recap (einmal pro Session, sobald Daten da sind)
+  useEffect(() => {
+    if (allMatches && allMatches.length > 0) checkMilestones(allMatches);
+  }, [allMatches]);
+
   // Calculate date based on time filter
   const getTimeFilterDate = () => {
     const now = new Date();
