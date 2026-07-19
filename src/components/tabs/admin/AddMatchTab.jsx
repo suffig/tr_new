@@ -139,13 +139,21 @@ export default function AddMatchTab() {
   const handleLiveFinish = (live) => {
     setShowLive(false);
     setEditingDraftId(null);
-    setFormData(makeEmptyForm());
-    // updateFormData rechnet goalsa/goalsb + Preisgeld automatisch nach.
-    updateFormData({
+    // Ein einziger, vollständig berechneter setFormData (kein Update-Batching):
+    // Tore = Summe der Torschützen-Counts (inkl. inline Eigentore_-Einträge),
+    // Preisgeld direkt mitberechnet — Formular ist sofort speicherbereit.
+    const goalsa = live.goalslista.reduce((s, g) => s + (g.count || 0), 0);
+    const goalsb = live.goalslistb.reduce((s, g) => s + (g.count || 0), 0);
+    const { prizeaek, prizereal } = MatchBusinessLogic.calculatePrizeMoney(
+      goalsa, goalsb, live.yellowa, live.reda, live.yellowb, live.redb
+    );
+    setFormData({
+      ...makeEmptyForm(),
       goalslista: live.goalslista,
       goalslistb: live.goalslistb,
       yellowa: live.yellowa, reda: live.reda,
       yellowb: live.yellowb, redb: live.redb,
+      goalsa, goalsb, prizeaek, prizereal,
     });
     setShowModal(true);
     toast('Live-Match übernommen — bitte prüfen, Spieler des Spiels wählen und speichern.', { duration: 6000 });
