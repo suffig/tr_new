@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 import { getTeamDisplay } from '../../../constants/teams';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
+import LiveMatchModal, { hasStoredLiveMatch } from '../../admin/LiveMatchModal';
 
 const DRAFTS_KEY = 'fusta_match_drafts_v1';
 
@@ -130,6 +131,24 @@ export default function AddMatchTab() {
     setEditingDraftId(null);
     setFormData(makeEmptyForm());
     setShowModal(true);
+  };
+
+  // Live-Match-Modus: läuft parallel zum normalen Formular. Auto-Resume, wenn
+  // ein Live-Match gespeichert ist (Reload/Crash verliert nichts).
+  const [showLive, setShowLive] = useState(hasStoredLiveMatch());
+  const handleLiveFinish = (live) => {
+    setShowLive(false);
+    setEditingDraftId(null);
+    setFormData(makeEmptyForm());
+    // updateFormData rechnet goalsa/goalsb + Preisgeld automatisch nach.
+    updateFormData({
+      goalslista: live.goalslista,
+      goalslistb: live.goalslistb,
+      yellowa: live.yellowa, reda: live.reda,
+      yellowb: live.yellowb, redb: live.redb,
+    });
+    setShowModal(true);
+    toast('Live-Match übernommen — bitte prüfen, Spieler des Spiels wählen und speichern.', { duration: 6000 });
   };
 
   // Save current form as a draft (localStorage only — no DB write)
@@ -540,15 +559,32 @@ export default function AddMatchTab() {
             Spiel hinzufügen
           </h4>
 
-          <button
-            onClick={openNewMatch}
-            className="btn-brand inline-flex items-center gap-2 px-6 py-3 rounded-xl"
-          >
-            <Icon name="football" size={18} strokeWidth={2} />
-            Neues Spiel erfassen
-          </button>
+          <div className="flex flex-col items-center gap-2">
+            <button
+              onClick={openNewMatch}
+              className="btn-brand inline-flex items-center gap-2 px-6 py-3 rounded-xl"
+            >
+              <Icon name="football" size={18} strokeWidth={2} />
+              Neues Spiel erfassen
+            </button>
+            <button
+              onClick={() => setShowLive(true)}
+              className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-system-red/10 text-system-red font-semibold hover:bg-system-red/15 transition-colors"
+            >
+              <span className="w-2 h-2 rounded-full bg-system-red animate-pulse" />
+              {hasStoredLiveMatch() ? 'Live-Match fortsetzen' : 'Live-Modus starten'}
+            </button>
+          </div>
         </div>
       </div>
+
+      {showLive && (
+        <LiveMatchModal
+          players={players}
+          onClose={() => setShowLive(false)}
+          onFinish={handleLiveFinish}
+        />
+      )}
 
       {/* Draft matches — saved locally, not yet on the DB */}
       {drafts.length > 0 && (
