@@ -456,10 +456,12 @@ const createDatabaseOperations = (client) => {
     },
 
     async insert(table, data) {
-      // Add FIFA version for versioned tables
+      // Add FIFA version for versioned tables — but respect an explicitly
+      // provided fifa_version (e.g. the edit flow re-inserting an old-season
+      // match must NOT re-stamp it with the current version).
       let enhancedData = data;
       if (shouldFilterByFifaVersion(table)) {
-        enhancedData = addFifaVersionToData(data);
+        enhancedData = data.fifa_version ? data : addFifaVersionToData(data);
       }
       
       try {

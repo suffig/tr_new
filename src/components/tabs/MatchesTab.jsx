@@ -6,6 +6,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay, getTeamShort } from '../../constants/teams';
 import { checkMilestones } from '../../utils/milestoneAlerts';
+import { chronoDesc } from '../../utils/matchChronology';
 import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
@@ -274,7 +275,7 @@ export default function MatchesTab() {
         const draws = allMatches.length - aekWins - realWins;
         const totalGoalsA = allMatches.reduce((s, m) => s + (m.goalsa || 0), 0);
         const totalGoalsB = allMatches.reduce((s, m) => s + (m.goalsb || 0), 0);
-        const last10 = [...allMatches].sort((a, b) => b.id - a.id).slice(0, 10).reverse();
+        const last10 = [...allMatches].sort(chronoDesc).slice(0, 10).reverse();
         const resultFor = (m, side) => {
           const a = m.goalsa || 0, b = m.goalsb || 0;
           if (a === b) return 'D';
@@ -284,7 +285,7 @@ export default function MatchesTab() {
         const formReal = last10.map(m => resultFor(m, 'Real'));
         // Current win streak (consecutive wins by the same team, newest first; a draw ends it)
         const streak = (() => {
-          const ordered = [...allMatches].sort((a, b) => b.id - a.id);
+          const ordered = [...allMatches].sort(chronoDesc);
           let who = null, len = 0;
           for (const m of ordered) {
             const a = m.goalsa || 0, b = m.goalsb || 0;

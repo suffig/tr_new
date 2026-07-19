@@ -37,8 +37,14 @@ export class MatchBusinessLogic {
         goalsa, goalsb, yellowa, reda, yellowb, redb
       );
 
-      // 2. Handle edit mode - delete old transactions and match
+      // 2. Handle edit mode - delete old transactions and match.
+      // Preserve the original match's fifa_version: without this, editing an
+      // old FC25 match while the app runs FC26 would move it into the FC26
+      // season (delete + re-insert stamps the current version).
+      let preservedFifaVersion = null;
       if (editId) {
+        const oldMatch = await supabaseDb.select('matches', 'fifa_version', { eq: { id: editId }, skipFifaFilter: true });
+        preservedFifaVersion = oldMatch.data?.[0]?.fifa_version || null;
         await this.deleteMatchTransactions(editId);
       }
 
@@ -79,6 +85,8 @@ export class MatchBusinessLogic {
         prizeaek,
         prizereal
       };
+
+      if (preservedFifaVersion) insertObj.fifa_version = preservedFifaVersion;
 
       const matchResult = await supabaseDb.insert('matches', insertObj);
       if (matchResult.error) {
@@ -124,7 +132,9 @@ export class MatchBusinessLogic {
         prizereal,
         manofthematch,
         winner,
-        loser
+        loser,
+        // Cross-version edit: book into the match's own season bucket.
+        fifaVersion: preservedFifaVersion
       });
 
       // 7. Decrement bans after match
@@ -271,10 +281,10 @@ export class MatchBusinessLogic {
   /**
    * Process all financial transactions for a match
    */
-  static async processFinancialTransactions({ matchId, date, prizeaek, prizereal, manofthematch, winner, loser }) {
+  static async processFinancialTransactions({ matchId, date, prizeaek, prizereal, manofthematch, winner, loser, fifaVersion = null }) {
     // Get current balances
-    const aekFinance = await this.getTeamFinance('AEK');
-    const realFinance = await this.getTeamFinance('Real');
+    const aekFinance = await this.getTeamFinance('AEK', fifaVersion);
+    const realFinance = await this.getTeamFinance('Real', fifaVersion);
 
     let aekBalance = aekFinance.balance || 0;
     let realBalance = realFinance.balance || 0;
@@ -292,9 +302,10 @@ export class MatchBusinessLogic {
         team: "AEK",
         amount: sdsBonusAek,
         match_id: matchId,
+        fifa_version: fifaVersion || undefined,
         info: "SdS Bonus"
       });
-      await this.updateTeamBalance('AEK', aekBalance);
+      await this.updateTeamBalance('AEK', aekBalance, fifaVersion);
     }
 
     if (sdsBonusReal > 0) {
@@ -305,9 +316,10 @@ export class MatchBusinessLogic {
         team: "Real",
         amount: sdsBonusReal,
         match_id: matchId,
+        fifa_version: fifaVersion || undefined,
         info: "SdS Bonus"
       });
-      await this.updateTeamBalance('Real', realBalance);
+      await this.updateTeamBalance('Real', realBalance, fifaVersion);
     }
 
     // 2. Process Prize Money
@@ -321,9 +333,10 @@ export class MatchBusinessLogic {
         team: "AEK",
         amount: prizeaek,
         match_id: matchId,
+        fifa_version: fifaVersion || undefined,
         info: "Preisgeld"
       });
-      await this.updateTeamBalance('AEK', aekBalance);
+      await this.updateTeamBalance('AEK', aekBalance, fifaVersion);
     }
 
     if (prizereal !== 0) {
@@ -336,9 +349,10 @@ export class MatchBusinessLogic {
         team: "Real",
         amount: prizereal,
         match_id: matchId,
+        fifa_version: fifaVersion || undefined,
         info: "Preisgeld"
       });
-      await this.updateTeamBalance('Real', realBalance);
+      await this.updateTeamBalance('Real', realBalance, fifaVersion);
     }
 
     // 3. Process Echtgeld-Ausgleich (Real money compensation)
@@ -355,7 +369,8 @@ export class MatchBusinessLogic {
         prizeaek,
         prizereal,
         sdsBonusAek: sdsBonusAek > 0 ? 1 : 0,
-        sdsBonusReal: sdsBonusReal > 0 ? 1 : 0
+        sdsBonusReal: sdsBonusReal > 0 ? 1 : 0,
+        fifaVersion
       });
     }
   }
@@ -363,7 +378,15 @@ export class MatchBusinessLogic {
   /**
    * Get team finance data
    */
-  static async getTeamFinance(team) {
+  static async getTeamFinance(team, fifaVersion = null) {
+    // Version-scoped when a specific season is targeted (cross-version edit),
+    // otherwise the current version's row (default auto-filter).
+    if (fifaVersion) {
+      const scoped = await supabaseDb.select('finances', '*', {
+        eq: { team, fifa_version: fifaVersion }, skipFifaFilter: true,
+      });
+      if (scoped.data && scoped.data.length > 0) return scoped.data[0];
+    }
     const result = await supabaseDb.select('finances', '*', { eq: { team } });
     return result.data && result.data.length > 0 ? result.data[0] : { balance: 0, debt: 0 };
   }
@@ -386,14 +409,15 @@ export class MatchBusinessLogic {
   /**
    * Update team balance
    */
-  static async updateTeamBalance(team, balance) {
-    const financeResult = await supabaseDb.select('finances', 'id', { eq: { team } });
-    if (financeResult.data && financeResult.data.length > 0) {
-      return await supabaseDb.update('finances', { balance }, financeResult.data[0].id);
-    } else {
-      // Create finance record if it doesn't exist
-      return await supabaseDb.insert('finances', { team, balance, debt: 0 });
+  static async updateTeamBalance(team, balance, fifaVersion = null) {
+    const fin = await this.getTeamFinance(team, fifaVersion);
+    if (fin.id != null) {
+      return await supabaseDb.update('finances', { balance }, fin.id);
     }
+    // Create finance record if it doesn't exist
+    return await supabaseDb.insert('finances', {
+      team, balance, debt: 0, fifa_version: fifaVersion || undefined,
+    });
   }
 
   /**
@@ -419,10 +443,10 @@ export class MatchBusinessLogic {
   /**
    * Process Echtgeld-Ausgleich calculation
    */
-  static async processEchtgeldAusgleich({ date, matchId, winner, loser, aekBalance, realBalance, prizeaek, prizereal, sdsBonusAek, sdsBonusReal }) {
+  static async processEchtgeldAusgleich({ date, matchId, winner, loser, aekBalance, realBalance, prizeaek, prizereal, sdsBonusAek, sdsBonusReal, fifaVersion = null }) {
     // Get current debts
-    const aekFinance = await this.getTeamFinance('AEK');
-    const realFinance = await this.getTeamFinance('Real');
+    const aekFinance = await this.getTeamFinance('AEK', fifaVersion);
+    const realFinance = await this.getTeamFinance('Real', fifaVersion);
     
     const debts = {
       AEK: aekFinance.debt || 0,
@@ -446,7 +470,8 @@ export class MatchBusinessLogic {
     const neuerVerliererDebt = verliererDebt + Math.max(0, restVerliererBetrag);
 
     // Update winner's debt
-    const winnerFinanceResult = await supabaseDb.select('finances', 'id', { eq: { team: winner } });
+    const winnerFin = await this.getTeamFinance(winner, fifaVersion);
+    const winnerFinanceResult = { data: winnerFin.id != null ? [winnerFin] : [] };
     if (winnerFinanceResult.data && winnerFinanceResult.data.length > 0) {
       await supabaseDb.update('finances', { debt: neuerGewinnerDebt }, winnerFinanceResult.data[0].id);
     }
@@ -459,10 +484,12 @@ export class MatchBusinessLogic {
         team: loser,
         amount: Math.max(0, restVerliererBetrag),
         match_id: matchId,
+        fifa_version: fifaVersion || undefined,
         info: "Echtgeld-Ausgleich"
       });
       
-      const loserFinanceResult = await supabaseDb.select('finances', 'id', { eq: { team: loser } });
+      const loserFin = await this.getTeamFinance(loser, fifaVersion);
+      const loserFinanceResult = { data: loserFin.id != null ? [loserFin] : [] };
       if (loserFinanceResult.data && loserFinanceResult.data.length > 0) {
         await supabaseDb.update('finances', { debt: neuerVerliererDebt }, loserFinanceResult.data[0].id);
       }
@@ -476,6 +503,7 @@ export class MatchBusinessLogic {
         team: winner,
         amount: -verrechnet,
         match_id: matchId,
+        fifa_version: fifaVersion || undefined,
         info: "Echtgeld-Ausgleich (getilgt)"
       });
     }

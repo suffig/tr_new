@@ -1,4 +1,5 @@
 import toast from 'react-hot-toast';
+import { chronoAsc } from './matchChronology';
 
 // Record + monthly-recap alerts, derived purely from matches.
 // A snapshot of the current bests lives in localStorage; when a new match list
@@ -10,7 +11,7 @@ const RECAP_KEY = 'fusta_last_recap_month';
 function computeSnapshot(matches) {
   let maxStreak = 0, biggestMargin = 0, mostGoalsGame = 0;
   let curWho = null, curLen = 0;
-  const chrono = [...matches].sort((p, q) => (p.id || 0) - (q.id || 0) || String(p.date).localeCompare(String(q.date)));
+  const chrono = [...matches].sort(chronoAsc);
   for (const m of chrono) {
     const a = m.goalsa || 0, b = m.goalsb || 0;
     biggestMargin = Math.max(biggestMargin, a === b ? 0 : Math.abs(a - b));

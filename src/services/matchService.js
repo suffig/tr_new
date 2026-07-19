@@ -12,16 +12,26 @@ import { supabaseDb } from '../utils/supabase';
 /** Types that live on `finances.debt` (everything else affects `balance`). */
 const DEBT_TYPES = ['Echtgeld-Ausgleich', 'Echtgeld-Ausgleich (getilgt)'];
 
-/** Fetch a single finance row (id + fields) for a team, or null. */
-async function getFinanceRow(team) {
+/**
+ * Fetch a single finance row for a team, preferring the match's FIFA version.
+ * Deleting an FC25 match while the app runs FC26 must reverse money in the
+ * FC25 finances — never in the currently active version's bucket.
+ */
+async function getFinanceRow(team, version) {
+  if (version) {
+    const r = await supabaseDb.select('finances', '*', {
+      eq: { team, fifa_version: version }, skipFifaFilter: true,
+    });
+    if (!r.error && r.data && r.data.length > 0) return r.data[0];
+  }
   const { data, error } = await supabaseDb.select('finances', '*', { eq: { team } });
   if (error || !data || data.length === 0) return null;
   return data[0];
 }
 
 /** Reverse one transaction from the team's finances (clamped at 0). */
-async function reverseTransaction(trans) {
-  const fin = await getFinanceRow(trans.team);
+async function reverseTransaction(trans, version) {
+  const fin = await getFinanceRow(trans.team, version);
   if (!fin) {
     console.warn(`No finance row for team ${trans.team} — cannot reverse ${trans.type}`);
     return;
@@ -61,23 +71,26 @@ export async function deleteMatch(id) {
   const validBigInt = typeof matchId === 'bigint' && matchId > 0n;
   if (!validNumber && !validBigInt) throw new Error(`Invalid match ID: ${matchId}`);
 
-  // --- 1. Load the match --------------------------------------------------
+  // --- 1. Load the match (across ALL versions — ids are globally unique,
+  // and an old-season match must stay deletable while a newer season runs).
   const { data: matchRows, error: matchError } = await supabaseDb.select(
     'matches',
     '*',
-    { eq: { id: matchId } }
+    { eq: { id: matchId }, skipFifaFilter: true }
   );
   if (matchError) throw matchError;
   if (!matchRows || matchRows.length === 0) {
     throw new Error(`Match with ID ${matchId} not found in database`);
   }
   const match = matchRows[0];
+  // All reversals target the MATCH's season, not the currently active one.
+  const matchVersion = match.fifa_version || null;
 
   // --- 2. Load this match's transactions ---------------------------------
   const { data: transRows, error: transError } = await supabaseDb.select(
     'transactions',
     '*',
-    { eq: { match_id: matchId } }
+    { eq: { match_id: matchId }, skipFifaFilter: true }
   );
   if (transError) throw transError;
   const matchTransactions = transRows || [];
@@ -86,17 +99,17 @@ export async function deleteMatch(id) {
   // --- 3. Reverse financial effects --------------------------------------
   const prizeReversedFor = new Set();
   for (const trans of matchTransactions) {
-    await reverseTransaction(trans);
+    await reverseTransaction(trans, trans.fifa_version || matchVersion);
     if (trans.type === 'Preisgeld') prizeReversedFor.add(trans.team);
   }
 
   // Fallback ONLY when no Preisgeld transaction was recorded for a team
   // (e.g. legacy rows). Unconditional double-reversal was a bug.
   if (!prizeReversedFor.has('AEK') && typeof match.prizeaek === 'number' && match.prizeaek !== 0) {
-    await reverseTransaction({ team: 'AEK', type: 'Preisgeld', amount: match.prizeaek });
+    await reverseTransaction({ team: 'AEK', type: 'Preisgeld', amount: match.prizeaek }, matchVersion);
   }
   if (!prizeReversedFor.has('Real') && typeof match.prizereal === 'number' && match.prizereal !== 0) {
-    await reverseTransaction({ team: 'Real', type: 'Preisgeld', amount: match.prizereal });
+    await reverseTransaction({ team: 'Real', type: 'Preisgeld', amount: match.prizereal }, matchVersion);
   }
 
   // --- 4. Delete the transactions (by their real row ids) -----------------
@@ -104,7 +117,7 @@ export async function deleteMatch(id) {
     const { error: delError } = await supabaseDb.delete('transactions', trans.id);
     if (delError) throw delError;
   }
-  const { data: remaining } = await supabaseDb.select('transactions', 'id', { eq: { match_id: matchId } });
+  const { data: remaining } = await supabaseDb.select('transactions', 'id', { eq: { match_id: matchId }, skipFifaFilter: true });
   if (remaining && remaining.length > 0) {
     throw new Error(`Transaction deletion incomplete: ${remaining.length} rows remain for match ${matchId}`);
   }
@@ -126,12 +139,15 @@ export async function deleteMatch(id) {
       goalCounts[name] = (goalCounts[name] || 0) + cnt;
     }
     for (const [playerName, count] of Object.entries(goalCounts)) {
-      const { data: players } = await supabaseDb.select('players', '*', { eq: { name: playerName, team } });
+      // Version-aware: an FC25 match's scorer is the FC25 player row.
+      const { data: players } = await supabaseDb.select('players', '*', {
+        eq: { name: playerName, team }, skipFifaFilter: true,
+      });
       if (!players || players.length === 0) {
         console.warn(`Player ${playerName} (${team}) not found for goal removal`);
         continue;
       }
-      const player = players[0];
+      const player = players.find((p) => (p.fifa_version || 'FC25') === (matchVersion || 'FC25')) || players[0];
       const newGoals = Math.max(0, (player.goals || 0) - count);
       await supabaseDb.update('players', { goals: newGoals }, player.id);
     }
@@ -152,10 +168,10 @@ export async function deleteMatch(id) {
     }
     if (sdsTeam) {
       const { data: sdsRows } = await supabaseDb.select('spieler_des_spiels', '*', {
-        eq: { name: match.manofthematch, team: sdsTeam },
+        eq: { name: match.manofthematch, team: sdsTeam }, skipFifaFilter: true,
       });
       if (sdsRows && sdsRows.length > 0) {
-        const sds = sdsRows[0];
+        const sds = sdsRows.find((s) => (s.fifa_version || 'FC25') === (matchVersion || 'FC25')) || sdsRows[0];
         await supabaseDb.update('spieler_des_spiels', { count: Math.max(0, (sds.count || 0) - 1) }, sds.id);
       }
     }
@@ -164,7 +180,7 @@ export async function deleteMatch(id) {
   // --- 7. Delete the match record -----------------------------------------
   const { error: deleteError } = await supabaseDb.delete('matches', matchId);
   if (deleteError) throw deleteError;
-  const { data: still } = await supabaseDb.select('matches', 'id', { eq: { id: matchId } });
+  const { data: still } = await supabaseDb.select('matches', 'id', { eq: { id: matchId }, skipFifaFilter: true });
   if (still && still.length > 0) {
     throw new Error(`Match deletion failed: match ${matchId} still exists`);
   }

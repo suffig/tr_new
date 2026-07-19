@@ -8,6 +8,7 @@ import SeasonView from './SeasonView';
 import RecordsView from './RecordsView';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { getTeamDisplay } from '../../constants/teams';
+import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 
 // goalslist entries are either a plain name string or { player_id, player, count }
 function parseGoals(raw) {
@@ -46,7 +47,7 @@ function computeDuel(matches, resolveName) {
   }
 
   // Order newest-first for streak & form (fall back to date if no id)
-  const ordered = [...list].sort((p, q) => (q.id || 0) - (p.id || 0) || String(q.date).localeCompare(String(p.date)));
+  const ordered = [...list].sort(chronoDesc);
 
   let streak = null, who = null, len = 0;
   for (const x of ordered) {
@@ -83,7 +84,7 @@ function computeDuel(matches, resolveName) {
 
 // Elo over all matches (K=24, Start 1000) — a form barometer for the rivalry.
 function computeElo(matches) {
-  const chrono = [...(matches || [])].sort((p, q) => (p.id || 0) - (q.id || 0) || String(p.date).localeCompare(String(q.date)));
+  const chrono = [...(matches || [])].sort(chronoAsc);
   let a = 1000, r = 1000;
   const series = [{ a, r }];
   for (const m of chrono) {
@@ -150,7 +151,9 @@ function computeAchievements(matches, resolveName, names) {
 
   for (const x of list) {
     const a = x.goalsa || 0, b = x.goalsb || 0;
-    totalPrize += (x.prizeaek || 0) + (x.prizereal || 0);
+    // Nur GEWONNENE Preisgelder zählen (Verlierer-Preisgeld ist negativ und
+    // würde die Summe sinnlos saldieren).
+    totalPrize += Math.max(0, x.prizeaek || 0) + Math.max(0, x.prizereal || 0);
 
     const tally = matchPlayerGoals(x, resolveName);
     for (const [player, goals] of Object.entries(tally)) {
@@ -170,7 +173,7 @@ function computeAchievements(matches, resolveName, names) {
   }
 
   // Longest historical win streak (chronological by id then date).
-  const chrono = [...list].sort((p, q) => (p.id || 0) - (q.id || 0) || String(p.date).localeCompare(String(q.date)));
+  const chrono = [...list].sort(chronoAsc);
   let maxStreak = { who: null, len: 0 }, curWho = null, curLen = 0;
   for (const x of chrono) {
     const a = x.goalsa || 0, b = x.goalsb || 0;
@@ -215,11 +218,11 @@ function computeAchievements(matches, resolveName, names) {
       context: torfabrik ? `${torfabrik.score} · ${torfabrik.total} Tore · ${fmtDay(torfabrik.date)}` : null,
     },
     {
-      id: 'prize1000', title: 'Große Kasse', icon: 'euro', iconClass: 'text-system-green',
-      desc: '1.000 € Preisgeld insgesamt',
-      unlocked: totalPrize >= 1000,
+      id: 'prize10m', title: 'Große Kasse', icon: 'euro', iconClass: 'text-system-green',
+      desc: '10 Mio € Preisgeld gewonnen (gesamt)',
+      unlocked: totalPrize >= 10000000,
       context: `${totalPrize.toLocaleString('de-DE')} € bisher`,
-      progress: { current: Math.min(totalPrize, 1000), target: 1000 },
+      progress: { current: Math.min(totalPrize, 10000000), target: 10000000 },
     },
     {
       id: 'games50', title: 'Halbes Hundert', icon: 'calendar', iconClass: 'text-system-blue',

@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import Icon from '../icons/Icon';
+import { chronoAsc } from '../../utils/matchChronology';
 
 // All-time records across every season (FIFA version). Pure derivation from
 // matches — no backend. Own goals (Eigentore_*) are excluded from scorer stats.
@@ -54,7 +55,7 @@ function computeRecords(matches, resolveName) {
   }
 
   // longest win streak (chronological)
-  const chrono = [...list].sort((p, q) => (p.id || 0) - (q.id || 0) || String(p.date).localeCompare(String(q.date)));
+  const chrono = [...list].sort(chronoAsc);
   let maxStreak = { who: null, len: 0 }, curWho = null, curLen = 0;
   for (const m of chrono) {
     const a = m.goalsa || 0, b = m.goalsb || 0;
