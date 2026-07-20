@@ -13,7 +13,6 @@ export const BASE_TABS = [
   { id: 'squad', icon: 'users', label: 'Kader', ariaLabel: 'Zu Kader-Übersicht wechseln' },
   { id: 'stats', icon: 'chart', label: 'Stats', ariaLabel: 'Zu Statistik-Übersicht wechseln' },
   { id: 'teams', icon: 'trophy', label: 'Teams', ariaLabel: 'Zu Team-Tracker wechseln' },
-  { id: 'events', icon: 'sparkles', label: 'Events', ariaLabel: 'Zu Events-Übersicht wechseln' },
   { id: 'alcohol', icon: 'beer', label: 'Alkohol', ariaLabel: 'Zu Alkohol & Blackjack-Tracker wechseln' },
   { id: 'spielersaufen', icon: 'mic', label: 'Saufen', ariaLabel: 'Zu Spielersaufen wechseln' },
   { id: 'admin', icon: 'settings', label: 'Admin', ariaLabel: 'Zu Verwaltung wechseln' },
@@ -21,15 +20,12 @@ export const BASE_TABS = [
 
 /**
  * Tabs that are actually visible for the given user
- * (events tab is opt-in, admin tab is restricted).
+ * (admin tab is restricted).
  */
 export function getVisibleTabs(user) {
-  const eventsEnabled = localStorage.getItem('eventsTabEnabled');
-  const showEvents = eventsEnabled !== null ? JSON.parse(eventsEnabled) : false;
   const isAdminUser = user?.email === ADMIN_EMAIL;
 
   return BASE_TABS.filter((tab) => {
-    if (tab.id === 'events' && !showEvents) return false;
     if (tab.id === 'admin' && !isAdminUser) return false;
     return true;
   });

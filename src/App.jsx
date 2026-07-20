@@ -26,7 +26,6 @@ const KaderTab = lazy(() => import('./components/tabs/KaderTab'));
 const BansTab = lazy(() => import('./components/tabs/BansTab'));
 const FinanzenTab = lazy(() => import('./components/tabs/FinanzenTab'));
 const StatsTab = lazy(() => import('./components/tabs/StatsTab'));
-const EventsTab = lazy(() => import('./components/tabs/EventsTab'));
 const AlcoholTrackerTab = lazy(() => import('./components/tabs/AlcoholTrackerTab'));
 const SpielersaufenTab  = lazy(() => import('./components/tabs/SpielersaufenTab'));
 const TeamTrackerTab = lazy(() => import('./components/tabs/TeamTrackerTab'));
@@ -239,8 +238,6 @@ function App() {
         return <KaderTab {...props} />;
       case 'stats':
         return <StatsTab {...props} />;
-      case 'events':
-        return <EventsTab {...props} />;
       case 'alcohol':
         return <AlcoholTrackerTab {...props} />;
       case 'spielersaufen':
