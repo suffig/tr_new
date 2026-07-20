@@ -127,8 +127,58 @@ export default function AddMatchTab() {
     );
   };
 
+  // Edit-Modus: gesetzt, wenn ein bestehendes Spiel bearbeitet wird.
+  // Speichern läuft dann über submitMatch(editId) → alte Buchung wird komplett
+  // zurückgerollt und ersetzt (matchService), fifa_version bleibt erhalten.
+  const [editingMatchId, setEditingMatchId] = useState(null);
+
+  // Übergabe aus MatchesTab („Bearbeiten“ am Spiel): Match liegt in sessionStorage.
+  useEffect(() => {
+    try {
+      const raw = sessionStorage.getItem('fusta_edit_match');
+      if (!raw) return;
+      sessionStorage.removeItem('fusta_edit_match');
+      const m = JSON.parse(raw);
+      const parseList = (r) => { try { return typeof r === 'string' ? (JSON.parse(r) || []) : (Array.isArray(r) ? r : []); } catch { return []; } };
+      // Eigentore_-Einträge aus den Listen in die ownGoals-Stepper extrahieren
+      const split = (list) => {
+        const scorers = []; let own = 0;
+        for (const g of parseList(list)) {
+          const isObj = typeof g === 'object' && g !== null;
+          const name = isObj ? g.player : g;
+          const cnt = isObj ? (g.count || 1) : 1;
+          if (String(name).startsWith('Eigentore_')) own += cnt;
+          else scorers.push({ player: name, count: cnt });
+        }
+        return { scorers, own };
+      };
+      const A = split(m.goalslista), B = split(m.goalslistb);
+      // Liste A enthält Eigentore des Gegners (Real) → zählen als ownGoalsB, umgekehrt für B
+      const ownGoalsB = A.own, ownGoalsA = B.own;
+      const goalsa = A.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsB;
+      const goalsb = B.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsA;
+      const { prizeaek, prizereal } = MatchBusinessLogic.calculatePrizeMoney(
+        goalsa, goalsb, m.yellowa || 0, m.reda || 0, m.yellowb || 0, m.redb || 0
+      );
+      setEditingDraftId(null);
+      setEditingMatchId(m.id);
+      setFormData({
+        ...makeEmptyForm(),
+        date: m.date,
+        goalslista: A.scorers, goalslistb: B.scorers,
+        ownGoalsA, ownGoalsB,
+        yellowa: m.yellowa || 0, reda: m.reda || 0,
+        yellowb: m.yellowb || 0, redb: m.redb || 0,
+        manofthematch: m.manofthematch || '',
+        goalsa, goalsb, prizeaek, prizereal,
+      });
+      setShowModal(true);
+    } catch { /* ignore */ }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const openNewMatch = () => {
     setEditingDraftId(null);
+    setEditingMatchId(null);
     setFormData(makeEmptyForm());
     setShowModal(true);
   };
@@ -139,6 +189,7 @@ export default function AddMatchTab() {
   const handleLiveFinish = (live) => {
     setShowLive(false);
     setEditingDraftId(null);
+    setEditingMatchId(null);
     // Ein einziger, vollständig berechneter setFormData (kein Update-Batching):
     // Tore = Summe der Torschützen-Counts (inkl. inline Eigentore_-Einträge),
     // Preisgeld direkt mitberechnet — Formular ist sofort speicherbereit.
@@ -252,9 +303,10 @@ export default function AddMatchTab() {
         reda: parseInt(formData.reda) || 0,
         yellowb: parseInt(formData.yellowb) || 0,
         redb: parseInt(formData.redb) || 0,
-        manofthematch: formData.manofthematch || null
+        manofthematch: formData.manofthematch || null,
+        editId: editingMatchId ?? null
       });
-      
+
       // Match is now on the DB — drop the draft it came from (if any)
       if (editingDraftId) {
         setDrafts(prev => prev.filter(d => d.id !== editingDraftId));
@@ -262,6 +314,7 @@ export default function AddMatchTab() {
       }
 
       // Reset form and close modal
+      setEditingMatchId(null);
       setFormData(makeEmptyForm());
       setShowModal(false);
       
@@ -661,6 +714,12 @@ export default function AddMatchTab() {
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
+                {editingMatchId && (
+                  <div className="rounded-xl bg-system-yellow/10 border border-system-yellow/40 px-3 py-2 text-footnote text-system-yellow">
+                    Bearbeitung: Speichern ersetzt das ursprüngliche Spiel — alte Buchungen
+                    (Preisgeld, Tore, SdS, Echtgeld) werden zurückgerollt und neu gebucht.
+                  </div>
+                )}
                 {/* Fixed Teams Display */}
                 <div className="bg-bg-tertiary rounded-xl p-4">
                   <div className="flex items-center justify-center gap-4">

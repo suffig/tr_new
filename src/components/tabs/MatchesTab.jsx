@@ -5,12 +5,13 @@ import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay, getTeamShort } from '../../constants/teams';
+import { ADMIN_EMAIL } from '../../constants/navigation';
 import { checkMilestones } from '../../utils/milestoneAlerts';
 import { chronoDesc } from '../../utils/matchChronology';
 import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
-export default function MatchesTab() {
+export default function MatchesTab({ onNavigate, user }) {
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
   const [timeFilter, setTimeFilter] = useState('all'); // '1week', '4weeks', '3months', 'all'
@@ -705,6 +706,23 @@ export default function MatchesTab() {
                                 ))}
                               </div>
                             </div>
+
+                            {/* Admin: Spiel bearbeiten (öffnet AddMatch vorbefüllt im Edit-Modus) */}
+                            {user?.email === ADMIN_EMAIL && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  try {
+                                    sessionStorage.setItem('fusta_edit_match', JSON.stringify(match));
+                                    onNavigate?.('admin');
+                                  } catch { /* ignore */ }
+                                }}
+                                className="w-full mt-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-bg-tertiary text-text-secondary font-medium hover:text-text-primary transition-colors"
+                              >
+                                <Icon name="edit" size={15} strokeWidth={2.2} />
+                                Spiel bearbeiten
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
