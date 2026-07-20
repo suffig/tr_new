@@ -12,6 +12,7 @@ export default function TeamSettingsTab() {
   });
   const [hasChanges, setHasChanges] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadFailed, setLoadFailed] = useState(false);
 
   // Load manager settings from database
   useEffect(() => {
@@ -76,7 +77,9 @@ export default function TeamSettingsTab() {
       
     } catch (error) {
       console.error('❌ [AdminTab] Error initializing managers:', error);
-      // Final fallback - just use state defaults
+      // Final fallback - use defaults, but TELL the user (silent fallback hid
+      // that edits here would not be persisted).
+      setLoadFailed(true);
       setManagers({
         aek: { name: 'Alexander', age: 30, weight: 110 },
         real: { name: 'Philip', age: 30, weight: 105 }
@@ -152,6 +155,12 @@ export default function TeamSettingsTab() {
 
   return (
     <div className="p-4 space-y-6">
+      {loadFailed && (
+        <div className="rounded-xl border border-system-yellow/40 bg-system-yellow/10 px-4 py-3 text-footnote text-system-yellow">
+          Manager-Daten konnten nicht aus der Datenbank geladen werden — es werden
+          Standardwerte angezeigt. Änderungen werden evtl. nicht gespeichert.
+        </div>
+      )}
       {/* Theme Settings Section */}
       <ThemeSettings />
       

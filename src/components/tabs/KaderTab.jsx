@@ -8,9 +8,14 @@ import CollapsibleCard from '../CollapsibleCard';
 import TeamLogo from '../TeamLogo';
 import { POSITIONS } from '../../utils/errorHandling';
 import { getTeamDisplay } from '../../constants/teams';
+import { ADMIN_EMAIL } from '../../constants/navigation';
+import { useAuth } from '../../hooks/useAuth';
 import toast from 'react-hot-toast';
 
 export default function KaderTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
+  const { user } = useAuth();
+  // Player mutations are admin-only — same rule as the admin area and the "+" FAB.
+  const isAdmin = user?.email === ADMIN_EMAIL;
   const [openPanel, setOpenPanel] = useState(null);
   const [showExportImport, setShowExportImport] = useState(false);
   const [editingPlayer, setEditingPlayer] = useState(null);
@@ -72,6 +77,10 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   };
   
   const handleSavePlayer = async (playerData) => {
+    if (!isAdmin) {
+      toast.error('Nur der Admin kann Spieler bearbeiten.');
+      return;
+    }
     try {
       await update(playerData, editingPlayer.id);
       toast.success(`Spieler ${playerData.name} erfolgreich aktualisiert`);
@@ -222,16 +231,18 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                                 >
                                   <Icon name="chart" size={16} strokeWidth={2} />
                                 </button>
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleEditPlayer(player);
-                                  }}
-                                  className="text-text-muted hover:text-primary-green transition-colors p-1"
-                                  title="Bearbeiten"
-                                >
-                                  <Icon name="edit" size={16} strokeWidth={2} />
-                                </button>
+                                {isAdmin && (
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      handleEditPlayer(player);
+                                    }}
+                                    className="text-text-muted hover:text-primary-green transition-colors p-1"
+                                    title="Bearbeiten"
+                                  >
+                                    <Icon name="edit" size={16} strokeWidth={2} />
+                                  </button>
+                                )}
                               </div>
                             </div>
                           </div>

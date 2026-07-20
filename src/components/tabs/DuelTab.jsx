@@ -418,7 +418,7 @@ function WrappedView({ d, aekName, realName }) {
 export default function DuelTab() {
   // skipFifaFilter → all matches across every FIFA version (all-time rivalry);
   // the Saison sub-view then splits them back out per version.
-  const { data: matches, loading: mLoading } = useSupabaseQuery('matches', '*', { skipFifaFilter: true });
+  const { data: matches, loading: mLoading, error: mError, refetch: refetchMatches } = useSupabaseQuery('matches', '*', { skipFifaFilter: true });
   const { data: players } = useSupabaseQuery('players', '*', { skipFifaFilter: true });
   const { data: managers } = useSupabaseQuery('manager', '*');
 
@@ -445,6 +445,18 @@ export default function DuelTab() {
   const evenings = useMemo(() => computeEvenings(matches), [matches]);
 
   if (mLoading) return <LoadingSpinner message="Lade Duell…" />;
+
+  if (mError && !matches) {
+    return (
+      <div className="p-4 text-center py-12">
+        <div className="text-accent-red mb-4 flex justify-center">
+          <Icon name="warning" size={28} strokeWidth={2} />
+        </div>
+        <p className="text-text-muted mb-4">Fehler beim Laden der Duell-Daten</p>
+        <button onClick={refetchMatches} className="btn-primary">Erneut versuchen</button>
+      </div>
+    );
+  }
 
   const views = [
     { id: 'uebersicht', label: 'Übersicht', iconName: 'zap' },

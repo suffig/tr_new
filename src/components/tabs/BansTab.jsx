@@ -9,7 +9,7 @@ import TeamLogo from '../TeamLogo';
 export default function BansTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   const [selectedType, setSelectedType] = useState('active'); // Changed from 'all' to 'active'
   
-  const { data: bans, loading: bansLoading } = useSupabaseQuery('bans', '*');
+  const { data: bans, loading: bansLoading, error: bansError, refetch: refetchBans } = useSupabaseQuery('bans', '*');
   const { data: players, loading: playersLoading } = useSupabaseQuery('players', '*');
   
   const loading = bansLoading || playersLoading;
@@ -56,6 +56,18 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
 
   if (loading) {
     return <LoadingSpinner message="Lade Sperren..." />;
+  }
+
+  if (bansError && !bans) {
+    return (
+      <div className="text-center py-12 px-4">
+        <div className="text-accent-red mb-4 flex justify-center">
+          <Icon name="warning" size={28} strokeWidth={2} />
+        </div>
+        <p className="text-text-muted mb-4">Fehler beim Laden der Sperren</p>
+        <button onClick={refetchBans} className="btn-primary">Erneut versuchen</button>
+      </div>
+    );
   }
 
   return (

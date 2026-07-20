@@ -21,7 +21,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
   const TX_PREVIEW_COUNT = 10;
   const NON_MATCH_PREVIEW = 5;
   
-  const { data: finances, loading: financesLoading } = useSupabaseQuery('finances', '*');
+  const { data: finances, loading: financesLoading, error: financesError, refetch: refetchFinances } = useSupabaseQuery('finances', '*');
   const { data: transactions, loading: transactionsLoading } = useSupabaseQuery(
     'transactions', 
     '*', 
@@ -195,6 +195,18 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
   if (loading) {
     return <LoadingSpinner message="Lade Finanzen..." />;
+  }
+
+  if (financesError && !finances) {
+    return (
+      <div className="p-4 text-center py-12">
+        <div className="text-accent-red mb-4 flex justify-center">
+          <Icon name="warning" size={28} strokeWidth={2} />
+        </div>
+        <p className="text-text-muted mb-4">Fehler beim Laden der Finanzen</p>
+        <button onClick={refetchFinances} className="btn-primary">Erneut versuchen</button>
+      </div>
+    );
   }
 
   const aekFinances = getTeamFinances('AEK');
