@@ -87,6 +87,7 @@ export default function AddBanTab() {
       setShowModal(false);
       
       // Show success message
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
       toast.success(`Sperre für "${selectedPlayer.name}" erfolgreich hinzugefügt!`);
     } catch (error) {
       console.error('Ban submission error:', error);

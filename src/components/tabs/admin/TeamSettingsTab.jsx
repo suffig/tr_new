@@ -126,6 +126,7 @@ export default function TeamSettingsTab() {
       window.dispatchEvent(new CustomEvent('managerSettingsChanged'));
       
       // Show success message
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
       toast.success('Manager-Einstellungen erfolgreich gespeichert!', {
         duration: 3000,
         position: 'top-center'

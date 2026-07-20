@@ -64,6 +64,7 @@ export default function AddTransactionTab() {
       setShowModal(false);
       
       // Show success message
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
       toast.success('Transaktion erfolgreich hinzugefügt!');
     } catch (error) {
       console.error('Transaction submission error:', error);

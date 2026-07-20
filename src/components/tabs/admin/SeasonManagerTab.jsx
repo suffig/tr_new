@@ -217,7 +217,7 @@ const SeasonManagerTab = () => {
                                  rounded-lg text-sm transition-colors disabled:opacity-50 
                                  disabled:cursor-not-allowed"
                     >
-                      {isLoading ? 'Exportiert...' : '📥 Export'}
+                      {isLoading ? 'Exportiert...' : 'Export'}
                     </button>
                     
                     {season.hasData && (

@@ -178,6 +178,7 @@ export default function DeleteTab() {
     setLoading(true);
     try {
       await removePlayer(player.id);
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
       toast.success(`Spieler ${player.name} erfolgreich gelöscht`);
       refetchPlayers();
       if (relatedBans.length > 0) {
@@ -265,6 +266,7 @@ export default function DeleteTab() {
     setLoading(true);
     try {
       await removeBan(ban.id);
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
       toast.success(`Sperre für ${playerName} erfolgreich gelöscht`);
       refetchBans();
     } catch (error) {
@@ -295,6 +297,7 @@ export default function DeleteTab() {
     setLoading(true);
     try {
       await removeTransaction(transaction.id);
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
       toast.success('Transaktion erfolgreich gelöscht');
       refetchTransactions();
     } catch (error) {

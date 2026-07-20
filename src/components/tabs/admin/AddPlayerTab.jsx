@@ -42,6 +42,10 @@ export default function AddPlayerTab() {
     setLoading(true);
 
     try {
+      const parsedValue = parseFloat(formData.value);
+      if (Number.isFinite(parsedValue) && parsedValue < 0) {
+        throw new Error('Marktwert darf nicht negativ sein');
+      }
       // Check if player already exists
       const existingPlayer = await supabaseDb.select('players', '*', { 
         eq: { name: formData.name.trim(), team: formData.team.trim() } 
