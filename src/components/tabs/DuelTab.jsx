@@ -7,7 +7,6 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import SeasonView from './SeasonView';
 import RecordsView from './RecordsView';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
-import { getTeamDisplay } from '../../constants/teams';
 import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 
 // goalslist entries are either a plain name string or { player_id, player, count }
@@ -513,13 +512,20 @@ export default function DuelTab() {
             </div>
           ) : (
             <>
-      {/* Hero scoreboard — broadcast look: team-colour gradient + big numerals */}
+      {/* Hero scoreboard — broadcast look: team-colour gradient + big numerals.
+          Bewusst OHNE Vereinsnamen: die Zahlen laufen ueber alle Saisons, die
+          Vereine wechseln aber je Saison (FC25 AEK/Real, FC26 Dynamo/Schalke).
+          Ein Vereinsname haette hier die Bilanz der einen Saison unter dem
+          Namen einer anderen ausgewiesen. Die Personen bleiben konstant. */}
       <div className="modern-card p-5 relative overflow-hidden bg-gradient-to-br from-system-blue/15 via-transparent to-system-red/15">
+        <div className="text-caption2 text-text-tertiary text-center mb-2">
+          Über alle Saisons
+          {d.seasonH2H.length > 1 ? ` · ${d.seasonH2H.length} Saisons` : ''}
+        </div>
         <div className="flex items-stretch">
           <div className="flex-1 flex flex-col items-center text-center">
             <TeamLogo team="aek" size="md" />
             <div className="mt-2 text-footnote font-semibold text-system-blue truncate max-w-full">{aekName}</div>
-            <div className="text-[11px] text-text-tertiary truncate max-w-full">{getTeamDisplay('AEK')}</div>
             <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-blue">{d.aekW}</div>
             <div className="text-[10px] uppercase tracking-widest text-text-tertiary">Siege</div>
           </div>
@@ -533,7 +539,6 @@ export default function DuelTab() {
           <div className="flex-1 flex flex-col items-center text-center">
             <TeamLogo team="real" size="md" />
             <div className="mt-2 text-footnote font-semibold text-system-red truncate max-w-full">{realName}</div>
-            <div className="text-[11px] text-text-tertiary truncate max-w-full">{getTeamDisplay('Real')}</div>
             <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-red">{d.realW}</div>
             <div className="text-[10px] uppercase tracking-widest text-text-tertiary">Siege</div>
           </div>

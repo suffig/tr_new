@@ -6,7 +6,6 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay, getTeamShort } from '../../constants/teams';
 import { ADMIN_EMAIL } from '../../constants/navigation';
-import MatchReactions from '../MatchReactions';
 import { checkMilestones } from '../../utils/milestoneAlerts';
 import { chronoDesc } from '../../utils/matchChronology';
 import toast from 'react-hot-toast';
@@ -707,10 +706,6 @@ export default function MatchesTab({ onNavigate, user }) {
                                 ))}
                               </div>
                             </div>
-
-                            {/* Reaktionen & Kommentare (blendet sich aus, solange
-                                die Tabelle match_reactions fehlt) */}
-                            <MatchReactions matchId={match.id} userEmail={user?.email} />
 
                             {/* Admin: Spiel bearbeiten (öffnet AddMatch vorbefüllt im Edit-Modus) */}
                             {user?.email === ADMIN_EMAIL && (
