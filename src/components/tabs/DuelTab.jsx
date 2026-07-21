@@ -8,6 +8,7 @@ import SeasonView from './SeasonView';
 import RecordsView from './RecordsView';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
+import { aggregatePlayers } from '../../utils/playerIdentity';
 
 // goalslist entries are either a plain name string or { player_id, player, count }
 function parseGoals(raw) {
@@ -433,7 +434,28 @@ export default function DuelTab() {
     };
   }, [players]);
 
-  const d = useMemo(() => computeDuel(matches, resolveName), [matches, resolveName]);
+  const dRaw = useMemo(() => computeDuel(matches, resolveName), [matches, resolveName]);
+
+  // Torschuetzen kommen aus den SPIELERZEILEN, nicht aus den Match-Torlisten.
+  // Grund: players.goals ist der gepflegte Karrierestand je Saison, waehrend
+  // die Torlisten nur so weit zurueckreichen, wie Spiele erhalten sind. Und
+  // derselbe Mensch hat pro Saison eine eigene Zeile — teils unter anderem
+  // Team (Benzema AEK -> Ehemalige) oder in anderer Schreibweise
+  // ("St Juste" / "St. Juste"). aggregatePlayers fasst das zusammen.
+  const career = useMemo(() => aggregatePlayers(players), [players]);
+
+  const d = useMemo(() => {
+    const liste = career
+      .filter((p) => p.goals > 0)
+      .slice(0, 5)
+      .map((p) => ({
+        name: p.name,
+        goals: p.goals,
+        seasons: p.seasons.filter((s) => s.goals > 0),
+        teams: p.teams,
+      }));
+    return { ...dRaw, topScorers: liste, topScorer: liste[0] || null };
+  }, [dRaw, career]);
   const [view, setView] = useState('uebersicht');
   const [mode, setMode] = useState('alltime'); // Übersicht: All-Time vs. Saison
   const achievements = useMemo(
@@ -631,7 +653,14 @@ export default function DuelTab() {
         {d.topScorer && (
           <StatCard iconName="star" iconClass="text-system-orange" label="Torschützenkönig">
             <span className="text-title3 font-bold text-text-primary truncate block">{d.topScorer.name}</span>
-            <div className="text-[11px] text-text-tertiary mt-0.5">{d.topScorer.goals} Tore gesamt</div>
+            <div className="text-[11px] text-text-tertiary mt-0.5 num-tabular">
+              {d.topScorer.goals} Tore · alle Saisons
+            </div>
+            {d.topScorer.seasons?.length > 1 && (
+              <div className="text-[10px] text-text-quaternary mt-0.5 num-tabular truncate">
+                {d.topScorer.seasons.map((s) => `${s.version} ${s.goals}`).join(' + ')}
+              </div>
+            )}
           </StatCard>
         )}
 

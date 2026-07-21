@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import Icon from '../icons/Icon';
 import { chronoAsc } from '../../utils/matchChronology';
+import { aggregatePlayers } from '../../utils/playerIdentity';
 
 // All-time records across every season (FIFA version). Pure derivation from
 // matches — no backend. Own goals (Eigentore_*) are excluded from scorer stats.
@@ -100,7 +101,17 @@ export default function RecordsView({ matches, players, aekName, realName }) {
     return p?.name || (typeof idOrName === 'string' ? idOrName : null);
   }, [players]);
 
-  const r = useMemo(() => computeRecords(matches, resolveName), [matches, resolveName]);
+  const rRaw = useMemo(() => computeRecords(matches, resolveName), [matches, resolveName]);
+
+  // Der All-Time-Torschuetzenkoenig kommt aus den SPIELERZEILEN, nicht aus den
+  // Match-Torlisten: players.goals ist der gepflegte Karrierestand je Saison,
+  // und derselbe Mensch hat pro Saison eine eigene Zeile (teils anderes Team,
+  // teils andere Schreibweise). Sonst wuerde diese Karte dem Duell-Tab
+  // widersprechen, der genauso rechnet.
+  const r = useMemo(() => {
+    const beste = aggregatePlayers(players).find((p) => p.goals > 0);
+    return { ...rRaw, topScorer: beste ? [beste.name, beste.goals] : rRaw.topScorer };
+  }, [rRaw, players]);
   const who = (t) => (t === 'AEK' ? aekName : realName);
 
   if (!r.total) {
