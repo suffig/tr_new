@@ -24,8 +24,9 @@ alter table public.transactions       drop constraint if exists transactions_fif
 alter table public.finances           drop constraint if exists finances_fifa_version_fkey;
 alter table public.spieler_des_spiels drop constraint if exists spieler_des_spiels_fifa_version_fkey;
 
--- --- 01 zurueck: Team-Check, Finanz-Eindeutigkeit, Transaktions-FK ----------
+-- --- 01 zurueck: Team-Check, Untergrenzen, Finanz-Eindeutigkeit, FK --------
 alter table public.matches      drop constraint if exists matches_teams_check;
+alter table public.finances     drop constraint if exists finances_nonnegative_check;
 drop index  if exists public.uq_finances_version_team;
 alter table public.transactions drop constraint if exists transactions_match_id_fkey;
 

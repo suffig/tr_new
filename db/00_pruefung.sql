@@ -139,6 +139,17 @@ order by abs(coalesce(s.count,0) - coalesce(x.anzahl,0)) desc;
 -- B3: finances.balance gegen die Summe der Transaktionen.
 --     ACHTUNG: balance ist Spielgeld, debt ist ECHTES Geld in Euro — die
 --     Echtgeld-Typen duerfen deshalb nicht in die balance-Summe einfliessen.
+--
+--     WICHTIG ZUR EINORDNUNG (geklaert am 21.07.2026):
+--     Eine Abweichung ist hier ERWARTET und KEIN Fehler. Der Kontostand hat
+--     bewusst eine Untergrenze von 0 — so ist die App gewollt. Wuerde eine
+--     Buchung darunter fuehren, wird auf 0 gedeckelt, waehrend die Transaktion
+--     in voller Hoehe erhalten bleibt. Ein Konto, das einmal an dieser Grenze
+--     war, kann danach rechnerisch nicht mehr zur Summe der Buchungen passen.
+--     Dazu kommt das Startkapital je Saison, das nicht als Transaktion gefuehrt
+--     wird. Diese Abfrage bleibt trotzdem drin — als Ueberblick, nicht als
+--     Alarm. Konsequenz: finances.balance NICHT auf einen abgeleiteten Wert
+--     umstellen, die beiden Groessen sind historisch auseinandergelaufen.
 with bewegung as (
   select fifa_version, team, sum(amount) as summe
   from public.transactions
@@ -154,9 +165,8 @@ select
 from public.finances f
 left join bewegung b on b.team = f.team and b.fifa_version = f.fifa_version
 order by f.fifa_version, f.team;
--- Hinweis zu B3: eine konstante Differenz ueber beide Teams ist normal und
--- entspricht dem Startkapital. Auffaellig waere, wenn die Differenz je Team
--- UNTERSCHIEDLICH ist — dann ist irgendwo eine Buchung verlorengegangen.
+-- (Zur Bewertung siehe den Hinweis ueber dieser Abfrage: Abweichungen sind
+--  hier systembedingt und kein Handlungsbedarf.)
 
 -- B4: Sperren, die mehr Spiele abgesessen haben als verhaengt wurden.
 select 'B4 bans matchesserved > totalgames' as pruefung,

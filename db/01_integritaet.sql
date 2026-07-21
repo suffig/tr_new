@@ -165,6 +165,40 @@ begin
   end if;
 end $$;
 
+-- ---------------------------------------------------------------------------
+-- 6) Untergrenze 0 fuer Kontostand und Schulden
+--    Das ist die ausdrueckliche Regel der App: der Kontostand soll minimal 0
+--    sein. Bisher lebt sie nur an zwei Stellen im JavaScript
+--    (AddTransactionTab: "if (newBalance < 0) newBalance = 0" und
+--    matchService: "Math.max(0, ...)"). Zwei Kopien einer Regel laufen
+--    frueher oder spaeter auseinander — hier steht sie einmal verbindlich.
+--    Es aendert NICHTS an bestehenden Daten und nichts am Verhalten der App,
+--    es zieht nur einen Boden ein, durch den nichts mehr faellt.
+-- ---------------------------------------------------------------------------
+do $$
+declare negativ int;
+begin
+  select count(*) into negativ
+  from public.finances
+  where coalesce(balance,0) < 0 or coalesce(debt,0) < 0;
+
+  if negativ > 0 then
+    raise notice
+      'HINWEIS: % finances-Zeile(n) sind negativ — die Untergrenzen-Regel wurde '
+      'NICHT angelegt. Bitte zuerst klaeren, alles andere ist migriert.', negativ;
+  else
+    if not exists (
+      select 1 from pg_constraint
+      where conname = 'finances_nonnegative_check'
+        and conrelid = 'public.finances'::regclass
+    ) then
+      alter table public.finances
+        add constraint finances_nonnegative_check
+        check (balance >= 0 and debt >= 0);
+    end if;
+  end if;
+end $$;
+
 commit;
 
 -- Fertig. Danach in der App pruefen: Spiel anlegen, Spiel bearbeiten,
