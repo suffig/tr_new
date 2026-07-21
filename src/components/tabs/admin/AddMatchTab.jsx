@@ -5,6 +5,7 @@ import { MatchBusinessLogic } from '../../../utils/matchBusinessLogic';
 import { triggerNotification } from '../../NotificationSystem';
 import toast from 'react-hot-toast';
 import { hapticSuccess, hapticError, celebrate } from '../../../utils/feedback';
+import { markSelfInsert } from '../../../utils/selfActivity';
 import { getTeamDisplay } from '../../../constants/teams';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
@@ -324,6 +325,9 @@ export default function AddMatchTab() {
       hapticSuccess();
       celebrate();
       
+      // Eigenes Insert markieren, damit das Realtime-Echo nicht ein zweites
+      // Mal benachrichtigt (siehe utils/selfActivity.js).
+      markSelfInsert('matches', result.matchId);
       // Trigger push notification for new match with correct match ID
       triggerNotification('match-created', {
         matchId: result.matchId || 'latest',

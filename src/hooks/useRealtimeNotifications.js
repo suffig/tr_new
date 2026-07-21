@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { supabase, usingFallback } from '../utils/supabase';
 import { triggerNotification } from '../components/NotificationSystem';
 import { getPushEnabled } from '../utils/notifications';
+import { wasSelfInsert } from '../utils/selfActivity';
 
 // Cross-device notifications: subscribe to Supabase Realtime and raise a compact
 // notification whenever a new match or transaction is inserted (e.g. by the other
@@ -25,10 +26,16 @@ export function useRealtimeNotifications() {
     const channel = supabase
       .channel('fusta-activity')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'matches' }, (payload) => {
-        triggerNotification('match-created', payload.new || {});
+        const row = payload.new || {};
+        // Das eigene Insert wurde lokal schon gemeldet — Echo verwerfen,
+        // sonst bekommt der Eintragende die Meldung doppelt.
+        if (wasSelfInsert('matches', row.id)) return;
+        triggerNotification('match-created', row);
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'transactions' }, (payload) => {
-        triggerNotification('transaction', payload.new || {});
+        const row = payload.new || {};
+        if (wasSelfInsert('transactions', row.id)) return;
+        triggerNotification('transaction', row);
       })
       .subscribe();
 
