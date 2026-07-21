@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import { getTeamShort } from '../../constants/teams';
+import { hapticLight } from '../../utils/feedback';
 
 // Live capture for a running match: tap goals (with scorer) and cards as they
 // happen. Writes NOTHING to the DB — on finish it hands the collected data to
@@ -52,9 +53,10 @@ export default function LiveMatchModal({ players, onClose, onFinish }) {
   const addGoal = (team, player) => {
     setLive((l) => ({ ...l, goals: [...l.goals, { team, player }] }));
     setPicker(null);
+    hapticLight();
   };
   const undoGoal = () => setLive((l) => ({ ...l, goals: l.goals.slice(0, -1) }));
-  const bump = (key, delta) => setLive((l) => ({ ...l, [key]: Math.max(0, (l[key] || 0) + delta) }));
+  const bump = (key, delta) => { hapticLight(); setLive((l) => ({ ...l, [key]: Math.max(0, (l[key] || 0) + delta) })); };
 
   const clearStore = () => { try { localStorage.removeItem(STORE_KEY); } catch { /* ignore */ } };
 

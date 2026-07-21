@@ -8,6 +8,7 @@ import MatchDayOverview from '../MatchDayOverview';
 import QuickStatsWidget from '../QuickStatsWidget';
 import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
+import CountUp from '../CountUp';
 import { getTeamDisplay } from '../../constants/teams';
 import { 
   TrendLineChart, 
@@ -787,9 +788,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             </div>
             <div className="text-center flex-shrink-0">
               <div className="stat-display text-[38px] flex items-baseline justify-center gap-2">
-                <span className="text-system-blue">{h2h.aekWins}</span>
+                <CountUp value={h2h.aekWins} className="text-system-blue" />
                 <span className="text-[22px] font-semibold text-text-quaternary">:</span>
-                <span className="text-system-red">{h2h.realWins}</span>
+                <CountUp value={h2h.realWins} className="text-system-red" />
               </div>
               <div className="text-caption2 text-text-tertiary mt-1.5">Siege</div>
             </div>

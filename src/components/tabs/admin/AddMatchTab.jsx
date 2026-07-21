@@ -4,6 +4,7 @@ import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { MatchBusinessLogic } from '../../../utils/matchBusinessLogic';
 import { triggerNotification } from '../../NotificationSystem';
 import toast from 'react-hot-toast';
+import { hapticSuccess, hapticError, celebrate } from '../../../utils/feedback';
 import { getTeamDisplay } from '../../../constants/teams';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
@@ -320,6 +321,8 @@ export default function AddMatchTab() {
       
       // Show success message with comprehensive feedback
       toast.success(result.message);
+      hapticSuccess();
+      celebrate();
       
       // Trigger push notification for new match with correct match ID
       triggerNotification('match-created', {
@@ -333,6 +336,7 @@ export default function AddMatchTab() {
       });
     } catch (error) {
       console.error('Match submission error:', error);
+      hapticError();
       toast.error(error.message || 'Fehler beim Hinzufügen des Spiels');
     } finally {
       setLoading(false);
