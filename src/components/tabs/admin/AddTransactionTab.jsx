@@ -34,8 +34,17 @@ export default function AddTransactionTab() {
     setLoading(true);
 
     try {
-      const amount = parseFloat(formData.amount);
-      
+      // Auf ganze Euro runden, BEVOR der Betrag irgendwo landet: derselbe Wert
+      // geht in die Transaktion UND in den Kontostand. Wuerde man den Rohwert
+      // weiterreichen, rundet die Datenbank jede der beiden integer-Spalten
+      // einzeln — gebuchter Betrag und Kontostand-Aenderung koennten dann
+      // auseinanderlaufen.
+      const parsed = parseFloat(formData.amount);
+      if (!Number.isFinite(parsed)) {
+        throw new Error('Bitte einen gültigen Betrag eingeben.');
+      }
+      const amount = Math.round(parsed);
+
       // Insert the transaction
       const transactionResult = await supabaseDb.insert('transactions', {
         date: formData.date,
@@ -205,14 +214,21 @@ export default function AddTransactionTab() {
                   <label className="block text-sm font-medium text-text-primary mb-2">
                     Betrag (€) *
                   </label>
+                  {/* Ganze Euro: transactions.amount und finances.balance sind
+                      beide integer-Spalten. Ein Cent-Betrag wuerde beim Speichern
+                      stillschweigend gerundet — es staende dann etwas anderes in
+                      der Datenbank als eingegeben. Alle automatischen Buchungen
+                      sind ohnehin ganze Euro (Preisgeld in 10.000er-Schritten,
+                      Echtgeld in 5er-Schritten). */}
                   <input
                     type="number"
-                    step="0.01"
+                    step="1"
+                    inputMode="numeric"
                     value={formData.amount}
                     onChange={(e) => handleInputChange('amount', e.target.value)}
                     onFocus={(e) => e.target.select()}
                     className="form-input"
-                    placeholder="0.00"
+                    placeholder="0"
                     required
                     disabled={loading}
                   />
