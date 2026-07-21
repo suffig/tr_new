@@ -7,6 +7,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import MatchDayOverview from '../MatchDayOverview';
 import QuickStatsWidget from '../QuickStatsWidget';
 import TeamLogo from '../TeamLogo';
+import InsightsView from './InsightsView';
 import { getTeamDisplay } from '../../constants/teams';
 import { 
   TrendLineChart, 
@@ -621,6 +622,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const views = [
     { id: 'dashboard', label: 'Dashboard', iconName: 'grid' },
     { id: 'overview', label: 'Übersicht', iconName: 'chart' },
+    { id: 'insights', label: 'Einblicke', iconName: 'bulb' },
     { id: 'advanced', label: 'Erweitert', iconName: 'zap' },
     { id: 'visualizations', label: 'Visualisierungen', iconName: 'trendingUp' },
     { id: 'matchdays', label: 'Spieltage', iconName: 'calendar' },
@@ -2450,6 +2452,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           <EnhancedDashboard onNavigate={onNavigate} />
         </div>
       );
+      case 'insights': return <InsightsView matches={filteredMatches} players={players} bans={bans} />;
       case 'advanced': return renderAdvancedStats();
       case 'visualizations': return renderVisualizations();
       case 'matchdays': return <MatchDayOverview matches={matches} />;
