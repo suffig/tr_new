@@ -527,7 +527,7 @@ export default function MatchesTab({ onNavigate, user }) {
                     <button
                       onClick={() => shareMatchday(dateGroup)}
                       aria-label="Spieltag teilen"
-                      className="w-8 h-8 rounded-full flex items-center justify-center text-text-tertiary hover:text-system-green hover:bg-system-green/10 active:scale-90 transition-all"
+                      className="btn-compact w-8 h-8 rounded-full flex items-center justify-center text-text-tertiary hover:text-system-green hover:bg-system-green/10 active:scale-90 transition-all"
                     >
                       <Icon name="share" size={15} strokeWidth={2.2} />
                     </button>
@@ -562,27 +562,27 @@ export default function MatchesTab({ onNavigate, user }) {
                           {/* Team A */}
                           <div className="flex flex-col items-center gap-1 w-16 flex-shrink-0">
                             <TeamLogo team={match.teama || 'AEK'} size="md" />
-                            <div className={`text-[11px] font-semibold text-center leading-tight truncate w-full ${winner === 'aek' ? 'text-system-blue' : 'text-text-tertiary'}`}>
+                            <div className={`text-caption2 text-center leading-tight truncate w-full ${winner === 'aek' ? 'text-system-blue font-bold' : 'text-text-tertiary font-medium'}`}>
                               {getTeamShort(match.teama || 'AEK')}
                             </div>
                           </div>
 
-                          {/* Score */}
+                          {/* Score — the anchor of the page: broadcast-style figures */}
                           <div className="flex-1 flex flex-col items-center">
-                            <div className="text-2xl font-black tracking-tight tabular-nums">
-                              <span className={winner === 'aek' ? 'text-system-blue' : 'text-text-secondary'}>{aekGoals}</span>
-                              <span className="mx-1.5 text-text-tertiary">:</span>
-                              <span className={winner === 'real' ? 'text-system-red' : 'text-text-secondary'}>{realGoals}</span>
+                            <div className="stat-display text-[32px] flex items-baseline justify-center gap-1.5">
+                              <span className={winner === 'aek' ? 'text-system-blue' : winner === 'draw' ? 'text-text-secondary' : 'text-text-tertiary'}>{aekGoals}</span>
+                              <span className="text-[19px] font-semibold text-text-quaternary">:</span>
+                              <span className={winner === 'real' ? 'text-system-red' : winner === 'draw' ? 'text-text-secondary' : 'text-text-tertiary'}>{realGoals}</span>
                             </div>
                             {match.status && match.status !== 'finished' && (
-                              <span className="text-[10px] text-system-orange font-medium">Laufend</span>
+                              <span className="chip chip-sm chip-orange mt-1">Laufend</span>
                             )}
                           </div>
 
                           {/* Team B */}
                           <div className="flex flex-col items-center gap-1 w-16 flex-shrink-0">
                             <TeamLogo team={match.teamb || 'Real'} size="md" />
-                            <div className={`text-[11px] font-semibold text-center leading-tight truncate w-full ${winner === 'real' ? 'text-system-red' : 'text-text-tertiary'}`}>
+                            <div className={`text-caption2 text-center leading-tight truncate w-full ${winner === 'real' ? 'text-system-red font-bold' : 'text-text-tertiary font-medium'}`}>
                               {getTeamShort(match.teamb || 'Real')}
                             </div>
                           </div>
@@ -597,10 +597,10 @@ export default function MatchesTab({ onNavigate, user }) {
                         {isExpanded && (
                           <div className="px-4 pb-4 border-t border-border-light pt-4 space-y-3">
                             {/* Meta line */}
-                            <div className="flex items-center gap-2 text-xs text-text-muted">
-                              <span className="bg-bg-tertiary px-2 py-1 rounded-md font-medium">Match #{matchNumber}</span>
-                              <span className="bg-bg-tertiary px-2 py-1 rounded-md">{totalGoals} Tore</span>
-                              <span className="bg-bg-tertiary px-2 py-1 rounded-md">{new Date(match.date).toLocaleDateString('de-DE')}</span>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <span className="chip chip-gray">Match #{matchNumber}</span>
+                              <span className="chip chip-gray">{totalGoals} Tore</span>
+                              <span className="chip chip-gray num-tabular">{new Date(match.date).toLocaleDateString('de-DE')}</span>
                             </div>
 
                             {/* Goal scorers */}
@@ -699,7 +699,7 @@ export default function MatchesTab({ onNavigate, user }) {
                                     <div className="flex items-center gap-1.5 text-xs text-text-secondary mb-0.5">
                                       <TeamLogo team={side.team} size="xs" /> {side.short}
                                     </div>
-                                    <div className={`font-bold text-sm ${side.prize > 0 ? 'text-system-green' : side.prize < 0 ? 'text-system-red' : 'text-text-secondary'}`}>
+                                    <div className={`stat-display text-[15px] ${side.prize > 0 ? 'text-system-green' : side.prize < 0 ? 'text-system-red' : 'text-text-secondary'}`}>
                                       {side.prize > 0 ? '+' : ''}{side.prize.toLocaleString('de-DE')} €
                                     </div>
                                   </div>
@@ -717,7 +717,7 @@ export default function MatchesTab({ onNavigate, user }) {
                                     onNavigate?.('admin');
                                   } catch { /* ignore */ }
                                 }}
-                                className="w-full mt-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-bg-tertiary text-text-secondary font-medium hover:text-text-primary transition-colors"
+                                className="btn-secondary w-full mt-1"
                               >
                                 <Icon name="edit" size={15} strokeWidth={2.2} />
                                 Spiel bearbeiten
