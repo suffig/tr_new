@@ -1,3 +1,4 @@
+import Icon from './icons/Icon';
 import { useState, useEffect, useCallback } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 
@@ -17,11 +18,11 @@ export default function GlobalSearch({ onNavigate, onClose }) {
   const searchResults = activeFilter === 'all' ? allResults : allResults.filter(result => result.type === activeFilter);
 
   const filters = [
-    { id: 'all', label: 'Alle', icon: '🔍' },
-    { id: 'player', label: 'Spieler', icon: '👥' },
-    { id: 'match', label: 'Spiele', icon: '⚽' },
-    { id: 'transaction', label: 'Finanzen', icon: '💰' },
-    { id: 'ban', label: 'Sperren', icon: '🚫' }
+    { id: 'all', label: 'Alle', icon: 'search' },
+    { id: 'player', label: 'Spieler', icon: 'users' },
+    { id: 'match', label: 'Spiele', icon: 'football' },
+    { id: 'transaction', label: 'Finanzen', icon: 'euro' },
+    { id: 'ban', label: 'Sperren', icon: 'ban' }
   ];
 
   const handleClose = useCallback(() => {
@@ -98,7 +99,7 @@ export default function GlobalSearch({ onNavigate, onClose }) {
         className="flex items-center gap-2 px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-all duration-200"
         title="Globale Suche (Strg+K)"
       >
-        <span className="text-lg" aria-hidden="true">🔍</span>
+        <Icon name="search" size={17} strokeWidth={2.2} />
         <span className="hidden sm:inline text-sm">Suchen...</span>
         <span className="hidden sm:inline text-xs bg-bg-tertiary px-1.5 py-0.5 rounded border border-border-light">
           Strg+K
@@ -113,7 +114,7 @@ export default function GlobalSearch({ onNavigate, onClose }) {
             <div className="p-4 border-b border-border-light">
               <div className="relative mb-4">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-                  <span className="text-text-secondary" aria-hidden="true">🔍</span>
+                  <Icon name="search" size={17} strokeWidth={2.2} className="text-text-tertiary" />
                 </div>
                 <input
                   type="text"
@@ -136,7 +137,7 @@ export default function GlobalSearch({ onNavigate, onClose }) {
                         : 'bg-bg-secondary text-text-muted hover:bg-bg-tertiary hover:text-text-primary border border-border-light'
                     }`}
                   >
-                    <span className="text-xs" aria-hidden="true">{filter.icon}</span>
+                    <Icon name={filter.icon} size={14} strokeWidth={2.2} />
                     <span className="hidden sm:inline">{filter.label}</span>
                   </button>
                 ))}
@@ -147,7 +148,9 @@ export default function GlobalSearch({ onNavigate, onClose }) {
             <div className="max-h-96 overflow-y-auto">
               {query.length === 0 ? (
                 <div className="p-6 text-center text-text-secondary">
-                  <div className="text-4xl mb-2" aria-hidden="true">⚡</div>
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+                    <Icon name="search" size={26} strokeWidth={1.8} />
+                  </div>
                   <p>Beginne zu tippen um zu suchen...</p>
                   <div className="mt-4 text-sm">
                     <p><strong>Tipps:</strong></p>
@@ -158,7 +161,9 @@ export default function GlobalSearch({ onNavigate, onClose }) {
                 </div>
               ) : searchResults.length === 0 ? (
                 <div className="p-6 text-center text-text-secondary">
-                  <div className="text-4xl mb-2" aria-hidden="true">🔍</div>
+                  <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+                    <Icon name="search" size={26} strokeWidth={1.8} />
+                  </div>
                   <p>Keine Ergebnisse für &quot;{query}&quot;</p>
                 </div>
               ) : (
@@ -174,7 +179,9 @@ export default function GlobalSearch({ onNavigate, onClose }) {
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-lg" aria-hidden="true">{result.icon}</span>
+                        <span className="flex-shrink-0 w-8 h-8 rounded-full bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+                          <Icon name={result.icon} size={16} strokeWidth={2.2} />
+                        </span>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
                             <span className="font-medium text-text-primary">{result.title}</span>
@@ -226,7 +233,7 @@ function getSearchResults(query, data) {
         results.push({
           type: 'player',
           id: player.id,
-          icon: player.team === 'AEK' ? '🔵' : '🔴',
+          icon: 'user',
           title: player.name,
           description: `${player.team} • ${player.position} • ${player.value?.toFixed(1)}M €`,
           category: 'Spieler',
@@ -247,7 +254,7 @@ function getSearchResults(query, data) {
         results.push({
           type: 'match',
           id: match.id,
-          icon: '⚽',
+          icon: 'football',
           title: `AEK ${match.goalsa || 0} - ${match.goalsb || 0} Real`,
           description: `${matchDate} • ${match.sds ? `⭐ SdS: ${match.sds}` : 'Kein SdS'}`,
           category: 'Spiel',
@@ -273,7 +280,7 @@ function getSearchResults(query, data) {
         results.push({
           type: 'ban',
           id: ban.id,
-          icon: '🚫',
+          icon: 'ban',
           title: playerName,
           description: `${ban.type} • ${remaining > 0 ? `${remaining} Spiele verbleibend` : 'Abgelaufen'}`,
           category: 'Sperre',
@@ -299,7 +306,7 @@ function getSearchResults(query, data) {
         results.push({
           type: 'transaction',
           id: transaction.id,
-          icon: '💰',
+          icon: 'euro',
           title: `${transaction.type || 'Transaktion'} • ${formattedAmount}`,
           description: `${date} • ${transaction.description || 'Keine Beschreibung'}`,
           category: 'Finanzen',

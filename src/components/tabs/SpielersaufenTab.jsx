@@ -470,15 +470,15 @@ export default function SpielersaufenTab() {
                         <input value={editingP.name} onChange={e => setEditingP(ep => ({ ...ep, name: e.target.value }))}
                           onKeyDown={e => { if(e.key==='Enter') confirmRenameP(); if(e.key==='Escape') setEditingP(null); }}
                           className="flex-1 border border-gray-300 rounded-lg px-2 py-1 text-sm" autoFocus />
-                        <button onClick={confirmRenameP} className="text-green-600 font-bold px-2">✓</button>
-                        <button onClick={() => setEditingP(null)} className="text-gray-400 px-1">✕</button>
+                        <button onClick={confirmRenameP} aria-label="Umbenennen bestätigen" className="btn-compact text-system-green p-1.5"><Icon name="check" size={16} strokeWidth={2.6} /></button>
+                        <button onClick={() => setEditingP(null)} aria-label="Abbrechen" className="btn-compact text-text-tertiary p-1.5"><Icon name="x" size={16} strokeWidth={2.4} /></button>
                       </>
                     ) : (
                       <>
                         <span className={`flex-1 font-semibold text-sm ${c.text}`}>{p.name}</span>
                         <span className="text-xs text-gray-400">{(data.assignments[p.id]||[]).length} Spieler</span>
-                        <button onClick={() => setEditingP({ id: p.id, name: p.name })} className="text-gray-400 hover:text-gray-600 p-1 text-base">✏️</button>
-                        <button onClick={() => delParticipant(p.id)} className="text-red-400 hover:text-red-600 p-1 text-base">🗑️</button>
+                        <button onClick={() => setEditingP({ id: p.id, name: p.name })} aria-label={`${p.name} umbenennen`} className="btn-compact text-text-tertiary hover:text-text-secondary p-1.5"><Icon name="edit" size={15} strokeWidth={2.2} /></button>
+                        <button onClick={() => delParticipant(p.id)} aria-label={`${p.name} entfernen`} className="btn-compact text-system-red/70 hover:text-system-red p-1.5"><Icon name="trash" size={15} strokeWidth={2.2} /></button>
                       </>
                     )}
                   </div>
@@ -490,7 +490,7 @@ export default function SpielersaufenTab() {
 
           {/* Checklist */}
           <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4">
-            <h4 className="font-bold text-amber-800 text-sm mb-2">✅ Bereit zum Spielen?</h4>
+            <h4 className="font-bold text-amber-800 text-sm mb-2 inline-flex items-center gap-1.5"><Icon name="check" size={15} strokeWidth={2.4} />Bereit zum Spielen?</h4>
             {[
               { ok: data.participants.length >= 2, label: `≥ 2 Mitspieler (${data.participants.length})` },
               { ok: activePCount('home') >= 1,     label: `Heimteam hat Spieler (${activePCount('home')})` },
