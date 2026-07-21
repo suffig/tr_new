@@ -37,7 +37,13 @@ function App() {
   useKeyboardAvoidance();     // iOS: scroll focused field above the on-screen keyboard
   // QoL: remember the last tab across reloads (PWA re-opens where you left off)
   const [activeTab, setActiveTab] = useState(() => {
-    try { return localStorage.getItem('fusta_active_tab') || 'matches'; } catch { return 'matches'; }
+    try {
+      // Feste Startansicht schlaegt den zuletzt benutzten Tab — wer eine
+      // gewaehlt hat, will immer dort landen. 'last' = altes Verhalten.
+      const preferred = localStorage.getItem('fusta_start_tab');
+      if (preferred && preferred !== 'last') return preferred;
+      return localStorage.getItem('fusta_active_tab') || 'matches';
+    } catch { return 'matches'; }
   });
   const [isDemoMode, setIsDemoMode] = useState(false);
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);

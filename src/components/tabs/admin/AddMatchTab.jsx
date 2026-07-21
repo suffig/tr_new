@@ -4,7 +4,7 @@ import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { MatchBusinessLogic } from '../../../utils/matchBusinessLogic';
 import { triggerNotification } from '../../NotificationSystem';
 import toast from 'react-hot-toast';
-import { hapticSuccess, hapticError, celebrate } from '../../../utils/feedback';
+import { hapticSuccess, hapticError, celebrate, hapticLight } from '../../../utils/feedback';
 import { markSelfInsert } from '../../../utils/selfActivity';
 import { getTeamDisplay } from '../../../constants/teams';
 import Icon from '../../icons/Icon';
@@ -53,6 +53,7 @@ const makeEmptyForm = () => ({
 export default function AddMatchTab() {
   const { data: players } = useSupabaseQuery('players', '*');
   const { data: finances } = useSupabaseQuery('finances', '*');
+  const { data: recentMatches } = useSupabaseQuery('matches', '*', { order: { column: 'date', ascending: false } });
   const [showModal, setShowModal] = useState(false);
   const [drafts, setDrafts] = useState(loadDraftsFromStorage);
   const [editingDraftId, setEditingDraftId] = useState(null);
@@ -427,6 +428,25 @@ export default function AddMatchTab() {
     return players.filter(p => p.team === formData.motmTeamFilter);
   };
 
+  // Haeufigste Torschuetzen der letzten Spiele — als Ein-Tipp-Vorschlaege.
+  // Spart beim Erfassen den Umweg ueber das Auswahlmenue.
+  const frequentScorers = (team) => {
+    const field = team === 'AEK' ? 'goalslista' : 'goalslistb';
+    const already = new Set((formData[field] || []).map((s) => s.player));
+    const tally = {};
+    for (const m of (recentMatches || []).slice(0, 10)) {
+      let list = m[field];
+      try { if (typeof list === 'string') list = JSON.parse(list) || []; } catch { list = []; }
+      for (const g of (Array.isArray(list) ? list : [])) {
+        const name = typeof g === 'object' && g !== null ? g.player : g;
+        const cnt = typeof g === 'object' && g !== null ? (g.count || 1) : 1;
+        if (!name || String(name).startsWith('Eigentore_') || already.has(name)) continue;
+        tally[name] = (tally[name] || 0) + cnt;
+      }
+    }
+    return Object.entries(tally).sort((a, b) => b[1] - a[1]).slice(0, 4).map(([name]) => name);
+  };
+
   // Add goal to a specific player
   const addPlayerGoal = (team, playerName) => {
     const fieldName = team === 'AEK' ? 'goalslista' : 'goalslistb';
@@ -531,7 +551,7 @@ export default function AddMatchTab() {
       <button
         type="button"
         onClick={onInc}
-        className="w-8 h-8 rounded-lg bg-system-green/15 text-system-green hover:bg-system-green/25 flex items-center justify-center text-lg font-semibold disabled:opacity-40 transition-colors"
+        className="btn-compact w-8 h-8 rounded-lg bg-system-green/15 text-system-green hover:bg-system-green/25 flex items-center justify-center text-lg font-semibold disabled:opacity-40 transition-colors"
         disabled={loading}
       >
         +
@@ -566,6 +586,27 @@ export default function AddMatchTab() {
             )}
           </div>
         ))}
+
+        {(() => {
+          const suggestions = frequentScorers(team);
+          if (suggestions.length === 0) return null;
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              {suggestions.map((name) => (
+                <button
+                  key={name}
+                  type="button"
+                  onClick={() => { hapticLight(); addPlayerGoal(team, name); }}
+                  disabled={loading}
+                  className="btn-compact chip chip-gray hover:bg-bg-hover transition-colors"
+                  title={`${name} als Torschütze hinzufügen`}
+                >
+                  + {name}
+                </button>
+              ))}
+            </div>
+          );
+        })()}
 
         <select
           onChange={(e) => { if (e.target.value) { addScorer(team, e.target.value); e.target.value = ''; } }}

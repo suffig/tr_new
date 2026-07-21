@@ -4,6 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getAvailableSeasons, switchToSeason, SEASONS } from '../utils/seasonManager.js';
 import { isPushSupported, getPushEnabled, enablePush, disablePush } from '../utils/notifications.js';
 import Icon from './icons/Icon';
+import { getVisibleTabs } from '../constants/navigation';
 
 export default function UserProfile({ onClose, onNavigate }) {
   const { user } = useAuth();
@@ -11,6 +12,10 @@ export default function UserProfile({ onClose, onNavigate }) {
   const [seasons, setSeasons] = useState([]);
   useEffect(() => { setSeasons(getAvailableSeasons()); }, []);
   const [pushOn, setPushOn] = useState(getPushEnabled());
+  // Startansicht: 'last' behaelt das bisherige Verhalten (zuletzt benutzter Tab)
+  const [startTab, setStartTab] = useState(() => {
+    try { return localStorage.getItem('fusta_start_tab') || 'last'; } catch { return 'last'; }
+  });
   const togglePush = async (v) => {
     if (v) setPushOn(await enablePush());
     else { disablePush(); setPushOn(false); }
@@ -30,6 +35,8 @@ export default function UserProfile({ onClose, onNavigate }) {
 
   const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString('de-DE') : '—';
   const email = user?.email || '—';
+  // Nur Tabs anbieten, die dieser Nutzer auch sehen darf
+  const startTabOptions = getVisibleTabs(user).map((t) => ({ id: t.id, label: t.label }));
 
   const go = (tab) => { onNavigate(tab); onClose(); };
 
@@ -75,6 +82,23 @@ export default function UserProfile({ onClose, onNavigate }) {
                   <AppleSwitch checked={pushOn} onChange={togglePush} />
                 </SettingRow>
               )}
+
+              {/* Startansicht */}
+              <SettingRow icon="grid" iconClass="bg-system-blue/12 text-system-blue" title="Startansicht" subtitle="Womit die App sich öffnet">
+                <select
+                  value={startTab}
+                  onChange={(e) => {
+                    setStartTab(e.target.value);
+                    try { localStorage.setItem('fusta_start_tab', e.target.value); } catch { /* ignore */ }
+                  }}
+                  className="bg-bg-tertiary text-text-primary text-footnote font-medium rounded-lg px-2 py-1.5 border border-border-light max-w-[9.5rem]"
+                >
+                  <option value="last">Zuletzt benutzt</option>
+                  {startTabOptions.map((t) => (
+                    <option key={t.id} value={t.id}>{t.label}</option>
+                  ))}
+                </select>
+              </SettingRow>
             </div>
           </div>
 
