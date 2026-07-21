@@ -68,13 +68,26 @@ export default function NewSeasonModal({ onClose, onCreated }) {
       }
       setVersionTeams(teamConfig, id);
 
-      // 3) Optionally make it the current season.
-      if (setActive) setCurrentFifaVersion(id);
-
-      // 4) Share everything to the DB (best-effort; localStorage already updated).
-      await pushVersionToDB(id, { name: displayName.trim() || id, teams: teamConfig });
+      // 3) ZUERST in der DB registrieren — und das Ergebnis pruefen.
+      //    Reihenfolge ist Absicht: eine Saison, die nur lokal existiert, ist
+      //    fuer die andere Person unsichtbar. Sobald fifa_version zusaetzlich
+      //    ein Fremdschluessel auf fifa_versions ist, wuerde in einer nicht
+      //    registrierten Saison ausserdem JEDER Insert abgewiesen. Deshalb
+      //    wird sie hier nicht aktiviert, solange die Registrierung nicht steht.
+      const reg = await pushVersionToDB(id, { name: displayName.trim() || id, teams: teamConfig });
+      if (!reg.ok) {
+        throw new Error(
+          'Saison konnte nicht in der Datenbank registriert werden. Sie wurde NICHT aktiviert — ' +
+          'bitte Verbindung prüfen und erneut versuchen.'
+        );
+      }
       await pushTeamsToDB(id, teamConfig);
-      if (setActive) await setActiveVersionInDB(id);
+
+      // 4) Erst jetzt lokal aktivieren.
+      if (setActive) {
+        setCurrentFifaVersion(id);
+        await setActiveVersionInDB(id);
+      }
 
       toast.success(`Saison „${displayName.trim() || id}" angelegt`);
       onCreated?.();

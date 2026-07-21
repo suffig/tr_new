@@ -98,7 +98,17 @@ const FifaVersionManagerTab = () => {
 
       await addCustomFifaVersion(versionId, metadata);
       // Share the new version (with its current default team config) across devices.
-      await pushVersionToDB(versionId, { name: metadata.displayName, teams: getVersionTeams(versionId) });
+      // Ergebnis wird geprueft: eine nur lokal existierende Saison ist fuer die
+      // andere Person unsichtbar — und sobald fifa_version ein Fremdschluessel
+      // auf fifa_versions ist, waere in ihr kein einziger Insert moeglich.
+      const reg = await pushVersionToDB(versionId, { name: metadata.displayName, teams: getVersionTeams(versionId) });
+      if (!reg.ok) {
+        throw new Error(
+          `Version ${versionId} wurde lokal angelegt, konnte aber NICHT in der Datenbank ` +
+          'registriert werden. Bitte Verbindung prüfen und erneut speichern, bevor ihr in ' +
+          'dieser Saison Spiele eintragt.'
+        );
+      }
 
       // Reset form
       setNewVersionData({ version: '', displayName: '', description: '' });

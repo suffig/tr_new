@@ -49,15 +49,30 @@ export async function hydrateFifaVersionsFromDB() {
   }
 }
 
-/** Insert/patch a version row (id + optional name/teams). */
+/**
+ * Insert/patch a version row (id + optional name/teams).
+ *
+ * Gibt das Ergebnis zurueck, statt Fehler zu verschlucken: eine Saison, die
+ * nur lokal existiert, ist fuer die andere Person unsichtbar — und sobald
+ * fifa_version ein Fremdschluessel auf diese Tabelle ist, wuerde jeder
+ * Spiel-/Spieler-/Transaktions-Insert dieser Saison abgewiesen.
+ *
+ * @returns {Promise<{ok: boolean, offline?: boolean, error?: unknown}>}
+ */
 export async function pushVersionToDB(id, { name = null, teams = null } = {}) {
-  if (usingFallback || !id) return;
+  if (!id) return { ok: false, error: new Error('Keine Versions-ID') };
+  // Demo-/Offline-Modus: es gibt keine DB, das ist kein Fehler.
+  if (usingFallback) return { ok: true, offline: true };
   try {
     const row = { id };
     if (name != null) row.name = name;
     if (teams != null) row.teams = teams;
-    await supabase.from(TABLE).upsert(row, { onConflict: 'id' });
-  } catch { /* best effort */ }
+    const { error } = await supabase.from(TABLE).upsert(row, { onConflict: 'id' });
+    if (error) return { ok: false, error };
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
 }
 
 /** Make exactly one version active. */
