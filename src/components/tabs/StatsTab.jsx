@@ -784,12 +784,12 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               <span className="text-xs font-semibold text-system-blue text-center truncate w-full">{getTeamDisplay('AEK')}</span>
             </div>
             <div className="text-center flex-shrink-0">
-              <div className="text-3xl font-extrabold tabular-nums leading-none">
+              <div className="stat-display text-[38px] flex items-baseline justify-center gap-2">
                 <span className="text-system-blue">{h2h.aekWins}</span>
-                <span className="text-text-tertiary mx-2">:</span>
+                <span className="text-[22px] font-semibold text-text-quaternary">:</span>
                 <span className="text-system-red">{h2h.realWins}</span>
               </div>
-              <div className="text-[11px] text-text-tertiary mt-1">Siege</div>
+              <div className="text-caption2 text-text-tertiary mt-1.5">Siege</div>
             </div>
             <div className="flex flex-col items-center gap-1.5 w-24 min-w-0">
               <TeamLogo team="real" size="lg" />
@@ -802,16 +802,16 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="bg-system-blue h-full transition-all" style={{ width: `${aekPct}%` }} />
             <div className="bg-system-red h-full transition-all" style={{ width: `${realPct}%` }} />
           </div>
-          <div className="flex justify-between items-center text-[11px] text-text-tertiary mt-1">
-            <span className="text-system-blue font-medium">{aekPct}%</span>
-            <span>Tore {h2h.aekGoals} : {h2h.realGoals}</span>
-            <span className="text-system-red font-medium">{realPct}%</span>
+          <div className="flex justify-between items-center text-caption2 text-text-tertiary mt-1">
+            <span className="text-system-blue font-semibold num-tabular">{aekPct}%</span>
+            <span className="num-tabular">Tore {h2h.aekGoals} : {h2h.realGoals}</span>
+            <span className="text-system-red font-semibold num-tabular">{realPct}%</span>
           </div>
 
           {/* Current streak highlight */}
           {current.count >= 2 && current.team && (
-            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-system-orange/10 text-system-orange py-2 text-sm font-semibold">
-              <span>🔥</span>
+            <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-system-orange/10 text-system-orange py-2 text-footnote font-semibold">
+              <Icon name="zap" size={15} strokeWidth={2.4} />
               <span>{getTeamDisplay(current.team)} – {current.count} Siege in Folge</span>
             </div>
           )}
@@ -1055,149 +1055,106 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
         {/* Longest Winning Streaks */}
         <div className="modern-card">
-          <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <span className="text-xl">🔥</span>
+          <h3 className="text-title3 mb-4 inline-flex items-center gap-2">
+            <Icon name="zap" size={18} strokeWidth={2.2} className="text-system-orange" />
             Längste Siegesserien
           </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* AEK Winning Streak */}
-            <div className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">AEK</span>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {[
+              { key: 'aek', team: 'AEK', accent: 'text-system-blue', data: winningStreaks.aek },
+              { key: 'real', team: 'Real', accent: 'text-system-red', data: winningStreaks.real },
+            ].map((side) => (
+              <div key={side.key} className="bg-bg-tertiary rounded-xl p-4">
+                <div className="flex items-center gap-2.5 mb-2">
+                  <TeamLogo team={side.key} size="sm" />
+                  <span className="text-footnote font-semibold text-text-secondary truncate">
+                    {getTeamDisplay(side.team)}
+                  </span>
                 </div>
-                <div className="text-lg font-bold text-blue-600">
-                  {winningStreaks.aek.streak} Siege
+                <div className={`stat-display text-[26px] ${side.accent}`}>
+                  {side.data.streak}
+                  <span className="text-footnote font-semibold text-text-tertiary ml-1.5">
+                    {side.data.streak === 1 ? 'Sieg' : 'Siege'}
+                  </span>
                 </div>
+                {side.data.startDate && side.data.endDate ? (
+                  <div className="text-caption2 text-text-tertiary num-tabular mt-1.5">
+                    {new Date(side.data.startDate).toLocaleDateString('de-DE')}
+                    {' – '}
+                    {new Date(side.data.endDate).toLocaleDateString('de-DE')}
+                  </div>
+                ) : (
+                  <div className="text-caption2 text-text-tertiary mt-1.5">
+                    {side.data.streak === 0 ? 'Keine Serie im Zeitraum' : 'Kein Datumsbereich verfügbar'}
+                  </div>
+                )}
               </div>
-              {winningStreaks.aek.startDate && winningStreaks.aek.endDate ? (
-                <div className="space-y-1 text-sm text-blue-700">
-                  <div className="flex items-center gap-2">
-                    <span className="text-blue-500">📅</span>
-                    <span>Von: {new Date(winningStreaks.aek.startDate).toLocaleDateString('de-DE')}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-blue-500">🏁</span>
-                    <span>Bis: {new Date(winningStreaks.aek.endDate).toLocaleDateString('de-DE')}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-blue-600">
-                  {winningStreaks.aek.streak === 0 ? 'Keine Siegesserie im Zeitraum' : 'Kein Datumsbereich verfügbar'}
-                </div>
-              )}
-            </div>
-
-            {/* Real Winning Streak */}
-            <div className="p-4 bg-gradient-to-br from-red-50 to-pink-50 rounded-lg border border-red-200">
-              <div className="flex items-center gap-3 mb-3">
-                <div className="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
-                  <span className="text-white font-bold text-sm">RM</span>
-                </div>
-                <div className="text-lg font-bold text-red-600">
-                  {winningStreaks.real.streak} Siege
-                </div>
-              </div>
-              {winningStreaks.real.startDate && winningStreaks.real.endDate ? (
-                <div className="space-y-1 text-sm text-red-700">
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-500">📅</span>
-                    <span>Von: {new Date(winningStreaks.real.startDate).toLocaleDateString('de-DE')}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-red-500">🏁</span>
-                    <span>Bis: {new Date(winningStreaks.real.endDate).toLocaleDateString('de-DE')}</span>
-                  </div>
-                </div>
-              ) : (
-                <div className="text-sm text-red-600">
-                  {winningStreaks.real.streak === 0 ? 'Keine Siegesserie im Zeitraum' : 'Kein Datumsbereich verfügbar'}
-                </div>
-              )}
-            </div>
+            ))}
           </div>
-          
+
           {/* Overall best streak indicator */}
-          <div className="mt-4 p-3 bg-gradient-to-r from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-            <div className="flex items-center justify-center gap-3">
-              <span className="text-2xl">🏆</span>
-              <div className="text-center">
-                <div className="text-sm font-medium text-orange-800">Beste Siegesserie im Zeitraum</div>
-                <div className="text-lg font-bold text-orange-600">
-                  {winningStreaks.aek.streak > winningStreaks.real.streak ? 
-                    `AEK: ${winningStreaks.aek.streak} Siege` : 
-                    winningStreaks.real.streak > winningStreaks.aek.streak ?
-                    `Real: ${winningStreaks.real.streak} Siege` :
-                    `Unentschieden: ${winningStreaks.aek.streak} Siege`
-                  }
-                </div>
-              </div>
-            </div>
+          <div className="mt-3 rounded-xl bg-system-orange/10 px-4 py-3 flex items-center justify-center gap-2.5 text-system-orange">
+            <Icon name="trophy" size={17} strokeWidth={2.2} className="flex-shrink-0" />
+            <span className="text-footnote font-semibold text-center">
+              Beste Serie:{' '}
+              {winningStreaks.aek.streak > winningStreaks.real.streak
+                ? `${getTeamDisplay('AEK')} – ${winningStreaks.aek.streak}`
+                : winningStreaks.real.streak > winningStreaks.aek.streak
+                ? `${getTeamDisplay('Real')} – ${winningStreaks.real.streak}`
+                : `Gleichstand – ${winningStreaks.aek.streak}`}
+              {' Siege'}
+            </span>
           </div>
         </div>
 
         {/* Other Interesting Statistics */}
         <div className="modern-card">
-          <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="bulb" size={18} strokeWidth={2.2} />Besondere Statistiken</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div className="text-center p-3 bg-gradient-to-br from-yellow-50 to-orange-50 rounded-lg border border-yellow-200">
-              <div className="text-xl font-bold text-yellow-600">
-                {(() => {
-                  // Calculate most productive player (goals per match played)
-                  let bestRatio = 0;
-                  let bestPlayer = 'Keine Daten';
-                  
-                  playerStats.forEach(player => {
-                    if (player.matchesPlayed > 0) {
-                      const ratio = player.goals / player.matchesPlayed;
-                      if (ratio > bestRatio) {
-                        bestRatio = ratio;
-                        bestPlayer = player.name;
-                      }
-                    }
-                  });
-                  
-                  return bestPlayer;
-                })()}
-              </div>
-              <div className="text-sm text-yellow-700">🎯 Effizientester Spieler</div>
-              <div className="text-xs text-yellow-600 mt-1">
-                {(() => {
-                  let bestRatio = 0;
-                  
-                  playerStats.forEach(player => {
-                    if (player.matchesPlayed > 0) {
-                      const ratio = player.goals / player.matchesPlayed;
-                      if (ratio > bestRatio) {
-                        bestRatio = ratio;
-                      }
-                    }
-                  });
-                  
-                  return bestRatio > 0 ? `${bestRatio.toFixed(2)} Tore/Spiel` : 'Keine Daten';
-                })()}
-              </div>
-            </div>
+          <h3 className="text-title3 mb-4 inline-flex items-center gap-2"><Icon name="bulb" size={18} strokeWidth={2.2} className="text-system-yellow" />Besondere Statistiken</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {(() => {
+              // Most productive player (goals per match played)
+              let bestRatio = 0;
+              let bestPlayer = 'Keine Daten';
+              playerStats.forEach((player) => {
+                if (player.matchesPlayed > 0) {
+                  const ratio = player.goals / player.matchesPlayed;
+                  if (ratio > bestRatio) { bestRatio = ratio; bestPlayer = player.name; }
+                }
+              });
 
-            <div className="text-center p-3 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-              <div className="text-xl font-bold text-blue-600">
-                {(() => {
-                  // Calculate team balance (how close teams are in wins)
-                  const aekWins = teamRecords.aek.wins;
-                  const realWins = teamRecords.real.wins;
-                  const totalDecisiveMatches = aekWins + realWins;
-                  
-                  if (totalDecisiveMatches === 0) return '100%';
-                  
-                  const balanceRatio = Math.min(aekWins, realWins) / Math.max(aekWins, realWins);
-                  return `${(balanceRatio * 100).toFixed(0)}%`;
-                })()}
-              </div>
-              <div className="text-sm text-blue-700">⚖️ Team-Balance</div>
-              <div className="text-xs text-blue-600 mt-1">
-                Ausgeglichenheit ({teamRecords.aek.wins}:{teamRecords.real.wins})
-              </div>
-            </div>
+              // Team balance (how close the teams are in wins)
+              const aekWins = teamRecords.aek.wins;
+              const realWins = teamRecords.real.wins;
+              const balance = (aekWins + realWins) === 0
+                ? 100
+                : (Math.min(aekWins, realWins) / Math.max(aekWins, realWins)) * 100;
+
+              return (
+                <>
+                  <div className="bg-bg-tertiary rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-1">
+                      <Icon name="star" size={15} strokeWidth={2.2} className="text-system-orange" />
+                      Effizientester Spieler
+                    </div>
+                    <div className="text-title3 font-bold text-text-primary truncate">{bestPlayer}</div>
+                    <div className="text-caption2 text-text-tertiary num-tabular mt-0.5">
+                      {bestRatio > 0 ? `${bestRatio.toFixed(2)} Tore/Spiel` : 'Keine Daten'}
+                    </div>
+                  </div>
+
+                  <div className="bg-bg-tertiary rounded-xl p-4">
+                    <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-1">
+                      <Icon name="scale" size={15} strokeWidth={2.2} className="text-system-blue" />
+                      Team-Balance
+                    </div>
+                    <div className="stat-display text-title3 text-system-blue">{balance.toFixed(0)}%</div>
+                    <div className="text-caption2 text-text-tertiary num-tabular mt-0.5">
+                      Ausgeglichenheit ({aekWins}:{realWins})
+                    </div>
+                  </div>
+                </>
+              );
+            })()}
           </div>
         </div>
 
@@ -1205,10 +1162,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       <div className="grid md:grid-cols-2 gap-6">
         <div className="card-ios">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-fifa-blue/10 rounded-full flex items-center justify-center">
-              <span className="text-lg">🔵</span>
-            </div>
-            <h3 className="text-title3 font-bold text-fifa-blue">{getTeamDisplay('AEK')}</h3>
+            <TeamLogo team="aek" size="md" />
+            <h3 className="text-title3 font-bold text-fifa-blue truncate">{getTeamDisplay('AEK')}</h3>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between">
@@ -1232,10 +1187,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
         <div className="card-ios">
           <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 bg-fifa-red/10 rounded-full flex items-center justify-center">
-              <span className="text-lg">🔴</span>
-            </div>
-            <h3 className="text-title3 font-bold text-fifa-red">{getTeamDisplay('Real')}</h3>
+            <TeamLogo team="real" size="md" />
+            <h3 className="text-title3 font-bold text-fifa-red truncate">{getTeamDisplay('Real')}</h3>
           </div>
           <div className="space-y-3">
             <div className="flex justify-between">
