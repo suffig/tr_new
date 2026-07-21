@@ -933,6 +933,171 @@ html {
   color: var(--system-purple-light);
 }
 
+/* ==========================================================================
+   11. Canonical form controls & buttons  (DESIGN FUNDAMENT)
+   These class names (.form-input, .btn-primary, .btn-secondary) are used across
+   the React app, but their base styles lived ONLY in the legacy css/new-design.css
+   which the React bundle never imports — so they rendered as near-default browser
+   controls (transparent buttons, borderless zero-radius inputs). Define them here
+   (this layer loads last, so it wins) against the design tokens.
+   ========================================================================== */
+
+/* --- Inputs, selects, textareas ------------------------------------------- */
+.form-input {
+  width: 100%;
+  padding: 0.7rem 0.9rem;
+  font-size: 16px;            /* iOS Safari: ≥16px prevents focus zoom */
+  line-height: 1.4;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-medium);
+  border-radius: 12px;
+  -webkit-appearance: none;
+  appearance: none;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease, background-color 0.18s ease;
+}
+
+select.form-input {
+  -webkit-appearance: none;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238A9A93' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2.25rem;
+}
+
+textarea.form-input {
+  min-height: 88px;
+  resize: vertical;
+}
+
+.form-input::placeholder { color: var(--text-quaternary); }
+
+.form-input:focus {
+  outline: none;
+  border-color: var(--system-green);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--system-green) 18%, transparent);
+}
+
+.form-input:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.dark .form-input { background: var(--bg-tertiary); }
+
+/* --- Primary button: the one strong green action per screen ---------------- */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.15rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: #fff;
+  background: var(--brand);
+  border: 1px solid transparent;
+  border-radius: 12px;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--brand) 32%, transparent);
+  transition: filter 0.2s ease, transform 0.15s var(--spring-smooth), box-shadow 0.2s ease;
+}
+.btn-primary:hover {
+  filter: brightness(1.06);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--brand) 42%, transparent);
+}
+.btn-primary:active { transform: scale(0.97); }
+.btn-primary:disabled {
+  filter: none;
+  box-shadow: none;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* --- Secondary button: quiet neutral companion ---------------------------- */
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.7rem 1.15rem;
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--text-secondary);
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border-light);
+  border-radius: 12px;
+  transition: background-color 0.2s ease, transform 0.15s var(--spring-smooth);
+}
+.btn-secondary:hover { background: color-mix(in srgb, var(--text-tertiary) 14%, transparent); }
+.btn-secondary:active { transform: scale(0.97); }
+.btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ==========================================================================
+   12. Chip / badge — ONE reusable pill used for positions, statuses,
+   transaction types … token-based, so light + dark are both handled here.
+   ========================================================================== */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 9px;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.5;
+  letter-spacing: 0.005em;
+  border-radius: 9999px;
+  white-space: nowrap;
+}
+.chip-sm { padding: 1px 7px; font-size: 11px; }
+
+.chip-blue   { background: color-mix(in srgb, var(--system-blue) 13%, transparent);   color: var(--system-blue); }
+.chip-green  { background: color-mix(in srgb, var(--system-green) 14%, transparent);  color: var(--system-green-dark); }
+.chip-red    { background: color-mix(in srgb, var(--system-red) 13%, transparent);    color: var(--system-red); }
+.chip-orange { background: color-mix(in srgb, var(--system-orange) 15%, transparent); color: var(--system-orange-dark); }
+.chip-yellow { background: color-mix(in srgb, var(--system-yellow) 18%, transparent); color: var(--system-orange-dark); }
+.chip-purple { background: color-mix(in srgb, var(--system-purple) 13%, transparent); color: var(--system-purple); }
+.chip-teal   { background: color-mix(in srgb, var(--system-teal) 15%, transparent);   color: var(--system-teal-dark); }
+.chip-gray   { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+.dark .chip-blue   { background: color-mix(in srgb, var(--system-blue) 22%, transparent);   color: var(--system-blue-light); }
+.dark .chip-green  { background: color-mix(in srgb, var(--system-green) 22%, transparent);  color: var(--system-green-light); }
+.dark .chip-red    { background: color-mix(in srgb, var(--system-red) 22%, transparent);    color: var(--system-red-light); }
+.dark .chip-orange { background: color-mix(in srgb, var(--system-orange) 24%, transparent); color: var(--system-orange-light); }
+.dark .chip-yellow { background: color-mix(in srgb, var(--system-yellow) 24%, transparent); color: var(--system-yellow-light); }
+.dark .chip-purple { background: color-mix(in srgb, var(--system-purple) 24%, transparent); color: var(--system-purple-light); }
+.dark .chip-teal   { background: color-mix(in srgb, var(--system-teal) 24%, transparent);   color: var(--system-teal-light); }
+.dark .chip-gray   { background: var(--bg-tertiary); color: var(--text-secondary); }
+
+/* ==========================================================================
+   13. Broadcast numerals + touch-target opt-outs
+   ========================================================================== */
+/* Aligned figures for any table/stat column */
+.num-tabular { font-variant-numeric: tabular-nums; font-feature-settings: "tnum" 1; }
+
+/* Big broadcast-style score / amount (distinct from the green-gradient
+   .stat-number used on dashboard cards). Tight, heavy, tabular. */
+.stat-display {
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  line-height: 1;
+  color: var(--text-primary);
+}
+
+/* The global `button { min-height:48px; min-width:48px }` (mobile-enhancements)
+   guarantees tap comfort but flattens hierarchy for small controls. These
+   opt-outs let steppers, icon-only and inline chips be their natural size. */
+.btn-compact,
+.stepper-btn,
+.chip-btn {
+  min-height: 0 !important;
+  min-width: 0 !important;
+}
+.stepper-btn::after,
+.chip-btn::after { display: none !important; }   /* no white ripple on tiny controls */
+
 /* --------------------------------------------------------------------------
    10. Reduced motion: disable decorative animation, keep functionality
    -------------------------------------------------------------------------- */
