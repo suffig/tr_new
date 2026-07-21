@@ -458,6 +458,7 @@ button {
 .bg-system-orange\/10 { background-color: color-mix(in srgb, var(--system-orange) 10%, transparent); }
 .bg-system-purple\/10 { background-color: color-mix(in srgb, var(--system-purple) 10%, transparent); }
 .bg-system-red\/10 { background-color: color-mix(in srgb, var(--system-red) 10%, transparent); }
+.bg-system-red\/20 { background-color: color-mix(in srgb, var(--system-red) 20%, transparent); }
 .bg-system-yellow\/10 { background-color: color-mix(in srgb, var(--system-yellow) 10%, transparent); }
 .bg-system-yellow\/20 { background-color: color-mix(in srgb, var(--system-yellow) 20%, transparent); }
 .border-system-blue\/20 { border-color: color-mix(in srgb, var(--system-blue) 20%, transparent); }
@@ -1034,6 +1035,58 @@ textarea.form-input {
 .btn-secondary:hover { background: color-mix(in srgb, var(--text-tertiary) 14%, transparent); }
 .btn-secondary:active { transform: scale(0.97); }
 .btn-secondary:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* --- Weitere Klassen, die bisher nur in der Legacy-css/new-design.css lagen ---
+   .spinner steckt in praktisch jedem Speichern-Button ("Speichern…"), war aber
+   ungestylt — der Ladeindikator war also ein unsichtbares leeres div.
+   .alert/.alert-error traegt den globalen Fehlerbildschirm in App.jsx und war
+   NIRGENDS definiert, auch nicht in der Legacy-Datei. */
+.spinner {
+  width: 1.25rem;
+  height: 1.25rem;
+  border: 2px solid color-mix(in srgb, currentColor 25%, transparent);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.btn-sm {
+  padding: 0.45rem 0.85rem;
+  font-size: 13px;
+}
+
+.alert {
+  border-radius: 18px;
+  padding: 1.25rem;
+  border: 1px solid var(--border-light);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+}
+.alert-error {
+  border-color: color-mix(in srgb, var(--system-red) 30%, transparent);
+  background: color-mix(in srgb, var(--system-red) 8%, var(--bg-secondary));
+}
+.alert-success {
+  border-color: color-mix(in srgb, var(--system-green) 30%, transparent);
+  background: color-mix(in srgb, var(--system-green) 8%, var(--bg-secondary));
+}
+.alert-warning {
+  border-color: color-mix(in srgb, var(--system-orange) 30%, transparent);
+  background: color-mix(in srgb, var(--system-orange) 8%, var(--bg-secondary));
+}
+
+/* Team-Identitaet fuer die Uebersichtskarten in den Stats. .mobile-overview-card
+   ist in mobile-enhancements.css definiert, die Team-Toenung lag aber nur in der
+   Legacy-CSS — die Karten waren dadurch bisher ununterscheidbar. */
+.mobile-overview-card.team-aek {
+  border-left: 3px solid var(--system-blue);
+  background: color-mix(in srgb, var(--system-blue) 6%, var(--bg-secondary));
+}
+.mobile-overview-card.team-real {
+  border-left: 3px solid var(--system-red);
+  background: color-mix(in srgb, var(--system-red) 6%, var(--bg-secondary));
+}
 
 /* ==========================================================================
    12. Chip / badge — ONE reusable pill used for positions, statuses,

@@ -603,8 +603,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       <span
         key={index}
         className={`inline-block w-6 h-6 text-xs font-bold rounded-full text-center leading-6 mx-0.5 ${
-          result === 'W' ? 'bg-green-500 text-white' :
-          'bg-red-500 text-white'
+          result === 'W' ? 'bg-system-green text-white' :
+          'bg-system-red text-white'
         }`}
       >
         {result}
@@ -1259,10 +1259,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div key={player.id} className="flex items-center justify-between py-2 border-b border-border-light last:border-b-0">
               <div className="flex items-center space-x-3">
                 <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  index === 0 ? 'bg-yellow-500 text-white' :
-                  index === 1 ? 'bg-gray-400 text-white' :
-                  index === 2 ? 'bg-orange-600 text-white' :
-                  'bg-gray-200 text-gray-600'
+                  index === 0 ? 'bg-system-orange text-white' :
+                  index === 1 ? 'bg-text-tertiary text-white' :
+                  index === 2 ? 'bg-system-orange text-white' :
+                  'bg-bg-tertiary text-text-secondary'
                 }`}>
                   {index + 1}
                 </span>
@@ -1343,9 +1343,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 <td className="py-2 font-medium">{player.name}</td>
                 <td className="py-2">
                   <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    player.team === 'AEK' ? 'bg-blue-100 text-blue-800' : 
-                    player.team === 'Ehemalige' ? 'bg-gray-100 text-gray-800' :
-                    'bg-red-100 text-red-800'
+                    player.team === 'AEK' ? 'bg-system-blue/10 text-system-blue' : 
+                    player.team === 'Ehemalige' ? 'bg-bg-tertiary text-text-primary' :
+                    'bg-system-red/10 text-system-red'
                   }`}>
                     {getTeamDisplay(player.team)}
                   </span>
@@ -1356,18 +1356,18 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 <td className="py-2 text-center">{player.sdsCount}</td>
                 <td className="py-2 text-center">
                   <span className={`px-1 py-0.5 rounded text-xs ${
-                    parseFloat(player.sdsPercentage) >= 50 ? 'bg-green-100 text-green-800' :
-                    parseFloat(player.sdsPercentage) >= 25 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-gray-100 text-gray-600'
+                    parseFloat(player.sdsPercentage) >= 50 ? 'bg-system-green/10 text-system-green' :
+                    parseFloat(player.sdsPercentage) >= 25 ? 'bg-system-yellow/10 text-system-orange' :
+                    'bg-bg-tertiary text-text-secondary'
                   }`}>
                     {player.sdsPercentage}% ({player.sdsCount}/{player.totalMatches})
                   </span>
                 </td>
                 <td className="py-2 text-center">
                   <span className={`px-1 py-0.5 rounded text-xs ${
-                    player.totalBans === 0 ? 'bg-green-100 text-green-800' :
-                    player.totalBans <= 2 ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
+                    player.totalBans === 0 ? 'bg-system-green/10 text-system-green' :
+                    player.totalBans <= 2 ? 'bg-system-yellow/10 text-system-orange' :
+                    'bg-system-red/10 text-system-red'
                   }`}>
                     {player.totalBans}
                   </span>
@@ -1381,8 +1381,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
       {/* Player Insights */}
       <div className="mt-6 grid md:grid-cols-3 gap-4">
-        <div className="p-4 bg-green-50 rounded-lg border border-green-200">
-          <h4 className="font-semibold text-green-800 mb-2 inline-flex items-center gap-2"><Icon name="trophy" size={16} strokeWidth={2.2} />Effizienz-Spitze</h4>
+        <div className="p-4 bg-system-green/10 rounded-lg border border-system-green/20">
+          <h4 className="font-semibold text-system-green mb-2 inline-flex items-center gap-2"><Icon name="trophy" size={16} strokeWidth={2.2} />Effizienz-Spitze</h4>
           {(() => {
             const mostEfficient = playerStats
               .filter(p => p.matchesPlayed >= 3) // Minimum 3 games
@@ -1390,19 +1390,19 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             
             return mostEfficient ? (
               <div>
-                <div className="font-medium text-green-700">{mostEfficient.name}</div>
-                <div className="text-sm text-green-600">
+                <div className="font-medium text-system-green">{mostEfficient.name}</div>
+                <div className="text-sm text-system-green">
                   {mostEfficient.goalsPerGame} Tore/Spiel ({mostEfficient.goals} Tore in {mostEfficient.matchesPlayed} Spielen)
                 </div>
               </div>
             ) : (
-              <div className="text-gray-500">Nicht genügend Daten</div>
+              <div className="text-text-tertiary">Nicht genügend Daten</div>
             );
           })()}
         </div>
 
-        <div className="p-4 bg-yellow-50 rounded-lg border border-yellow-200">
-          <h4 className="font-semibold text-yellow-800 mb-2 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} />SdS-König</h4>
+        <div className="p-4 bg-system-yellow/10 rounded-lg border border-system-yellow/20">
+          <h4 className="font-semibold text-system-orange mb-2 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} />SdS-König</h4>
           {(() => {
             const mostSds = playerStats
               .filter(p => p.sdsCount > 0)
@@ -1410,19 +1410,19 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             
             return mostSds ? (
               <div>
-                <div className="font-medium text-yellow-700">{mostSds.name}</div>
-                <div className="text-sm text-yellow-600">
+                <div className="font-medium text-system-orange">{mostSds.name}</div>
+                <div className="text-sm text-system-orange">
                   {mostSds.sdsPercentage}% Quote ({mostSds.sdsCount}x SdS)
                 </div>
               </div>
             ) : (
-              <div className="text-gray-500">Noch keine SdS vergeben</div>
+              <div className="text-text-tertiary">Noch keine SdS vergeben</div>
             );
           })()}
         </div>
 
-        <div className="p-4 bg-red-50 rounded-lg border border-red-200">
-          <h4 className="font-semibold text-red-800 mb-2 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} />Disziplin-Problem</h4>
+        <div className="p-4 bg-system-red/10 rounded-lg border border-system-red/20">
+          <h4 className="font-semibold text-system-red mb-2 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} />Disziplin-Problem</h4>
           {(() => {
             const mostBans = playerStats
               .filter(p => p.totalBans > 0)
@@ -1430,13 +1430,13 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             
             return mostBans ? (
               <div>
-                <div className="font-medium text-red-700">{mostBans.name}</div>
-                <div className="text-sm text-red-600">
+                <div className="font-medium text-system-red">{mostBans.name}</div>
+                <div className="text-sm text-system-red">
                   {mostBans.totalBans} Sperren (Score: {mostBans.disciplinaryScore})
                 </div>
               </div>
             ) : (
-              <div className="text-gray-500">Keine Sperren verzeichnet</div>
+              <div className="text-text-tertiary">Keine Sperren verzeichnet</div>
             );
           })()}
         </div>
@@ -1451,7 +1451,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="scale" size={18} strokeWidth={2.2} />Team-Vergleich</h3>
         <div className="grid md:grid-cols-2 gap-6">
           <div className="space-y-3">
-            <h4 className="font-semibold text-blue-600">{getTeamDisplay('AEK')}</h4>
+            <h4 className="font-semibold text-system-blue">{getTeamDisplay('AEK')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Aktive Spieler:</span>
@@ -1472,7 +1472,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             </div>
           </div>
           <div className="space-y-3">
-            <h4 className="font-semibold text-red-600">{getTeamDisplay('Real')}</h4>
+            <h4 className="font-semibold text-system-red">{getTeamDisplay('Real')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
                 <span>Aktive Spieler:</span>
@@ -1520,7 +1520,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="text-xs text-text-muted mt-1">Durchschnittswert</div>
           </div>
           <div className="text-center p-4 bg-bg-secondary rounded-lg">
-            <div className="text-2xl font-bold text-purple-600">
+            <div className="text-2xl font-bold text-system-purple">
               {advancedStats.currentStreak.count > 0 ? 
                 `${advancedStats.currentStreak.count}` : '0'}
             </div>
@@ -1535,7 +1535,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* New Enhanced Statistics Section */}
         <div className="mt-6 grid md:grid-cols-3 gap-6">
           <div className="space-y-3">
-            <h4 className="font-semibold text-blue-600">🏠 Home/Away Analyse</h4>
+            <h4 className="font-semibold text-system-blue">🏠 Home/Away Analyse</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>{getTeamDisplay('AEK')} Heimspiele:</span>
@@ -1561,7 +1561,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-semibold text-green-600 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Torstatistiken</h4>
+            <h4 className="font-semibold text-system-green inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Torstatistiken</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Beide Teams treffen:</span>
@@ -1585,7 +1585,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-semibold text-purple-600 inline-flex items-center gap-2"><Icon name="target" size={16} strokeWidth={2.2} />Spielqualität</h4>
+            <h4 className="font-semibold text-system-purple inline-flex items-center gap-2"><Icon name="target" size={16} strokeWidth={2.2} />Spielqualität</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Enge Spiele (≤1 Tor):</span>
@@ -1665,23 +1665,23 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           Direkter Vergleich zwischen {getTeamDisplay('AEK')} und {getTeamDisplay('Real')} über alle Spiele.
         </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-blue-50 rounded-lg">
-            <div className="text-2xl font-bold text-blue-600">{headToHead.aekWins}</div>
-            <div className="text-sm text-blue-700">{getTeamDisplay('AEK')} Siege</div>
+          <div className="text-center p-4 bg-system-blue/10 rounded-lg">
+            <div className="text-2xl font-bold text-system-blue">{headToHead.aekWins}</div>
+            <div className="text-sm text-system-blue">{getTeamDisplay('AEK')} Siege</div>
             <div className="text-xs text-text-muted mt-1">
               {headToHead.totalMatches > 0 ? `${((headToHead.aekWins / headToHead.totalMatches) * 100).toFixed(1)}%` : '0%'}
             </div>
           </div>
-          <div className="text-center p-4 bg-red-50 rounded-lg">
-            <div className="text-2xl font-bold text-red-600">{headToHead.realWins}</div>
-            <div className="text-sm text-red-700">{getTeamDisplay('Real')} Siege</div>
+          <div className="text-center p-4 bg-system-red/10 rounded-lg">
+            <div className="text-2xl font-bold text-system-red">{headToHead.realWins}</div>
+            <div className="text-sm text-system-red">{getTeamDisplay('Real')} Siege</div>
             <div className="text-xs text-text-muted mt-1">
               {headToHead.totalMatches > 0 ? `${((headToHead.realWins / headToHead.totalMatches) * 100).toFixed(1)}%` : '0%'}
             </div>
           </div>
-          <div className="text-center p-4 bg-green-50 rounded-lg">
-            <div className="text-2xl font-bold text-green-600">{headToHead.aekGoals + headToHead.realGoals}</div>
-            <div className="text-sm text-green-700">Tore gesamt</div>
+          <div className="text-center p-4 bg-system-green/10 rounded-lg">
+            <div className="text-2xl font-bold text-system-green">{headToHead.aekGoals + headToHead.realGoals}</div>
+            <div className="text-sm text-system-green">Tore gesamt</div>
             <div className="text-xs text-text-muted mt-1">
               {headToHead.totalMatches > 0 ? `⌀ ${((headToHead.aekGoals + headToHead.realGoals) / headToHead.totalMatches).toFixed(1)} pro Spiel` : '⌀ 0 pro Spiel'}
             </div>
@@ -1690,12 +1690,12 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
         {/* Biggest Wins Details */}
         <div className="mt-6 grid md:grid-cols-2 gap-4">
-          <div className="p-4 bg-blue-50 rounded-lg">
-            <h4 className="font-semibold text-blue-800 mb-2">🔵 Größter AEK Sieg</h4>
+          <div className="p-4 bg-system-blue/10 rounded-lg">
+            <h4 className="font-semibold text-system-blue mb-2">🔵 Größter AEK Sieg</h4>
             {headToHead.biggestAekWin.diff > 0 ? (
               <div>
-                <div className="text-2xl font-bold text-blue-600 mb-1">{headToHead.biggestAekWin.score}</div>
-                <div className="text-sm text-blue-700">
+                <div className="text-2xl font-bold text-system-blue mb-1">{headToHead.biggestAekWin.score}</div>
+                <div className="text-sm text-system-blue">
                   Unterschied: {headToHead.biggestAekWin.diff} Tore
                 </div>
                 <div className="text-xs text-text-muted">
@@ -1703,15 +1703,15 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 </div>
               </div>
             ) : (
-              <div className="text-gray-500">Noch kein Sieg verzeichnet</div>
+              <div className="text-text-tertiary">Noch kein Sieg verzeichnet</div>
             )}
           </div>
-          <div className="p-4 bg-red-50 rounded-lg">
-            <h4 className="font-semibold text-red-800 mb-2">🔴 Größter Real Sieg</h4>
+          <div className="p-4 bg-system-red/10 rounded-lg">
+            <h4 className="font-semibold text-system-red mb-2">🔴 Größter Real Sieg</h4>
             {headToHead.biggestRealWin.diff > 0 ? (
               <div>
-                <div className="text-2xl font-bold text-red-600 mb-1">{headToHead.biggestRealWin.score}</div>
-                <div className="text-sm text-red-700">
+                <div className="text-2xl font-bold text-system-red mb-1">{headToHead.biggestRealWin.score}</div>
+                <div className="text-sm text-system-red">
                   Unterschied: {headToHead.biggestRealWin.diff} Tore
                 </div>
                 <div className="text-xs text-text-muted">
@@ -1719,7 +1719,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 </div>
               </div>
             ) : (
-              <div className="text-gray-500">Noch kein Sieg verzeichnet</div>
+              <div className="text-text-tertiary">Noch kein Sieg verzeichnet</div>
             )}
           </div>
         </div>
@@ -1733,7 +1733,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         </div>
         <div className="grid md:grid-cols-2 gap-6">          
           <div className="space-y-3">
-            <h4 className="font-semibold text-red-600">🎲 Spielstatistiken</h4>
+            <h4 className="font-semibold text-system-red">🎲 Spielstatistiken</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Spiele gespielt:</span>
@@ -1753,7 +1753,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           
           <div className="space-y-3">
-            <h4 className="font-semibold text-purple-600">🏆 Leistungs-Metriken</h4>
+            <h4 className="font-semibold text-system-purple">🏆 Leistungs-Metriken</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Aktive Spieler:</span>
@@ -1852,23 +1852,23 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           
           {/* Overall Trend Summary */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-xl font-bold text-blue-600">
+            <div className="text-center p-4 bg-system-blue/10 rounded-lg">
+              <div className="text-xl font-bold text-system-blue">
                 {enhancedTrends.reduce((sum, trend) => sum + trend.aekWins, 0)}
               </div>
-              <div className="text-sm text-blue-700">{getTeamDisplay('AEK')} Siege gesamt</div>
+              <div className="text-sm text-system-blue">{getTeamDisplay('AEK')} Siege gesamt</div>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-xl font-bold text-red-600">
+            <div className="text-center p-4 bg-system-red/10 rounded-lg">
+              <div className="text-xl font-bold text-system-red">
                 {enhancedTrends.reduce((sum, trend) => sum + trend.realWins, 0)}
               </div>
-              <div className="text-sm text-red-700">{getTeamDisplay('Real')} Siege gesamt</div>
+              <div className="text-sm text-system-red">{getTeamDisplay('Real')} Siege gesamt</div>
             </div>
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-xl font-bold text-green-600">
+            <div className="text-center p-4 bg-system-green/10 rounded-lg">
+              <div className="text-xl font-bold text-system-green">
                 {enhancedTrends.reduce((sum, trend) => sum + trend.matchCount, 0)}
               </div>
-              <div className="text-sm text-green-700">Spiele gesamt</div>
+              <div className="text-sm text-system-green">Spiele gesamt</div>
             </div>
           </div>
         </div>
@@ -1901,10 +1901,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
                 {/* Team Performance Comparison */}
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="p-4 bg-blue-50 rounded-lg">
+                  <div className="p-4 bg-system-blue/10 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-blue-700">{getTeamDisplay('AEK')}</span>
-                      <span className="text-sm text-blue-600">{aekWinRate}% Siege</span>
+                      <span className="font-medium text-system-blue">{getTeamDisplay('AEK')}</span>
+                      <span className="text-sm text-system-blue">{aekWinRate}% Siege</span>
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
@@ -1924,10 +1924,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     </div>
                   </div>
 
-                  <div className="p-4 bg-red-50 rounded-lg">
+                  <div className="p-4 bg-system-red/10 rounded-lg">
                     <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-red-700">{getTeamDisplay('Real')}</span>
-                      <span className="text-sm text-red-600">{realWinRate}% Siege</span>
+                      <span className="font-medium text-system-red">{getTeamDisplay('Real')}</span>
+                      <span className="text-sm text-system-red">{realWinRate}% Siege</span>
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
@@ -1954,14 +1954,14 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     <span>{getTeamDisplay('AEK')} Dominanz</span>
                     <span>{getTeamDisplay('Real')} Dominanz</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                  <div className="w-full bg-bg-tertiary rounded-full h-3 overflow-hidden">
                     <div className="h-full flex">
                       <div 
-                        className="bg-blue-500" 
+                        className="bg-system-blue" 
                         style={{ width: `${aekWinRate}%` }}
                       ></div>
                       <div 
-                        className="bg-red-500" 
+                        className="bg-system-red" 
                         style={{ width: `${realWinRate}%` }}
                       ></div>
                     </div>
@@ -1999,7 +1999,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     <div className="flex justify-between">
                       <span>Letzter Monat AEK:</span>
                       <span className={`font-medium ${
-                        enhancedTrends[0].aekWins >= enhancedTrends[1].aekWins ? 'text-green-600' : 'text-red-600'
+                        enhancedTrends[0].aekWins >= enhancedTrends[1].aekWins ? 'text-system-green' : 'text-system-red'
                       }`}>
                         {enhancedTrends[0].aekWins >= enhancedTrends[1].aekWins ? '↗️ Besser' : '↘️ Schlechter'}
                       </span>
@@ -2007,7 +2007,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     <div className="flex justify-between">
                       <span>Letzter Monat Real:</span>
                       <span className={`font-medium ${
-                        enhancedTrends[0].realWins >= enhancedTrends[1].realWins ? 'text-green-600' : 'text-red-600'
+                        enhancedTrends[0].realWins >= enhancedTrends[1].realWins ? 'text-system-green' : 'text-system-red'
                       }`}>
                         {enhancedTrends[0].realWins >= enhancedTrends[1].realWins ? '↗️ Besser' : '↘️ Schlechter'}
                       </span>
@@ -2031,7 +2031,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     <>
                       <div className="flex justify-between">
                         <span>Torreichster Monat:</span>
-                        <span className="font-medium text-green-600">{bestMonth?.month}</span>
+                        <span className="font-medium text-system-green">{bestMonth?.month}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Tore in diesem Monat:</span>
@@ -2141,23 +2141,23 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </h3>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-green-50 rounded-lg">
-              <div className="text-xl font-bold text-green-600">{metrics.scoreMargins.oneGoal}</div>
+            <div className="text-center p-3 bg-system-green/10 rounded-lg">
+              <div className="text-xl font-bold text-system-green">{metrics.scoreMargins.oneGoal}</div>
               <div className="text-xs text-text-secondary">1-Tor-Spiele</div>
               <div className="text-xs text-text-muted">Spannend</div>
             </div>
-            <div className="text-center p-3 bg-blue-50 rounded-lg">
-              <div className="text-xl font-bold text-blue-600">{metrics.scoreMargins.twoGoals}</div>
+            <div className="text-center p-3 bg-system-blue/10 rounded-lg">
+              <div className="text-xl font-bold text-system-blue">{metrics.scoreMargins.twoGoals}</div>
               <div className="text-xs text-text-secondary">2-Tor-Spiele</div>
               <div className="text-xs text-text-muted">Umkämpft</div>
             </div>
-            <div className="text-center p-3 bg-orange-50 rounded-lg">
-              <div className="text-xl font-bold text-orange-600">{metrics.scoreMargins.threeOrMore}</div>
+            <div className="text-center p-3 bg-system-yellow/10 rounded-lg">
+              <div className="text-xl font-bold text-system-orange">{metrics.scoreMargins.threeOrMore}</div>
               <div className="text-xs text-text-secondary">3-4 Tore Diff.</div>
               <div className="text-xs text-text-muted">Deutlich</div>
             </div>
-            <div className="text-center p-3 bg-red-50 rounded-lg">
-              <div className="text-xl font-bold text-red-600">{metrics.scoreMargins.blowouts}</div>
+            <div className="text-center p-3 bg-system-red/10 rounded-lg">
+              <div className="text-xl font-bold text-system-red">{metrics.scoreMargins.blowouts}</div>
               <div className="text-xs text-text-secondary">5+ Tore Diff.</div>
               <div className="text-xs text-text-muted">Dominant</div>
             </div>
@@ -2176,9 +2176,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               <div key={player.name} className="flex items-center justify-between p-3 bg-bg-secondary rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    index === 0 ? 'bg-yellow-400 text-white' :
-                    index === 1 ? 'bg-gray-400 text-white' :
-                    index === 2 ? 'bg-orange-400 text-white' :
+                    index === 0 ? 'bg-system-orange text-white' :
+                    index === 1 ? 'bg-text-tertiary text-white' :
+                    index === 2 ? 'bg-system-orange text-white' :
                     'bg-bg-tertiary text-text-primary'
                   }`}>
                     {index + 1}
@@ -2205,13 +2205,13 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </h3>
           
           <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="text-center p-4 bg-blue-50 rounded-lg">
-              <div className="text-2xl font-bold text-blue-600">{metrics.recentForm.aekWins}</div>
+            <div className="text-center p-4 bg-system-blue/10 rounded-lg">
+              <div className="text-2xl font-bold text-system-blue">{metrics.recentForm.aekWins}</div>
               <div className="text-sm text-text-secondary mb-2">{getTeamDisplay('AEK')} Siege</div>
               <div className="text-xs text-text-muted">{metrics.recentForm.aekGoals} Tore geschossen</div>
             </div>
-            <div className="text-center p-4 bg-red-50 rounded-lg">
-              <div className="text-2xl font-bold text-red-600">{metrics.recentForm.realWins}</div>
+            <div className="text-center p-4 bg-system-red/10 rounded-lg">
+              <div className="text-2xl font-bold text-system-red">{metrics.recentForm.realWins}</div>
               <div className="text-sm text-text-secondary mb-2">{getTeamDisplay('Real')} Siege</div>
               <div className="text-xs text-text-muted">{metrics.recentForm.realGoals} Tore geschossen</div>
             </div>
@@ -2260,8 +2260,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               .map((player, index) => (
                 <div key={player.name} className="flex items-center justify-between p-3 bg-bg-secondary rounded-lg">
                   <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-bold text-green-600">{index + 1}</span>
+                    <div className="w-6 h-6 bg-system-green/10 rounded-full flex items-center justify-center">
+                      <span className="text-xs font-bold text-system-green">{index + 1}</span>
                     </div>
                     <div>
                       <div className="font-medium text-text-primary">{player.name}</div>
@@ -2269,7 +2269,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-green-600">{player.valuePerGoal}M €</div>
+                    <div className="font-bold text-system-green">{player.valuePerGoal}M €</div>
                     <div className="text-xs text-text-muted">pro Tor</div>
                   </div>
                 </div>
@@ -2347,7 +2347,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               </p>
             </div>
           </div>
-          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+          <div className="mt-4 p-4 bg-system-blue/10 rounded-lg">
             <p className="text-sm text-text-secondary">
               💡 <strong>Tipp:</strong> Bewege die Maus über die Charts für detaillierte Informationen. 
               Alle Visualisierungen sind animiert und interaktiv.
