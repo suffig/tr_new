@@ -89,26 +89,28 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
     return 'text-text-secondary';
   };
 
-  const getTransactionIcon = (type) => {
+  // Transaktionsart -> SVG-Icon + Farbton (statt Emoji, das je Geraet anders
+  // aussieht und keinen einheitlichen Strich hat).
+  const getTransactionVisual = (type) => {
     switch (type) {
       case 'Preisgeld':
-        return '🏆';
+        return { icon: 'trophy', tone: 'text-system-yellow' };
       case 'Sonstiges':
-        return '📈';
+        return { icon: 'trendingUp', tone: 'text-system-green' };
       case 'Strafe':
-        return '📉';
+        return { icon: 'warning', tone: 'text-system-red' };
       case 'Spielerkauf':
-        return '👤';
+        return { icon: 'user', tone: 'text-system-blue' };
       case 'Spielerverkauf':
-        return '💰';
+        return { icon: 'euro', tone: 'text-system-green' };
       case 'SdS Bonus':
-        return '⭐';
+        return { icon: 'star', tone: 'text-system-orange' };
       case 'Echtgeld-Ausgleich':
-        return '💳';
+        return { icon: 'wallet', tone: 'text-system-red' };
       case 'Echtgeld-Ausgleich (getilgt)':
-        return '✅';
+        return { icon: 'check', tone: 'text-system-green' };
       default:
-        return '💰';
+        return { icon: 'euro', tone: 'text-text-tertiary' };
     }
   };
 
@@ -266,13 +268,20 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
               {txns.slice(0, 12).map((t) => (
                 <div key={t.id} className="flex items-center justify-between gap-3 p-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <span className="text-lg flex-shrink-0">{getTransactionIcon(t.type)}</span>
+                    {(() => {
+                      const v = getTransactionVisual(t.type);
+                      return (
+                        <span className={`flex-shrink-0 w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center ${v.tone}`}>
+                          <Icon name={v.icon} size={16} strokeWidth={2.2} />
+                        </span>
+                      );
+                    })()}
                     <div className="min-w-0">
                       <div className="text-sm font-medium text-text-primary truncate">{t.info || t.type || 'Transaktion'}</div>
-                      <div className="text-xs text-text-muted">{t.date ? new Date(t.date).toLocaleDateString('de-DE') : t.type}</div>
+                      <div className="text-caption1 text-text-muted num-tabular">{t.date ? new Date(t.date).toLocaleDateString('de-DE') : t.type}</div>
                     </div>
                   </div>
-                  <div className={`font-bold text-sm whitespace-nowrap ${(t.amount || 0) >= 0 ? 'text-system-green' : 'text-system-red'}`}>
+                  <div className={`stat-display text-[15px] whitespace-nowrap ${(t.amount || 0) >= 0 ? 'text-system-green' : 'text-system-red'}`}>
                     {(t.amount || 0) > 0 ? '+' : ''}{formatCurrency(t.amount || 0)}
                   </div>
                 </div>
@@ -387,7 +396,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                               txFilters.type === type ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'
                             }`}
                           >
-                            <span>{getTransactionIcon(type)}</span>{type}
+                            <Icon name={getTransactionVisual(type).icon} size={13} strokeWidth={2.2} />{type}
                           </button>
                         ))}
                       </div>
@@ -410,7 +419,11 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                   {visible.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between gap-3 p-3 hover:bg-bg-tertiary/40 transition-colors">
                       <div className="flex items-center gap-3 min-w-0">
-                        <span className="text-lg flex-shrink-0">{getTransactionIcon(transaction.type)}</span>
+                        {(() => { const v = getTransactionVisual(transaction.type); return (
+                          <span className={`flex-shrink-0 w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center ${v.tone}`}>
+                            <Icon name={v.icon} size={16} strokeWidth={2.2} />
+                          </span>
+                        ); })()}
                         <div className="min-w-0">
                           <div className="text-sm font-medium text-text-primary truncate">
                             {transaction.info || transaction.type || 'Transaktion'}
@@ -698,7 +711,11 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                         <div key={transaction.id} className="bg-bg-tertiary rounded-xl p-3">
                           <div className="flex items-start justify-between gap-3">
                             <div className="flex items-start gap-3 min-w-0">
-                              <span className="text-lg flex-shrink-0">{getTransactionIcon(transaction.type)}</span>
+                              {(() => { const v = getTransactionVisual(transaction.type); return (
+                          <span className={`flex-shrink-0 w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center ${v.tone}`}>
+                            <Icon name={v.icon} size={16} strokeWidth={2.2} />
+                          </span>
+                        ); })()}
                               <div className="min-w-0">
                                 <h5 className="font-medium text-text-primary text-sm truncate">
                                   {transaction.info || 'Transaktion'}
@@ -759,7 +776,11 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                 <div key={transaction.id} className="bg-bg-tertiary rounded-xl p-3">
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-start gap-3 min-w-0">
-                      <span className="text-lg flex-shrink-0">{getTransactionIcon(transaction.type)}</span>
+                      {(() => { const v = getTransactionVisual(transaction.type); return (
+                          <span className={`flex-shrink-0 w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center ${v.tone}`}>
+                            <Icon name={v.icon} size={16} strokeWidth={2.2} />
+                          </span>
+                        ); })()}
                       <div className="min-w-0">
                         <h5 className="font-medium text-text-primary text-sm truncate">
                           {transaction.info || 'Transaktion'}

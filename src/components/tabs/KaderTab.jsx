@@ -30,12 +30,14 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
     "ZOM": 6, "LM": 7, "RM": 8, "LF": 9, "RF": 10, "ST": 11
   };
 
+  // Mannschaftsteil -> Chip-Farbe (die Chip-Klassen sind token-basiert und
+  // bringen ihren Dark-Mode selbst mit, siehe modern-design.css).
   const getPositionBadgeClass = (pos) => {
-    if (pos === "TH") return "inline-block px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200";
-    if (["IV", "LV", "RV", "ZDM"].includes(pos)) return "inline-block px-2 py-1 rounded text-xs font-medium bg-blue-100 text-blue-800 border border-blue-200";
-    if (["ZM", "ZOM", "LM", "RM"].includes(pos)) return "inline-block px-2 py-1 rounded text-xs font-medium bg-yellow-100 text-yellow-800 border border-yellow-200";
-    if (["LF", "RF", "ST"].includes(pos)) return "inline-block px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200";
-    return "inline-block px-2 py-1 rounded text-xs font-medium bg-gray-100 text-gray-800 border border-gray-200";
+    if (pos === "TH") return "chip chip-green";
+    if (["IV", "LV", "RV", "ZDM"].includes(pos)) return "chip chip-blue";
+    if (["ZM", "ZOM", "LM", "RM"].includes(pos)) return "chip chip-yellow";
+    if (["LF", "RF", "ST"].includes(pos)) return "chip chip-red";
+    return "chip chip-gray";
   };
 
   const getTeamPlayers = (teamName) => {
@@ -148,7 +150,12 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       displayName: getTeamDisplay('Ehemalige'), 
       players: ehemaligePlayers,
       squadValue: getTeamSquadValue('Ehemalige'),
-      icon: '⚪'
+      // Kein Emoji: neutrale Icon-Kachel im Stil der beiden Team-Logos
+      logoComponent: (
+        <span className="w-9 h-9 rounded-full bg-bg-tertiary text-text-tertiary flex items-center justify-center flex-shrink-0">
+          <Icon name="users" size={17} strokeWidth={2.2} />
+        </span>
+      )
     }
   ];
 

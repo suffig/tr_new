@@ -119,7 +119,7 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                               <span className={`inline-block px-2 py-1 rounded text-xs font-medium border transition-all group-hover:scale-105 ${getBanTypeColor(ban.type)}`}>
                                 {ban.type}
                               </span>
-                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200 transition-all group-hover:scale-105">
+                              <span className="chip chip-red transition-all group-hover:scale-105">
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
                               </span>
                             </div>
@@ -194,7 +194,7 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                               <span className={`inline-block px-2 py-1 rounded text-xs font-medium border transition-all group-hover:scale-105 ${getBanTypeColor(ban.type)}`}>
                                 {ban.type}
                               </span>
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200 transition-all group-hover:scale-105">
+                              <span className="chip chip-green transition-all group-hover:scale-105">
                                 <Icon name="check" size={12} strokeWidth={2.6} />Beendet
                               </span>
                             </div>
@@ -258,11 +258,11 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                               {ban.type}
                             </span>
                             {isActive ? (
-                              <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-xs font-medium bg-red-100 text-red-800 border border-red-200 transition-all group-hover:scale-105">
+                              <span className="chip chip-red transition-all group-hover:scale-105">
                                 <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 rounded text-xs font-medium bg-green-100 text-green-800 border border-green-200 transition-all group-hover:scale-105">
+                              <span className="chip chip-green transition-all group-hover:scale-105">
                                 <Icon name="check" size={12} strokeWidth={2.6} />Beendet
                               </span>
                             )}
