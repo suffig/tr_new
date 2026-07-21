@@ -54,7 +54,10 @@ button {
 *:focus-visible {
   outline: none;
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--system-blue) 55%, transparent);
-  border-radius: 8px;
+  /* KEIN border-radius hier: der Fokusring folgt dem Radius des Elements
+     ohnehin von selbst. Ein fester Wert hat stattdessen jedem fokussierten
+     Element seine eigene Rundung genommen — ein 12px-Eingabefeld sprang beim
+     Antippen sichtbar auf 8px. */
 }
 
 /* --------------------------------------------------------------------------
