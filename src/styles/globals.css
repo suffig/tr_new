@@ -11,6 +11,7 @@
   --bg-primary: #F3F6F4;
   --bg-secondary: rgba(255, 255, 255, 0.96);
   --bg-tertiary: rgba(236, 242, 238, 0.85);
+  --bg-hover: rgba(214, 226, 219, 0.95);
   --bg-elevated: rgba(255, 255, 255, 0.92);
   --bg-grouped: #F3F6F4;
   --bg-overlay: rgba(8, 18, 13, 0.45);
@@ -105,6 +106,7 @@
   --bg-primary: #0A1119;
   --bg-secondary: rgba(19, 28, 40, 0.95);
   --bg-tertiary: rgba(31, 42, 56, 0.8);
+  --bg-hover: rgba(44, 58, 76, 0.9);
   --bg-elevated: rgba(23, 33, 46, 0.92);
   --bg-grouped: #0A1119;
   --bg-overlay: rgba(2, 6, 12, 0.7);

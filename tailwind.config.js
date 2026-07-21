@@ -60,6 +60,7 @@ export default {
           primary: 'var(--bg-primary)',
           secondary: 'var(--bg-secondary)',
           tertiary: 'var(--bg-tertiary)',
+          hover: 'var(--bg-hover)',
           elevated: 'var(--bg-elevated)',
           grouped: 'var(--bg-grouped)',
           overlay: 'var(--bg-overlay)',

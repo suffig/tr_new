@@ -256,7 +256,7 @@ export default function AddTransactionTab() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-2 border border-border-light rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+                    className="btn-secondary flex-1"
                     disabled={loading}
                   >
                     Abbrechen
@@ -310,14 +310,14 @@ export default function AddTransactionTab() {
         </div>
       </div>
 
-      <div className="mt-6 modern-card bg-blue-50 border-blue-200">
+      <div className="mt-6 modern-card bg-system-blue/10 border-system-blue/20">
         <div className="flex items-start">
-          <div className="text-blue-600 mr-3 flex-shrink-0">
+          <div className="text-system-blue mr-3 flex-shrink-0">
             <Icon name="bulb" size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="font-semibold text-blue-800 mb-1">Hinweis</h4>
-            <p className="text-blue-700 text-sm">
+            <h4 className="font-semibold text-text-primary mb-1">Hinweis</h4>
+            <p className="text-footnote text-text-secondary">
               Nach dem Hinzufügen können Sie die Transaktion in der Finanzen-Übersicht einsehen.
             </p>
           </div>

@@ -237,7 +237,7 @@ export default function AddPlayerTab() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-2 border border-border-light rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+                    className="btn-secondary flex-1"
                     disabled={loading}
                   >
                     Abbrechen
@@ -293,14 +293,14 @@ export default function AddPlayerTab() {
         </div>
       </div>
 
-      <div className="mt-6 modern-card bg-green-50 border-green-200">
+      <div className="mt-6 modern-card bg-system-green/10 border-system-green/20">
         <div className="flex items-start">
-          <div className="text-green-600 mr-3 flex-shrink-0">
+          <div className="text-system-green mr-3 flex-shrink-0">
             <Icon name="bulb" size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="font-semibold text-green-800 mb-1">Hinweis</h4>
-            <p className="text-green-700 text-sm">
+            <h4 className="font-semibold text-text-primary mb-1">Hinweis</h4>
+            <p className="text-footnote text-text-secondary">
               Nach dem Hinzufügen können Sie den Spieler in der Kader-Übersicht einsehen und verwalten.
             </p>
           </div>

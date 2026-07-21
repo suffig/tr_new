@@ -275,7 +275,7 @@ export default function AddBanTab() {
                   <button
                     type="button"
                     onClick={() => setShowModal(false)}
-                    className="flex-1 px-4 py-2 border border-border-light rounded-lg text-text-secondary hover:bg-bg-tertiary transition-colors"
+                    className="btn-secondary flex-1"
                     disabled={loading}
                   >
                     Abbrechen
@@ -322,14 +322,14 @@ export default function AddBanTab() {
         </div>
       </div>
 
-      <div className="mt-6 modern-card bg-yellow-50 border-yellow-200">
+      <div className="mt-6 modern-card bg-system-yellow/10 border-system-yellow/20">
         <div className="flex items-start">
-          <div className="text-yellow-600 mr-3 flex-shrink-0">
+          <div className="text-system-yellow mr-3 flex-shrink-0">
             <Icon name="bulb" size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="font-semibold text-yellow-800 mb-1">Hinweis</h4>
-            <p className="text-yellow-700 text-sm">
+            <h4 className="font-semibold text-text-primary mb-1">Hinweis</h4>
+            <p className="text-footnote text-text-secondary">
               Nach dem Hinzufügen können Sie die Sperre in der Sperren-Übersicht einsehen und verwalten.
             </p>
           </div>

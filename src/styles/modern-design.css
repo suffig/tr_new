@@ -460,7 +460,9 @@ button {
 .bg-system-red\/10 { background-color: color-mix(in srgb, var(--system-red) 10%, transparent); }
 .bg-system-yellow\/10 { background-color: color-mix(in srgb, var(--system-yellow) 10%, transparent); }
 .bg-system-yellow\/20 { background-color: color-mix(in srgb, var(--system-yellow) 20%, transparent); }
+.border-system-blue\/20 { border-color: color-mix(in srgb, var(--system-blue) 20%, transparent); }
 .border-system-blue\/30 { border-color: color-mix(in srgb, var(--system-blue) 30%, transparent); }
+.border-system-yellow\/20 { border-color: color-mix(in srgb, var(--system-yellow) 20%, transparent); }
 .border-system-green\/20 { border-color: color-mix(in srgb, var(--system-green) 20%, transparent); }
 .border-system-green\/40 { border-color: color-mix(in srgb, var(--system-green) 40%, transparent); }
 .border-system-red\/20 { border-color: color-mix(in srgb, var(--system-red) 20%, transparent); }
