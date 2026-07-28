@@ -326,11 +326,15 @@ export const createFifaVersionFilter = (version = null) => {
 export const getFifaVersionedTables = () => {
   return [
     'players',
-    'matches', 
+    'matches',
     'bans',
     'transactions',
     'finances',
-    'spieler_des_spiels'
+    'spieler_des_spiels',
+    // Team-Sammlung: jede Saison zaehlt ihre eigenen Ziehungen.
+    // Setzt db/06_team_tracker_season.sql voraus (Spalte fifa_version).
+    'team_pull_events',
+    'team_collection'
   ];
 };
 

@@ -1,16 +1,24 @@
-import { supabaseDb } from './supabase';
+import { supabaseDb, usingFallback } from './supabase';
 
 // Event-log model: every "team bekommen" is one pull event with a timestamp.
-// This is the source of truth for the UI (works offline / in demo) and is
-// best-effort mirrored to Supabase `team_pull_events`. A DB trigger keeps the
-// `team_collection` aggregate consistent server-side (see migration 003).
 //
-// Local shape: [{ id, person, team, rating, women, national, ts }]
+// Supabase `team_pull_events` ist die dauerhafte Quelle: beim Oeffnen des Tabs
+// wird von dort geladen (fetchPullsFromDB), localStorage dient nur noch als
+// Offline-Zwischenspeicher. Vorher war die Datenbank reines Schreibziel und
+// wurde nie zurueckgelesen — geleerter localStorage sah deshalb wie
+// Datenverlust aus, obwohl alles in der DB lag.
+//
+// Die Tabelle ist seit db/06_team_tracker_season.sql saison-gebunden; das
+// Stempeln und Filtern uebernimmt die supabaseDb-Schicht (siehe
+// getFifaVersionedTables), hier wird fifa_version deshalb nicht angefasst.
+//
+// Local shape: [{ id, dbId?, person, team, rating, women, national, ts }]
 const PULLS_KEY = 'fc26TeamPulls_v1';
 const LEGACY_KEY = 'fc26TeamCollection_v1'; // old aggregate { person: { team: count } }
 
 export const COLLECTION_PEOPLE = ['alexander', 'philip'];
 const PERSON_LABEL = { alexander: 'Alexander', philip: 'Philip' };
+const PERSON_ID = { Alexander: 'alexander', Philip: 'philip' };
 
 export const TIME_WINDOWS = [
   { id: '24h', label: '24 Std.', ms: 24 * 60 * 60 * 1000 },
@@ -65,6 +73,12 @@ function savePulls(arr) {
   try { localStorage.setItem(PULLS_KEY, JSON.stringify(arr)); } catch { /* ignore quota */ }
 }
 
+/** Offline-Zwischenspeicher durch den Stand aus der Datenbank ersetzen. */
+export function replacePulls(arr) {
+  savePulls(arr);
+  return arr;
+}
+
 /** Count per team for a person within an optional time window (sinceTs = 0 → all). */
 export function countsInWindow(pulls, personId, sinceTs = 0) {
   const out = {};
@@ -105,9 +119,10 @@ export function removeLatestPull(pulls, personId, teamName, sinceTs = 0) {
     if (t >= latest) { latest = t; idx = i; }
   }
   if (idx === -1) return pulls;
+  const entfernt = pulls[idx];
   const next = pulls.slice(0, idx).concat(pulls.slice(idx + 1));
   savePulls(next);
-  dbDeleteLatest(personId, teamName);
+  dbDeleteEvent(entfernt, personId, teamName);
   return next;
 }
 
@@ -118,39 +133,129 @@ export function clearPerson(pulls, personId) {
   return next;
 }
 
-// ── Best-effort Supabase sync (never throws) ─────────────────────────────────
-async function dbInsert(ev) {
+// ── Supabase sync ────────────────────────────────────────────────────────────
+// Schreibfehler werden nicht mehr verschluckt: wer eine Ziehung eintraegt, soll
+// erfahren, wenn sie nur lokal angekommen ist. Im Demo-/Offline-Modus gibt es
+// keine Datenbank — das ist kein Fehler und bleibt still.
+
+let syncErrorHandler = null;
+
+/** Einmal registrieren (z. B. im Teams-Tab), um Sync-Fehler anzuzeigen. */
+export function onSyncError(fn) {
+  syncErrorHandler = typeof fn === 'function' ? fn : null;
+}
+
+function reportSyncError(action, error) {
+  console.warn(`[Teams] ${action} konnte nicht in der Datenbank gespeichert werden:`, error?.message || error);
+  if (syncErrorHandler) {
+    try { syncErrorHandler(action, error); } catch { /* Anzeige darf nie stoeren */ }
+  }
+}
+
+/** DB-Zeile -> lokale Form. Behaelt die echte Zeilen-ID fuer sicheres Loeschen. */
+function rowToLocal(row) {
+  return {
+    id: `db_${row.id}`,
+    dbId: row.id,
+    person: PERSON_ID[row.person] || String(row.person || '').toLowerCase(),
+    team: row.team_name,
+    rating: row.rating ?? null,
+    women: !!row.is_women,
+    national: !!row.is_national,
+    ts: row.created_at || new Date().toISOString(),
+  };
+}
+
+/**
+ * Sammlung der AKTUELLEN Saison aus der Datenbank laden.
+ * Die Saison-Filterung passiert in der supabaseDb-Schicht.
+ * @returns {Promise<{ok: boolean, offline?: boolean, error?: unknown, pulls: Array}>}
+ */
+export async function fetchPullsFromDB() {
+  if (usingFallback) return { ok: false, offline: true, pulls: [] };
   try {
-    await supabaseDb.insert('team_pull_events', {
+    const res = await supabaseDb.select('team_pull_events', '*', {
+      order: { column: 'created_at', ascending: true },
+    });
+    if (res?.error) return { ok: false, error: res.error, pulls: [] };
+    return { ok: true, pulls: (res?.data || []).map(rowToLocal) };
+  } catch (error) {
+    return { ok: false, error, pulls: [] };
+  }
+}
+
+/** Lokal vorhandene Ziehungen einmalig in die Datenbank uebertragen. */
+export async function pushLocalPullsToDB(pulls) {
+  if (usingFallback) return { ok: false, offline: true, uebertragen: 0 };
+  let uebertragen = 0;
+  for (const ev of pulls) {
+    if (ev.dbId) continue; // stammt bereits aus der DB
+    const res = await dbInsert(ev);
+    if (!res.ok) return { ok: false, error: res.error, uebertragen };
+    uebertragen++;
+  }
+  return { ok: true, uebertragen };
+}
+
+async function dbInsert(ev) {
+  if (usingFallback) return { ok: true, offline: true };
+  try {
+    const res = await supabaseDb.insert('team_pull_events', {
       person: PERSON_LABEL[ev.person] || ev.person,
       team_name: ev.team,
       rating: ev.rating ?? null,
       is_women: !!ev.women,
       is_national: !!ev.national,
     });
-  } catch { /* offline / demo */ }
+    if (res?.error) { reportSyncError('Ziehung', res.error); return { ok: false, error: res.error }; }
+    return { ok: true };
+  } catch (error) {
+    reportSyncError('Ziehung', error);
+    return { ok: false, error };
+  }
 }
 
-async function dbDeleteLatest(personId, teamName) {
+async function dbDeleteEvent(ev, personId, teamName) {
+  if (usingFallback) return { ok: true, offline: true };
   try {
-    const person = PERSON_LABEL[personId] || personId;
-    const res = await supabaseDb.select('team_pull_events', '*', {
-      eq: { person, team_name: teamName },
-      order: { column: 'created_at', ascending: false },
-      limit: 1,
-      skipFifaFilter: true,
-    });
-    const row = (res?.data || [])[0];
-    if (row) await supabaseDb.delete('team_pull_events', row.id);
-  } catch { /* offline / demo */ }
+    // Bevorzugt ueber die echte Zeilen-ID loeschen; nur wenn die Ziehung offline
+    // entstanden ist, muss die neueste passende Zeile gesucht werden.
+    let id = ev?.dbId ?? null;
+    if (id == null) {
+      const person = PERSON_LABEL[personId] || personId;
+      const res = await supabaseDb.select('team_pull_events', '*', {
+        eq: { person, team_name: teamName },
+        order: { column: 'created_at', ascending: false },
+        limit: 1,
+      });
+      if (res?.error) { reportSyncError('Entfernen', res.error); return { ok: false, error: res.error }; }
+      id = (res?.data || [])[0]?.id ?? null;
+    }
+    if (id == null) return { ok: true };
+    const del = await supabaseDb.delete('team_pull_events', id);
+    if (del?.error) { reportSyncError('Entfernen', del.error); return { ok: false, error: del.error }; }
+    return { ok: true };
+  } catch (error) {
+    reportSyncError('Entfernen', error);
+    return { ok: false, error };
+  }
 }
 
 async function dbClearPerson(personId) {
+  if (usingFallback) return { ok: true, offline: true };
   try {
     const person = PERSON_LABEL[personId] || personId;
-    const res = await supabaseDb.select('team_pull_events', '*', { eq: { person }, skipFifaFilter: true });
+    // Ohne skipFifaFilter: es wird nur die Sammlung der AKTUELLEN Saison
+    // geleert. Frueheren Saisons soll ein Zuruecksetzen nichts anhaben.
+    const res = await supabaseDb.select('team_pull_events', '*', { eq: { person } });
+    if (res?.error) { reportSyncError('Zurücksetzen', res.error); return { ok: false, error: res.error }; }
     for (const row of (res?.data || [])) {
-      await supabaseDb.delete('team_pull_events', row.id);
+      const del = await supabaseDb.delete('team_pull_events', row.id);
+      if (del?.error) { reportSyncError('Zurücksetzen', del.error); return { ok: false, error: del.error }; }
     }
-  } catch { /* offline / demo */ }
+    return { ok: true };
+  } catch (error) {
+    reportSyncError('Zurücksetzen', error);
+    return { ok: false, error };
+  }
 }

@@ -6,6 +6,7 @@ import { getCatalog } from '../../utils/fc26Catalog';
 import {
   loadPulls, countsInWindow, addPull, removeLatestPull, clearPerson,
   windowStart, TIME_WINDOWS,
+  fetchPullsFromDB, replacePulls, pushLocalPullsToDB, onSyncError,
 } from '../../utils/teamCollection';
 
 const PEOPLE = [
@@ -92,6 +93,55 @@ function StarRating({ rating, size = 13 }) {
 
 export default function TeamTrackerTab() {
   const [pulls, setPulls] = useState(loadPulls);
+  // 'laden' | 'ok' | 'offline' | 'fehler' | 'lokal-mehr'
+  const [dbStatus, setDbStatus] = useState('laden');
+  const [uebertrage, setUebertrage] = useState(false);
+
+  // Sammlung beim Öffnen aus der Datenbank holen. Der localStorage ist nur noch
+  // Offline-Zwischenspeicher — vorher war die DB reines Schreibziel, wodurch ein
+  // geleerter Speicher wie Datenverlust aussah.
+  useEffect(() => {
+    let abgebrochen = false;
+    (async () => {
+      const res = await fetchPullsFromDB();
+      if (abgebrochen) return;
+      if (res.offline) { setDbStatus('offline'); return; }
+      if (!res.ok) { setDbStatus('fehler'); return; }
+
+      // Weniger in der DB als lokal? Dann NICHT überschreiben — sonst wären
+      // Ziehungen weg, die nie synchronisiert wurden. Stattdessen anbieten,
+      // sie zu übertragen.
+      const lokal = loadPulls();
+      if (res.pulls.length < lokal.length) { setDbStatus('lokal-mehr'); return; }
+
+      setPulls(replacePulls(res.pulls));
+      setDbStatus('ok');
+    })();
+    return () => { abgebrochen = true; };
+  }, []);
+
+  // Fehlgeschlagene Schreibvorgänge sichtbar machen statt still zu verschlucken.
+  useEffect(() => {
+    onSyncError((aktion) => {
+      toast.error(`${aktion} wurde nur lokal gespeichert — keine Verbindung zur Datenbank.`, { duration: 5000 });
+      setDbStatus('fehler');
+    });
+    return () => onSyncError(null);
+  }, []);
+
+  const lokaleDatenUebertragen = async () => {
+    setUebertrage(true);
+    const res = await pushLocalPullsToDB(loadPulls());
+    setUebertrage(false);
+    if (!res.ok) {
+      toast.error('Übertragung fehlgeschlagen — es wurde nichts verändert.');
+      return;
+    }
+    toast.success(`${res.uebertragen} Ziehung${res.uebertragen === 1 ? '' : 'en'} in die Datenbank übertragen.`);
+    const neu = await fetchPullsFromDB();
+    if (neu.ok) { setPulls(replacePulls(neu.pulls)); setDbStatus('ok'); }
+  };
+
   const [person, setPerson] = useState(() => { try { return localStorage.getItem('fusta_teams_person') || 'alexander'; } catch { return 'alexander'; } });
   const [windowId, setWindowId] = useState(() => { try { return localStorage.getItem('fusta_teams_window') || 'all'; } catch { return 'all'; } });
   useEffect(() => { try { localStorage.setItem('fusta_teams_person', person); } catch { /* ignore */ } }, [person]);
@@ -127,7 +177,12 @@ export default function TeamTrackerTab() {
         if (after[k] && !before[k]) toast.success(`🏆 ${current.name}: ${MILESTONE_LABELS[k]}`, { duration: 4000 });
       }
     }
-    setPulls((prev) => (delta > 0 ? addPull(prev, current.id, team) : removeLatestPull(prev, current.id, teamName, sinceTs)));
+    // Bewusst AUSSERHALB des State-Updaters: addPull/removeLatestPull schreiben
+    // in localStorage und in die Datenbank. React ruft Updater im StrictMode
+    // doppelt auf — als Updater haette jeder Klick zwei DB-Zeilen erzeugt.
+    setPulls(delta > 0
+      ? addPull(pulls, current.id, team)
+      : removeLatestPull(pulls, current.id, teamName, sinceTs));
   };
 
   // Rich stats for a person within the current window
@@ -219,6 +274,37 @@ export default function TeamTrackerTab() {
   return (
     <div className="p-4 pb-28 mobile-safe-bottom">
 
+      {/* Speicher-Status: nur melden, wenn etwas NICHT in der Datenbank steht */}
+      {dbStatus === 'lokal-mehr' && (
+        <div className="mb-4 rounded-xl border border-system-orange/30 bg-system-orange/10 p-3">
+          <div className="flex items-start gap-2">
+            <Icon name="warning" size={16} strokeWidth={2.2} className="text-system-orange flex-shrink-0 mt-0.5" />
+            <div className="min-w-0">
+              <p className="text-footnote text-text-primary">
+                Auf diesem Gerät liegen mehr Ziehungen als in der Datenbank. Sie wurden
+                bisher nur lokal gespeichert und sind für den anderen nicht sichtbar.
+              </p>
+              <button
+                onClick={lokaleDatenUebertragen}
+                disabled={uebertrage}
+                className="btn-primary btn-sm mt-2 disabled:opacity-60"
+              >
+                {uebertrage ? 'Wird übertragen …' : 'In die Datenbank übertragen'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {dbStatus === 'fehler' && (
+        <div className="mb-4 rounded-xl border border-system-red/20 bg-system-red/10 p-3 flex items-start gap-2">
+          <Icon name="warning" size={16} strokeWidth={2.2} className="text-system-red flex-shrink-0 mt-0.5" />
+          <p className="text-footnote text-text-primary min-w-0">
+            Keine Verbindung zur Datenbank — angezeigt wird der zuletzt auf diesem Gerät
+            gespeicherte Stand. Änderungen werden erst übernommen, wenn die Verbindung steht.
+          </p>
+        </div>
+      )}
+
       {/* Mode segmented control */}
       <div className="flex gap-1 p-1 bg-bg-tertiary rounded-2xl mb-4 overflow-x-auto scrollbar-hide">
         {PEOPLE.map((p) => {
@@ -258,7 +344,7 @@ export default function TeamTrackerTab() {
                 <div className="text-xs text-text-muted">Sammlung · {TIME_WINDOWS.find((w) => w.id === windowId)?.label}</div>
               </div>
               {countsTotal(pulls, current.id, 0) > 0 && (
-                <button onClick={() => { if (window.confirm(`Komplette Sammlung von ${current.name} löschen?`)) setPulls((prev) => clearPerson(prev, current.id)); }}
+                <button onClick={() => { if (window.confirm(`Komplette Sammlung von ${current.name} löschen?`)) setPulls(clearPerson(pulls, current.id)); }}
                   className="ml-auto text-xs font-medium text-text-tertiary hover:text-system-red px-2 py-1">Zurücksetzen</button>
               )}
             </div>
