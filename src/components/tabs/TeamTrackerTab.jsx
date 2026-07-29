@@ -1,8 +1,9 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../icons/Icon';
 import { getCatalog } from '../../utils/fc26Catalog';
+import { addSterneEintrag, gutschriftFuer } from '../../utils/sterneCounter';
 import {
   loadPulls, countsInWindow, addPull, removeLatestPull, clearPerson,
   windowStart, TIME_WINDOWS,
@@ -91,6 +92,151 @@ function StarRating({ rating, size = 13 }) {
   );
 }
 
+// ── Spielduell ───────────────────────────────────────────────────────────────
+// Beide bekommen ein Team, es wird gegeneinander gespielt, danach der Sieger
+// eingetragen. Die Ziehungen zaehlen wie bisher fuer die Sammlung; zusaetzlich
+// bekommt der SIEGER die Handicap-Gutschrift seines Teams (6 − Sterne, dieselbe
+// Regel wie im Alkohol-Tab). Wer mit einem schwachen Team gewinnt, holt also
+// mehr — mit einem 5-Sterne-Team nur 1,0.
+function SpielduellModal({ catalog, onClose, onConfirm }) {
+  const [teams, setTeams] = useState({ alexander: null, philip: null });
+  const [sieger, setSieger] = useState(null);
+  const [waehlt, setWaehlt] = useState('alexander');
+  const [suche, setSuche] = useState('');
+  const sucheRef = useRef(null);
+
+  useEffect(() => {
+    if (!waehlt) return undefined;
+    const t = setTimeout(() => sucheRef.current?.focus(), 50);
+    return () => clearTimeout(t);
+  }, [waehlt]);
+
+  const treffer = useMemo(() => {
+    const q = suche.trim().toLowerCase();
+    if (!q) return catalog.slice(0, 40);
+    return catalog.filter((t) => t.name.toLowerCase().includes(q)).slice(0, 40);
+  }, [catalog, suche]);
+
+  const beideGewaehlt = !!(teams.alexander && teams.philip);
+  const siegerTeam = sieger ? teams[sieger] : null;
+  const ohneRating = !!siegerTeam && siegerTeam.rating == null;
+  const gutschrift = siegerTeam && siegerTeam.rating != null ? gutschriftFuer(siegerTeam.rating) : 0;
+
+  const waehle = (team) => {
+    const naechstesLeer = waehlt === 'alexander' && !teams.philip;
+    setTeams((prev) => ({ ...prev, [waehlt]: team }));
+    setSuche('');
+    setWaehlt(naechstesLeer ? 'philip' : null);
+  };
+
+  return createPortal(
+    <div className="fixed inset-0 z-[70] bg-bg-overlay backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
+      <div className="bg-bg-primary w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto safe-area-bottom">
+        <div className="flex items-center justify-between px-5 py-4 sticky top-0 bg-bg-primary/95 backdrop-blur z-10 border-b border-separator">
+          <h2 className="text-lg font-bold text-text-primary">Spielduell</h2>
+          <button onClick={onClose} aria-label="Schließen"
+            className="btn-compact w-9 h-9 rounded-full bg-bg-tertiary text-text-secondary flex items-center justify-center">
+            <Icon name="x" size={18} strokeWidth={2.2} />
+          </button>
+        </div>
+
+        <div className="p-4 space-y-3">
+          {PEOPLE.map((p) => {
+            const t = teams[p.id];
+            const a = ACCENT[p.accent];
+            const offen = waehlt === p.id;
+            return (
+              <button key={p.id} type="button"
+                onClick={() => { setWaehlt(offen ? null : p.id); setSuche(''); }}
+                className={`w-full text-left rounded-xl px-3 py-2.5 border transition-colors ${offen ? 'border-system-blue/30 bg-system-blue/10' : 'border-border-light bg-bg-secondary'}`}>
+                <div className="flex items-center gap-2">
+                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${a.bar}`} />
+                  <span className={`text-caption1 font-semibold flex-shrink-0 ${a.text}`}>{p.name}</span>
+                  <span className="ml-auto min-w-0 text-right">
+                    {t
+                      ? <span className="text-sm font-medium text-text-primary truncate block">{t.name}</span>
+                      : <span className="text-sm text-text-tertiary">Team wählen …</span>}
+                  </span>
+                </div>
+                {t && <div className="mt-1 flex justify-end"><StarRating rating={t.rating} /></div>}
+              </button>
+            );
+          })}
+
+          {waehlt && (
+            <div className="rounded-xl border border-border-light bg-bg-secondary p-2">
+              <input ref={sucheRef} type="text" value={suche} onChange={(e) => setSuche(e.target.value)}
+                placeholder="Team suchen …" autoComplete="off" className="form-input !py-2 text-sm mb-2" />
+              <div className="max-h-56 overflow-y-auto space-y-1">
+                {treffer.map((t) => (
+                  <button key={t.name} type="button" onClick={() => waehle(t)}
+                    className="w-full flex items-center justify-between gap-2 px-2.5 py-2 rounded-lg bg-bg-tertiary text-left">
+                    <span className="text-sm text-text-primary truncate min-w-0">{t.name}</span>
+                    <span className="flex-shrink-0"><StarRating rating={t.rating} size={11} /></span>
+                  </button>
+                ))}
+                {treffer.length === 0 && (
+                  <p className="text-footnote text-text-tertiary text-center py-3">Kein Team gefunden.</p>
+                )}
+              </div>
+            </div>
+          )}
+
+          {beideGewaehlt && (
+            <div>
+              <div className="text-caption1 font-semibold text-text-muted mb-1.5">Wer hat gewonnen?</div>
+              <div className="grid grid-cols-2 gap-2">
+                {PEOPLE.map((p) => {
+                  const a = ACCENT[p.accent];
+                  const aktiv = sieger === p.id;
+                  return (
+                    <button key={p.id} type="button" onClick={() => setSieger(p.id)}
+                      className={`py-2.5 rounded-xl text-sm font-semibold transition-all ${aktiv ? a.pill : 'bg-bg-tertiary text-text-secondary'}`}>
+                      {p.name}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {siegerTeam && (
+            <div className="rounded-xl bg-system-yellow/10 px-3 py-2.5 text-center">
+              {ohneRating ? (
+                <p className="text-footnote text-text-secondary">
+                  Für <strong className="text-text-primary">{siegerTeam.name}</strong> ist kein Rating
+                  hinterlegt — es werden keine Sterne gutgeschrieben. Die Ziehungen zählen trotzdem.
+                </p>
+              ) : (
+                <p className="text-footnote text-text-secondary">
+                  <strong className="text-text-primary">{PEOPLE.find((p) => p.id === sieger)?.name}</strong>
+                  {' gewinnt mit '}
+                  <strong className="text-text-primary">{siegerTeam.name}</strong>
+                  {' ('}{fmtRating(siegerTeam.rating)}{'★) → '}
+                  <strong className="text-system-orange">
+                    +{gutschrift % 1 === 0 ? gutschrift : gutschrift.toFixed(1)} ⭐
+                  </strong>
+                  <span className="text-text-tertiary">{' (6 − '}{fmtRating(siegerTeam.rating)}{')'}</span>
+                </p>
+              )}
+            </div>
+          )}
+
+          <div className="flex gap-2 pt-1">
+            <button type="button" onClick={onClose} className="btn-secondary flex-1">Abbrechen</button>
+            <button type="button" disabled={!beideGewaehlt || !sieger}
+              onClick={() => onConfirm({ teams, sieger, gutschrift })}
+              className="btn-primary flex-1 disabled:opacity-50">
+              Eintragen
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+}
+
 export default function TeamTrackerTab() {
   const [pulls, setPulls] = useState(loadPulls);
   // 'laden' | 'ok' | 'offline' | 'fehler' | 'lokal-mehr'
@@ -142,15 +288,57 @@ export default function TeamTrackerTab() {
     if (neu.ok) { setPulls(replacePulls(neu.pulls)); setDbStatus('ok'); }
   };
 
+  // Spielduell abschließen: beide Ziehungen zählen für die Sammlung, der Sieger
+  // bekommt zusätzlich die Handicap-Gutschrift (6 − Sterne) im Sterne-Zähler.
+  const duellEintragen = ({ teams, sieger }) => {
+    // Bewusst außerhalb eines State-Updaters — addPull schreibt in localStorage
+    // und in die Datenbank (siehe Kommentar bei change()).
+    let next = addPull(pulls, 'alexander', teams.alexander);
+    next = addPull(next, 'philip', teams.philip);
+    setPulls(next);
+
+    const siegerName = PEOPLE.find((p) => p.id === sieger)?.name || sieger;
+    const siegerTeam = teams[sieger];
+    let gutschrift = 0;
+    if (siegerTeam?.rating != null) {
+      const res = addSterneEintrag({
+        person: sieger,
+        stars: siegerTeam.rating,
+        info: `Spielduell: ${teams.alexander.name} vs. ${teams.philip.name}`,
+      });
+      gutschrift = res.gained;
+    }
+    setDuellOffen(false);
+    toast.success(
+      gutschrift > 0
+        ? `${siegerName} gewinnt — +${fmtRating(gutschrift)} ⭐ im Sterne-Zähler`
+        : `${siegerName} gewinnt — Ziehungen erfasst (kein Rating, keine Sterne)`,
+      { duration: 4500 }
+    );
+  };
+
   const [person, setPerson] = useState(() => { try { return localStorage.getItem('fusta_teams_person') || 'alexander'; } catch { return 'alexander'; } });
   const [windowId, setWindowId] = useState(() => { try { return localStorage.getItem('fusta_teams_window') || 'all'; } catch { return 'all'; } });
   useEffect(() => { try { localStorage.setItem('fusta_teams_person', person); } catch { /* ignore */ } }, [person]);
   useEffect(() => { try { localStorage.setItem('fusta_teams_window', windowId); } catch { /* ignore */ } }, [windowId]);
   const [search, setSearch] = useState('');
+  const searchRef = useRef(null);
+  const [duellOffen, setDuellOffen] = useState(false);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all'); // all | clubs | national | women
   const [openTier, setOpenTier] = useState(5);
   const [filtersOpen, setFiltersOpen] = useState(false);
+
+  // Beim Wechsel zwischen den Personen die Suche leeren und das Feld
+  // aktivieren — so kann direkt das naechste Team getippt werden.
+  useEffect(() => {
+    setSearch('');
+    if (person === 'stats') return;
+    // Nach dem Rendern fokussieren, sonst greift der Fokus ins Leere.
+    const t = setTimeout(() => searchRef.current?.focus(), 0);
+    return () => clearTimeout(t);
+  }, [person]);
+
 
   const isStats = person === 'stats';
   const current = PEOPLE.find((p) => p.id === person) || PEOPLE[0];
@@ -438,15 +626,36 @@ export default function TeamTrackerTab() {
           <div className="flex items-center gap-2 mb-3">
             <div className="relative flex-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"><Icon name="search" size={18} strokeWidth={2} /></span>
-              <input type="text" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Team suchen…"
-                className="w-full pl-11 pr-3 py-3 bg-bg-secondary border border-border-light rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none" />
+              <input ref={searchRef} type="text" value={search} onChange={(e) => setSearch(e.target.value)}
+                placeholder="Team suchen…" autoFocus autoComplete="off"
+                className="w-full pl-11 pr-9 py-3 bg-bg-secondary border border-border-light rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none" />
+              {search && (
+                <button type="button" onClick={() => { setSearch(''); searchRef.current?.focus(); }}
+                  aria-label="Suche leeren"
+                  className="btn-compact absolute right-2 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full bg-bg-tertiary text-text-tertiary flex items-center justify-center">
+                  <Icon name="x" size={14} strokeWidth={2.4} />
+                </button>
+              )}
             </div>
+            <button onClick={() => setDuellOffen(true)} aria-label="Spielduell eintragen"
+              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium bg-system-orange/12 text-system-orange">
+              <Icon name="zap" size={16} strokeWidth={2.2} />
+              <span className="hidden min-[380px]:inline">Duell</span>
+            </button>
             <button onClick={() => setFiltersOpen((o) => !o)}
               className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium ${ratingFilter !== 'all' || typeFilter !== 'all' || filtersOpen ? 'bg-system-blue/12 text-system-blue' : 'bg-bg-tertiary text-text-secondary'}`}>
               <Icon name="filter" size={16} strokeWidth={2.2} />
               {(ratingFilter !== 'all' || typeFilter !== 'all') && <span className="w-1.5 h-1.5 rounded-full bg-system-blue" />}
             </button>
           </div>
+
+          {duellOffen && (
+            <SpielduellModal
+              catalog={catalog}
+              onClose={() => setDuellOffen(false)}
+              onConfirm={duellEintragen}
+            />
+          )}
 
           {filtersOpen && (
             <div className="modern-card mb-3 animate-mobile-slide-in space-y-3">

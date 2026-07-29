@@ -1,4 +1,5 @@
 ﻿import Icon from '../icons/Icon';
+import { gutschriftFuer, loadSterne, saveSterne } from '../../utils/sterneCounter';
 import { useState, useEffect, useCallback } from 'react';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
@@ -162,15 +163,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       }
     }
 
-    // Load Sterne counter from localStorage
-    const savedSterne = localStorage.getItem('sterneData');
-    if (savedSterne) {
-      try {
-        setSterneData(JSON.parse(savedSterne));
-      } catch (e) {
-        console.error('Error loading Sterne data:', e);
-      }
-    }
+    // Sterne-Zaehler laden (gemeinsame Quelle: utils/sterneCounter)
+    setSterneData(loadSterne());
 
     // Load BJ tracking data from localStorage
     const savedBjTracking = localStorage.getItem('bjTracking');
@@ -727,12 +721,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // ─── Sterne-Counter helpers ───────────────────────────────────────────────
   const saveSterneData = (newData) => {
     setSterneData(newData);
-    localStorage.setItem('sterneData', JSON.stringify(newData));
+    saveSterne(newData);
   };
 
   const addSterne = () => {
     const { person, stars } = sterneInput;
-    const gained = 6 - stars; // Differenz zu 6 Sternen
+    const gained = gutschriftFuer(stars); // 6 − Sterne (siehe utils/sterneCounter)
     const newData = {
       ...sterneData,
       [person]: sterneData[person] + gained,
@@ -748,7 +742,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     if (sterneData.history.length === 0) return;
     const history = [...sterneData.history];
     const last = history.pop();
-    const toRemove = last.gained ?? (6 - last.stars); // backward compat
+    const toRemove = last.gained ?? gutschriftFuer(last.stars); // backward compat
     const newData = {
       ...sterneData,
       [last.person]: Math.max(0, sterneData[last.person] - toRemove),
@@ -1645,7 +1639,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <div className="text-xs text-gray-500">
                     Team-Stärke: <strong className="text-gray-700">{sterneInput.stars}</strong>
                     {' → '}
-                    Gutschrift: <strong className="text-yellow-600">+{(6 - sterneInput.stars) % 1 === 0 ? 6 - sterneInput.stars : (6 - sterneInput.stars).toFixed(1)} ⭐</strong>
+                    Gutschrift: <strong className="text-yellow-600">+{gutschriftFuer(sterneInput.stars) % 1 === 0 ? gutschriftFuer(sterneInput.stars) : gutschriftFuer(sterneInput.stars).toFixed(1)} ⭐</strong>
                     {' '}(6 − {sterneInput.stars})
                   </div>
                 </div>
