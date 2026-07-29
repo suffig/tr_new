@@ -1,5 +1,5 @@
 ﻿import Icon from '../icons/Icon';
-import { gutschriftFuer, loadSterne, saveSterne } from '../../utils/sterneCounter';
+import { gutschriftFuer, loadSterne, saveSterne, removeSterneEintrag } from '../../utils/sterneCounter';
 import { useState, useEffect, useCallback } from 'react';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
@@ -749,6 +749,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       history
     };
     saveSterneData(newData);
+  };
+
+  // Einzelnen Verlaufseintrag loeschen (Gutschrift wird zurueckgerechnet).
+  const deleteSterneEintrag = (index) => {
+    setSterneData(removeSterneEintrag(index));
   };
 
   const resetSterneData = () => {
@@ -1684,24 +1689,44 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <div className="space-y-1.5 max-h-64 overflow-y-auto">
                   {[...sterneData.history].reverse().map((entry, i) => {
                     const isAlex = entry.person === 'alex';
+                    // Die Liste ist umgedreht — echter Index im gespeicherten Verlauf:
+                    const echterIndex = sterneData.history.length - 1 - i;
+                    const wer = isAlex ? managers.aek.name : managers.real.name;
                     return (
                       <div
-                        key={i}
-                        className={`flex items-center justify-between px-3 py-2 rounded-lg ${isAlex ? 'bg-blue-50 border border-blue-100' : 'bg-red-50 border border-red-100'}`}
+                        key={`${entry.timestamp}-${echterIndex}`}
+                        className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg ${isAlex ? 'bg-blue-50 border border-blue-100' : 'bg-red-50 border border-red-100'}`}
                       >
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-2 flex-wrap min-w-0">
                           <span>{isAlex ? '🔵' : '🔴'}</span>
                           <span className={`font-semibold text-sm ${isAlex ? 'text-blue-700' : 'text-red-700'}`}>
-                            {isAlex ? managers.aek.name : managers.real.name}
+                            {wer}
                           </span>
                           <span className="text-xs text-gray-400">{entry.stars}★ Team</span>
                           <span className={`text-xs font-bold ${isAlex ? 'text-blue-600' : 'text-green-600'}`}>
-                            {(() => { const g = entry.gained ?? (6 - entry.stars); return `+${g % 1 === 0 ? g : g.toFixed(1)}⭐`; })()}
+                            {(() => { const g = entry.gained ?? gutschriftFuer(entry.stars); return `+${g % 1 === 0 ? g : g.toFixed(1)}⭐`; })()}
                           </span>
+                          {entry.info && (
+                            <span className="text-[11px] text-gray-400 truncate max-w-full">{entry.info}</span>
+                          )}
                         </div>
-                        <span className="text-xs text-gray-400">
-                          {new Date(entry.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
+                        <div className="flex items-center gap-1.5 flex-shrink-0">
+                          <span className="text-xs text-gray-400">
+                            {new Date(entry.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          <button
+                            onClick={() => {
+                              const g = entry.gained ?? gutschriftFuer(entry.stars);
+                              if (window.confirm(`Eintrag löschen? ${wer} verliert ${g % 1 === 0 ? g : g.toFixed(1)} ⭐.`)) {
+                                deleteSterneEintrag(echterIndex);
+                              }
+                            }}
+                            aria-label={`Eintrag von ${wer} löschen`}
+                            className="btn-compact w-7 h-7 rounded-full bg-white/70 text-red-500 hover:bg-red-100 flex items-center justify-center"
+                          >
+                            <Icon name="trash" size={13} strokeWidth={2.2} />
+                          </button>
+                        </div>
                       </div>
                     );
                   })}

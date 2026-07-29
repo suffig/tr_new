@@ -126,6 +126,23 @@ export function removeLatestPull(pulls, personId, teamName, sinceTs = 0) {
   return next;
 }
 
+/**
+ * Alle Ziehungen EINES Teams entfernen — wahlweise nur fuer eine Person
+ * (personId gesetzt) oder fuer beide (personId = null).
+ * Wird auch benutzt, wenn ein Team ganz aus dem Katalog verschwindet: sonst
+ * blieben dessen Ziehungen als Karteileichen in der Sammlung stehen.
+ */
+export function removeTeamPulls(pulls, teamName, personId = null) {
+  const betroffen = pulls.filter(
+    (e) => e.team === teamName && (personId ? e.person === personId : true)
+  );
+  if (betroffen.length === 0) return pulls;
+  const next = pulls.filter((e) => !betroffen.includes(e));
+  savePulls(next);
+  for (const ev of betroffen) dbDeleteEvent(ev, ev.person, teamName);
+  return next;
+}
+
 export function clearPerson(pulls, personId) {
   const next = pulls.filter((e) => e.person !== personId);
   savePulls(next);

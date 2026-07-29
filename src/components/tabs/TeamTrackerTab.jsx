@@ -20,6 +20,14 @@ const ACCENT = {
   red: { text: 'text-system-red', chip: 'bg-system-red/12 text-system-red', pill: 'bg-system-red text-white', bar: 'bg-system-red' },
 };
 
+const DUELL_ENTWURF_KEY = 'fusta_duell_entwurf_v1';
+function ladeDuellEntwurf() {
+  try {
+    const d = JSON.parse(localStorage.getItem(DUELL_ENTWURF_KEY) || 'null');
+    return d && d.teams ? d : null;
+  } catch { return null; }
+}
+
 const RATING_TIERS = [5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5];
 const fmtRating = (r) => (r == null ? '—' : r.toFixed(1).replace('.', ','));
 
@@ -98,12 +106,29 @@ function StarRating({ rating, size = 13 }) {
 // bekommt der SIEGER die Handicap-Gutschrift seines Teams (6 − Sterne, dieselbe
 // Regel wie im Alkohol-Tab). Wer mit einem schwachen Team gewinnt, holt also
 // mehr — mit einem 5-Sterne-Team nur 1,0.
-function SpielduellModal({ catalog, onClose, onConfirm }) {
-  const [teams, setTeams] = useState({ alexander: null, philip: null });
-  const [sieger, setSieger] = useState(null);
-  const [waehlt, setWaehlt] = useState('alexander');
+function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeichern, onEntwurfSichern, onEntwurfVerwerfen }) {
+  const [teams, setTeams] = useState(() => entwurf?.teams || { alexander: null, philip: null });
+  const [sieger, setSieger] = useState(() => entwurf?.sieger || null);
+  const [waehlt, setWaehlt] = useState(() => (entwurf?.teams?.alexander ? null : 'alexander'));
   const [suche, setSuche] = useState('');
   const sucheRef = useRef(null);
+
+  // Aktueller Stand in einem Ref — der Aufraeum-Effekt unten sieht sonst nur
+  // die Werte vom ersten Rendern (stale closure).
+  const standRef = useRef({ teams, sieger });
+  useEffect(() => { standRef.current = { teams, sieger }; }, [teams, sieger]);
+
+  // Wird das Modal abgeraeumt (Tabwechsel, App zu), ohne dass eingetragen oder
+  // bewusst verworfen wurde, bleibt der angefangene Duell-Stand als Entwurf
+  // erhalten — genauso wie beim Spiel-Erfassen im Admin-Bereich.
+  const abschliessendRef = useRef(false);
+  useEffect(() => {
+    return () => {
+      if (abschliessendRef.current) return;
+      const { teams: t, sieger: s } = standRef.current;
+      if (t.alexander || t.philip) onEntwurfSichern({ teams: t, sieger: s });
+    };
+  }, [onEntwurfSichern]);
 
   useEffect(() => {
     if (!waehlt) return undefined;
@@ -223,13 +248,29 @@ function SpielduellModal({ catalog, onClose, onConfirm }) {
           )}
 
           <div className="flex gap-2 pt-1">
-            <button type="button" onClick={onClose} className="btn-secondary flex-1">Abbrechen</button>
+            <button type="button" disabled={!teams.alexander && !teams.philip}
+              onClick={() => { abschliessendRef.current = true; onEntwurfSpeichern({ teams, sieger }); }}
+              className="btn-secondary flex-1 disabled:opacity-50">
+              Entwurf
+            </button>
             <button type="button" disabled={!beideGewaehlt || !sieger}
-              onClick={() => onConfirm({ teams, sieger, gutschrift })}
+              onClick={() => { abschliessendRef.current = true; onConfirm({ teams, sieger, gutschrift }); }}
               className="btn-primary flex-1 disabled:opacity-50">
               Eintragen
             </button>
           </div>
+
+          {(teams.alexander || teams.philip) && (
+            <button type="button"
+              onClick={() => {
+                if (!window.confirm('Angefangenes Duell verwerfen?')) return;
+                abschliessendRef.current = true;
+                onEntwurfVerwerfen();
+              }}
+              className="btn-compact w-full text-center text-footnote text-text-tertiary py-1">
+              Verwerfen
+            </button>
+          )}
         </div>
       </div>
     </div>,
@@ -288,6 +329,34 @@ export default function TeamTrackerTab() {
     if (neu.ok) { setPulls(replacePulls(neu.pulls)); setDbStatus('ok'); }
   };
 
+  // ── Duell-Entwurf ──────────────────────────────────────────────────────────
+  // Ein angefangenes Duell überlebt Tabwechsel und App-Neustart. Bewusst nur
+  // EIN Entwurf (anders als bei den Spiel-Entwürfen im Admin-Bereich): es ist
+  // immer höchstens ein Duell gleichzeitig offen.
+  // Nur schreiben, KEIN React-State: das ruft der Aufräum-Effekt des Modals.
+  // React führt Effekte im StrictMode doppelt aus (mount → cleanup → mount) —
+  // würde hier setDuellOffen(false) stehen, schlösse sich das Modal sofort
+  // nach dem Öffnen wieder, sobald ein Entwurf geladen ist.
+  const entwurfNurSchreiben = ({ teams, sieger }) => {
+    const daten = { teams, sieger, savedAt: new Date().toISOString() };
+    try { localStorage.setItem(DUELL_ENTWURF_KEY, JSON.stringify(daten)); } catch { /* ignore quota */ }
+  };
+
+  // Bewusstes Speichern über den Knopf: schreiben, schließen, Rückmeldung.
+  const entwurfSpeichern = ({ teams, sieger }) => {
+    const daten = { teams, sieger, savedAt: new Date().toISOString() };
+    try { localStorage.setItem(DUELL_ENTWURF_KEY, JSON.stringify(daten)); } catch { /* ignore quota */ }
+    setDuellEntwurf(daten);
+    setDuellOffen(false);
+    toast.success('Duell als Entwurf gespeichert');
+  };
+
+  const entwurfVerwerfen = () => {
+    try { localStorage.removeItem(DUELL_ENTWURF_KEY); } catch { /* ignore */ }
+    setDuellEntwurf(null);
+    setDuellOffen(false);
+  };
+
   // Spielduell abschließen: beide Ziehungen zählen für die Sammlung, der Sieger
   // bekommt zusätzlich die Handicap-Gutschrift (6 − Sterne) im Sterne-Zähler.
   const duellEintragen = ({ teams, sieger }) => {
@@ -308,6 +377,8 @@ export default function TeamTrackerTab() {
       });
       gutschrift = res.gained;
     }
+    try { localStorage.removeItem(DUELL_ENTWURF_KEY); } catch { /* ignore */ }
+    setDuellEntwurf(null);
     setDuellOffen(false);
     toast.success(
       gutschrift > 0
@@ -324,6 +395,7 @@ export default function TeamTrackerTab() {
   const [search, setSearch] = useState('');
   const searchRef = useRef(null);
   const [duellOffen, setDuellOffen] = useState(false);
+  const [duellEntwurf, setDuellEntwurf] = useState(ladeDuellEntwurf);
   const [ratingFilter, setRatingFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all'); // all | clubs | national | women
   const [openTier, setOpenTier] = useState(5);
@@ -637,10 +709,12 @@ export default function TeamTrackerTab() {
                 </button>
               )}
             </div>
-            <button onClick={() => setDuellOffen(true)} aria-label="Spielduell eintragen"
-              className="flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium bg-system-orange/12 text-system-orange">
+            <button onClick={() => setDuellOffen(true)}
+              aria-label={duellEntwurf ? 'Duell-Entwurf fortsetzen' : 'Spielduell eintragen'}
+              className="relative flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium bg-system-orange/12 text-system-orange">
               <Icon name="zap" size={16} strokeWidth={2.2} />
-              <span className="hidden min-[380px]:inline">Duell</span>
+              <span className="hidden min-[380px]:inline">{duellEntwurf ? 'Entwurf' : 'Duell'}</span>
+              {duellEntwurf && <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-system-orange" />}
             </button>
             <button onClick={() => setFiltersOpen((o) => !o)}
               className={`flex-shrink-0 inline-flex items-center gap-1.5 px-3 py-3 rounded-xl text-sm font-medium ${ratingFilter !== 'all' || typeFilter !== 'all' || filtersOpen ? 'bg-system-blue/12 text-system-blue' : 'bg-bg-tertiary text-text-secondary'}`}>
@@ -652,8 +726,12 @@ export default function TeamTrackerTab() {
           {duellOffen && (
             <SpielduellModal
               catalog={catalog}
+              entwurf={duellEntwurf}
               onClose={() => setDuellOffen(false)}
               onConfirm={duellEintragen}
+              onEntwurfSpeichern={entwurfSpeichern}
+              onEntwurfSichern={entwurfNurSchreiben}
+              onEntwurfVerwerfen={entwurfVerwerfen}
             />
           )}
 

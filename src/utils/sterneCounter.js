@@ -50,6 +50,25 @@ export function saveSterne(data) {
  * ({ person, stars, gained, timestamp }), damit "Rueckgaengig" dort weiter
  * funktioniert; Zusatzfelder wie `info` stoeren das nicht.
  */
+/**
+ * Einen einzelnen Verlaufseintrag entfernen und seine Gutschrift zurueckrechnen.
+ * @param {number} index Position im Verlauf (aelteste = 0)
+ */
+export function removeSterneEintrag(index) {
+  const data = loadSterne();
+  const eintrag = data.history[index];
+  if (!eintrag) return data;
+  const key = STERNE_PERSON_KEY[eintrag.person] || eintrag.person;
+  const abzug = eintrag.gained ?? gutschriftFuer(eintrag.stars);
+  const next = {
+    ...data,
+    // Nie unter 0 — der Zaehler ist eine Punktesumme, keine Schuld.
+    [key]: Math.max(0, (Number(data[key]) || 0) - abzug),
+    history: data.history.filter((_, i) => i !== index),
+  };
+  return saveSterne(next);
+}
+
 export function addSterneEintrag({ person, stars, info = null }) {
   const key = STERNE_PERSON_KEY[person] || person;
   const gained = gutschriftFuer(stars);

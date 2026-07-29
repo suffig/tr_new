@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import Icon from '../../icons/Icon';
 import { getCatalog, setRating, addTeam, removeTeam } from '../../../utils/fc26Catalog';
+import { loadPulls, removeTeamPulls } from '../../../utils/teamCollection';
 import toast from 'react-hot-toast';
 
 const fmtRating = (r) => (r == null ? '—' : r.toFixed(1).replace('.', ','));
@@ -47,10 +48,23 @@ export default function TeamCatalogTab() {
     toast.success(`„${name}" hinzugefügt`);
   };
 
+  // Team samt allem entfernen: Katalogeintrag UND alle Ziehungen beider
+  // Personen. Vorher blieben die Ziehungen als Karteileichen in der Sammlung
+  // stehen — sichtbar in den Zählern, aber ohne Team dahinter.
   const onRemove = (name) => {
-    if (!window.confirm(`„${name}" aus dem Katalog entfernen?`)) return;
+    const pulls = loadPulls();
+    const betroffen = pulls.filter((e) => e.team === name).length;
+    const frage = betroffen > 0
+      ? `„${name}" aus dem Katalog entfernen?\n\nDazu werden ${betroffen} erfasste Ziehung${betroffen === 1 ? '' : 'en'} gelöscht (beide Personen). Das lässt sich nicht rückgängig machen.`
+      : `„${name}" aus dem Katalog entfernen?`;
+    if (!window.confirm(frage)) return;
+    if (betroffen > 0) removeTeamPulls(pulls, name);
     removeTeam(name); refresh();
-    toast.success(`„${name}" entfernt`);
+    toast.success(
+      betroffen > 0
+        ? `„${name}" entfernt · ${betroffen} Ziehung${betroffen === 1 ? '' : 'en'} gelöscht`
+        : `„${name}" entfernt`
+    );
   };
 
   return (
