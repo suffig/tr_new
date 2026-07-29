@@ -289,6 +289,13 @@ export class MatchBusinessLogic {
     let aekBalance = aekFinance.balance || 0;
     let realBalance = realFinance.balance || 0;
 
+    // Kontostaende VOR diesem Spiel festhalten. Der Echtgeld-Ausgleich fragt
+    // "wie viel der Preisgeld-Strafe konnte das Konto NICHT decken" — dafuer
+    // zaehlt das Guthaben, BEVOR die Strafe abgezogen wurde. Wuerde man den
+    // bereits reduzierten Stand einsetzen, ginge die Strafe zweimal ein.
+    const aekBalanceVorSpiel = aekBalance;
+    const realBalanceVorSpiel = realBalance;
+
     // Calculate SdS bonuses
     const sdsBonusAek = manofthematch ? await this.getSdSBonus(manofthematch, 'AEK') : 0;
     const sdsBonusReal = manofthematch ? await this.getSdSBonus(manofthematch, 'Real') : 0;
@@ -356,16 +363,19 @@ export class MatchBusinessLogic {
     }
 
     // 3. Process Echtgeld-Ausgleich (Real money compensation)
-    // Pass the running balances AFTER SdS bonus and prize money have been applied
-    // and clamped to 0 — exactly as the legacy tracker_full_v1 does.
+    // WICHTIG: hier gehen die Kontostaende VOR diesem Spiel ein, nicht die
+    // bereits um das Preisgeld reduzierten. calculateEchtgeldBetrag zieht das
+    // Preisgeld selbst ab und addiert den SdS-Bonus selbst dazu; mit dem
+    // reduzierten Stand waere die Strafe doppelt eingegangen (und ein
+    // SdS-Bonus des Verlierers doppelt gutgeschrieben).
     if (winner && loser) {
       await this.processEchtgeldAusgleich({
         date,
         matchId,
         winner,
         loser,
-        aekBalance,
-        realBalance,
+        aekBalance: aekBalanceVorSpiel,
+        realBalance: realBalanceVorSpiel,
         prizeaek,
         prizereal,
         sdsBonusAek: sdsBonusAek > 0 ? 1 : 0,
@@ -423,14 +433,19 @@ export class MatchBusinessLogic {
   /**
    * Calculate the real-money (Echtgeld) amount owed — exact tracker_full_v1 formula.
    *
-   * `loserBalance` is the loser's balance AFTER the SdS bonus and prize money have
-   * already been applied and clamped to 0 (as the legacy tracker does). Only the
-   * loser's own account counts toward `konto` — the winner's balance is irrelevant.
+   * `loserBalance` ist der Kontostand des Verlierers VOR diesem Spiel — also
+   * bevor Preisgeld und SdS-Bonus verbucht wurden. Beides bringt die Formel
+   * selbst ein: den SdS-Bonus addiert sie auf `konto`, das Preisgeld zieht sie
+   * als Strafe ab. Nur das Konto des Verlierers zaehlt; der Gewinner ist egal.
    *
-   * @param {number} loserBalance   - Loser's balance after SdS+prize were applied (clamped ≥ 0)
-   * @param {number} preisgeld      - Loser's prize money (negative value)
-   * @param {number|boolean} sdsBonus - 1/true if the loser's player was SdS, 0/false otherwise
-   * @returns {number} Real-money amount in euros
+   * Grundbetrag sind 5 €. Dazu kommt 1 € je 100.000 €, die das Konto von der
+   * Preisgeld-Strafe NICHT decken konnte. Wer die Strafe komplett aus eigener
+   * Kasse zahlen kann, zahlt also genau die 5 €.
+   *
+   * @param {number} loserBalance   - Kontostand des Verlierers VOR dem Spiel
+   * @param {number} preisgeld      - Preisgeld des Verlierers (negativer Wert)
+   * @param {number|boolean} sdsBonus - 1/true, wenn der SdS aus seinem Team kam
+   * @returns {number} Betrag in echten Euro
    */
   static calculateEchtgeldBetrag(loserBalance, preisgeld, sdsBonus) {
     let konto = loserBalance;
