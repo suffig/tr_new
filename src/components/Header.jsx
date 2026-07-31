@@ -13,11 +13,15 @@ export default function Header({ onNavigate }) {
       <header className="glass-ios border-b border-separator z-40 safe-area-top safe-area-x flex-shrink-0">
         <div className="px-4 py-2 flex items-center justify-between gap-2">
           <div className="flex items-center gap-3 min-w-0 flex-shrink">
-            <div className="w-8 h-8 flex-shrink-0 bg-gradient-to-br from-system-green to-system-blue rounded-ios flex items-center justify-center logo-glow">
+            {/* Das Logo bringt seinen eigenen Hintergrund mit und fuellt die
+                Kachel. Frueher sass ein kleineres Logo auf einer gruen-blauen
+                Verlaufsflaeche — mit dem jetzigen Motiv waeren das zwei
+                Hintergruende uebereinander. */}
+            <div className="w-8 h-8 flex-shrink-0 rounded-ios overflow-hidden logo-glow">
               <img
                 src={logoFusta}
                 alt="FUSTA Logo"
-                className="w-6 h-6 object-contain"
+                className="w-full h-full object-cover"
                 loading="eager"
               />
             </div>

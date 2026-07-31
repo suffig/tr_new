@@ -207,18 +207,20 @@ button {
   50% { background-position: 100% center; }
 }
 
+/* Neutraler Schein statt gruen: das Logo bringt seine eigenen Farben mit
+   (Orange bis Violett), ein gruener Halo darum sah nach Versehen aus. */
 .logo-glow {
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--system-green) 25%, transparent),
-    0 4px 14px color-mix(in srgb, var(--system-green) 28%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--text-primary) 12%, transparent),
+    0 4px 14px rgba(0, 0, 0, 0.22);
   transition: box-shadow 0.4s ease, transform 0.4s var(--spring-bounce);
 }
 
 .logo-glow:hover {
   transform: scale(1.05);
   box-shadow:
-    0 0 0 1px color-mix(in srgb, var(--system-green) 35%, transparent),
-    0 5px 16px color-mix(in srgb, var(--system-green) 32%, transparent);
+    0 0 0 1px color-mix(in srgb, var(--text-primary) 18%, transparent),
+    0 5px 16px rgba(0, 0, 0, 0.28);
 }
 
 /* --------------------------------------------------------------------------

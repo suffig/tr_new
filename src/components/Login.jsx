@@ -154,11 +154,11 @@ export default function Login() {
           {/* Header */}
           <div className="text-center mb-8 login-header">
             <div className="mb-6 flex justify-center">
-              <div className="w-20 h-20 bg-gradient-to-br from-system-green to-system-blue rounded-ios-2xl flex items-center justify-center shadow-ios-lg login-logo-bounce">
-                <img 
-                  src={logoFusta} 
-                  alt="FUSTA Logo" 
-                  className="w-12 h-12 object-contain"
+              <div className="w-20 h-20 rounded-ios-2xl overflow-hidden shadow-ios-lg login-logo-bounce">
+                <img
+                  src={logoFusta}
+                  alt="FUSTA Logo"
+                  className="w-full h-full object-cover"
                   loading="eager"
                 />
               </div>
