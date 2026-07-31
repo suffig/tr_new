@@ -8,14 +8,6 @@ import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
 // (legacy rows without one count as FC25), so seasons are derived purely from
 // existing data — no extra table, no season_id.
 
-function parseGoals(raw) {
-  try {
-    if (typeof raw === 'string') return JSON.parse(raw) || [];
-    if (Array.isArray(raw)) return raw;
-  } catch { /* ignore */ }
-  return [];
-}
-
 function computeStandings(matches) {
   const A = { w: 0, d: 0, l: 0, gf: 0, ga: 0 };
   const R = { w: 0, d: 0, l: 0, gf: 0, ga: 0 };
@@ -29,33 +21,31 @@ function computeStandings(matches) {
   return { A, R };
 }
 
-function computeAwards(matches, resolveName) {
-  const scorers = {}, motm = {};
+// MVP kommt aus den Spielen dieser Saison. Die TORSCHUETZEN dagegen aus den
+// Spielerzeilen (siehe unten): players.goals ist der gepflegte Stand je Saison,
+// waehrend die Match-Torlisten nur so weit zurueckreichen, wie Spiele erfasst
+// sind. Bei FC25 stehen dort die uebernommenen Karrierezahlen — aus den
+// Torlisten kaeme eine viel zu kleine Zahl heraus.
+function computeAwards(matches) {
+  const motm = {};
   for (const m of matches) {
-    for (const raw of [m.goalslista, m.goalslistb]) {
-      for (const g of parseGoals(raw)) {
-        const isObj = typeof g === 'object' && g !== null;
-        const name = resolveName(isObj ? (g.player ?? g.player_id) : g);
-        const cnt = isObj ? (g.count || 1) : 1;
-        if (name && !String(name).startsWith('Eigentore')) scorers[name] = (scorers[name] || 0) + cnt;
-      }
-    }
     if (m.manofthematch) motm[m.manofthematch] = (motm[m.manofthematch] || 0) + 1;
   }
   const top = (obj) => Object.entries(obj).sort((x, y) => y[1] - x[1])[0] || null;
-  return { topScorer: top(scorers), topMotm: top(motm) };
+  return { topMotm: top(motm) };
+}
+
+/** Torschuetzen EINER Saison aus den Spielerzeilen dieser Saison. */
+function saisonTorschuetzen(players, version) {
+  return (players || [])
+    .filter((p) => (p.fifa_version || 'FC25') === version && (Number(p.goals) || 0) > 0)
+    .map((p) => ({ name: p.name, goals: Number(p.goals) || 0, team: p.team }))
+    .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name));
 }
 
 const versionNum = (v) => parseInt(String(v).replace(/\D/g, ''), 10) || 0;
 
 export default function SeasonView({ matches, players, aekName, realName }) {
-  const resolveName = useMemo(() => (idOrName) => {
-    if (idOrName == null) return null;
-    if (typeof idOrName === 'string' && !/^\d+$/.test(idOrName)) return idOrName;
-    const p = (players || []).find((pl) => pl.id === idOrName || String(pl.id) === String(idOrName));
-    return p?.name || (typeof idOrName === 'string' ? idOrName : null);
-  }, [players]);
-
   const currentVersion = getCurrentFifaVersion();
 
   // Seasons = the FIFA versions that appear in the data (plus the current one),
@@ -79,7 +69,11 @@ export default function SeasonView({ matches, players, aekName, realName }) {
   );
 
   const { A, R } = useMemo(() => computeStandings(seasonMatches), [seasonMatches]);
-  const awards = useMemo(() => computeAwards(seasonMatches, resolveName), [seasonMatches, resolveName]);
+  const awards = useMemo(() => computeAwards(seasonMatches), [seasonMatches]);
+  const torschuetzen = useMemo(
+    () => saisonTorschuetzen(players, current?.version),
+    [players, current]
+  );
 
   if (!matches) {
     return <div className="text-center py-16 text-text-muted">Lade Saison…</div>;
@@ -168,8 +162,8 @@ export default function SeasonView({ matches, players, aekName, realName }) {
               <Icon name="star" size={15} strokeWidth={2.2} className="text-system-orange" />
               Torschützenkönig
             </div>
-            {awards.topScorer
-              ? <span className="text-callout font-bold text-text-primary truncate block">{awards.topScorer[0]} <span className="text-text-tertiary font-medium">({awards.topScorer[1]})</span></span>
+            {torschuetzen[0]
+              ? <span className="text-callout font-bold text-text-primary truncate block">{torschuetzen[0].name} <span className="text-text-tertiary font-medium">({torschuetzen[0].goals})</span></span>
               : <span className="text-footnote text-text-tertiary">—</span>}
           </div>
           <div className="modern-card p-4">
@@ -181,6 +175,39 @@ export default function SeasonView({ matches, players, aekName, realName }) {
               ? <span className="text-callout font-bold text-text-primary truncate block">{awards.topMotm[0]} <span className="text-text-tertiary font-medium">({awards.topMotm[1]})</span></span>
               : <span className="text-footnote text-text-tertiary">—</span>}
           </div>
+        </div>
+      )}
+
+      {/* Torschützenliste der Saison — aus den Spielerzeilen dieser Saison,
+          also inklusive der übernommenen Zahlen aus der Zeit vor dem Tracker. */}
+      {torschuetzen.length > 0 && (
+        <div className="modern-card p-4">
+          <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
+            <Icon name="football" size={15} strokeWidth={2.2} className="text-system-green" />
+            Torschützen · Saison {current?.number}
+            <span className="ml-auto text-caption2 text-text-tertiary num-tabular">
+              {torschuetzen.reduce((s, p) => s + p.goals, 0)} Tore gesamt
+            </span>
+          </div>
+          <div className="space-y-1.5">
+            {torschuetzen.slice(0, 8).map((p, i) => (
+              <div key={`${p.name}-${i}`} className="flex items-center gap-2.5">
+                <span className="w-4 text-caption2 text-text-tertiary num-tabular flex-shrink-0">{i + 1}.</span>
+                <TeamLogo team={p.team === 'AEK' ? 'aek' : p.team === 'Real' ? 'real' : 'aek'} size="xs" />
+                <span className="text-sm text-text-primary truncate min-w-0 flex-1">{p.name}</span>
+                <div className="hidden min-[380px]:block flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden max-w-[6rem]">
+                  <div className="h-full bg-system-green/70"
+                    style={{ width: `${(p.goals / torschuetzen[0].goals) * 100}%` }} />
+                </div>
+                <span className="stat-display text-[15px] text-text-primary w-12 text-right flex-shrink-0">{p.goals}</span>
+              </div>
+            ))}
+          </div>
+          {torschuetzen.length > 8 && (
+            <p className="text-caption2 text-text-tertiary mt-2">
+              … und {torschuetzen.length - 8} weitere mit Toren.
+            </p>
+          )}
         </div>
       )}
 
