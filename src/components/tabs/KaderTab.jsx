@@ -58,19 +58,21 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
     return `${(amount || 0).toFixed(1)}M €`;
   };
 
+  // Teamfarben aus dem Designsystem statt fester Tailwind-Stufen. Vorher stand
+  // hier blue-600/red-400 — andere Farbtoene als die app-weiten system-blue /
+  // system-red, und im Dunkelmodus unveraendert, weil sie keine CSS-Variablen
+  // sind. AEK ist ueberall blau, Real ueberall rot.
   const getTeamCardClass = (teamName) => {
-    const baseClass = "modern-card";
-    if (teamName === "AEK") return `${baseClass} border-l-4 border-blue-400`;
-    if (teamName === "Real") return `${baseClass} border-l-4 border-red-400`;
-    if (teamName === "Ehemalige") return `${baseClass} border-l-4 border-slate-400`;
-    return baseClass;
+    const base = "modern-card overflow-hidden border-l-4";
+    if (teamName === "AEK") return `${base} border-l-system-blue`;
+    if (teamName === "Real") return `${base} border-l-system-red`;
+    return `${base} border-l-border-strong`;
   };
 
   const getTeamColor = (teamName) => {
-    if (teamName === "AEK") return "text-blue-600";
-    if (teamName === "Real") return "text-red-600";
-    if (teamName === "Ehemalige") return "text-slate-600";
-    return "text-gray-600";
+    if (teamName === "AEK") return "text-system-blue";
+    if (teamName === "Real") return "text-system-red";
+    return "text-text-secondary";
   };
 
   // Minimal CRUD functions without changing the design
@@ -171,18 +173,18 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                   onClick={() => setOpenPanel(openPanel === team.id ? null : team.id)}
                   className="w-full text-left p-4 focus:outline-none"
                 >
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
                       {team.logoComponent || <span className="text-2xl">{team.icon}</span>}
-                      <div>
-                        <h3 className={`font-semibold text-lg ${getTeamColor(team.name)}`}>
+                      <div className="min-w-0">
+                        <h3 className={`font-semibold text-callout truncate ${getTeamColor(team.name)}`}>
                           {team.displayName}
                         </h3>
-                        <p className="text-sm text-text-muted">
-                          {team.players.length} Spieler
+                        <p className="text-footnote text-text-tertiary num-tabular">
+                          {team.players.length} {team.players.length === 1 ? 'Spieler' : 'Spieler'}
                           {team.squadValue > 0 && (
                             <span className="ml-2">
-                              • Kaderwert: {formatCurrencyInMillions(team.squadValue)}
+                              · {formatCurrencyInMillions(team.squadValue)}
                             </span>
                           )}
                         </p>
@@ -200,41 +202,38 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                     {team.players.length > 0 ? (
                       <div className="grid gap-3">
                         {team.players.map((player) => (
-                          <div key={player.id} className="bg-bg-tertiary rounded-lg p-3 hover:bg-bg-secondary transition-colors cursor-pointer relative group"
+                          <div key={player.id} className="bg-bg-tertiary rounded-xl p-3 hover:bg-bg-hover transition-colors cursor-pointer group"
                                onClick={() => handleShowPlayerDetail(player)}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex-1">
-                                <div className="flex items-center space-x-3">
-                                  <div>
-                                    <h4 className="font-medium text-text-primary group-hover:text-blue-400 transition-colors">
-                                      {player.name}
-                                    </h4>
-                                    <div className="flex items-center space-x-2 mt-1">
-                                      <span className={getPositionBadgeClass(player.position)}>
-                                        {player.position}
-                                      </span>
-                                      {player.staerke && (
-                                        <span className="text-xs text-text-muted">
-                                          Stärke: {player.staerke}
-                                        </span>
-                                      )}
-                                      {(player.value !== null && player.value !== undefined) && (
-                                        <span className="text-xs text-primary-green font-medium">
-                                          {formatCurrencyInMillions(player.value)}
-                                        </span>
-                                      )}
-                                    </div>
-                                  </div>
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="min-w-0 flex-1">
+                                <h4 className="font-medium text-text-primary truncate group-hover:text-system-blue transition-colors">
+                                  {player.name}
+                                </h4>
+                                <div className="flex items-center flex-wrap gap-2 mt-1">
+                                  <span className={getPositionBadgeClass(player.position)}>
+                                    {player.position}
+                                  </span>
+                                  {player.staerke && (
+                                    <span className="text-caption2 text-text-tertiary num-tabular">
+                                      Stärke {player.staerke}
+                                    </span>
+                                  )}
+                                  {(player.value !== null && player.value !== undefined) && (
+                                    <span className="text-caption2 text-system-green font-medium num-tabular">
+                                      {formatCurrencyInMillions(player.value)}
+                                    </span>
+                                  )}
                                 </div>
                               </div>
-                              <div className="flex items-center space-x-2">
+                              <div className="flex items-center gap-1 flex-shrink-0">
                                 <button
                                   onClick={(e) => {
                                     e.stopPropagation();
                                     handleShowPlayerDetail(player);
                                   }}
-                                  className="text-blue-400 hover:text-blue-300 transition-colors p-2 rounded-full hover:bg-blue-400/10"
-                                  title="FIFA Statistics"
+                                  className="btn-compact text-text-tertiary hover:text-system-blue transition-colors p-2 rounded-lg"
+                                  title="Spielerstatistiken"
+                                  aria-label={`Statistiken von ${player.name}`}
                                 >
                                   <Icon name="chart" size={16} strokeWidth={2} />
                                 </button>
@@ -244,8 +243,9 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                                       e.stopPropagation();
                                       handleEditPlayer(player);
                                     }}
-                                    className="text-text-muted hover:text-primary-green transition-colors p-1"
+                                    className="btn-compact text-text-tertiary hover:text-system-green transition-colors p-2 rounded-lg"
                                     title="Bearbeiten"
+                                    aria-label={`${player.name} bearbeiten`}
                                   >
                                     <Icon name="edit" size={16} strokeWidth={2} />
                                   </button>
@@ -322,9 +322,11 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       
       {/* Player Edit Modal */}
       {editingPlayer && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full">
-            <div className="p-6">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          {/* bg-bg-elevated statt bg-white — die feste Farbe blieb im
+              Dunkelmodus weiss. Rundung wie bei den uebrigen Modals. */}
+          <div className="bg-bg-elevated border border-border-light rounded-2xl shadow-ios-floating max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto">
+            <div className="p-5">
               <div className="flex items-center justify-between mb-4">
                 <h3 className="text-lg font-semibold text-text-primary">Spieler bearbeiten</h3>
                 <button
@@ -369,27 +371,27 @@ function PlayerForm({ player, onSave, onCancel }) {
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-text-primary mb-1">
+        <label className="block text-footnote font-medium text-text-secondary mb-1.5">
           Name *
         </label>
         <input
           type="text"
           value={formData.name}
           onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-          className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent"
+          className="form-input"
           placeholder="Spielername"
           required
         />
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-text-primary mb-1">
+        <label className="block text-footnote font-medium text-text-secondary mb-1.5">
           Position *
         </label>
         <select
           value={formData.position}
           onChange={(e) => setFormData({ ...formData, position: e.target.value })}
-          className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent"
+          className="form-input"
           required
         >
           <option value="">Position wählen</option>
@@ -400,13 +402,13 @@ function PlayerForm({ player, onSave, onCancel }) {
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-text-primary mb-1">
+        <label className="block text-footnote font-medium text-text-secondary mb-1.5">
           Team *
         </label>
         <select
           value={formData.team}
           onChange={(e) => setFormData({ ...formData, team: e.target.value })}
-          className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent"
+          className="form-input"
           required
         >
           <option value="">Team wählen</option>
@@ -417,7 +419,7 @@ function PlayerForm({ player, onSave, onCancel }) {
       </div>
       
       <div>
-        <label className="block text-sm font-medium text-text-primary mb-1">
+        <label className="block text-footnote font-medium text-text-secondary mb-1.5">
           Marktwert (in Millionen €)
         </label>
         <input
@@ -427,22 +429,22 @@ function PlayerForm({ player, onSave, onCancel }) {
           value={formData.value}
           onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
           onFocus={(e) => e.target.select()}
-          className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-primary-green focus:border-transparent"
+          className="form-input"
           placeholder="0.0"
         />
       </div>
       
-      <div className="flex space-x-3 pt-4">
+      <div className="flex gap-3 pt-2">
         <button
           type="submit"
-          className="flex-1 bg-primary-green text-white py-2 px-4 rounded-lg hover:bg-primary-green/90 transition-colors"
+          className="btn-primary flex-1"
         >
           Speichern
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="flex-1 bg-bg-secondary text-text-muted py-2 px-4 rounded-lg hover:bg-bg-tertiary transition-colors"
+          className="btn-secondary flex-1"
         >
           Abbrechen
         </button>

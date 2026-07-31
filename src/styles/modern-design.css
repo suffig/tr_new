@@ -1127,6 +1127,177 @@ textarea.form-input {
 .dark .chip-teal   { background: color-mix(in srgb, var(--system-teal) 24%, transparent);   color: var(--system-teal-light); }
 .dark .chip-gray   { background: var(--bg-tertiary); color: var(--text-secondary); }
 
+/* --------------------------------------------------------------------------
+   Getoente Flaechen (.panel-*)
+   --------------------------------------------------------------------------
+   Dasselbe Prinzip wie .chip-*, nur als Flaeche statt als Plakette: leicht
+   eingefaerbter Hintergrund plus passender Rahmen, hell und dunkel getrennt.
+
+   Warum es die Klassen ueberhaupt gibt: Alkohol- und Saufen-Tab bestanden aus
+   Bloecken wie "bg-blue-50 border border-blue-200". Feste Tailwind-Stufen
+   kennen keinen Dunkelmodus — die Flaechen blieben dort hellblau mit dunkler
+   Schrift darauf. Als Utility mit Transparenz (bg-system-blue/8) liesse es
+   sich nicht schreiben, weil Tailwind fuer Farben aus CSS-Variablen keine
+   Transparenzstufen erzeugt. Deshalb einmal hier, benutzt als
+   <div class="panel-blue p-4">.
+   -------------------------------------------------------------------------- */
+.panel-blue,
+.panel-green,
+.panel-red,
+.panel-orange,
+.panel-yellow,
+.panel-purple,
+.panel-teal,
+.panel-pink,
+.panel-indigo,
+.panel-gray {
+  border: 1px solid;
+  border-radius: 14px; /* etwas enger als .modern-card (18px) — Panels liegen meist IN einer Karte */
+}
+
+.panel-blue   { background: color-mix(in srgb, var(--system-blue) 8%, transparent);   border-color: color-mix(in srgb, var(--system-blue) 20%, transparent); }
+.panel-green  { background: color-mix(in srgb, var(--system-green) 9%, transparent);  border-color: color-mix(in srgb, var(--system-green) 22%, transparent); }
+.panel-red    { background: color-mix(in srgb, var(--system-red) 8%, transparent);    border-color: color-mix(in srgb, var(--system-red) 20%, transparent); }
+.panel-orange { background: color-mix(in srgb, var(--system-orange) 10%, transparent); border-color: color-mix(in srgb, var(--system-orange) 24%, transparent); }
+.panel-yellow { background: color-mix(in srgb, var(--system-yellow) 12%, transparent); border-color: color-mix(in srgb, var(--system-yellow) 26%, transparent); }
+.panel-purple { background: color-mix(in srgb, var(--system-purple) 8%, transparent); border-color: color-mix(in srgb, var(--system-purple) 20%, transparent); }
+.panel-teal   { background: color-mix(in srgb, var(--system-teal) 10%, transparent);  border-color: color-mix(in srgb, var(--system-teal) 24%, transparent); }
+.panel-pink   { background: color-mix(in srgb, var(--system-pink) 9%, transparent);   border-color: color-mix(in srgb, var(--system-pink) 22%, transparent); }
+.panel-indigo { background: color-mix(in srgb, var(--system-indigo) 9%, transparent); border-color: color-mix(in srgb, var(--system-indigo) 22%, transparent); }
+.panel-gray   { background: var(--bg-tertiary);                                       border-color: var(--border-light); }
+
+/* Dunkel: kraeftiger tingieren, sonst verschwindet die Flaeche im Untergrund. */
+.dark .panel-blue   { background: color-mix(in srgb, var(--system-blue) 16%, transparent);   border-color: color-mix(in srgb, var(--system-blue) 32%, transparent); }
+.dark .panel-green  { background: color-mix(in srgb, var(--system-green) 16%, transparent);  border-color: color-mix(in srgb, var(--system-green) 32%, transparent); }
+.dark .panel-red    { background: color-mix(in srgb, var(--system-red) 16%, transparent);    border-color: color-mix(in srgb, var(--system-red) 32%, transparent); }
+.dark .panel-orange { background: color-mix(in srgb, var(--system-orange) 18%, transparent); border-color: color-mix(in srgb, var(--system-orange) 34%, transparent); }
+.dark .panel-yellow { background: color-mix(in srgb, var(--system-yellow) 18%, transparent); border-color: color-mix(in srgb, var(--system-yellow) 34%, transparent); }
+.dark .panel-purple { background: color-mix(in srgb, var(--system-purple) 18%, transparent); border-color: color-mix(in srgb, var(--system-purple) 34%, transparent); }
+.dark .panel-teal   { background: color-mix(in srgb, var(--system-teal) 18%, transparent);   border-color: color-mix(in srgb, var(--system-teal) 34%, transparent); }
+.dark .panel-pink   { background: color-mix(in srgb, var(--system-pink) 9%, transparent);   border-color: color-mix(in srgb, var(--system-pink) 22%, transparent); }
+.panel-indigo { background: color-mix(in srgb, var(--system-indigo) 9%, transparent); border-color: color-mix(in srgb, var(--system-indigo) 22%, transparent); }
+.panel-gray   { background: var(--bg-tertiary);                                        border-color: var(--border-light); }
+
+
+/* --------------------------------------------------------------------------
+   Transparenzstufen fuer die System-Farben
+   --------------------------------------------------------------------------
+   Tailwind erzeugt fuer Farben, die aus CSS-Variablen kommen, KEINE
+   Transparenzvarianten — bg-system-blue/10 bliebe eine Klasse ohne Regel.
+   Deshalb hier von Hand, in Tailwind-Schreibweise, damit im JSX nichts
+   Besonderes steht. Dunkel jeweils kraeftiger, sonst verschwindet die
+   Tingierung im dunklen Untergrund.
+   -------------------------------------------------------------------------- */
+.bg-system-blue\/10 { background-color: color-mix(in srgb, var(--system-blue) 10%, transparent); }
+.bg-system-blue\/15 { background-color: color-mix(in srgb, var(--system-blue) 15%, transparent); }
+.bg-system-blue\/25 { background-color: color-mix(in srgb, var(--system-blue) 25%, transparent); }
+.bg-system-green\/10 { background-color: color-mix(in srgb, var(--system-green) 10%, transparent); }
+.bg-system-green\/15 { background-color: color-mix(in srgb, var(--system-green) 15%, transparent); }
+.bg-system-green\/25 { background-color: color-mix(in srgb, var(--system-green) 25%, transparent); }
+.bg-system-red\/10 { background-color: color-mix(in srgb, var(--system-red) 10%, transparent); }
+.bg-system-red\/15 { background-color: color-mix(in srgb, var(--system-red) 15%, transparent); }
+.bg-system-red\/25 { background-color: color-mix(in srgb, var(--system-red) 25%, transparent); }
+.bg-system-orange\/10 { background-color: color-mix(in srgb, var(--system-orange) 10%, transparent); }
+.bg-system-orange\/15 { background-color: color-mix(in srgb, var(--system-orange) 15%, transparent); }
+.bg-system-orange\/25 { background-color: color-mix(in srgb, var(--system-orange) 25%, transparent); }
+.bg-system-yellow\/10 { background-color: color-mix(in srgb, var(--system-yellow) 10%, transparent); }
+.bg-system-yellow\/15 { background-color: color-mix(in srgb, var(--system-yellow) 15%, transparent); }
+.bg-system-yellow\/25 { background-color: color-mix(in srgb, var(--system-yellow) 25%, transparent); }
+.bg-system-purple\/10 { background-color: color-mix(in srgb, var(--system-purple) 10%, transparent); }
+.bg-system-purple\/15 { background-color: color-mix(in srgb, var(--system-purple) 15%, transparent); }
+.bg-system-purple\/25 { background-color: color-mix(in srgb, var(--system-purple) 25%, transparent); }
+.bg-system-teal\/10 { background-color: color-mix(in srgb, var(--system-teal) 10%, transparent); }
+.bg-system-teal\/15 { background-color: color-mix(in srgb, var(--system-teal) 15%, transparent); }
+.bg-system-teal\/25 { background-color: color-mix(in srgb, var(--system-teal) 25%, transparent); }
+.bg-system-pink\/10 { background-color: color-mix(in srgb, var(--system-pink) 10%, transparent); }
+.bg-system-pink\/15 { background-color: color-mix(in srgb, var(--system-pink) 15%, transparent); }
+.bg-system-pink\/25 { background-color: color-mix(in srgb, var(--system-pink) 25%, transparent); }
+.bg-system-indigo\/10 { background-color: color-mix(in srgb, var(--system-indigo) 10%, transparent); }
+.bg-system-indigo\/15 { background-color: color-mix(in srgb, var(--system-indigo) 15%, transparent); }
+.bg-system-indigo\/25 { background-color: color-mix(in srgb, var(--system-indigo) 25%, transparent); }
+.border-system-blue\/25 { border-color: color-mix(in srgb, var(--system-blue) 25%, transparent); }
+.border-system-blue\/35 { border-color: color-mix(in srgb, var(--system-blue) 35%, transparent); }
+.border-system-blue\/45 { border-color: color-mix(in srgb, var(--system-blue) 45%, transparent); }
+.border-system-green\/25 { border-color: color-mix(in srgb, var(--system-green) 25%, transparent); }
+.border-system-green\/35 { border-color: color-mix(in srgb, var(--system-green) 35%, transparent); }
+.border-system-green\/45 { border-color: color-mix(in srgb, var(--system-green) 45%, transparent); }
+.border-system-red\/25 { border-color: color-mix(in srgb, var(--system-red) 25%, transparent); }
+.border-system-red\/35 { border-color: color-mix(in srgb, var(--system-red) 35%, transparent); }
+.border-system-red\/45 { border-color: color-mix(in srgb, var(--system-red) 45%, transparent); }
+.border-system-orange\/25 { border-color: color-mix(in srgb, var(--system-orange) 25%, transparent); }
+.border-system-orange\/35 { border-color: color-mix(in srgb, var(--system-orange) 35%, transparent); }
+.border-system-orange\/45 { border-color: color-mix(in srgb, var(--system-orange) 45%, transparent); }
+.border-system-yellow\/25 { border-color: color-mix(in srgb, var(--system-yellow) 25%, transparent); }
+.border-system-yellow\/35 { border-color: color-mix(in srgb, var(--system-yellow) 35%, transparent); }
+.border-system-yellow\/45 { border-color: color-mix(in srgb, var(--system-yellow) 45%, transparent); }
+.border-system-purple\/25 { border-color: color-mix(in srgb, var(--system-purple) 25%, transparent); }
+.border-system-purple\/35 { border-color: color-mix(in srgb, var(--system-purple) 35%, transparent); }
+.border-system-purple\/45 { border-color: color-mix(in srgb, var(--system-purple) 45%, transparent); }
+.border-system-teal\/25 { border-color: color-mix(in srgb, var(--system-teal) 25%, transparent); }
+.border-system-teal\/35 { border-color: color-mix(in srgb, var(--system-teal) 35%, transparent); }
+.border-system-teal\/45 { border-color: color-mix(in srgb, var(--system-teal) 45%, transparent); }
+.border-system-pink\/25 { border-color: color-mix(in srgb, var(--system-pink) 25%, transparent); }
+.border-system-pink\/35 { border-color: color-mix(in srgb, var(--system-pink) 35%, transparent); }
+.border-system-pink\/45 { border-color: color-mix(in srgb, var(--system-pink) 45%, transparent); }
+.border-system-indigo\/25 { border-color: color-mix(in srgb, var(--system-indigo) 25%, transparent); }
+.border-system-indigo\/35 { border-color: color-mix(in srgb, var(--system-indigo) 35%, transparent); }
+.border-system-indigo\/45 { border-color: color-mix(in srgb, var(--system-indigo) 45%, transparent); }
+
+.dark .bg-system-blue\/10 { background-color: color-mix(in srgb, var(--system-blue) 18%, transparent); }
+.dark .bg-system-blue\/15 { background-color: color-mix(in srgb, var(--system-blue) 24%, transparent); }
+.dark .bg-system-blue\/25 { background-color: color-mix(in srgb, var(--system-blue) 34%, transparent); }
+.dark .bg-system-green\/10 { background-color: color-mix(in srgb, var(--system-green) 18%, transparent); }
+.dark .bg-system-green\/15 { background-color: color-mix(in srgb, var(--system-green) 24%, transparent); }
+.dark .bg-system-green\/25 { background-color: color-mix(in srgb, var(--system-green) 34%, transparent); }
+.dark .bg-system-red\/10 { background-color: color-mix(in srgb, var(--system-red) 18%, transparent); }
+.dark .bg-system-red\/15 { background-color: color-mix(in srgb, var(--system-red) 24%, transparent); }
+.dark .bg-system-red\/25 { background-color: color-mix(in srgb, var(--system-red) 34%, transparent); }
+.dark .bg-system-orange\/10 { background-color: color-mix(in srgb, var(--system-orange) 18%, transparent); }
+.dark .bg-system-orange\/15 { background-color: color-mix(in srgb, var(--system-orange) 24%, transparent); }
+.dark .bg-system-orange\/25 { background-color: color-mix(in srgb, var(--system-orange) 34%, transparent); }
+.dark .bg-system-yellow\/10 { background-color: color-mix(in srgb, var(--system-yellow) 18%, transparent); }
+.dark .bg-system-yellow\/15 { background-color: color-mix(in srgb, var(--system-yellow) 24%, transparent); }
+.dark .bg-system-yellow\/25 { background-color: color-mix(in srgb, var(--system-yellow) 34%, transparent); }
+.dark .bg-system-purple\/10 { background-color: color-mix(in srgb, var(--system-purple) 18%, transparent); }
+.dark .bg-system-purple\/15 { background-color: color-mix(in srgb, var(--system-purple) 24%, transparent); }
+.dark .bg-system-purple\/25 { background-color: color-mix(in srgb, var(--system-purple) 34%, transparent); }
+.dark .bg-system-teal\/10 { background-color: color-mix(in srgb, var(--system-teal) 18%, transparent); }
+.dark .bg-system-teal\/15 { background-color: color-mix(in srgb, var(--system-teal) 24%, transparent); }
+.dark .bg-system-teal\/25 { background-color: color-mix(in srgb, var(--system-teal) 34%, transparent); }
+.dark .bg-system-pink\/10 { background-color: color-mix(in srgb, var(--system-pink) 18%, transparent); }
+.dark .bg-system-pink\/15 { background-color: color-mix(in srgb, var(--system-pink) 24%, transparent); }
+.dark .bg-system-pink\/25 { background-color: color-mix(in srgb, var(--system-pink) 34%, transparent); }
+.dark .bg-system-indigo\/10 { background-color: color-mix(in srgb, var(--system-indigo) 18%, transparent); }
+.dark .bg-system-indigo\/15 { background-color: color-mix(in srgb, var(--system-indigo) 24%, transparent); }
+.dark .bg-system-indigo\/25 { background-color: color-mix(in srgb, var(--system-indigo) 34%, transparent); }
+.dark .border-system-blue\/25 { border-color: color-mix(in srgb, var(--system-blue) 38%, transparent); }
+.dark .border-system-blue\/35 { border-color: color-mix(in srgb, var(--system-blue) 48%, transparent); }
+.dark .border-system-blue\/45 { border-color: color-mix(in srgb, var(--system-blue) 58%, transparent); }
+.dark .border-system-green\/25 { border-color: color-mix(in srgb, var(--system-green) 38%, transparent); }
+.dark .border-system-green\/35 { border-color: color-mix(in srgb, var(--system-green) 48%, transparent); }
+.dark .border-system-green\/45 { border-color: color-mix(in srgb, var(--system-green) 58%, transparent); }
+.dark .border-system-red\/25 { border-color: color-mix(in srgb, var(--system-red) 38%, transparent); }
+.dark .border-system-red\/35 { border-color: color-mix(in srgb, var(--system-red) 48%, transparent); }
+.dark .border-system-red\/45 { border-color: color-mix(in srgb, var(--system-red) 58%, transparent); }
+.dark .border-system-orange\/25 { border-color: color-mix(in srgb, var(--system-orange) 38%, transparent); }
+.dark .border-system-orange\/35 { border-color: color-mix(in srgb, var(--system-orange) 48%, transparent); }
+.dark .border-system-orange\/45 { border-color: color-mix(in srgb, var(--system-orange) 58%, transparent); }
+.dark .border-system-yellow\/25 { border-color: color-mix(in srgb, var(--system-yellow) 38%, transparent); }
+.dark .border-system-yellow\/35 { border-color: color-mix(in srgb, var(--system-yellow) 48%, transparent); }
+.dark .border-system-yellow\/45 { border-color: color-mix(in srgb, var(--system-yellow) 58%, transparent); }
+.dark .border-system-purple\/25 { border-color: color-mix(in srgb, var(--system-purple) 38%, transparent); }
+.dark .border-system-purple\/35 { border-color: color-mix(in srgb, var(--system-purple) 48%, transparent); }
+.dark .border-system-purple\/45 { border-color: color-mix(in srgb, var(--system-purple) 58%, transparent); }
+.dark .border-system-teal\/25 { border-color: color-mix(in srgb, var(--system-teal) 38%, transparent); }
+.dark .border-system-teal\/35 { border-color: color-mix(in srgb, var(--system-teal) 48%, transparent); }
+.dark .border-system-teal\/45 { border-color: color-mix(in srgb, var(--system-teal) 58%, transparent); }
+.dark .border-system-pink\/25 { border-color: color-mix(in srgb, var(--system-pink) 38%, transparent); }
+.dark .border-system-pink\/35 { border-color: color-mix(in srgb, var(--system-pink) 48%, transparent); }
+.dark .border-system-pink\/45 { border-color: color-mix(in srgb, var(--system-pink) 58%, transparent); }
+.dark .border-system-indigo\/25 { border-color: color-mix(in srgb, var(--system-indigo) 38%, transparent); }
+.dark .border-system-indigo\/35 { border-color: color-mix(in srgb, var(--system-indigo) 48%, transparent); }
+.dark .border-system-indigo\/45 { border-color: color-mix(in srgb, var(--system-indigo) 58%, transparent); }
+
 /* ==========================================================================
    13. Broadcast numerals + touch-target opt-outs
    ========================================================================== */
