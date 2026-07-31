@@ -1,6 +1,6 @@
 ﻿import { useState, Suspense, lazy, useEffect, useRef } from 'react';
 import * as React from 'react';
-import { getVisibleTabs, ADMIN_EMAIL } from './constants/navigation.js';
+import { getVisibleTabs, ADMIN_EMAIL, resolveTab } from './constants/navigation.js';
 import toast, { Toaster } from 'react-hot-toast';
 import { useAuth } from './hooks/useAuth.js';
 import { useRealtimeNotifications } from './hooks/useRealtimeNotifications.js';
@@ -20,32 +20,40 @@ import NotificationSystem from './components/NotificationSystem';
 import AddToHomeHint from './components/AddToHomeHint';
 
 // Lazy load tab components for better performance
-const MatchesTab = lazy(() => import('./components/tabs/MatchesTab'));
+const SpielbetriebTab = lazy(() => import('./components/tabs/SpielbetriebTab'));
+const AbendTab = lazy(() => import('./components/tabs/AbendTab'));
 const DuelTab = lazy(() => import('./components/tabs/DuelTab'));
-const KaderTab = lazy(() => import('./components/tabs/KaderTab'));
-const BansTab = lazy(() => import('./components/tabs/BansTab'));
 const FinanzenTab = lazy(() => import('./components/tabs/FinanzenTab'));
 const StatsTab = lazy(() => import('./components/tabs/StatsTab'));
-const AlcoholTrackerTab = lazy(() => import('./components/tabs/AlcoholTrackerTab'));
-const SpielersaufenTab  = lazy(() => import('./components/tabs/SpielersaufenTab'));
-const TeamTrackerTab = lazy(() => import('./components/tabs/TeamTrackerTab'));
 const AdminTab = lazy(() => import('./components/tabs/AdminTab'));
+
+/**
+ * Wo die App startet. Feste Startansicht schlaegt den zuletzt benutzten Tab —
+ * wer eine gewaehlt hat, will immer dort landen ('last' = altes Verhalten).
+ * Beides kann noch einen alten Tab-Namen enthalten (z. B. 'squad'), deshalb
+ * laeuft alles durch resolveTab und liefert Bereich + Unteransicht.
+ */
+function startZiel() {
+  try {
+    const preferred = localStorage.getItem('fusta_start_tab');
+    if (preferred && preferred !== 'last') return resolveTab(preferred);
+    return resolveTab(localStorage.getItem('fusta_active_tab') || 'spielbetrieb');
+  } catch { return { tab: 'spielbetrieb', view: null }; }
+}
 
 function App() {
   const { user, loading: authLoading, signOut } = useAuth();
   useRealtimeNotifications(); // cross-device push for new matches & transactions
   useKeyboardAvoidance();     // iOS: scroll focused field above the on-screen keyboard
   // QoL: remember the last tab across reloads (PWA re-opens where you left off)
-  const [activeTab, setActiveTab] = useState(() => {
-    try {
-      // Feste Startansicht schlaegt den zuletzt benutzten Tab — wer eine
-      // gewaehlt hat, will immer dort landen. 'last' = altes Verhalten.
-      const preferred = localStorage.getItem('fusta_start_tab');
-      if (preferred && preferred !== 'last') return preferred;
-      return localStorage.getItem('fusta_active_tab') || 'matches';
-    } catch { return 'matches'; }
-  });
+  const [activeTab, setActiveTab] = useState(() => startZiel().tab);
   const [isDemoMode, setIsDemoMode] = useState(false);
+  // Gewuenschte Unteransicht eines Sammel-Tabs (aus alten Tab-Namen abgeleitet).
+  // Mit Zaehler, weil dieselbe Ansicht zweimal hintereinander angefordert werden
+  // kann: wer im Bereich "Spiele" gerade auf Kader steht, zurueck auf Spiele
+  // wechselt und im Profil erneut "Kader" tippt, soll wieder dort landen — ein
+  // reiner String waere unveraendert und wuerde nichts ausloesen.
+  const [viewRequest, setViewRequest] = useState(() => ({ view: startZiel().view, n: 0 }));
   const [showGlobalSearch, setShowGlobalSearch] = useState(false);
 
   const mainRef = useRef(null);
@@ -102,7 +110,16 @@ function App() {
     return () => window.removeEventListener('fifa-fallback-activated', checkDemoMode);
   }, [user]);
 
-  const handleTabChange = async (newTab, options = {}) => {
+  const handleTabChange = async (rawTab, options = {}) => {
+    // Alte Tab-Namen (matches, squad, bans, teams, alcohol, spielersaufen)
+    // auf den neuen Bereich samt Unteransicht abbilden.
+    const { tab: newTab, view } = resolveTab(rawTab);
+    // Ohne Unteransicht (normaler Tipp auf die untere Leiste) die Anfrage
+    // zuruecksetzen, sonst wuerde ein alter Sprung nach "Kader" den Bereich
+    // beim naechsten Oeffnen wieder dorthin zwingen statt zur zuletzt
+    // benutzten Ansicht.
+    setViewRequest((r) => ({ view: view || null, n: r.n + 1 }));
+
     if (newTab === activeTab && !options.force) {
       // iOS pattern: tapping the active tab again scrolls back to top
       mainRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
@@ -227,33 +244,25 @@ function App() {
     // Security check: redirect unauthorized users away from admin tab
     if (activeTab === 'admin' && (!user || user.email !== ADMIN_EMAIL)) {
       // Redirect to matches tab
-      setTimeout(() => setActiveTab('matches'), 0);
-      return <MatchesTab {...props} />;
+      setTimeout(() => setActiveTab('spielbetrieb'), 0);
+      return <SpielbetriebTab {...props} />;
     }
     
     switch (activeTab) {
-      case 'matches':
-        return <MatchesTab {...props} />;
+      case 'spielbetrieb':
+        return <SpielbetriebTab viewRequest={viewRequest} {...props} />;
       case 'duell':
         return <DuelTab {...props} />;
-      case 'bans':
-        return <BansTab {...props} />;
-      case 'finanzen':
-        return <FinanzenTab {...props} />;
-      case 'squad':
-        return <KaderTab {...props} />;
       case 'stats':
         return <StatsTab {...props} />;
-      case 'alcohol':
-        return <AlcoholTrackerTab {...props} />;
-      case 'spielersaufen':
-        return <SpielersaufenTab {...props} />;
-      case 'teams':
-        return <TeamTrackerTab {...props} />;
+      case 'finanzen':
+        return <FinanzenTab {...props} />;
+      case 'abend':
+        return <AbendTab viewRequest={viewRequest} {...props} />;
       case 'admin':
         return <AdminTab onLogout={handleLogout} {...props} />;
       default:
-        return <MatchesTab {...props} />;
+        return <SpielbetriebTab viewRequest={viewRequest} {...props} />;
     }
   };
 

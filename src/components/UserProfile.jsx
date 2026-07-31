@@ -147,11 +147,16 @@ export default function UserProfile({ onClose, onNavigate }) {
           {/* Quick actions */}
           <div>
             <div className="section-label">Schnellzugriff</div>
-            <div className="grid grid-cols-2 gap-2">
-              <QuickAction icon="chart" label="Statistiken" onClick={() => go('stats')} />
+            {/* Die sechs Unteransichten der beiden Sammel-Bereiche. Statistik,
+                Duell und Finanzen stehen hier bewusst nicht mehr — die sind
+                seit der Neuordnung mit einem Tipp in der unteren Leiste. */}
+            <div className="grid grid-cols-3 gap-2">
               <QuickAction icon="football" label="Spiele" onClick={() => go('matches')} />
               <QuickAction icon="users" label="Kader" onClick={() => go('squad')} />
-              <QuickAction icon="euro" label="Finanzen" onClick={() => go('finanzen')} />
+              <QuickAction icon="ban" label="Sperren" onClick={() => go('bans')} />
+              <QuickAction icon="trophy" label="Teams" onClick={() => go('teams')} />
+              <QuickAction icon="beer" label="Alkohol" onClick={() => go('alcohol')} />
+              <QuickAction icon="mic" label="Saufen" onClick={() => go('spielersaufen')} />
             </div>
           </div>
 
@@ -183,10 +188,10 @@ function QuickAction({ icon, label, onClick }) {
   return (
     <button
       onClick={onClick}
-      className="flex items-center gap-2 p-3 rounded-xl bg-bg-secondary border border-border-light hover:bg-bg-tertiary transition-colors press-scale"
+      className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-xl bg-bg-secondary border border-border-light hover:bg-bg-tertiary transition-colors press-scale"
     >
-      <span className="text-text-secondary"><Icon name={icon} size={18} strokeWidth={2} /></span>
-      <span className="text-sm font-medium text-text-primary">{label}</span>
+      <span className="text-text-secondary"><Icon name={icon} size={20} strokeWidth={2} /></span>
+      <span className="text-[11px] font-medium text-text-primary leading-none max-w-full truncate">{label}</span>
     </button>
   );
 }
