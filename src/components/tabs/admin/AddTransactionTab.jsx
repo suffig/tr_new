@@ -220,18 +220,41 @@ export default function AddTransactionTab() {
                       der Datenbank als eingegeben. Alle automatischen Buchungen
                       sind ohnehin ganze Euro (Preisgeld in 10.000er-Schritten,
                       Echtgeld in 5er-Schritten). */}
-                  <input
-                    type="number"
-                    step="1"
-                    inputMode="numeric"
-                    value={formData.amount}
-                    onChange={(e) => handleInputChange('amount', e.target.value)}
-                    onFocus={(e) => e.target.select()}
-                    className="form-input"
-                    placeholder="0"
-                    required
-                    disabled={loading}
-                  />
+                  {/* KEIN inputMode="numeric": dessen Ziffernblock hat auf dem
+                      Handy keine Minus-Taste — Ausgaben liessen sich dann gar
+                      nicht mehr eingeben. Der Schalter daneben dreht das
+                      Vorzeichen unabhaengig von der Tastatur. */}
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      step="1"
+                      value={formData.amount}
+                      onChange={(e) => handleInputChange('amount', e.target.value)}
+                      onFocus={(e) => e.target.select()}
+                      className="form-input flex-1"
+                      placeholder="0"
+                      required
+                      disabled={loading}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const n = parseFloat(formData.amount);
+                        if (!Number.isFinite(n) || n === 0) return;
+                        handleInputChange('amount', String(-n));
+                      }}
+                      disabled={loading}
+                      aria-label="Vorzeichen umdrehen (Einnahme / Ausgabe)"
+                      title="Vorzeichen umdrehen"
+                      className={`flex-shrink-0 px-3 py-3 rounded-xl text-sm font-bold transition-colors ${
+                        parseFloat(formData.amount) < 0
+                          ? 'bg-system-red/12 text-system-red'
+                          : 'bg-system-green/12 text-system-green'
+                      }`}
+                    >
+                      {parseFloat(formData.amount) < 0 ? '− Ausgabe' : '+ Einnahme'}
+                    </button>
+                  </div>
                   <p className="text-xs text-text-muted mt-1">
                     Negative Werte für Ausgaben, positive für Einnahmen
                   </p>

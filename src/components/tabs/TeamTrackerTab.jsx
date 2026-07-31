@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../icons/Icon';
-import { getCatalog } from '../../utils/fc26Catalog';
+import { getCatalog, setRating } from '../../utils/fc26Catalog';
 import { addSterneEintrag, gutschriftFuer } from '../../utils/sterneCounter';
 import {
   loadPulls, countsInWindow, addPull, removeLatestPull, clearPerson,
@@ -106,7 +106,7 @@ function StarRating({ rating, size = 13 }) {
 // bekommt der SIEGER die Handicap-Gutschrift seines Teams (6 − Sterne, dieselbe
 // Regel wie im Alkohol-Tab). Wer mit einem schwachen Team gewinnt, holt also
 // mehr — mit einem 5-Sterne-Team nur 1,0.
-function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeichern, onEntwurfSichern, onEntwurfVerwerfen }) {
+function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeichern, onEntwurfSichern, onEntwurfVerwerfen, onRatingChange }) {
   const [teams, setTeams] = useState(() => entwurf?.teams || { alexander: null, philip: null });
   const [sieger, setSieger] = useState(() => entwurf?.sieger || null);
   const [waehlt, setWaehlt] = useState(() => (entwurf?.teams?.alexander ? null : 'alexander'));
@@ -154,6 +154,23 @@ function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeich
     setWaehlt(naechstesLeer ? 'philip' : null);
   };
 
+  // Sterne eines gewählten Teams korrigieren. Geht dauerhaft in den Katalog
+  // (und von dort in die Datenbank) — nicht nur in dieses eine Duell. Steht
+  // ein Team ohne Rating da, beginnt die Korrektur bei 3,0.
+  const sterneAendern = (slot, delta) => {
+    const team = teams[slot];
+    if (!team) return;
+    const basis = team.rating == null ? 3 : team.rating;
+    const neu = Math.min(5, Math.max(0.5, Math.round((basis + delta) * 2) / 2));
+    if (neu === team.rating) return;
+    onRatingChange(team.name, neu);
+    // Beide Seiten aktualisieren: dasselbe Team kann in beiden Slots stehen.
+    setTeams((prev) => ({
+      alexander: prev.alexander?.name === team.name ? { ...prev.alexander, rating: neu } : prev.alexander,
+      philip: prev.philip?.name === team.name ? { ...prev.philip, rating: neu } : prev.philip,
+    }));
+  };
+
   return createPortal(
     <div className="fixed inset-0 z-[70] bg-bg-overlay backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
       <div className="bg-bg-primary w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto safe-area-bottom">
@@ -171,20 +188,43 @@ function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeich
             const a = ACCENT[p.accent];
             const offen = waehlt === p.id;
             return (
-              <button key={p.id} type="button"
-                onClick={() => { setWaehlt(offen ? null : p.id); setSuche(''); }}
-                className={`w-full text-left rounded-xl px-3 py-2.5 border transition-colors ${offen ? 'border-system-blue/30 bg-system-blue/10' : 'border-border-light bg-bg-secondary'}`}>
-                <div className="flex items-center gap-2">
-                  <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${a.bar}`} />
-                  <span className={`text-caption1 font-semibold flex-shrink-0 ${a.text}`}>{p.name}</span>
-                  <span className="ml-auto min-w-0 text-right">
-                    {t
-                      ? <span className="text-sm font-medium text-text-primary truncate block">{t.name}</span>
-                      : <span className="text-sm text-text-tertiary">Team wählen …</span>}
-                  </span>
-                </div>
-                {t && <div className="mt-1 flex justify-end"><StarRating rating={t.rating} /></div>}
-              </button>
+              // Kein <button> als Huelle: die Sterne-Regler sind selbst Buttons,
+              // und verschachtelte Buttons sind ungueltiges HTML.
+              <div key={p.id}
+                className={`w-full rounded-xl px-3 py-2.5 border transition-colors ${offen ? 'border-system-blue/30 bg-system-blue/10' : 'border-border-light bg-bg-secondary'}`}>
+                <button type="button" className="w-full text-left"
+                  onClick={() => { setWaehlt(offen ? null : p.id); setSuche(''); }}>
+                  <div className="flex items-center gap-2">
+                    <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${a.bar}`} />
+                    <span className={`text-caption1 font-semibold flex-shrink-0 ${a.text}`}>{p.name}</span>
+                    <span className="ml-auto min-w-0 text-right">
+                      {t
+                        ? <span className="text-sm font-medium text-text-primary truncate block">{t.name}</span>
+                        : <span className="text-sm text-text-tertiary">Team wählen …</span>}
+                    </span>
+                  </div>
+                </button>
+
+                {/* Sterne direkt hier korrigieren — landet im Katalog und in der
+                    Datenbank, nicht nur in diesem Duell. */}
+                {t && (
+                  <div className="mt-1.5 flex items-center justify-end gap-1.5">
+                    <StarRating rating={t.rating} />
+                    <button type="button" aria-label={`${t.name}: Sterne verringern`}
+                      disabled={t.rating == null || t.rating <= 0.5}
+                      onClick={() => sterneAendern(p.id, -0.5)}
+                      className="btn-compact w-7 h-7 rounded-lg bg-bg-tertiary text-text-secondary font-semibold disabled:opacity-40">
+                      −
+                    </button>
+                    <button type="button" aria-label={`${t.name}: Sterne erhöhen`}
+                      disabled={t.rating != null && t.rating >= 5}
+                      onClick={() => sterneAendern(p.id, +0.5)}
+                      className="btn-compact w-7 h-7 rounded-lg bg-bg-tertiary text-text-secondary font-semibold disabled:opacity-40">
+                      +
+                    </button>
+                  </div>
+                )}
+              </div>
             );
           })}
 
@@ -239,7 +279,7 @@ function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeich
                   <strong className="text-text-primary">{siegerTeam.name}</strong>
                   {' ('}{fmtRating(siegerTeam.rating)}{'★) → '}
                   <strong className="text-system-orange">
-                    +{gutschrift % 1 === 0 ? gutschrift : gutschrift.toFixed(1)} ⭐
+                    +{fmtRating(gutschrift)} ⭐
                   </strong>
                   <span className="text-text-tertiary">{' (6 − '}{fmtRating(siegerTeam.rating)}{')'}</span>
                 </p>
@@ -417,7 +457,13 @@ export default function TeamTrackerTab() {
   const accent = ACCENT[current.accent];
   const sinceTs = windowStart(windowId);
 
-  const catalog = useMemo(() => getCatalog(), []);
+  // Aus dem State, damit eine Sterne-Korrektur im Duell sofort ueberall greift.
+  const [catalog, setCatalog] = useState(getCatalog);
+  const teamRatingAendern = (name, rating) => {
+    setRating(name, rating);          // localStorage + Datenbank
+    setCatalog(getCatalog());
+    toast.success(`${name}: ${fmtRating(rating)}★ gespeichert`);
+  };
   const teamByName = useMemo(() => {
     const m = new Map();
     catalog.forEach((t) => m.set(t.name, t));
@@ -732,6 +778,7 @@ export default function TeamTrackerTab() {
               onEntwurfSpeichern={entwurfSpeichern}
               onEntwurfSichern={entwurfNurSchreiben}
               onEntwurfVerwerfen={entwurfVerwerfen}
+              onRatingChange={teamRatingAendern}
             />
           )}
 
