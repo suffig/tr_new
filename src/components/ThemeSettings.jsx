@@ -24,7 +24,7 @@ export default function ThemeSettings() {
                 className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center space-y-2 ${
                   autoMode
                     ? 'border-primary-green bg-primary-green/10'
-                    : 'border-border-medium hover:border-border-dark'
+                    : 'border-border-medium hover:border-border-strong'
                 }`}
               >
                 <div className="text-2xl">🌗</div>
@@ -40,7 +40,7 @@ export default function ThemeSettings() {
                 className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center space-y-2 ${
                   !autoMode && theme === 'light'
                     ? 'border-primary-green bg-primary-green/10'
-                    : 'border-border-medium hover:border-border-dark'
+                    : 'border-border-medium hover:border-border-strong'
                 }`}
               >
                 <div className="text-2xl">☀️</div>
@@ -56,7 +56,7 @@ export default function ThemeSettings() {
                 className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center space-y-2 ${
                   !autoMode && theme === 'dark'
                     ? 'border-primary-green bg-primary-green/10'
-                    : 'border-border-medium hover:border-border-dark'
+                    : 'border-border-medium hover:border-border-strong'
                 }`}
               >
                 <div className="text-2xl">🌙</div>
@@ -111,14 +111,14 @@ export default function ThemeSettings() {
         </div>
 
         {/* Info Section */}
-        <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="mt-6 p-4 bg-system-blue/10 dark:bg-system-blue/20 rounded-lg border border-system-blue/25 dark:border-system-blue">
           <div className="flex items-start space-x-3">
-            <div className="text-blue-500 text-xl flex-shrink-0">💡</div>
+            <div className="text-system-blue text-xl flex-shrink-0">💡</div>
             <div>
-              <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+              <div className="text-sm font-medium text-system-blue dark:text-blue-200 mb-1">
                 Darstellungshinweise
               </div>
-              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              <div className="text-xs text-system-blue dark:text-system-blue space-y-1">
                 <p>• <strong>Automatisch:</strong> Wechselt automatisch basierend auf Ihren Systemeinstellungen</p>
                 <p>• <strong>Hell:</strong> Optimiert für helle Umgebungen und bessere Akkulaufzeit</p>
                 <p>• <strong>Dunkel:</strong> Reduziert Augenbelastung bei schwachem Licht</p>

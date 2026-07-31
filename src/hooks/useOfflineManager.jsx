@@ -80,8 +80,8 @@ export function OfflineIndicator() {
   if (isOnline) return null;
 
   return (
-    <div className="fixed top-3 right-3 z-50 w-8 h-8 bg-red-500 rounded-full flex items-center justify-center shadow-lg">
-      <div className="w-3 h-3 bg-white rounded-full animate-pulse"></div>
+    <div className="fixed top-3 right-3 z-50 w-8 h-8 bg-system-red rounded-full flex items-center justify-center shadow-lg">
+      <div className="w-3 h-3 bg-bg-elevated rounded-full animate-pulse"></div>
     </div>
   );
 }

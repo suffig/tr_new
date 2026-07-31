@@ -177,7 +177,7 @@ export default function ColorCustomization() {
                 className={`p-3 rounded-lg border-2 transition-all duration-300 ${
                   selectedPreset === preset.name
                     ? 'border-primary-green bg-primary-green/10'
-                    : 'border-border-medium hover:border-border-dark'
+                    : 'border-border-medium hover:border-border-strong'
                 }`}
               >
                 <div className="flex items-center justify-center space-x-1 mb-2">
@@ -276,9 +276,9 @@ export default function ColorCustomization() {
         </div>
 
         {/* Enhanced Preview Section */}
-        <div className="mt-8 p-6 bg-gradient-to-r from-gray-50 to-blue-50 rounded-2xl border border-gray-200">
-          <h5 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-            <Icon name="eye" size={16} className="text-blue-500" />
+        <div className="mt-8 p-6 bg-system-green rounded-2xl border border-border-light">
+          <h5 className="text-lg font-bold text-text-primary mb-4 flex items-center gap-2">
+            <Icon name="eye" size={16} className="text-system-blue" />
             Live-Vorschau
           </h5>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -313,14 +313,14 @@ export default function ColorCustomization() {
         </div>
 
         {/* Info */}
-        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+        <div className="mt-4 p-4 bg-system-blue/10 dark:bg-system-blue/20 rounded-lg border border-system-blue/25 dark:border-system-blue">
           <div className="flex items-start space-x-3">
-            <div className="text-blue-500 text-xl flex-shrink-0">💡</div>
+            <div className="text-system-blue text-xl flex-shrink-0">💡</div>
             <div>
-              <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+              <div className="text-sm font-medium text-system-blue dark:text-blue-200 mb-1">
                 Farbhinweise
               </div>
-              <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+              <div className="text-xs text-system-blue dark:text-system-blue space-y-1">
                 <p>• Änderungen werden sofort in der Vorschau angezeigt</p>
                 <p>• Gespeicherte Farben werden automatisch bei der nächsten Anmeldung geladen</p>
                 <p>• Verwenden Sie Hex-Codes (#RRGGBB) für präzise Farben</p>

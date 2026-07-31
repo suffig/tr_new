@@ -306,8 +306,8 @@ export default function MatchesTab({ onNavigate, user }) {
             <div className="flex items-center p-3 gap-2">
               <div className="flex-1 flex flex-col items-center gap-1">
                 <TeamLogo team="AEK" size="lg" />
-                <div className="text-3xl font-black text-blue-500">{aekWins}</div>
-                <div className="text-[11px] font-semibold text-blue-400 leading-tight text-center">{aekName}</div>
+                <div className="text-3xl font-black text-system-blue">{aekWins}</div>
+                <div className="text-[11px] font-semibold text-system-blue leading-tight text-center">{aekName}</div>
               </div>
               <div className="flex flex-col items-center gap-0.5 px-1">
                 <div className="text-[11px] text-text-muted font-medium">{allMatches.length} Spiele</div>
@@ -316,8 +316,8 @@ export default function MatchesTab({ onNavigate, user }) {
               </div>
               <div className="flex-1 flex flex-col items-center gap-1">
                 <TeamLogo team="Real" size="lg" />
-                <div className="text-3xl font-black text-red-500">{realWins}</div>
-                <div className="text-[11px] font-semibold text-red-400 leading-tight text-center">{realName}</div>
+                <div className="text-3xl font-black text-system-red">{realWins}</div>
+                <div className="text-[11px] font-semibold text-system-red leading-tight text-center">{realName}</div>
               </div>
             </div>
             {/* Current win streak highlight */}
@@ -344,7 +344,7 @@ export default function MatchesTab({ onNavigate, user }) {
                       <span
                         key={i}
                         title={r === 'W' ? 'Sieg' : r === 'D' ? 'Unentschieden' : 'Niederlage'}
-                        className={`w-4 h-4 rounded-full text-white text-[8px] font-bold flex items-center justify-center ${r === 'W' ? 'bg-system-green' : r === 'D' ? 'bg-gray-400' : 'bg-system-red'}`}
+                        className={`w-4 h-4 rounded-full text-white text-[8px] font-bold flex items-center justify-center ${r === 'W' ? 'bg-system-green' : r === 'D' ? 'bg-border-strong' : 'bg-system-red'}`}
                       >
                         {r === 'W' ? 'S' : r === 'D' ? 'U' : 'N'}
                       </span>

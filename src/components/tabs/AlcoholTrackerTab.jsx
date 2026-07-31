@@ -1413,7 +1413,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       {Array.from({ length: schnapsShotsData.target - 1 }).map((_, i) => (
                         <div
                           key={i}
-                          className="absolute top-0 bottom-0 w-px bg-bg-elevated/40"
+                          className="absolute top-0 bottom-0 w-px bg-white/40"
                           style={{ left: `${((i + 1) / schnapsShotsData.target) * 100}%` }}
                         />
                       ))}
@@ -1729,7 +1729,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                               }
                             }}
                             aria-label={`Eintrag von ${wer} löschen`}
-                            className="btn-compact w-7 h-7 rounded-full bg-bg-elevated/70 text-system-red hover:bg-system-red/15 flex items-center justify-center"
+                            className="btn-compact w-7 h-7 rounded-full bg-white/70 text-system-red hover:bg-system-red/15 flex items-center justify-center"
                           >
                             <Icon name="trash" size={13} strokeWidth={2.2} />
                           </button>

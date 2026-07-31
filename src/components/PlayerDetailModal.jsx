@@ -59,13 +59,13 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
     return (
       <div className="basic-info-section mb-8">
         <h3 className="text-xl font-semibold text-white mb-4 flex items-center gap-3">
-          <Icon name="user" size={16} className="text-blue-400" />
+          <Icon name="user" size={16} className="text-system-blue" />
           Spieler-Informationen
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="bg-white/5 rounded-lg p-4 border border-white/10">
             <label className="block text-sm text-slate-400 mb-1">Team</label>
-            <span className={`font-semibold ${getTeamClass() === 'team-aek' ? 'text-blue-400' : getTeamClass() === 'team-real' ? 'text-red-400' : 'text-gray-400'}`}>
+            <span className={`font-semibold ${getTeamClass() === 'team-aek' ? 'text-system-blue' : getTeamClass() === 'team-real' ? 'text-system-red' : 'text-text-tertiary'}`}>
               {getTeamDisplayName()}
             </span>
           </div>
@@ -75,11 +75,11 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
           </div>
           <div className="bg-white/5 rounded-lg p-4 border border-white/10">
             <label className="block text-sm text-slate-400 mb-1">Market Value</label>
-            <span className="text-green-400 font-semibold">{marketValue ? marketValue + 'M €' : 'Not valued'}</span>
+            <span className="text-system-green font-semibold">{marketValue ? marketValue + 'M €' : 'Not valued'}</span>
           </div>
           <div className="bg-white/5 rounded-lg p-4 border border-white/10">
             <label className="block text-sm text-slate-400 mb-1">Goals Scored</label>
-            <span className="text-yellow-400 font-semibold">{player.goals || 0}</span>
+            <span className="text-system-yellow font-semibold">{player.goals || 0}</span>
           </div>
         </div>
       </div>
@@ -148,7 +148,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
     return (
       <div className="fifa-attributes mb-8">
         <h4 className="text-xl font-semibold text-white mb-6 flex items-center gap-3">
-          <Icon name="chart" size={16} className="text-blue-400" />
+          <Icon name="chart" size={16} className="text-system-blue" />
           FIFA Main Attributes
         </h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -229,7 +229,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
     return (
       <div className="fifa-skills">
         <h4 className="text-xl font-semibold text-white mb-6 flex items-center gap-3">
-          <Icon name="settings" size={16} className="text-blue-400" />
+          <Icon name="settings" size={16} className="text-system-blue" />
           Detailed Skills & Attributes
         </h4>
         <div className="space-y-3">
@@ -288,7 +288,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
         }
       </p>
       {fifaData?.generated && (
-        <div className="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-4 mx-auto max-w-md mb-6">
+        <div className="bg-system-yellow/10 border border-system-yellow/20 rounded-lg p-4 mx-auto max-w-md mb-6">
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div className="flex justify-between">
               <span className="text-slate-400">Overall:</span>
@@ -307,7 +307,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
               <span className="text-white">{fifaData.foot} (Est.)</span>
             </div>
           </div>
-          <p className="text-yellow-400 text-xs mt-3 flex items-center justify-center gap-2">
+          <p className="text-system-yellow text-xs mt-3 flex items-center justify-center gap-2">
             <Icon name="warning" size={16} />
             These are estimated values and may not reflect actual FIFA ratings.
           </p>
@@ -315,7 +315,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
       )}
       <div className="text-slate-500 text-sm">
         <Icon name="bulb" size={16} className="mr-2" />
-        FIFA ratings are sourced from <a href="https://sofifa.com" target="_blank" rel="noopener noreferrer" className="text-blue-400 hover:underline">SoFIFA.com</a>
+        FIFA ratings are sourced from <a href="https://sofifa.com" target="_blank" rel="noopener noreferrer" className="text-system-blue hover:underline">SoFIFA.com</a>
       </div>
     </div>
   );
@@ -324,16 +324,16 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm modal-overlay animate-fade-in">
-      <div className="enhanced-modal bg-gradient-to-br from-slate-800 to-slate-900 rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-white/10 animate-scale-in">
+      <div className="enhanced-modal bg-system-green rounded-2xl max-w-4xl w-full max-h-[90vh] overflow-hidden shadow-2xl border border-white/10 animate-scale-in">
         {/* Header */}
-        <div className="modal-header bg-gradient-to-r from-blue-600 to-blue-700 px-6 py-4 flex items-center justify-between">
+        <div className="modal-header bg-system-blue px-6 py-4 flex items-center justify-between">
           <div className="animate-slide-in-left">
             <h2 className="text-2xl font-bold text-white">{player.name}</h2>
             <div className="flex gap-3 mt-2">
               <span className={`modal-badge px-3 py-1 rounded-full text-sm font-semibold animate-slide-in-left ${
-                getTeamClass() === 'team-aek' ? 'bg-blue-500/20 text-blue-300' :
-                getTeamClass() === 'team-real' ? 'bg-red-500/20 text-red-300' :
-                'bg-gray-500/20 text-gray-300'
+                getTeamClass() === 'team-aek' ? 'bg-system-blue/20 text-system-blue' :
+                getTeamClass() === 'team-real' ? 'bg-system-red/20 text-system-red' :
+                'bg-gray-500/20 text-text-tertiary'
               }`} style={{ animationDelay: '0.1s' }}>
                 {getTeamDisplayName()}
               </span>
@@ -341,7 +341,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
                 {player.position || 'N/A'}
               </span>
               {fifaData?.found && (
-                <span className="modal-badge bg-gradient-to-r from-yellow-400 to-yellow-500 text-yellow-900 px-3 py-1 rounded-full text-sm font-bold animate-slide-in-left" style={{ animationDelay: '0.3s' }}>
+                <span className="modal-badge bg-system-yellow text-system-yellow px-3 py-1 rounded-full text-sm font-bold animate-slide-in-left" style={{ animationDelay: '0.3s' }}>
                   FIFA {fifaData.overall}
                 </span>
               )}
@@ -359,7 +359,7 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
         <div className="modal-body p-6 max-h-[calc(90vh-120px)] overflow-y-auto custom-scrollbar">
           {loading ? (
             <div className="text-center py-12 animate-pulse-gentle">
-              <div className="text-4xl text-blue-400 mb-4 animate-bounce-gentle">
+              <div className="text-4xl text-system-blue mb-4 animate-bounce-gentle">
                 <Icon name="spinner" size={16} className="animate-spin" />
               </div>
               <p className="text-slate-400">Loading FIFA data...</p>
@@ -375,14 +375,14 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
                 <div className="animate-fade-in" style={{ animationDelay: '0.4s' }}>
                   <div className="fifa-stats-section">
                     <h3 className="text-xl font-semibold text-white mb-6 flex items-center gap-3">
-                      <Icon name="chart" size={16} className="text-yellow-400" />
+                      <Icon name="chart" size={16} className="text-system-yellow" />
                       FIFA Attribute & Statistiken
                       {fifaData.sofifaUrl && (
                         <a 
                           href={fifaData.sofifaUrl} 
                           target="_blank" 
                           rel="noopener noreferrer"
-                          className="ml-auto bg-blue-500/10 text-blue-400 px-3 py-1 rounded-lg text-sm font-medium hover:bg-blue-500/20 transition-all duration-300 border border-blue-500/20 hover:scale-105"
+                          className="ml-auto bg-system-blue/10 text-system-blue px-3 py-1 rounded-lg text-sm font-medium hover:bg-system-blue/20 transition-all duration-300 border border-system-blue/20 hover:scale-105"
                         >
                           <Icon name="externalLink" size={16} className="mr-2" />
                           View on SoFIFA

@@ -863,7 +863,7 @@ export default function AddMatchTab() {
                         className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                           formData.motmTeamFilter === 'all'
                             ? 'bg-gray-600 text-white'
-                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                            : 'bg-bg-tertiary text-text-secondary hover:bg-bg-hover'
                         }`}
                         disabled={loading}
                       >
@@ -874,8 +874,8 @@ export default function AddMatchTab() {
                         onClick={() => handleInputChange('motmTeamFilter', 'AEK')}
                         className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                           formData.motmTeamFilter === 'AEK'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-blue-100 text-blue-700 hover:bg-blue-200'
+                            ? 'bg-system-blue text-white'
+                            : 'bg-system-blue/15 text-system-blue hover:bg-system-blue/25'
                         }`}
                         disabled={loading}
                       >
@@ -886,8 +886,8 @@ export default function AddMatchTab() {
                         onClick={() => handleInputChange('motmTeamFilter', 'Real')}
                         className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
                           formData.motmTeamFilter === 'Real'
-                            ? 'bg-red-600 text-white'
-                            : 'bg-red-100 text-red-700 hover:bg-red-200'
+                            ? 'bg-system-red text-white'
+                            : 'bg-system-red/15 text-system-red hover:bg-system-red/25'
                         }`}
                         disabled={loading}
                       >
@@ -928,7 +928,7 @@ export default function AddMatchTab() {
                       <input
                         type="number" inputMode="decimal"
                         value={formData.prizeaek}
-                        className="form-input bg-gray-100"
+                        className="form-input bg-bg-tertiary"
                         placeholder="Automatisch berechnet"
                         disabled
                         readOnly
@@ -941,7 +941,7 @@ export default function AddMatchTab() {
                       <input
                         type="number" inputMode="decimal"
                         value={formData.prizereal}
-                        className="form-input bg-gray-100"
+                        className="form-input bg-bg-tertiary"
                         placeholder="Automatisch berechnet"
                         disabled
                         readOnly
@@ -955,39 +955,39 @@ export default function AddMatchTab() {
 
                 {/* Match Summary Preview */}
                 {isFormValid() && (
-                  <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                    <h5 className="font-medium text-green-800 mb-3 flex items-center">
+                  <div className="bg-system-green/10 border border-system-green/25 rounded-lg p-4">
+                    <h5 className="font-medium text-system-green mb-3 flex items-center">
                       <Icon name="check" size={16} strokeWidth={2.6} className="mr-2" />
                       Spiel-Zusammenfassung
                     </h5>
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-green-700">Datum:</span>
-                        <span className="font-medium text-green-800">{new Date(formData.date).toLocaleDateString('de-DE')}</span>
+                        <span className="text-system-green">Datum:</span>
+                        <span className="font-medium text-system-green">{new Date(formData.date).toLocaleDateString('de-DE')}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span className="text-green-700">Ergebnis:</span>
-                        <span className="font-medium text-green-800">{getTeamDisplay('AEK')} {formData.goalsa} : {formData.goalsb} {getTeamDisplay('Real')}</span>
+                        <span className="text-system-green">Ergebnis:</span>
+                        <span className="font-medium text-system-green">{getTeamDisplay('AEK')} {formData.goalsa} : {formData.goalsb} {getTeamDisplay('Real')}</span>
                       </div>
                       {formData.manofthematch && (
                         <div className="flex justify-between">
-                          <span className="text-green-700">Spieler des Spiels:</span>
-                          <span className="font-medium text-green-800">{formData.manofthematch}</span>
+                          <span className="text-system-green">Spieler des Spiels:</span>
+                          <span className="font-medium text-system-green">{formData.manofthematch}</span>
                         </div>
                       )}
                       <div className="flex justify-between">
-                        <span className="text-green-700">Preisgelder:</span>
-                        <span className="font-medium text-green-800">
+                        <span className="text-system-green">Preisgelder:</span>
+                        <span className="font-medium text-system-green">
                           {getTeamDisplay('AEK')} {formData.prizeaek.toLocaleString()}€, {getTeamDisplay('Real')} {formData.prizereal.toLocaleString()}€
                         </span>
                       </div>
                       {echtgeldPreview && (
-                        <div className="mt-2 pt-2 border-t border-green-200">
+                        <div className="mt-2 pt-2 border-t border-system-green/25">
                           <div className="flex justify-between">
-                            <span className="text-green-700">💳 Echtgeld-Ausgleich:</span>
-                            <span className="font-bold text-red-700">{getTeamDisplay(echtgeldPreview.loser)} schuldet {echtgeldPreview.loserBetrag}€</span>
+                            <span className="text-system-green">💳 Echtgeld-Ausgleich:</span>
+                            <span className="font-bold text-system-red">{getTeamDisplay(echtgeldPreview.loser)} schuldet {echtgeldPreview.loserBetrag}€</span>
                           </div>
-                          <div className="mt-1 text-xs text-green-600 italic">
+                          <div className="mt-1 text-xs text-system-green italic">
                             Kontostand: {getTeamDisplay('AEK')} {echtgeldPreview.aekBalance.toLocaleString()}€ / {getTeamDisplay('Real')} {echtgeldPreview.realBalance.toLocaleString()}€
                           </div>
                         </div>
@@ -998,16 +998,16 @@ export default function AddMatchTab() {
 
                 {/* Live Echtgeld preview even before form is fully valid (when score is known) */}
                 {!isFormValid() && echtgeldPreview && (
-                  <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <h5 className="font-medium text-blue-800 mb-2 flex items-center text-sm">
+                  <div className="bg-system-blue/10 border border-system-blue/25 rounded-lg p-3">
+                    <h5 className="font-medium text-system-blue mb-2 flex items-center text-sm">
                       💳 Echtgeld-Vorschau
                     </h5>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span className="text-blue-700">Verlierer schuldet:</span>
-                        <span className="font-bold text-red-700">{getTeamDisplay(echtgeldPreview.loser)} {echtgeldPreview.loserBetrag}€</span>
+                        <span className="text-system-blue">Verlierer schuldet:</span>
+                        <span className="font-bold text-system-red">{getTeamDisplay(echtgeldPreview.loser)} {echtgeldPreview.loserBetrag}€</span>
                       </div>
-                      <div className="text-xs text-blue-600 italic">
+                      <div className="text-xs text-system-blue italic">
                         Kontostand: {getTeamDisplay('AEK')} {echtgeldPreview.aekBalance.toLocaleString()}€ / {getTeamDisplay('Real')} {echtgeldPreview.realBalance.toLocaleString()}€
                       </div>
                     </div>
@@ -1016,12 +1016,12 @@ export default function AddMatchTab() {
 
                 {/* Enhanced Validation Status */}
                 {!isFormValid() && (
-                  <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                  <div className="bg-system-red/10 border border-system-red/25 rounded-lg p-3">
                     <div className="flex items-start">
-                      <div className="text-red-600 mr-2 mt-1">⚠️</div>
+                      <div className="text-system-red mr-2 mt-1">⚠️</div>
                       <div className="flex-1">
-                        <h5 className="font-medium text-red-800 mb-1">Formular unvollständig</h5>
-                        <ul className="text-sm text-red-700 space-y-1">
+                        <h5 className="font-medium text-system-red mb-1">Formular unvollständig</h5>
+                        <ul className="text-sm text-system-red space-y-1">
                           {getValidationStatus().issues.map((issue, index) => (
                             <li key={index} className="flex items-start">
                               <span className="mr-2">•</span>

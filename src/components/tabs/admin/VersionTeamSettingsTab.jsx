@@ -241,7 +241,7 @@ const VersionTeamSettingsTab = () => {
               onClick={() => handleVersionSelect(version.id)}
               className={`p-4 rounded-lg border-2 transition-all ${
                 selectedVersion === version.id
-                  ? 'border-blue-500 bg-system-blue/10 text-system-blue'
+                  ? 'border-system-blue bg-system-blue/10 text-system-blue'
                   : 'border-border-light hover:border-border-light text-text-secondary'
               }`}
             >
@@ -311,7 +311,7 @@ const VersionTeamSettingsTab = () => {
                       type="text"
                       value={teamConfig.label}
                       onChange={(e) => handleTeamChange(teamKey, 'label', e.target.value)}
-                      className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-system-blue focus:border-system-blue"
                       placeholder="Team-Name eingeben"
                     />
                   </div>
@@ -323,7 +323,7 @@ const VersionTeamSettingsTab = () => {
                     <select
                       value={teamConfig.color}
                       onChange={(e) => handleTeamChange(teamKey, 'color', e.target.value)}
-                      className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-system-blue focus:border-system-blue"
                     >
                       <option value="blue">Blau</option>
                       <option value="red">Rot</option>
@@ -344,12 +344,12 @@ const VersionTeamSettingsTab = () => {
                         type="file"
                         accept="image/*"
                         onChange={(e) => handleIconUpload(teamKey, e.target.files[0])}
-                        className="flex-1 px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        className="flex-1 px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-system-blue focus:border-system-blue"
                       />
                       {teamConfig.customIcon && (
                         <button
                           onClick={() => handleRemoveIcon(teamKey)}
-                          className="px-3 py-2 bg-system-red/100 text-white rounded-lg hover:bg-red-600 transition-colors"
+                          className="px-3 py-2 bg-system-red/100 text-white rounded-lg hover:bg-system-red transition-colors"
                         >
                           Entfernen
                         </button>
@@ -370,7 +370,7 @@ const VersionTeamSettingsTab = () => {
               <button
                 onClick={saveChanges}
                 disabled={loading}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-6 py-2 bg-system-blue text-white rounded-lg hover:bg-system-blue disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Speichern...' : 'Änderungen speichern'}
               </button>
@@ -391,7 +391,7 @@ const VersionTeamSettingsTab = () => {
             <select
               value={copyFromVersion}
               onChange={(e) => setCopyFromVersion(e.target.value)}
-              className="w-full px-3 py-2 border border-border-light rounded-lg mb-4 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-border-light rounded-lg mb-4 focus:ring-2 focus:ring-system-blue focus:border-system-blue"
             >
               <option value="">Version auswählen...</option>
               {versions
@@ -416,7 +416,7 @@ const VersionTeamSettingsTab = () => {
               <button
                 onClick={handleCopyFromVersion}
                 disabled={!copyFromVersion || loading}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-2 bg-system-blue text-white rounded-lg hover:bg-system-blue disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 Kopieren
               </button>

@@ -1285,7 +1285,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
                 const acc = ACCENT[people.find((p) => p.id === achievePerson)?.accent || 'blue'];
                 return (
                   <div key={x.id} className={`flex gap-3 p-3 rounded-xl ${x.done ? acc.chip : 'bg-bg-tertiary'}`}>
-                    <span className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center ${x.done ? 'bg-bg-elevated/60' : 'bg-bg-secondary text-text-quaternary'}`}>
+                    <span className={`w-10 h-10 rounded-xl flex-shrink-0 flex items-center justify-center ${x.done ? 'bg-bg-elevated' : 'bg-bg-secondary text-text-quaternary'}`}>
                       <Icon name={x.icon} size={18} strokeWidth={x.done ? 2.2 : 1.8} />
                     </span>
                     <div className="min-w-0 flex-1">

@@ -309,7 +309,7 @@ export default function SearchTab({ onNavigate }) {
                   
                   {/* Show Man of the Match if available */}
                   {item.manofthematch && (
-                    <p className="text-xs text-yellow-600 mt-1">
+                    <p className="text-xs text-system-yellow mt-1">
                       ⭐ SdS: {item.manofthematch}
                     </p>
                   )}
@@ -334,7 +334,7 @@ export default function SearchTab({ onNavigate }) {
                 </div>
                 <div className="text-right ml-4">
                   <div className={`text-lg font-bold ${
-                    (item.amount || 0) >= 0 ? 'text-green-600' : 'text-red-600'
+                    (item.amount || 0) >= 0 ? 'text-system-green' : 'text-system-red'
                   }`}>
                     {(item.amount || 0) > 0 ? '+' : ''}{item.amount || 0}€
                   </div>

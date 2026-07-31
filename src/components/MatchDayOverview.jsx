@@ -199,7 +199,7 @@ export default function MatchDayOverview({ matches }) {
       {/* Header */}
       <div className="modern-card">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-full flex items-center justify-center">
+          <div className="w-10 h-10 bg-system-purple rounded-full flex items-center justify-center">
             <span className="text-white text-lg">📅</span>
           </div>
           <div>
@@ -238,7 +238,7 @@ export default function MatchDayOverview({ matches }) {
                 <div
                   key={date}
                   onClick={() => setSelectedDate(date)}
-                  className="p-4 bg-bg-secondary rounded-lg border border-border-light hover:border-primary-blue cursor-pointer transition-all duration-200 hover:scale-105"
+                  className="p-4 bg-bg-secondary rounded-lg border border-border-light hover:border-system-blue cursor-pointer transition-all duration-200 hover:scale-105"
                 >
                   <div className="text-sm font-medium text-text-primary mb-2">
                     {formatShortDate(date)}
@@ -302,10 +302,10 @@ export default function MatchDayOverview({ matches }) {
                     <div
                       key={index}
                       className={`p-2 rounded-lg text-sm ${
-                        event.type === 'hat-trick' ? 'bg-yellow-50 text-yellow-800 border border-yellow-200' :
-                        event.type === 'clean-sheet' ? 'bg-green-50 text-green-800 border border-green-200' :
-                        event.type === 'high-scoring' ? 'bg-red-50 text-red-800 border border-red-200' :
-                        'bg-blue-50 text-blue-800 border border-blue-200'
+                        event.type === 'hat-trick' ? 'bg-system-yellow/10 text-system-yellow border border-system-yellow/25' :
+                        event.type === 'clean-sheet' ? 'bg-system-green/10 text-system-green border border-system-green/25' :
+                        event.type === 'high-scoring' ? 'bg-system-red/10 text-system-red border border-system-red/25' :
+                        'bg-system-blue/10 text-system-blue border border-system-blue/25'
                       }`}
                     >
                       {event.description}
@@ -325,13 +325,13 @@ export default function MatchDayOverview({ matches }) {
             </div>
             
             <div className="modern-card text-center">
-              <div className="text-2xl font-bold text-primary-blue">{selectedDateStats.aekWins}</div>
+              <div className="text-2xl font-bold text-system-blue">{selectedDateStats.aekWins}</div>
               <div className="text-sm text-text-secondary">{getTeamDisplay('AEK')} Siege</div>
               <div className="text-xs text-text-muted">{selectedDateStats.aekGoals} Tore erzielt</div>
             </div>
             
             <div className="modern-card text-center">
-              <div className="text-2xl font-bold text-primary-red">{selectedDateStats.realWins}</div>
+              <div className="text-2xl font-bold text-system-red">{selectedDateStats.realWins}</div>
               <div className="text-sm text-text-secondary">{getTeamDisplay('Real')} Siege</div>
               <div className="text-xs text-text-muted">{selectedDateStats.realGoals} Tore erzielt</div>
             </div>
@@ -359,7 +359,7 @@ export default function MatchDayOverview({ matches }) {
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
-                        <span className="w-6 h-6 bg-blue-500 text-white rounded text-xs flex items-center justify-center font-bold">A</span>
+                        <span className="w-6 h-6 bg-system-blue text-white rounded text-xs flex items-center justify-center font-bold">A</span>
                         <span className="font-medium">AEK</span>
                       </div>
                       <div className="text-xl font-bold">
@@ -367,7 +367,7 @@ export default function MatchDayOverview({ matches }) {
                       </div>
                       <div className="flex items-center gap-2">
                         <span className="font-medium">Real</span>
-                        <span className="w-6 h-6 bg-red-500 text-white rounded text-xs flex items-center justify-center font-bold">R</span>
+                        <span className="w-6 h-6 bg-system-red text-white rounded text-xs flex items-center justify-center font-bold">R</span>
                       </div>
                     </div>
                     <div className="text-sm text-text-muted">
@@ -399,7 +399,7 @@ export default function MatchDayOverview({ matches }) {
                         }
                       })() && (
                         <div className="text-sm">
-                          <span className="text-primary-blue font-medium">AEK Torschützen: </span>
+                          <span className="text-system-blue font-medium">AEK Torschützen: </span>
                           {(() => {
                             try {
                               const aekGoals = typeof match.goalslista === 'string' 
@@ -416,7 +416,7 @@ export default function MatchDayOverview({ matches }) {
                               }) : [];
                             } catch (error) {
                               console.warn('Error parsing AEK goals for display:', error);
-                              return <span className="text-red-500 text-xs">Fehler beim Laden der Torschützen</span>;
+                              return <span className="text-system-red text-xs">Fehler beim Laden der Torschützen</span>;
                             }
                           })()}
                         </div>
@@ -433,7 +433,7 @@ export default function MatchDayOverview({ matches }) {
                         }
                       })() && (
                         <div className="text-sm">
-                          <span className="text-primary-red font-medium">Real Torschützen: </span>
+                          <span className="text-system-red font-medium">Real Torschützen: </span>
                           {(() => {
                             try {
                               const realGoals = typeof match.goalslistb === 'string' 
@@ -450,7 +450,7 @@ export default function MatchDayOverview({ matches }) {
                               }) : [];
                             } catch (error) {
                               console.warn('Error parsing Real goals for display:', error);
-                              return <span className="text-red-500 text-xs">Fehler beim Laden der Torschützen</span>;
+                              return <span className="text-system-red text-xs">Fehler beim Laden der Torschützen</span>;
                             }
                           })()}
                         </div>
@@ -461,7 +461,7 @@ export default function MatchDayOverview({ matches }) {
                   {/* Man of the Match */}
                   {match.manofthematch && (
                     <div className="mt-2 text-sm">
-                      <span className="text-yellow-600 font-medium">⭐ Spieler des Spiels: </span>
+                      <span className="text-system-yellow font-medium">⭐ Spieler des Spiels: </span>
                       <span>{match.manofthematch}</span>
                     </div>
                   )}
@@ -506,10 +506,10 @@ export default function MatchDayOverview({ matches }) {
                     <div key={player} className="flex items-center justify-between py-2">
                       <div className="flex items-center gap-2">
                         <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                          index === 0 ? 'bg-yellow-500 text-white' :
-                          index === 1 ? 'bg-gray-400 text-white' :
-                          index === 2 ? 'bg-orange-600 text-white' :
-                          'bg-gray-200 text-gray-600'
+                          index === 0 ? 'bg-system-yellow text-white' :
+                          index === 1 ? 'bg-border-strong text-white' :
+                          index === 2 ? 'bg-system-orange text-white' :
+                          'bg-bg-tertiary text-text-secondary'
                         }`}>
                           {index + 1}
                         </span>

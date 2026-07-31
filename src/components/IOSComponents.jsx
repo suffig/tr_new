@@ -16,19 +16,19 @@ export function IOSToggle({ checked, onChange, disabled = false, size = 'md', co
   };
 
   const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    red: 'bg-red-500',
-    purple: 'bg-purple-500'
+    blue: 'bg-system-blue',
+    green: 'bg-system-green',
+    red: 'bg-system-red',
+    purple: 'bg-system-purple'
   };
 
   return (
     <button
       type="button"
       className={`
-        relative inline-flex items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500
+        relative inline-flex items-center rounded-full transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-system-blue
         ${sizeClasses[size]}
-        ${checked ? colorClasses[color] : 'bg-gray-300'}
+        ${checked ? colorClasses[color] : 'bg-border-strong'}
         ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
       `}
       onClick={() => !disabled && onChange(!checked)}
@@ -36,7 +36,7 @@ export function IOSToggle({ checked, onChange, disabled = false, size = 'md', co
     >
       <span
         className={`
-          inline-block rounded-full bg-white transition-transform duration-200 ease-in-out shadow-lg
+          inline-block rounded-full bg-bg-elevated transition-transform duration-200 ease-in-out shadow-lg
           ${thumbSizeClasses[size]}
           ${checked ? 'translate-x-6' : 'translate-x-1'}
         `}
@@ -50,10 +50,10 @@ export function IOSSlider({ value, onChange, min = 0, max = 100, step = 1, disab
   const [isDragging, setIsDragging] = useState(false);
 
   const colorClasses = {
-    blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    red: 'bg-red-500',
-    purple: 'bg-purple-500'
+    blue: 'bg-system-blue',
+    green: 'bg-system-green',
+    red: 'bg-system-red',
+    purple: 'bg-system-purple'
   };
 
   const percentage = ((value - min) / (max - min)) * 100;
@@ -75,7 +75,7 @@ export function IOSSlider({ value, onChange, min = 0, max = 100, step = 1, disab
         className="sr-only"
       />
       <div className="relative h-7 flex items-center">
-        <div className="w-full h-1 bg-gray-300 rounded-full">
+        <div className="w-full h-1 bg-border-strong rounded-full">
           <div 
             className={`h-1 rounded-full transition-all duration-150 ${colorClasses[color]}`}
             style={{ width: `${percentage}%` }}
@@ -83,8 +83,8 @@ export function IOSSlider({ value, onChange, min = 0, max = 100, step = 1, disab
         </div>
         <div 
           className={`
-            absolute w-7 h-7 bg-white rounded-full shadow-lg border-2 transition-all duration-150 cursor-pointer
-            ${isDragging ? 'scale-110 border-blue-300' : 'border-gray-300'}
+            absolute w-7 h-7 bg-bg-elevated rounded-full shadow-lg border-2 transition-all duration-150 cursor-pointer
+            ${isDragging ? 'scale-110 border-system-blue/45' : 'border-border-medium'}
             ${disabled ? 'opacity-50 cursor-not-allowed' : ''}
           `}
           style={{ left: `calc(${percentage}% - 14px)` }}
@@ -103,7 +103,7 @@ export function IOSSegmentedControl({ options, selectedIndex, onChange, size = '
   };
 
   return (
-    <div className="inline-flex bg-gray-200 rounded-lg p-1">
+    <div className="inline-flex bg-bg-tertiary rounded-lg p-1">
       {options.map((option, index) => (
         <button
           key={index}
@@ -112,8 +112,8 @@ export function IOSSegmentedControl({ options, selectedIndex, onChange, size = '
             relative rounded-md font-medium transition-all duration-200 ease-in-out
             ${sizeClasses[size]}
             ${selectedIndex === index 
-              ? 'bg-white text-gray-900 shadow-sm' 
-              : 'text-gray-600 hover:text-gray-900'
+              ? 'bg-bg-elevated text-text-primary shadow-sm' 
+              : 'text-text-secondary hover:text-text-primary'
             }
           `}
         >
@@ -150,12 +150,12 @@ export function IOSActionSheet({ isOpen, onClose, actions, title, message }) {
       
       {/* Action Sheet */}
       <div className="absolute bottom-0 left-0 right-0 transform transition-transform duration-300 ease-out">
-        <div className="bg-white rounded-t-2xl mx-2 mb-2 overflow-hidden">
+        <div className="bg-bg-elevated rounded-t-2xl mx-2 mb-2 overflow-hidden">
           {/* Header */}
           {(title || message) && (
-            <div className="px-4 py-3 border-b border-gray-200">
-              {title && <h3 className="text-lg font-medium text-gray-900 text-center">{title}</h3>}
-              {message && <p className="text-sm text-gray-600 text-center mt-1">{message}</p>}
+            <div className="px-4 py-3 border-b border-border-light">
+              {title && <h3 className="text-lg font-medium text-text-primary text-center">{title}</h3>}
+              {message && <p className="text-sm text-text-secondary text-center mt-1">{message}</p>}
             </div>
           )}
           
@@ -171,10 +171,10 @@ export function IOSActionSheet({ isOpen, onClose, actions, title, message }) {
                 className={`
                   w-full px-4 py-4 text-center text-base transition-colors duration-150
                   ${action.style === 'destructive' 
-                    ? 'text-red-600 hover:bg-red-50' 
+                    ? 'text-system-red hover:bg-system-red/10' 
                     : action.style === 'cancel'
-                    ? 'text-gray-600 hover:bg-gray-50 font-medium'
-                    : 'text-blue-600 hover:bg-blue-50'
+                    ? 'text-text-secondary hover:bg-bg-tertiary font-medium'
+                    : 'text-system-blue hover:bg-system-blue/10'
                   }
                 `}
               >
@@ -185,10 +185,10 @@ export function IOSActionSheet({ isOpen, onClose, actions, title, message }) {
         </div>
         
         {/* Cancel button */}
-        <div className="bg-white rounded-xl mx-2 mb-8">
+        <div className="bg-bg-elevated rounded-xl mx-2 mb-8">
           <button
             onClick={onClose}
-            className="w-full px-4 py-4 text-center text-base font-semibold text-blue-600 hover:bg-blue-50 transition-colors duration-150"
+            className="w-full px-4 py-4 text-center text-base font-semibold text-system-blue hover:bg-system-blue/10 transition-colors duration-150"
           >
             Abbrechen
           </button>
@@ -208,21 +208,21 @@ export function IOSAlert({ isOpen, onClose, title, message, buttons = [] }) {
       <div className="absolute inset-0 bg-black bg-opacity-50" />
       
       {/* Alert */}
-      <div className="relative bg-white rounded-2xl w-full max-w-sm mx-auto overflow-hidden shadow-xl">
+      <div className="relative bg-bg-elevated rounded-2xl w-full max-w-sm mx-auto overflow-hidden shadow-xl">
         <div className="px-6 py-6 text-center">
-          {title && <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>}
-          {message && <p className="text-sm text-gray-600 leading-relaxed">{message}</p>}
+          {title && <h3 className="text-lg font-semibold text-text-primary mb-2">{title}</h3>}
+          {message && <p className="text-sm text-text-secondary leading-relaxed">{message}</p>}
         </div>
         
         {buttons.length > 0 && (
-          <div className="border-t border-gray-200">
+          <div className="border-t border-border-light">
             {buttons.length === 1 ? (
               <button
                 onClick={() => {
                   buttons[0].onPress();
                   onClose();
                 }}
-                className="w-full px-6 py-4 text-center text-base font-medium text-blue-600 hover:bg-blue-50 transition-colors duration-150"
+                className="w-full px-6 py-4 text-center text-base font-medium text-system-blue hover:bg-system-blue/10 transition-colors duration-150"
               >
                 {buttons[0].text}
               </button>
@@ -237,10 +237,10 @@ export function IOSAlert({ isOpen, onClose, title, message, buttons = [] }) {
                     }}
                     className={`
                       px-6 py-4 text-center text-base font-medium transition-colors duration-150
-                      ${index > 0 ? 'border-l border-gray-200' : ''}
+                      ${index > 0 ? 'border-l border-border-light' : ''}
                       ${button.style === 'destructive' 
-                        ? 'text-red-600 hover:bg-red-50' 
-                        : 'text-blue-600 hover:bg-blue-50'
+                        ? 'text-system-red hover:bg-system-red/10' 
+                        : 'text-system-blue hover:bg-system-blue/10'
                       }
                     `}
                   >
@@ -266,10 +266,10 @@ export function IOSToast({ message, type = 'info', isVisible, onHide, duration =
   }, [isVisible, duration, onHide]);
 
   const typeConfig = {
-    success: { icon: 'check', color: 'text-green-600 bg-green-50' },
-    error: { icon: 'warning', color: 'text-red-600 bg-red-50' },
-    warning: { icon: 'warning', color: 'text-yellow-600 bg-yellow-50' },
-    info: { icon: 'bulb', color: 'text-blue-600 bg-blue-50' }
+    success: { icon: 'check', color: 'text-system-green bg-system-green/10' },
+    error: { icon: 'warning', color: 'text-system-red bg-system-red/10' },
+    warning: { icon: 'warning', color: 'text-system-yellow bg-system-yellow/10' },
+    info: { icon: 'bulb', color: 'text-system-blue bg-system-blue/10' }
   };
 
   return (

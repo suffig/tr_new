@@ -185,7 +185,7 @@ export default function TeamSettingsTab() {
             🏆 Team-Manager Einstellungen
           </h3>
           {hasChanges && (
-            <span className="text-sm text-orange-600 font-medium">
+            <span className="text-sm text-system-orange font-medium">
               Ungespeicherte Änderungen
             </span>
           )}
@@ -197,9 +197,9 @@ export default function TeamSettingsTab() {
 
         <div className="grid md:grid-cols-2 gap-6">
           {/* AEK Manager */}
-          <div className="space-y-4 p-4 border border-blue-200 rounded-lg bg-blue-50">
-            <h4 className="font-medium text-blue-800 flex items-center">
-              <div className="w-6 h-6 bg-blue-600 rounded mr-2"></div>
+          <div className="space-y-4 p-4 border border-system-blue/25 rounded-lg bg-system-blue/10">
+            <h4 className="font-medium text-system-blue flex items-center">
+              <div className="w-6 h-6 bg-system-blue rounded mr-2"></div>
               AEK Manager
             </h4>
             
@@ -209,7 +209,7 @@ export default function TeamSettingsTab() {
                 type="text"
                 value={managers.aek.name}
                 onChange={(e) => handleManagerChange('aek', 'name', e.target.value)}
-                className="w-full px-3 py-2 border border-border-light rounded-lg bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-blue"
                 placeholder="Manager Name"
               />
             </div>
@@ -224,7 +224,7 @@ export default function TeamSettingsTab() {
                   value={managers.aek.age}
                   onChange={(e) => handleManagerChange('aek', 'age', e.target.value)}
                   onFocus={(e) => e.target.select()}
-                  className="w-full px-3 py-2 border border-border-light rounded-lg bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-blue"
                 />
               </div>
               <div>
@@ -236,16 +236,16 @@ export default function TeamSettingsTab() {
                   value={managers.aek.weight}
                   onChange={(e) => handleManagerChange('aek', 'weight', e.target.value)}
                   onFocus={(e) => e.target.select()}
-                  className="w-full px-3 py-2 border border-border-light rounded-lg bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-blue"
                 />
               </div>
             </div>
           </div>
 
           {/* Real Manager */}
-          <div className="space-y-4 p-4 border border-red-200 rounded-lg bg-red-50">
-            <h4 className="font-medium text-red-800 flex items-center">
-              <div className="w-6 h-6 bg-red-600 rounded mr-2"></div>
+          <div className="space-y-4 p-4 border border-system-red/25 rounded-lg bg-system-red/10">
+            <h4 className="font-medium text-system-red flex items-center">
+              <div className="w-6 h-6 bg-system-red rounded mr-2"></div>
               Real Manager
             </h4>
             
@@ -255,7 +255,7 @@ export default function TeamSettingsTab() {
                 type="text"
                 value={managers.real.name}
                 onChange={(e) => handleManagerChange('real', 'name', e.target.value)}
-                className="w-full px-3 py-2 border border-border-light rounded-lg bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-red-500"
+                className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-red"
                 placeholder="Manager Name"
               />
             </div>
@@ -270,7 +270,7 @@ export default function TeamSettingsTab() {
                   value={managers.real.age}
                   onChange={(e) => handleManagerChange('real', 'age', e.target.value)}
                   onFocus={(e) => e.target.select()}
-                  className="w-full px-3 py-2 border border-border-light rounded-lg bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-red"
                 />
               </div>
               <div>
@@ -282,7 +282,7 @@ export default function TeamSettingsTab() {
                   value={managers.real.weight}
                   onChange={(e) => handleManagerChange('real', 'weight', e.target.value)}
                   onFocus={(e) => e.target.select()}
-                  className="w-full px-3 py-2 border border-border-light rounded-lg bg-white text-text-primary focus:outline-none focus:ring-2 focus:ring-red-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-red"
                 />
               </div>
             </div>
@@ -293,7 +293,7 @@ export default function TeamSettingsTab() {
         <div className="flex justify-between items-center pt-4 border-t border-border-light">
           <button
             onClick={resetToDefaults}
-            className="px-4 py-2 text-sm bg-gray-100 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-200 transition-colors"
+            className="px-4 py-2 text-sm bg-bg-tertiary text-text-secondary border border-border-medium rounded-lg hover:bg-bg-tertiary transition-colors"
           >
             Standardwerte wiederherstellen
           </button>
@@ -303,16 +303,16 @@ export default function TeamSettingsTab() {
             disabled={!hasChanges || loading}
             className={`px-4 py-2 text-sm rounded-lg transition-colors ${
               hasChanges && !loading
-                ? 'bg-primary-green text-white hover:bg-green-600' 
-                : 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                ? 'bg-primary-green text-white hover:bg-system-green' 
+                : 'bg-border-strong text-text-tertiary cursor-not-allowed'
             }`}
           >
             {loading ? 'Speichern...' : 'Einstellungen speichern'}
           </button>
         </div>
 
-        <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-          <div className="text-sm text-yellow-800">
+        <div className="mt-4 p-3 bg-system-yellow/10 border border-system-yellow/25 rounded-lg">
+          <div className="text-sm text-system-yellow">
             <strong>Hinweis:</strong> Diese Einstellungen werden für die BAK-Berechnung in der Statistik verwendet.
             Die Werte werden in der Datenbank gespeichert.
           </div>

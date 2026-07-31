@@ -140,7 +140,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-system-green/20 via-bg-primary to-system-blue/20 flex items-center justify-center p-4 safe-area-all">
+    <div className="min-h-screen verlauf-anmeldung flex items-center justify-center p-4 safe-area-all">
       {/* Background Elements */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <div className="floating-orb floating-orb-1 bg-system-green/10"></div>

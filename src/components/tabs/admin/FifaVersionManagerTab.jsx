@@ -369,7 +369,7 @@ const FifaVersionManagerTab = () => {
                   <button
                     onClick={() => handleRemoveVersion(version.id)}
                     disabled={version.isActive}
-                    className="px-3 py-2 bg-red-100 hover:bg-red-200 text-system-red rounded-lg 
+                    className="px-3 py-2 bg-system-red/15 hover:bg-system-red/25 text-system-red rounded-lg 
                              text-sm transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     Löschen
@@ -388,12 +388,12 @@ const FifaVersionManagerTab = () => {
       </div>
 
       {/* Information Section */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+      <div className="bg-system-orange/10 border border-system-orange/25 rounded-xl p-6">
         <div className="flex items-start gap-3">
-          <span className="text-amber-600 text-2xl">💡</span>
+          <span className="text-system-orange text-2xl">💡</span>
           <div>
-            <h4 className="font-semibold text-amber-800 mb-2">FIFA Versionen-System</h4>
-            <div className="space-y-2 text-sm text-amber-700">
+            <h4 className="font-semibold text-system-orange mb-2">FIFA Versionen-System</h4>
+            <div className="space-y-2 text-sm text-system-orange">
               <p>• <strong>Built-in Versionen:</strong> FC25 (Legacy) und FC26 (Standard) sind vorinstalliert</p>
               <p>• <strong>Custom Versionen:</strong> Erstellen Sie eigene Versionen für zukünftige FIFA-Editionen</p>
               <p>• <strong>Datenisolation:</strong> Jede Version hat separate Datenbanken</p>

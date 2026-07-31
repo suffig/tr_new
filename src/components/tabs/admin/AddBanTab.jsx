@@ -247,8 +247,8 @@ export default function AddBanTab() {
                 )}
 
                 {selectedBanType && selectedBanType.fixedDuration && (
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-blue-800 flex items-start gap-2">
+                  <div className="p-3 bg-system-blue/10 rounded-lg border border-system-blue/25">
+                    <p className="text-sm text-system-blue flex items-start gap-2">
                       <Icon name="bulb" size={16} strokeWidth={2} className="flex-shrink-0 mt-0.5" />
                       <span>Gelb-Rote Karten haben immer eine feste Sperre von 1 Spiel.</span>
                     </p>

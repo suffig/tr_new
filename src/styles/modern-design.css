@@ -1298,6 +1298,100 @@ textarea.form-input {
 .dark .border-system-indigo\/35 { border-color: color-mix(in srgb, var(--system-indigo) 48%, transparent); }
 .dark .border-system-indigo\/45 { border-color: color-mix(in srgb, var(--system-indigo) 58%, transparent); }
 
+
+
+/* --------------------------------------------------------------------------
+   Automatisch ergaenzte Transparenzstufen (siehe scratchpad/erzeuge_stufen.py)
+   --------------------------------------------------------------------------
+   Tailwind erzeugt fuer Farben aus CSS-Variablen keine /NN-Varianten. Ohne
+   diese Regeln bleiben die betroffenen Klassen wirkungslos — die Flaeche ist
+   dann schlicht durchsichtig, ohne dass irgendetwas fehlschlaegt.
+   -------------------------------------------------------------------------- */
+.bg-bg-primary\/90 { background-color: color-mix(in srgb, var(--bg-primary) 90%, transparent); }
+.bg-bg-primary\/95 { background-color: color-mix(in srgb, var(--bg-primary) 95%, transparent); }
+.bg-bg-secondary\/95 { background-color: color-mix(in srgb, var(--bg-secondary) 95%, transparent); }
+.bg-primary-green\/10 { background-color: color-mix(in srgb, var(--fifa-green) 10%, transparent); }
+.bg-system-blue\/10 { background-color: color-mix(in srgb, var(--system-blue) 10%, transparent); }
+.bg-system-blue\/12 { background-color: color-mix(in srgb, var(--system-blue) 12%, transparent); }
+.bg-system-blue\/15 { background-color: color-mix(in srgb, var(--system-blue) 15%, transparent); }
+.bg-system-blue\/20 { background-color: color-mix(in srgb, var(--system-blue) 20%, transparent); }
+.bg-system-blue\/25 { background-color: color-mix(in srgb, var(--system-blue) 25%, transparent); }
+.bg-system-green\/10 { background-color: color-mix(in srgb, var(--system-green) 10%, transparent); }
+.bg-system-green\/12 { background-color: color-mix(in srgb, var(--system-green) 12%, transparent); }
+.bg-system-green\/15 { background-color: color-mix(in srgb, var(--system-green) 15%, transparent); }
+.bg-system-green\/20 { background-color: color-mix(in srgb, var(--system-green) 20%, transparent); }
+.bg-system-green\/60 { background-color: color-mix(in srgb, var(--system-green) 60%, transparent); }
+.bg-system-green\/70 { background-color: color-mix(in srgb, var(--system-green) 70%, transparent); }
+.bg-system-indigo\/10 { background-color: color-mix(in srgb, var(--system-indigo) 10%, transparent); }
+.bg-system-indigo\/12 { background-color: color-mix(in srgb, var(--system-indigo) 12%, transparent); }
+.bg-system-orange\/10 { background-color: color-mix(in srgb, var(--system-orange) 10%, transparent); }
+.bg-system-orange\/12 { background-color: color-mix(in srgb, var(--system-orange) 12%, transparent); }
+.bg-system-orange\/15 { background-color: color-mix(in srgb, var(--system-orange) 15%, transparent); }
+.bg-system-orange\/70 { background-color: color-mix(in srgb, var(--system-orange) 70%, transparent); }
+.bg-system-purple\/10 { background-color: color-mix(in srgb, var(--system-purple) 10%, transparent); }
+.bg-system-purple\/15 { background-color: color-mix(in srgb, var(--system-purple) 15%, transparent); }
+.bg-system-red\/10 { background-color: color-mix(in srgb, var(--system-red) 10%, transparent); }
+.bg-system-red\/100 { background-color: color-mix(in srgb, var(--system-red) 100%, transparent); }
+.bg-system-red\/12 { background-color: color-mix(in srgb, var(--system-red) 12%, transparent); }
+.bg-system-red\/15 { background-color: color-mix(in srgb, var(--system-red) 15%, transparent); }
+.bg-system-red\/20 { background-color: color-mix(in srgb, var(--system-red) 20%, transparent); }
+.bg-system-red\/25 { background-color: color-mix(in srgb, var(--system-red) 25%, transparent); }
+.bg-system-yellow\/10 { background-color: color-mix(in srgb, var(--system-yellow) 10%, transparent); }
+.bg-system-yellow\/12 { background-color: color-mix(in srgb, var(--system-yellow) 12%, transparent); }
+.bg-system-yellow\/15 { background-color: color-mix(in srgb, var(--system-yellow) 15%, transparent); }
+.bg-system-yellow\/20 { background-color: color-mix(in srgb, var(--system-yellow) 20%, transparent); }
+.bg-text-tertiary\/15 { background-color: color-mix(in srgb, var(--text-tertiary) 15%, transparent); }
+.bg-text-tertiary\/40 { background-color: color-mix(in srgb, var(--text-tertiary) 40%, transparent); }
+.bg-text-tertiary\/50 { background-color: color-mix(in srgb, var(--text-tertiary) 50%, transparent); }
+.border-system-blue\/20 { border-color: color-mix(in srgb, var(--system-blue) 20%, transparent); }
+.border-system-blue\/25 { border-color: color-mix(in srgb, var(--system-blue) 25%, transparent); }
+.border-system-blue\/30 { border-color: color-mix(in srgb, var(--system-blue) 30%, transparent); }
+.border-system-blue\/45 { border-color: color-mix(in srgb, var(--system-blue) 45%, transparent); }
+.border-system-green\/20 { border-color: color-mix(in srgb, var(--system-green) 20%, transparent); }
+.border-system-green\/25 { border-color: color-mix(in srgb, var(--system-green) 25%, transparent); }
+.border-system-green\/30 { border-color: color-mix(in srgb, var(--system-green) 30%, transparent); }
+.border-system-green\/40 { border-color: color-mix(in srgb, var(--system-green) 40%, transparent); }
+.border-system-green\/45 { border-color: color-mix(in srgb, var(--system-green) 45%, transparent); }
+.border-system-indigo\/25 { border-color: color-mix(in srgb, var(--system-indigo) 25%, transparent); }
+.border-system-orange\/25 { border-color: color-mix(in srgb, var(--system-orange) 25%, transparent); }
+.border-system-orange\/30 { border-color: color-mix(in srgb, var(--system-orange) 30%, transparent); }
+.border-system-orange\/45 { border-color: color-mix(in srgb, var(--system-orange) 45%, transparent); }
+.border-system-purple\/25 { border-color: color-mix(in srgb, var(--system-purple) 25%, transparent); }
+.border-system-purple\/45 { border-color: color-mix(in srgb, var(--system-purple) 45%, transparent); }
+.border-system-red\/20 { border-color: color-mix(in srgb, var(--system-red) 20%, transparent); }
+.border-system-red\/25 { border-color: color-mix(in srgb, var(--system-red) 25%, transparent); }
+.border-system-red\/30 { border-color: color-mix(in srgb, var(--system-red) 30%, transparent); }
+.border-system-red\/45 { border-color: color-mix(in srgb, var(--system-red) 45%, transparent); }
+.border-system-yellow\/20 { border-color: color-mix(in srgb, var(--system-yellow) 20%, transparent); }
+.border-system-yellow\/25 { border-color: color-mix(in srgb, var(--system-yellow) 25%, transparent); }
+.border-system-yellow\/40 { border-color: color-mix(in srgb, var(--system-yellow) 40%, transparent); }
+.border-system-yellow\/45 { border-color: color-mix(in srgb, var(--system-yellow) 45%, transparent); }
+.text-system-red\/70 { color: color-mix(in srgb, var(--system-red) 70%, transparent); }
+.dark .dark\:bg-system-blue\/20 { background-color: color-mix(in srgb, var(--system-blue) 20%, transparent); }
+.dark .dark\:bg-system-green\/20 { background-color: color-mix(in srgb, var(--system-green) 20%, transparent); }
+.dark .dark\:bg-system-red\/20 { background-color: color-mix(in srgb, var(--system-red) 20%, transparent); }
+.dark .dark\:bg-system-yellow\/20 { background-color: color-mix(in srgb, var(--system-yellow) 20%, transparent); }
+.focus\:ring-primary-green\/20:focus { --tw-ring-color: color-mix(in srgb, var(--fifa-green) 20%, transparent); }
+.focus\:ring-primary-green\/50:focus { --tw-ring-color: color-mix(in srgb, var(--fifa-green) 50%, transparent); }
+.focus\:ring-system-red\/20:focus { --tw-ring-color: color-mix(in srgb, var(--system-red) 20%, transparent); }
+.hover\:bg-bg-tertiary\/40:hover { background-color: color-mix(in srgb, var(--bg-tertiary) 40%, transparent); }
+.hover\:bg-system-blue\/10:hover { background-color: color-mix(in srgb, var(--system-blue) 10%, transparent); }
+.hover\:bg-system-blue\/15:hover { background-color: color-mix(in srgb, var(--system-blue) 15%, transparent); }
+.hover\:bg-system-blue\/20:hover { background-color: color-mix(in srgb, var(--system-blue) 20%, transparent); }
+.hover\:bg-system-blue\/25:hover { background-color: color-mix(in srgb, var(--system-blue) 25%, transparent); }
+.hover\:bg-system-blue\/90:hover { background-color: color-mix(in srgb, var(--system-blue) 90%, transparent); }
+.hover\:bg-system-green\/10:hover { background-color: color-mix(in srgb, var(--system-green) 10%, transparent); }
+.hover\:bg-system-green\/15:hover { background-color: color-mix(in srgb, var(--system-green) 15%, transparent); }
+.hover\:bg-system-green\/20:hover { background-color: color-mix(in srgb, var(--system-green) 20%, transparent); }
+.hover\:bg-system-green\/25:hover { background-color: color-mix(in srgb, var(--system-green) 25%, transparent); }
+.hover\:bg-system-orange\/15:hover { background-color: color-mix(in srgb, var(--system-orange) 15%, transparent); }
+.hover\:bg-system-red\/10:hover { background-color: color-mix(in srgb, var(--system-red) 10%, transparent); }
+.hover\:bg-system-red\/15:hover { background-color: color-mix(in srgb, var(--system-red) 15%, transparent); }
+.hover\:bg-system-red\/25:hover { background-color: color-mix(in srgb, var(--system-red) 25%, transparent); }
+.hover\:bg-system-yellow\/15:hover { background-color: color-mix(in srgb, var(--system-yellow) 15%, transparent); }
+.hover\:border-system-blue\/45:hover { border-color: color-mix(in srgb, var(--system-blue) 45%, transparent); }
+.hover\:border-system-green\/45:hover { border-color: color-mix(in srgb, var(--system-green) 45%, transparent); }
+
 /* ==========================================================================
    13. Broadcast numerals + touch-target opt-outs
    ========================================================================== */

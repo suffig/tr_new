@@ -92,7 +92,7 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
           {activeBans.length > 0 && (
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="w-2 h-2 rounded-full bg-system-red animate-pulse" />
                 Aktive Sperren ({activeBans.length})
               </h3>
               <div className="space-y-4">
@@ -120,7 +120,7 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                                 {ban.type}
                               </span>
                               <span className="chip chip-red transition-all group-hover:scale-105">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
+                                <span className="w-1.5 h-1.5 rounded-full bg-system-red animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
                               </span>
                             </div>
 
@@ -130,9 +130,9 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                                 <span>Fortschritt: {ban.matchesserved || 0} / {ban.totalgames || 0} Spiele</span>
                                 <span>{Math.round(progress)}%</span>
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div className="w-full bg-bg-tertiary rounded-full h-2">
                                 <div 
-                                  className="h-2 rounded-full bg-red-500 transition-all duration-300"
+                                  className="h-2 rounded-full bg-system-red transition-all duration-300"
                                   style={{ width: `${Math.min(progress, 100)}%` }}
                                 ></div>
                               </div>
@@ -148,10 +148,10 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                         
                         {/* Large remaining games indicator */}
                         <div className="text-center ml-4">
-                          <div className="text-2xl font-bold text-red-600">
+                          <div className="text-2xl font-bold text-system-red">
                             {remainingGames}
                           </div>
-                          <div className="text-xs text-red-600 uppercase font-medium">
+                          <div className="text-xs text-system-red uppercase font-medium">
                             Verbleibend
                           </div>
                         </div>
@@ -205,9 +205,9 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                                 <span>Fortschritt: {ban.matchesserved || 0} / {ban.totalgames || 0} Spiele</span>
                                 <span>{Math.round(progress)}%</span>
                               </div>
-                              <div className="w-full bg-gray-200 rounded-full h-2">
+                              <div className="w-full bg-bg-tertiary rounded-full h-2">
                                 <div 
-                                  className="h-2 rounded-full bg-green-500 transition-all duration-300"
+                                  className="h-2 rounded-full bg-system-green transition-all duration-300"
                                   style={{ width: `${Math.min(progress, 100)}%` }}
                                 ></div>
                               </div>
@@ -259,7 +259,7 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                             </span>
                             {isActive ? (
                               <span className="chip chip-red transition-all group-hover:scale-105">
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
+                                <span className="w-1.5 h-1.5 rounded-full bg-system-red animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
                               </span>
                             ) : (
                               <span className="chip chip-green transition-all group-hover:scale-105">
@@ -274,10 +274,10 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                               <span>Fortschritt: {ban.matchesserved || 0} / {ban.totalgames || 0} Spiele</span>
                               <span>{Math.round(progress)}%</span>
                             </div>
-                            <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div className="w-full bg-bg-tertiary rounded-full h-2">
                               <div 
                                 className={`h-2 rounded-full transition-all duration-300 ${
-                                  isActive ? 'bg-red-500' : 'bg-green-500'
+                                  isActive ? 'bg-system-red' : 'bg-system-green'
                                 }`}
                                 style={{ width: `${Math.min(progress, 100)}%` }}
                               ></div>
@@ -295,10 +295,10 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
                       {/* Large remaining games indicator for active bans */}
                       {isActive && (
                         <div className="text-center ml-4">
-                          <div className="text-2xl font-bold text-red-600">
+                          <div className="text-2xl font-bold text-system-red">
                             {remainingGames}
                           </div>
-                          <div className="text-xs text-red-600 uppercase font-medium">
+                          <div className="text-xs text-system-red uppercase font-medium">
                             Verbleibend
                           </div>
                         </div>

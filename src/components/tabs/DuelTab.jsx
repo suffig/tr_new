@@ -539,7 +539,7 @@ export default function DuelTab() {
           Vereine wechseln aber je Saison (FC25 AEK/Real, FC26 Dynamo/Schalke).
           Ein Vereinsname haette hier die Bilanz der einen Saison unter dem
           Namen einer anderen ausgewiesen. Die Personen bleiben konstant. */}
-      <div className="modern-card p-5 relative overflow-hidden bg-gradient-to-br from-system-blue/15 via-transparent to-system-red/15">
+      <div className="modern-card p-5 relative overflow-hidden verlauf-duell">
         <div className="text-caption2 text-text-tertiary text-center mb-2">
           Über alle Saisons
           {d.seasonH2H.length > 1 ? ` · ${d.seasonH2H.length} Saisons` : ''}

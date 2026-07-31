@@ -611,7 +611,7 @@ export default function SpielersaufenTab() {
                 <div className={`${color.hdr} p-3`}>
                   <div className="flex items-center gap-2 mb-2">
                     <input value={team.name} onChange={e => setTeamField(teamId,'name',e.target.value)}
-                      className="flex-1 bg-bg-elevated/20 text-white font-bold rounded-lg px-2 py-1 text-sm focus:outline-none focus:bg-bg-elevated/30 placeholder-white/60" placeholder="Teamname…" />
+                      className="flex-1 bg-white/20 text-white font-bold rounded-lg px-2 py-1 text-sm focus:outline-none focus:bg-bg-elevated placeholder-white/60" placeholder="Teamname…" />
                     <span className="text-white/80 text-xs font-semibold">{active.length}/11</span>
                   </div>
                   <div className="flex gap-1.5 flex-wrap">
@@ -716,7 +716,7 @@ export default function SpielersaufenTab() {
                   <div className={`${c.panel} border-0 rounded-none px-4 py-2.5 flex items-center gap-3`}>
                     <div className={`w-2.5 h-2.5 rounded-full ${c.dot}`} />
                     <span className={`font-bold text-sm ${c.text} flex-1`}>{p.name}</span>
-                    <span className="text-xs text-text-tertiary bg-bg-elevated/60 px-2 py-0.5 rounded-full">{assigned.length} Spieler</span>
+                    <span className="text-xs text-text-tertiary bg-bg-elevated px-2 py-0.5 rounded-full">{assigned.length} Spieler</span>
                   </div>
                   <div className="bg-bg-elevated px-4 py-3 space-y-2">
                     {assigned.map(a => {

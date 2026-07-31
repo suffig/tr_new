@@ -81,10 +81,10 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
         </button>
 
         {showSelector && (
-          <div className="absolute top-full right-0 mt-1 bg-white rounded-lg shadow-xl border 
-                          border-gray-200 z-50 min-w-64">
+          <div className="absolute top-full right-0 mt-1 bg-bg-elevated rounded-lg shadow-xl border 
+                          border-border-light z-50 min-w-64">
             <div className="p-4">
-              <h3 className="font-semibold text-gray-800 mb-3">Saison wählen</h3>
+              <h3 className="font-semibold text-text-primary mb-3">Saison wählen</h3>
               <div className="space-y-2">
                 {availableSeasons.map((season) => (
                   <button
@@ -93,8 +93,8 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
                     disabled={season.isActive || isChangingSeason}
                     className={`w-full p-3 rounded-lg border-2 transition-all text-left
                       ${season.isActive 
-                        ? 'border-blue-500 bg-blue-50 text-blue-800' 
-                        : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                        ? 'border-system-blue bg-system-blue/10 text-system-blue' 
+                        : 'border-border-light hover:border-border-medium hover:bg-bg-tertiary'
                       }
                       ${!season.hasData ? 'opacity-60' : ''}
                       ${isChangingSeason ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
@@ -108,24 +108,24 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
                             <span className="font-bold text-lg">
                               {season.id === SEASONS.LEGACY ? 'FC25' : 'FC26'}
                             </span>
-                            <span className="font-medium text-gray-700">{season.name}</span>
+                            <span className="font-medium text-text-secondary">{season.name}</span>
                           </div>
-                          <div className="text-sm text-gray-600">{season.description}</div>
+                          <div className="text-sm text-text-secondary">{season.description}</div>
                         </div>
                       </div>
                       <div className="flex flex-col items-end gap-1">
                         {season.isActive && (
-                          <span className="text-xs bg-blue-100 text-blue-700 px-2 py-1 rounded">
+                          <span className="text-xs bg-system-blue/15 text-system-blue px-2 py-1 rounded">
                             Aktiv
                           </span>
                         )}
                         {season.hasData && (
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                          <span className="text-xs bg-system-green/15 text-system-green px-2 py-1 rounded">
                             Daten vorhanden
                           </span>
                         )}
                         {!season.hasData && season.id === SEASONS.FC26 && (
-                          <span className="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded">
+                          <span className="text-xs bg-system-yellow/15 text-system-yellow px-2 py-1 rounded">
                             Neu
                           </span>
                         )}
@@ -136,9 +136,9 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
               </div>
               
               {isChangingSeason && (
-                <div className="mt-3 p-2 bg-blue-50 rounded-lg">
-                  <div className="flex items-center gap-2 text-blue-800 text-sm">
-                    <div className="animate-spin w-4 h-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <div className="mt-3 p-2 bg-system-blue/10 rounded-lg">
+                  <div className="flex items-center gap-2 text-system-blue text-sm">
+                    <div className="animate-spin w-4 h-4 border-2 border-system-blue border-t-transparent rounded-full"></div>
                     <span>Saison wird gewechselt...</span>
                   </div>
                 </div>
@@ -154,38 +154,38 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
   return (
     <div className={`modern-card ${className}`}>
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-xl 
+        <div className="w-12 h-12 bg-system-blue rounded-xl 
                         flex items-center justify-center text-white text-xl font-bold">
           📅
         </div>
         <div>
-          <h2 className="text-xl font-bold text-gray-800">Saison-Manager</h2>
-          <p className="text-gray-600">Wechseln Sie zwischen Legacy und FC26 Daten</p>
+          <h2 className="text-xl font-bold text-text-primary">Saison-Manager</h2>
+          <p className="text-text-secondary">Wechseln Sie zwischen Legacy und FC26 Daten</p>
         </div>
       </div>
 
       {/* Current Season Display */}
-      <div className="mb-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg border">
+      <div className="mb-6 p-4 bg-system-blue rounded-lg border">
         <div className="flex items-center gap-3">
           <span className="text-2xl">{currentSeasonMeta?.icon}</span>
           <div>
-            <div className="font-semibold text-gray-800">Aktuelle Saison: {currentSeasonMeta?.name}</div>
-            <div className="text-sm text-gray-600">{currentSeasonMeta?.description}</div>
+            <div className="font-semibold text-text-primary">Aktuelle Saison: {currentSeasonMeta?.name}</div>
+            <div className="text-sm text-text-secondary">{currentSeasonMeta?.description}</div>
           </div>
         </div>
       </div>
 
       {/* Season Selection */}
       <div className="space-y-4">
-        <h3 className="font-medium text-gray-700">Verfügbare Saisons:</h3>
+        <h3 className="font-medium text-text-secondary">Verfügbare Saisons:</h3>
         
         {availableSeasons.map((season) => (
           <div
             key={season.id}
             className={`p-6 rounded-xl border-2 transition-all
               ${season.isActive 
-                ? 'border-blue-500 bg-blue-50' 
-                : 'border-gray-200 hover:border-gray-300'
+                ? 'border-system-blue bg-system-blue/10' 
+                : 'border-border-light hover:border-border-medium'
               }
             `}
           >
@@ -196,14 +196,14 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
                   {season.icon}
                 </div>
                 <div>
-                  <h4 className="text-lg font-semibold text-gray-800">{season.name}</h4>
-                  <p className="text-gray-600">{season.description}</p>
+                  <h4 className="text-lg font-semibold text-text-primary">{season.name}</h4>
+                  <p className="text-text-secondary">{season.description}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">
+                    <span className="text-xs bg-bg-tertiary text-text-secondary px-2 py-1 rounded">
                       Version {season.version}
                     </span>
                     {season.hasData && (
-                      <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded">
+                      <span className="text-xs bg-system-green/15 text-system-green px-2 py-1 rounded">
                         ✓ Daten vorhanden
                       </span>
                     )}
@@ -213,7 +213,7 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
 
               <div className="flex flex-col gap-2">
                 {season.isActive ? (
-                  <div className="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg text-sm font-medium">
+                  <div className="px-4 py-2 bg-system-blue/15 text-system-blue rounded-lg text-sm font-medium">
                     Aktuelle Saison
                   </div>
                 ) : (
@@ -233,11 +233,11 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               {season.id === SEASONS.LEGACY && (
                 <>
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-text-secondary">
                     <span>📚</span>
                     <span>Alle bisherigen FIFA-Daten</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-text-secondary">
                     <span>🔄</span>
                     <span>Kompatibel mit allen alten Features</span>
                   </div>
@@ -245,11 +245,11 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
               )}
               {season.id === SEASONS.FC26 && (
                 <>
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-text-secondary">
                     <span>⚡</span>
                     <span>Neue FIFA Club 26 Saison</span>
                   </div>
-                  <div className="flex items-center gap-2 text-gray-600">
+                  <div className="flex items-center gap-2 text-text-secondary">
                     <span>🆕</span>
                     <span>Frische Daten ohne Legacy-Ballast</span>
                   </div>
@@ -261,12 +261,12 @@ const SeasonSelector = ({ className = '', showInHeader = false }) => {
       </div>
 
       {/* Information Box */}
-      <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+      <div className="mt-6 p-4 bg-system-orange/10 border border-system-orange/25 rounded-lg">
         <div className="flex items-start gap-3">
-          <span className="text-amber-600 text-xl">💡</span>
-          <div className="text-sm text-amber-800">
+          <span className="text-system-orange text-xl">💡</span>
+          <div className="text-sm text-system-orange">
             <div className="font-medium mb-1">Hinweis zum Saison-Wechsel:</div>
-            <ul className="space-y-1 text-amber-700">
+            <ul className="space-y-1 text-system-orange">
               <li>• Legacy-Daten bleiben erhalten und können jederzeit aufgerufen werden</li>
               <li>• FC26 startet mit einer komplett leeren Datenbank</li>
               <li>• Jede Saison hat separate Speicherbereiche</li>

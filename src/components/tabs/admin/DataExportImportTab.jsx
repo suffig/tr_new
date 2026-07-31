@@ -174,7 +174,7 @@ const DataExportImportTab = () => {
   return (
     <div className="p-4 space-y-6">
       {/* Header */}
-      <div className="bg-gradient-to-r from-orange-50 to-red-50 rounded-xl p-6 border">
+      <div className="bg-system-orange rounded-xl p-6 border">
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold text-text-primary">Daten Export & Import</h3>
@@ -192,9 +192,9 @@ const DataExportImportTab = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Legacy Data */}
           {dataStats.legacy && (
-            <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-              <h5 className="font-medium text-amber-800 mb-2">Legacy Daten</h5>
-              <div className="space-y-1 text-sm text-amber-700">
+            <div className="bg-system-orange/10 border border-system-orange/25 rounded-lg p-4">
+              <h5 className="font-medium text-system-orange mb-2">Legacy Daten</h5>
+              <div className="space-y-1 text-sm text-system-orange">
                 <div>Matches: {dataStats.legacy.matches}</div>
                 <div>Spieler: {dataStats.legacy.players}</div>
                 <div>Transaktionen: {dataStats.legacy.transactions}</div>
@@ -225,15 +225,15 @@ const DataExportImportTab = () => {
         <div className="space-y-4">
           {/* Legacy Export */}
           {dataStats.legacy && (
-            <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-lg">
+            <div className="flex items-center justify-between p-4 bg-system-orange/10 border border-system-orange/25 rounded-lg">
               <div>
-                <h5 className="font-medium text-amber-800">Legacy Daten</h5>
-                <p className="text-sm text-amber-600">Ursprüngliche Daten vor dem Versioning-System</p>
+                <h5 className="font-medium text-system-orange">Legacy Daten</h5>
+                <p className="text-sm text-system-orange">Ursprüngliche Daten vor dem Versioning-System</p>
               </div>
               <button
                 onClick={handleExportLegacy}
                 disabled={loading}
-                className="px-4 py-2 bg-amber-600 text-white rounded-lg hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="px-4 py-2 bg-system-orange text-white rounded-lg hover:bg-system-orange disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Exportiere...' : 'Download'}
               </button>
@@ -251,7 +251,7 @@ const DataExportImportTab = () => {
                 <button
                   onClick={() => handleExportVersion(version.id)}
                   disabled={loading}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="px-4 py-2 bg-system-blue text-white rounded-lg hover:bg-system-blue disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
                   {loading ? 'Exportiere...' : 'Download'}
                 </button>
@@ -267,7 +267,7 @@ const DataExportImportTab = () => {
           <h4 className="font-semibold text-text-primary">Finanzdaten kopieren</h4>
           <button
             onClick={() => setShowCopyModal(true)}
-            className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+            className="px-4 py-2 bg-system-green text-white rounded-lg hover:bg-system-green transition-colors"
           >
             Finanzen kopieren
           </button>
@@ -315,7 +315,7 @@ const DataExportImportTab = () => {
                 <select
                   value={copyFromVersion}
                   onChange={(e) => setCopyFromVersion(e.target.value)}
-                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-system-green focus:border-system-green"
                 >
                   <option value="">Version auswählen...</option>
                   {versionsWithFinances.map(version => (
@@ -333,7 +333,7 @@ const DataExportImportTab = () => {
                 <select
                   value={copyToVersion}
                   onChange={(e) => setCopyToVersion(e.target.value)}
-                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-green-500 focus:border-green-500"
+                  className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-system-green focus:border-system-green"
                 >
                   <option value="">Version auswählen...</option>
                   {versions.map(version => (
@@ -350,7 +350,7 @@ const DataExportImportTab = () => {
                   id="overwrite"
                   checked={overwriteFinances}
                   onChange={(e) => setOverwriteFinances(e.target.checked)}
-                  className="h-4 w-4 text-system-green focus:ring-green-500 border-border-light rounded"
+                  className="h-4 w-4 text-system-green focus:ring-system-green border-border-light rounded"
                 />
                 <label htmlFor="overwrite" className="ml-2 text-sm text-text-secondary">
                   Bestehende Daten überschreiben
@@ -368,7 +368,7 @@ const DataExportImportTab = () => {
               <button
                 onClick={handleCopyFinances}
                 disabled={!copyFromVersion || !copyToVersion || loading}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                className="flex-1 px-4 py-2 bg-system-green text-white rounded-lg hover:bg-system-green disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >
                 {loading ? 'Kopiere...' : 'Kopieren'}
               </button>

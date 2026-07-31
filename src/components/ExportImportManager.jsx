@@ -129,13 +129,13 @@ export default function ExportImportManager({ onClose }) {
               <button
                 onClick={handleExportAllData}
                 disabled={isExporting}
-                className="w-full flex items-center justify-between p-3 bg-blue-50 hover:bg-blue-100 border border-blue-200 rounded-lg transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-between p-3 bg-system-blue/10 hover:bg-system-blue/15 border border-system-blue/25 rounded-lg transition-colors disabled:opacity-50"
               >
                 <div className="flex items-center">
                   <span className="mr-3">💾</span>
                   <div className="text-left">
-                    <div className="font-medium text-blue-800">Komplette Datensicherung</div>
-                    <div className="text-sm text-blue-600">Alle Daten als JSON</div>
+                    <div className="font-medium text-system-blue">Komplette Datensicherung</div>
+                    <div className="text-sm text-system-blue">Alle Daten als JSON</div>
                   </div>
                 </div>
                 {isExporting && <div className="spinner w-4 h-4"></div>}
@@ -144,13 +144,13 @@ export default function ExportImportManager({ onClose }) {
               <button
                 onClick={handleExportPlayerStats}
                 disabled={isExporting}
-                className="w-full flex items-center justify-between p-3 bg-green-50 hover:bg-green-100 border border-green-200 rounded-lg transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-between p-3 bg-system-green/10 hover:bg-system-green/15 border border-system-green/25 rounded-lg transition-colors disabled:opacity-50"
               >
                 <div className="flex items-center">
                   <span className="mr-3">👥</span>
                   <div className="text-left">
-                    <div className="font-medium text-green-800">Spieler-Statistiken</div>
-                    <div className="text-sm text-green-600">Detaillierte CSV-Datei</div>
+                    <div className="font-medium text-system-green">Spieler-Statistiken</div>
+                    <div className="text-sm text-system-green">Detaillierte CSV-Datei</div>
                   </div>
                 </div>
                 {isExporting && <div className="spinner w-4 h-4"></div>}
@@ -159,13 +159,13 @@ export default function ExportImportManager({ onClose }) {
               <button
                 onClick={handleExportFinancialData}
                 disabled={isExporting}
-                className="w-full flex items-center justify-between p-3 bg-yellow-50 hover:bg-yellow-100 border border-yellow-200 rounded-lg transition-colors disabled:opacity-50"
+                className="w-full flex items-center justify-between p-3 bg-system-yellow/10 hover:bg-system-yellow/15 border border-system-yellow/25 rounded-lg transition-colors disabled:opacity-50"
               >
                 <div className="flex items-center">
                   <span className="mr-3">💰</span>
                   <div className="text-left">
-                    <div className="font-medium text-yellow-800">Finanzdaten</div>
-                    <div className="text-sm text-yellow-600">Alle Transaktionen</div>
+                    <div className="font-medium text-system-yellow">Finanzdaten</div>
+                    <div className="text-sm text-system-yellow">Alle Transaktionen</div>
                   </div>
                 </div>
                 {isExporting && <div className="spinner w-4 h-4"></div>}
@@ -216,10 +216,10 @@ export default function ExportImportManager({ onClose }) {
           </div>
 
           {/* Warning */}
-          <div className="mt-6 p-3 bg-orange-50 border border-orange-200 rounded-lg">
+          <div className="mt-6 p-3 bg-system-orange/10 border border-system-orange/25 rounded-lg">
             <div className="flex items-start">
-              <span className="text-orange-500 mr-2">⚠️</span>
-              <div className="text-sm text-orange-800">
+              <span className="text-system-orange mr-2">⚠️</span>
+              <div className="text-sm text-system-orange">
                 <strong>Hinweis:</strong> Der Import überschreibt bestehende Daten. 
                 Erstellen Sie vor dem Import eine Backup-Datei!
               </div>

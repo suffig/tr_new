@@ -272,7 +272,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
   return (
     <div ref={containerRef} className="w-full">
       <h3 className="text-lg font-semibold mb-4 text-text-primary">{title}</h3>
-      <div className="bg-white dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+      <div className="bg-bg-elevated dark:bg-gray-800 rounded-lg p-4 shadow-sm">
         <svg ref={svgRef}></svg>
         <div ref={tooltipRef}></div>
       </div>

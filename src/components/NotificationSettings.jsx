@@ -77,14 +77,14 @@ export default function NotificationSettings() {
             Push-Benachrichtigungen
           </h3>
           
-          <div className="bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg p-4">
+          <div className="bg-system-yellow/10 dark:bg-system-yellow/20 border border-system-yellow/25 dark:border-system-yellow rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <div className="text-yellow-500 text-xl flex-shrink-0">⚠️</div>
+              <div className="text-system-yellow text-xl flex-shrink-0">⚠️</div>
               <div>
-                <div className="text-sm font-medium text-yellow-800 dark:text-yellow-200 mb-1">
+                <div className="text-sm font-medium text-system-yellow dark:text-yellow-200 mb-1">
                   Nicht unterstützt
                 </div>
-                <div className="text-xs text-yellow-700 dark:text-yellow-300">
+                <div className="text-xs text-system-yellow dark:text-system-yellow">
                   Ihr Browser unterstützt keine Push-Benachrichtigungen. 
                   Verwenden Sie einen modernen Browser oder installieren Sie die App für Benachrichtigungen.
                 </div>
@@ -123,10 +123,10 @@ export default function NotificationSettings() {
             </div>
             <div className={`px-3 py-1 rounded-full text-xs font-medium ${
               status.permission === 'granted' 
-                ? 'bg-green-100 text-green-700 dark:bg-green-900/20 dark:text-green-300' 
+                ? 'bg-system-green/15 text-system-green dark:bg-system-green/20 dark:text-system-green' 
                 : status.permission === 'denied'
-                ? 'bg-red-100 text-red-700 dark:bg-red-900/20 dark:text-red-300'
-                : 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-300'
+                ? 'bg-system-red/15 text-system-red dark:bg-system-red/20 dark:text-system-red'
+                : 'bg-system-yellow/15 text-system-yellow dark:bg-system-yellow/20 dark:text-system-yellow'
             }`}>
               {status.permission === 'granted' ? 'Aktiv' : 
                status.permission === 'denied' ? 'Blockiert' : 'Ausstehend'}
@@ -191,7 +191,7 @@ export default function NotificationSettings() {
                     onChange={(e) => handleSettingChange('matchReminders', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
+                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
                 </label>
               </div>
 
@@ -232,7 +232,7 @@ export default function NotificationSettings() {
                     onChange={(e) => handleSettingChange('goals', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
+                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
                 </label>
               </div>
 
@@ -253,7 +253,7 @@ export default function NotificationSettings() {
                     onChange={(e) => handleSettingChange('achievements', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
+                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
                 </label>
               </div>
 
@@ -274,7 +274,7 @@ export default function NotificationSettings() {
                     onChange={(e) => handleSettingChange('events', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
+                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
                 </label>
               </div>
             </div>
@@ -283,7 +283,7 @@ export default function NotificationSettings() {
             <div className="flex flex-col sm:flex-row gap-3 pt-4 border-t border-border-light">
               <button
                 onClick={handleTestNotification}
-                className="flex-1 py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-all duration-300"
+                className="flex-1 py-2 px-4 bg-system-blue hover:bg-system-blue text-white rounded-lg font-medium transition-all duration-300"
               >
                 Test-Benachrichtigung
               </button>
@@ -291,7 +291,7 @@ export default function NotificationSettings() {
               <button
                 onClick={handleUnsubscribe}
                 disabled={isLoading}
-                className="py-2 px-4 bg-red-600 hover:bg-red-700 text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50"
+                className="py-2 px-4 bg-system-red hover:bg-system-red text-white rounded-lg font-medium transition-all duration-300 disabled:opacity-50"
               >
                 {isLoading ? 'Deaktiviere...' : 'Deaktivieren'}
               </button>
@@ -301,14 +301,14 @@ export default function NotificationSettings() {
 
         {/* iOS Notice */}
         {status.isIOS && (
-          <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+          <div className="mt-6 p-4 bg-system-blue/10 dark:bg-system-blue/20 rounded-lg border border-system-blue/25 dark:border-system-blue">
             <div className="flex items-start space-x-3">
-              <div className="text-blue-500 text-xl flex-shrink-0">📱</div>
+              <div className="text-system-blue text-xl flex-shrink-0">📱</div>
               <div>
-                <div className="text-sm font-medium text-blue-800 dark:text-blue-200 mb-1">
+                <div className="text-sm font-medium text-system-blue dark:text-blue-200 mb-1">
                   iOS-Hinweis
                 </div>
-                <div className="text-xs text-blue-700 dark:text-blue-300 space-y-1">
+                <div className="text-xs text-system-blue dark:text-system-blue space-y-1">
                   <p>• Installieren Sie die App über &quot;Zum Home-Bildschirm hinzufügen&quot; für beste Benachrichtigungen</p>
                   <p>• Benachrichtigungen funktionieren nur bei aktiver App oder im Hintergrund</p>
                   <p>• Überprüfen Sie die iOS-Einstellungen für App-Benachrichtigungen</p>

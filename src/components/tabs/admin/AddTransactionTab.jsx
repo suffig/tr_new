@@ -340,7 +340,7 @@ export default function AddTransactionTab() {
         <div className="grid grid-cols-2 gap-2">
           {TEAMS.filter(team => team.value !== 'Ehemalige').map((team) => (
             <div key={team.value} className="p-3 bg-bg-secondary rounded-lg text-center">
-              <span className={`font-medium ${team.color === 'blue' ? 'text-blue-600' : 'text-red-600'}`}>
+              <span className={`font-medium ${team.color === 'blue' ? 'text-system-blue' : 'text-system-red'}`}>
                 {getTeamDisplay(team.value)}
               </span>
               <div className="text-xs text-text-muted mt-1">({team.value})</div>

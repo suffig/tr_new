@@ -380,7 +380,7 @@ export default function DeleteTab() {
             <button
               onClick={() => handleDeletePlayer(player)}
               disabled={loading}
-              className="btn-secondary btn-sm text-accent-red hover:bg-red-50 disabled:opacity-50"
+              className="btn-secondary btn-sm text-accent-red hover:bg-system-red/10 disabled:opacity-50"
             >
               <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
@@ -413,14 +413,14 @@ export default function DeleteTab() {
                 type="checkbox"
                 checked={allSelected}
                 onChange={() => handleSelectAllMatches(matches)}
-                className="w-4 h-4 text-accent-primary focus:ring-accent-primary border-gray-300 rounded"
+                className="w-4 h-4 text-system-green focus:ring-system-green border-border-medium rounded"
               />
               <span className="text-sm text-text-primary">
                 {allSelected ? 'Alle abwählen' : 'Alle auswählen'} ({filteredMatches.length})
               </span>
             </label>
             {selectedMatches.size > 0 && (
-              <span className="text-sm text-accent-primary font-medium">
+              <span className="text-sm text-system-green font-medium">
                 {selectedMatches.size} ausgewählt
               </span>
             )}
@@ -430,7 +430,7 @@ export default function DeleteTab() {
             <button
               onClick={handleBulkDeleteSelected}
               disabled={loading}
-              className="btn-primary btn-sm bg-red-600 hover:bg-red-700 text-white disabled:opacity-50"
+              className="btn-primary btn-sm bg-system-red hover:bg-system-red text-white disabled:opacity-50"
             >
               <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               {selectedMatches.size} Spiele löschen
@@ -447,7 +447,7 @@ export default function DeleteTab() {
                   type="checkbox"
                   checked={selectedMatches.has(match.id)}
                   onChange={(e) => handleMatchSelection(match.id, e.target.checked)}
-                  className="w-4 h-4 text-accent-primary focus:ring-accent-primary border-gray-300 rounded"
+                  className="w-4 h-4 text-system-green focus:ring-system-green border-border-medium rounded"
                 />
               </label>
               
@@ -471,7 +471,7 @@ export default function DeleteTab() {
                   <button
                     onClick={() => handleDeleteMatch(match)}
                     disabled={loading}
-                    className="btn-secondary btn-sm text-accent-red hover:bg-red-50 disabled:opacity-50"
+                    className="btn-secondary btn-sm text-accent-red hover:bg-system-red/10 disabled:opacity-50"
                   >
                     <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
                     Einzeln löschen
@@ -530,7 +530,7 @@ export default function DeleteTab() {
             <button
               onClick={() => handleDeleteBan(ban)}
               disabled={loading}
-              className="btn-secondary btn-sm text-accent-red hover:bg-red-50 disabled:opacity-50"
+              className="btn-secondary btn-sm text-accent-red hover:bg-system-red/10 disabled:opacity-50"
             >
               <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
@@ -566,7 +566,7 @@ export default function DeleteTab() {
               <div className="flex-1">
                 <h4 className="font-medium text-text-primary">{transaction.type}</h4>
                 <p className="text-sm text-text-muted">
-                  <span className={transaction.amount > 0 ? 'text-green-600' : 'text-red-600'}>
+                  <span className={transaction.amount > 0 ? 'text-system-green' : 'text-system-red'}>
                     {transaction.amount > 0 ? '+' : ''}{transaction.amount}M €
                   </span>
                   {transaction.date && (
@@ -579,7 +579,7 @@ export default function DeleteTab() {
                   </p>
                 )}
                 {getMatchContext(transaction) && (
-                  <p className="text-xs text-blue-600 mt-1">
+                  <p className="text-xs text-system-blue mt-1">
                     <Icon name="football" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
                     {getMatchContext(transaction)}
                   </p>
@@ -589,7 +589,7 @@ export default function DeleteTab() {
             <button
               onClick={() => handleDeleteTransaction(transaction)}
               disabled={loading}
-              className="btn-secondary btn-sm text-accent-red hover:bg-red-50 disabled:opacity-50"
+              className="btn-secondary btn-sm text-accent-red hover:bg-system-red/10 disabled:opacity-50"
             >
               <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
@@ -654,7 +654,7 @@ export default function DeleteTab() {
             placeholder={`${sections.find(s => s.id === activeSection)?.label.replace(' löschen', '')} durchsuchen...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-accent-red focus:border-transparent text-text-primary bg-bg-secondary"
+            className="w-full pl-10 pr-4 py-2 border border-border-medium rounded-lg focus:ring-2 focus:ring-accent-red focus:border-transparent text-text-primary bg-bg-secondary"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
             <Icon name="search" size={16} strokeWidth={2} />
@@ -693,14 +693,14 @@ export default function DeleteTab() {
       </div>
 
       {/* Warning */}
-      <div className="mt-6 modern-card bg-red-50 border-red-200">
+      <div className="mt-6 modern-card bg-system-red/10 border-system-red/25">
         <div className="flex items-start">
-          <div className="text-red-600 mr-3 flex-shrink-0">
+          <div className="text-system-red mr-3 flex-shrink-0">
             <Icon name="warning" size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="font-semibold text-red-800 mb-1">Achtung</h4>
-            <p className="text-red-700 text-sm">
+            <h4 className="font-semibold text-system-red mb-1">Achtung</h4>
+            <p className="text-system-red text-sm">
               Das Löschen von Daten ist permanent und kann nicht rückgängig gemacht werden. 
               Bitte überprüfen Sie Ihre Auswahl sorgfältig, bevor Sie fortfahren.
             </p>

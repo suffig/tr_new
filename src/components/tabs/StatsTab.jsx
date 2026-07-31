@@ -1327,19 +1327,19 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           <div className="text-sm text-text-secondary">Aktive Torschützen</div>
         </div>
         <div className="text-center p-3 bg-bg-secondary rounded-lg">
-          <div className="text-xl font-bold text-primary-blue">
+          <div className="text-xl font-bold text-system-blue">
             {playerStats.reduce((sum, p) => sum + p.goals, 0)}
           </div>
           <div className="text-sm text-text-secondary">Tore insgesamt</div>
         </div>
         <div className="text-center p-3 bg-bg-secondary rounded-lg">
-          <div className="text-xl font-bold text-primary-orange">
+          <div className="text-xl font-bold text-system-orange">
             {playerStats.filter(p => p.sdsCount > 0).length}
           </div>
           <div className="text-sm text-text-secondary">SdS Träger</div>
         </div>
         <div className="text-center p-3 bg-bg-secondary rounded-lg">
-          <div className="text-xl font-bold text-primary-red">
+          <div className="text-xl font-bold text-system-red">
             {playerStats.reduce((sum, p) => sum + p.totalBans, 0)}
           </div>
           <div className="text-sm text-text-secondary">Gesamt Sperren</div>

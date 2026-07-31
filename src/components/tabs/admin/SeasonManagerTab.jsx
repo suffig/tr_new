@@ -98,8 +98,8 @@ const SeasonManagerTab = () => {
     <div className="p-6 space-y-6">
       {/* Enhanced Header */}
       <div className="flex items-center gap-6 mb-6">
-        <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-cyan-500 rounded-2xl 
-                        flex items-center justify-center text-white shadow-lg border border-emerald-300">
+        <div className="w-16 h-16 bg-system-green rounded-2xl 
+                        flex items-center justify-center text-white shadow-lg border border-system-green/45">
           <Icon name="calendar" size={28} strokeWidth={2} />
         </div>
         <div>
@@ -109,15 +109,15 @@ const SeasonManagerTab = () => {
       </div>
 
       {/* Current Season Status */}
-      <div className="bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 rounded-2xl p-6 border border-emerald-200 shadow-lg">
+      <div className="bg-system-green rounded-2xl p-6 border border-system-green/25 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className="w-14 h-14 bg-gradient-to-br from-emerald-400 to-cyan-400 rounded-xl flex items-center justify-center shadow-lg text-white">
+            <div className="w-14 h-14 bg-system-green rounded-xl flex items-center justify-center shadow-lg text-white">
               <Icon name="calendar" size={24} strokeWidth={2} />
             </div>
             <div>
               <h3 className="text-xl font-bold text-text-primary mb-1">Aktuelle Saison</h3>
-              <p className="text-2xl font-bold text-emerald-600">
+              <p className="text-2xl font-bold text-system-green">
                 {SEASON_NAMES[currentSeason]}
               </p>
               <p className="text-text-secondary text-sm mt-1">
@@ -148,7 +148,7 @@ const SeasonManagerTab = () => {
                 key={season.id}
                 className={`p-6 rounded-xl border-2 ${
                   season.isActive 
-                    ? 'border-blue-500 bg-system-blue/10' 
+                    ? 'border-system-blue bg-system-blue/10' 
                     : 'border-border-light bg-bg-secondary'
                 }`}
               >
@@ -234,12 +234,12 @@ const SeasonManagerTab = () => {
       </div>
 
       {/* Information Section */}
-      <div className="bg-amber-50 border border-amber-200 rounded-xl p-6">
+      <div className="bg-system-orange/10 border border-system-orange/25 rounded-xl p-6">
         <div className="flex items-start gap-3">
-          <span className="text-amber-600 text-2xl">💡</span>
+          <span className="text-system-orange text-2xl">💡</span>
           <div>
-            <h4 className="font-semibold text-amber-800 mb-2">FC26 Saison-System</h4>
-            <div className="space-y-2 text-sm text-amber-700">
+            <h4 className="font-semibold text-system-orange mb-2">FC26 Saison-System</h4>
+            <div className="space-y-2 text-sm text-system-orange">
               <p>• <strong>Legacy:</strong> Alle bisherigen FIFA-Daten bleiben erhalten und zugänglich</p>
               <p>• <strong>FC26:</strong> Neue Saison mit frischen Daten für FIFA Club 26</p>
               <p>• <strong>Isolation:</strong> Jede Saison hat separate Speicherbereiche</p>

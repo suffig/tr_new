@@ -204,7 +204,7 @@ export default function EnhancedSearch({
             {hasActiveFilters && (
               <button
                 onClick={clearAllFilters}
-                className="px-3 py-1 bg-red-100 text-red-800 border border-red-200 rounded text-sm hover:bg-red-200 transition-colors duration-200"
+                className="px-3 py-1 bg-system-red/15 text-system-red border border-system-red/25 rounded text-sm hover:bg-system-red/25 transition-colors duration-200"
               >
                 Filter zurücksetzen
               </button>
@@ -238,7 +238,7 @@ export default function EnhancedSearch({
                     return (
                       <span
                         key={key}
-                        className="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs"
+                        className="bg-system-blue/15 text-system-blue px-2 py-1 rounded text-xs"
                       >
                         {filter?.label}: {option?.label || value}
                       </span>
@@ -246,7 +246,7 @@ export default function EnhancedSearch({
                   })
                 }
                 {sortBy && (
-                  <span className="bg-yellow-100 text-yellow-800 px-2 py-1 rounded text-xs">
+                  <span className="bg-system-yellow/15 text-system-yellow px-2 py-1 rounded text-xs">
                     📊 {formatFieldName(sortBy)} {sortOrder === 'asc' ? '↑' : '↓'}
                   </span>
                 )}

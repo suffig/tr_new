@@ -270,8 +270,8 @@ export default function AddPlayerTab() {
           {TEAMS.map((team) => (
             <div key={team.value} className="p-3 bg-bg-secondary rounded-lg text-center">
               <span className={`font-medium ${
-                team.color === 'blue' ? 'text-blue-600' : 
-                team.color === 'red' ? 'text-red-600' : 'text-gray-600'
+                team.color === 'blue' ? 'text-system-blue' : 
+                team.color === 'red' ? 'text-system-red' : 'text-text-secondary'
               }`}>
                 {getTeamDisplay(team.value)}
               </span>
