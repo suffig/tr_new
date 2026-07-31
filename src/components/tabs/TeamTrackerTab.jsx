@@ -2,8 +2,9 @@ import { useState, useMemo, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../icons/Icon';
+import ZiehungsAuswertung from './teams/ZiehungsAuswertung';
 import { getCatalog, setRating } from '../../utils/fc26Catalog';
-import { addSterneEintrag, gutschriftFuer } from '../../utils/sterneCounter';
+import { addSterneEintrag, gutschriftFuer, STERNE_PERSON_KEY } from '../../utils/sterneCounter';
 import {
   loadPulls, countsInWindow, addPull, removeLatestPull, clearPerson,
   windowStart, TIME_WINDOWS,
@@ -44,16 +45,25 @@ function computeMilestones(pulls, catalog, pid) {
   const teamOf = new Map(catalog.map((t) => [t.name, t]));
   const total5 = catalog.filter((t) => t.rating === 5).length;
   const counts = new Map();
+  // Rueckfall auf die in der Ziehung gespeicherte Wertung — siehe ratingVon().
+  const ausZiehung = new Map();
   let total = 0;
-  for (const e of pulls) { if (e.person !== pid) continue; total += 1; counts.set(e.team, (counts.get(e.team) || 0) + 1); }
+  for (const e of pulls) {
+    if (e.person !== pid) continue;
+    total += 1;
+    counts.set(e.team, (counts.get(e.team) || 0) + 1);
+    if (Number.isFinite(Number(e.rating))) ausZiehung.set(e.team, Number(e.rating));
+  }
   let five = 0, top = 0, nat = 0, women = 0, maxCount = 0;
   const tiers = new Set();
   for (const [name, c] of counts) {
     if (c > maxCount) maxCount = c;
-    const t = teamOf.get(name); const r = t?.rating;
+    const t = teamOf.get(name);
+    const r = t ? (t.rating ?? null) : (ausZiehung.get(name) ?? null);
     if (r === 5) five += 1;
     if (r != null && r >= 4.5) top += 1;
-    if (r == null) nat += 1;
+    // Nur ein Katalogteam ohne Wertung ist eine Nationalmannschaft.
+    if (t && t.rating == null) nat += 1;
     if (t?.women) women += 1;
     if (r != null) tiers.add(r);
   }
@@ -414,6 +424,17 @@ export default function TeamTrackerTab() {
         person: sieger,
         stars: siegerTeam.rating,
         info: `Spielduell: ${teams.alexander.name} vs. ${teams.philip.name}`,
+        // Beide Seiten mitschreiben — der Sterne-Eintrag allein kennt nur das
+        // Siegerteam, fuer den Staerkevergleich braucht die Duell-Bilanz auch
+        // das Rating des Verlierers.
+        duell: {
+          sieger: STERNE_PERSON_KEY[sieger] || sieger,
+          verlierer: sieger === 'alexander' ? 'philip' : 'alex',
+          teams: {
+            alex: { name: teams.alexander.name, rating: teams.alexander.rating ?? null },
+            philip: { name: teams.philip.name, rating: teams.philip.rating ?? null },
+          },
+        },
       });
       gutschrift = res.gained;
     }
@@ -470,6 +491,26 @@ export default function TeamTrackerTab() {
     return m;
   }, [catalog]);
 
+  // Jede Ziehung haelt die Sternewertung fest, mit der sie erfasst wurde. Wird
+  // ein Team im Katalog umbenannt oder geloescht, findet teamByName nichts mehr
+  // — ohne diesen Rueckfall verschwinden die betroffenen Ziehungen lautlos aus
+  // ⌀ Rating, Verteilung und Bestes/Schwaechstes, obwohl sie unter "Bekommen"
+  // weiter mitzaehlen. Der Katalog behaelt Vorrang, damit spaetere Korrekturen
+  // einer Wertung wirken.
+  const ratingAusZiehung = useMemo(() => {
+    const m = new Map();
+    for (const e of pulls) {
+      if (Number.isFinite(Number(e.rating))) m.set(e.team, Number(e.rating));
+    }
+    return m;
+  }, [pulls]);
+  const ratingVon = (name) => {
+    const t = teamByName.get(name);
+    if (t) return t.rating;
+    const r = ratingAusZiehung.get(name);
+    return r == null ? null : r;
+  };
+
   const counts = useMemo(() => countsInWindow(pulls, current.id, sinceTs), [pulls, current.id, sinceTs]);
 
   const change = (teamName, delta) => {
@@ -501,12 +542,14 @@ export default function TeamTrackerTab() {
       if (!cnt) continue;
       unique += 1; totalPulls += cnt;
       const t = teamByName.get(name);
-      if (t && t.rating != null) {
-        ratingSum += t.rating * cnt; ratingWeight += cnt;
-        dist[t.rating] = (dist[t.rating] || 0) + cnt;
-        if (!best || t.rating > best.rating) best = t;
-        if (!worst || t.rating < worst.rating) worst = t;
-      } else if (t && t.rating == null) {
+      const rating = ratingVon(name);
+      if (rating != null) {
+        ratingSum += rating * cnt; ratingWeight += cnt;
+        dist[rating] = (dist[rating] || 0) + cnt;
+        if (!best || rating > best.rating) best = { name, rating };
+        if (!worst || rating < worst.rating) worst = { name, rating };
+      } else if (t) {
+        // Im Katalog, aber ohne Wertung → Nationalmannschaft.
         nationals += cnt;
       }
       if (cnt > mostCount) { mostCount = cnt; mostTeam = name; }
@@ -869,7 +912,20 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
 
   // One lookup for the whole view (previously duplicated three times)
   const teamOf = useMemo(() => new Map(catalog.map((t) => [t.name, t])), [catalog]);
-  const ratingOf = (name) => teamOf.get(name)?.rating ?? null;
+  // Wie in statsFor: der Katalog hat Vorrang, aber eine Ziehung, deren Team
+  // dort nicht mehr steht, faellt auf die mitgespeicherte Wertung zurueck.
+  const ratingAusZiehung = useMemo(() => {
+    const m = new Map();
+    for (const e of pulls) {
+      if (Number.isFinite(Number(e.rating))) m.set(e.team, Number(e.rating));
+    }
+    return m;
+  }, [pulls]);
+  const ratingOf = (name) => {
+    const t = teamOf.get(name);
+    if (t) return t.rating ?? null;
+    return ratingAusZiehung.get(name) ?? null;
+  };
   const total5star = useMemo(() => catalog.filter((t) => t.rating === 5).length, [catalog]);
   const tierTotals = useMemo(() => {
     const o = {};
@@ -914,10 +970,13 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
     const tiers = new Set();
     for (const [name, c] of counts) {
       if (c > maxCount) { maxCount = c; maxTeam = name; }
-      const t = teamOf.get(name); const r = t?.rating;
+      const t = teamOf.get(name); const r = ratingOf(name);
       if (r === 5) five += 1;
       if (r != null && r >= 4.5) top += 1;
-      if (r == null) nat += 1;
+      // Nur was im Katalog steht und dort keine Wertung hat, ist eine
+      // Nationalmannschaft. Ein Team, das gar nicht (mehr) im Katalog steht,
+      // hat hier frueher als Nationalteam gezaehlt.
+      if (t && t.rating == null) nat += 1;
       if (t?.women) women += 1;
       if (r != null) tiers.add(r);
     }
@@ -1024,7 +1083,10 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
         {duel.n > 0 && (
           <div className="mt-3 pt-3 border-t border-border-light">
             <div className="flex items-center justify-between mb-1.5">
-              <span className="text-xs font-medium text-text-secondary">Bessere-Team-Duelle</span>
+              {/* Nicht mit den echten Spielduellen weiter unten verwechseln:
+                  hier zaehlt allein, wer je Spiel das staerkere Team gezogen
+                  hat — nicht, wer gewonnen hat. */}
+              <span className="text-xs font-medium text-text-secondary">Bessere Ziehung je Spiel</span>
               <span className="text-[11px] text-text-tertiary">
                 {duel.n} Spiele{duel.dr ? ' · ' + duel.dr + '× gleich' : ''}
                 {duel.streakLen > 1 ? ' · 🔥 ' + personName(duel.streakWho) + ' ' + duel.streakLen + '×' : ''}
@@ -1056,6 +1118,9 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
           })}
         </div>
       </div>
+
+      {/* Glücks-Index, echte Spielduelle, Wochenrhythmus, Saisonvergleich */}
+      <ZiehungsAuswertung people={people} pulls={pulls} catalog={catalog} />
 
       {/* Per person: key stats + labelled distribution + collapsible details */}
       {all.map((p) => {

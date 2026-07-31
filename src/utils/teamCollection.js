@@ -179,6 +179,9 @@ function rowToLocal(row) {
     rating: row.rating ?? null,
     women: !!row.is_women,
     national: !!row.is_national,
+    // Nur fuer die Saison-Auswertung interessant; im normalen Betrieb sind
+    // ohnehin alle geladenen Ziehungen aus der aktuellen Saison.
+    saison: row.fifa_version || null,
     ts: row.created_at || new Date().toISOString(),
   };
 }
@@ -193,6 +196,26 @@ export async function fetchPullsFromDB() {
   try {
     const res = await supabaseDb.select('team_pull_events', '*', {
       order: { column: 'created_at', ascending: true },
+    });
+    if (res?.error) return { ok: false, error: res.error, pulls: [] };
+    return { ok: true, pulls: (res?.data || []).map(rowToLocal) };
+  } catch (error) {
+    return { ok: false, error, pulls: [] };
+  }
+}
+
+/**
+ * Ziehungen ALLER Saisons laden — bewusst ohne den Saison-Filter.
+ * Der normale Betrieb sieht nur die laufende Saison; fuer "Sammlung je Saison"
+ * braucht es den Blick darueber hinaus.
+ * @returns {Promise<{ok: boolean, offline?: boolean, error?: unknown, pulls: Array}>}
+ */
+export async function fetchAlleSaisonZiehungen() {
+  if (usingFallback) return { ok: false, offline: true, pulls: [] };
+  try {
+    const res = await supabaseDb.select('team_pull_events', '*', {
+      order: { column: 'created_at', ascending: true },
+      skipFifaFilter: true,
     });
     if (res?.error) return { ok: false, error: res.error, pulls: [] };
     return { ok: true, pulls: (res?.data || []).map(rowToLocal) };
