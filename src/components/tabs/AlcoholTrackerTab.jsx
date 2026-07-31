@@ -1,5 +1,6 @@
 ﻿import Icon from '../icons/Icon';
 import { gutschriftFuer, loadSterne, saveSterne, removeSterneEintrag } from '../../utils/sterneCounter';
+import SterneVerlauf from './alkohol/SterneVerlauf';
 import { useState, useEffect, useCallback } from 'react';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
@@ -1679,6 +1680,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 </button>
               </div>
             </div>
+
+            {/* Kurve vor der Liste: erst der Verlauf, dann die Einzeleinträge */}
+            <SterneVerlauf
+              history={sterneData.history}
+              namen={{ alex: managers.aek.name, philip: managers.real.name }}
+            />
 
             {/* History */}
             {sterneData.history.length > 0 && (

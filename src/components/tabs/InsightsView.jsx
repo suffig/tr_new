@@ -145,11 +145,66 @@ function computeInsights(matches, players, bans) {
   const busiestDay = activeDays.slice().sort((x, y) => y.games - x.games)[0] || null;
   const richestDay = activeDays.slice().sort((x, y) => (y.goals / y.games) - (x.goals / x.games))[0] || null;
 
+  // --- Haeufigste Ergebnisse ------------------------------------------------
+  // Immer in der Reihenfolge AEK:Real, sonst waeren 3:1 und 1:3 ein Topf.
+  const ergebnisse = new Map();
+  for (const m of list) {
+    const key = `${m.goalsa || 0}:${m.goalsb || 0}`;
+    ergebnisse.set(key, (ergebnisse.get(key) || 0) + 1);
+  }
+  const topErgebnisse = [...ergebnisse.entries()]
+    .map(([ergebnis, anzahl]) => ({ ergebnis, anzahl, anteil: anzahl / (totalGames || 1) }))
+    .sort((x, y) => y.anzahl - x.anzahl || x.ergebnis.localeCompare(y.ergebnis))
+    .slice(0, 6);
+
+  // --- Tore je Spiel --------------------------------------------------------
+  const torSummen = list.map((m) => (m.goalsa || 0) + (m.goalsb || 0));
+  const maxTore = torSummen.length ? Math.max(...torSummen) : 0;
+  const torHistogramm = [];
+  for (let i = 0; i <= maxTore; i++) {
+    torHistogramm.push({ tore: i, anzahl: torSummen.filter((t) => t === i).length });
+  }
+  const schnittTore = torSummen.length
+    ? torSummen.reduce((s, t) => s + t, 0) / torSummen.length
+    : 0;
+  // Median statt nur Mittelwert: ein einzelnes 7:5 verschiebt den Schnitt
+  // spuerbar, der Median sagt, wie ein typisches Spiel aussieht.
+  const sortiert = [...torSummen].sort((a, b) => a - b);
+  const medianTore = sortiert.length
+    ? (sortiert.length % 2
+      ? sortiert[(sortiert.length - 1) / 2]
+      : (sortiert[sortiert.length / 2 - 1] + sortiert[sortiert.length / 2]) / 2)
+    : 0;
+
+  // --- Serien ---------------------------------------------------------------
+  // Chronologisch, sonst haengt die laengste Serie an der Sortierung der Liste.
+  const chrono = [...list].sort((x, y) => new Date(x.date || 0) - new Date(y.date || 0));
+  const serien = { AEK: null, Real: null };
+  for (const team of ['AEK', 'Real']) {
+    const beste = { zuNull: 0, ungeschlagen: 0, siege: 0 };
+    const laufend = { zuNull: 0, ungeschlagen: 0, siege: 0 };
+    for (const m of chrono) {
+      const eigene = team === 'AEK' ? (m.goalsa || 0) : (m.goalsb || 0);
+      const gegen = team === 'AEK' ? (m.goalsb || 0) : (m.goalsa || 0);
+
+      laufend.zuNull = gegen === 0 ? laufend.zuNull + 1 : 0;
+      laufend.ungeschlagen = eigene >= gegen ? laufend.ungeschlagen + 1 : 0;
+      laufend.siege = eigene > gegen ? laufend.siege + 1 : 0;
+
+      beste.zuNull = Math.max(beste.zuNull, laufend.zuNull);
+      beste.ungeschlagen = Math.max(beste.ungeschlagen, laufend.ungeschlagen);
+      beste.siege = Math.max(beste.siege, laufend.siege);
+    }
+    serien[team] = { beste, aktuell: laufend };
+  }
+
   return {
     totalGames, teamWins, draws,
     byDay, activeDays, busiestDay, richestDay,
     scorerImpact, ownGoals, ownGoalMatches,
     cards, value, banStats,
+    topErgebnisse, torHistogramm, schnittTore, medianTore, maxTore,
+    serien,
   };
 }
 
@@ -405,6 +460,102 @@ export default function InsightsView({ matches, players, bans }) {
         ) : (
           <p className="text-footnote text-text-tertiary">Keine Sperren in diesem Zeitraum.</p>
         )}
+      </Section>
+
+      {/* 7 — Häufigste Ergebnisse */}
+      <Section
+        icon="target" iconClass="text-system-teal" title="Häufigste Ergebnisse"
+        hint={`Immer als ${getTeamDisplay('AEK')} : ${getTeamDisplay('Real')} gelesen — 3:1 und 1:3 sind zwei verschiedene Ergebnisse.`}
+      >
+        <div className="space-y-1.5">
+          {r.topErgebnisse.map((e) => (
+            <div key={e.ergebnis} className="flex items-center gap-2.5">
+              <span className="w-12 stat-display text-[15px] text-text-primary">{e.ergebnis}</span>
+              <div className="flex-1 h-2.5 rounded-full bg-bg-tertiary overflow-hidden">
+                <div className="h-full bg-system-teal"
+                  style={{ width: `${(e.anzahl / r.topErgebnisse[0].anzahl) * 100}%` }} />
+              </div>
+              <span className="w-20 text-right text-caption2 text-text-tertiary num-tabular">
+                {e.anzahl}× · {Math.round(e.anteil * 100)}%
+              </span>
+            </div>
+          ))}
+        </div>
+      </Section>
+
+      {/* 8 — Tore pro Spiel */}
+      <Section
+        icon="football" iconClass="text-system-green" title="Tore pro Spiel"
+        hint="Wie torreich eure Spiele typischerweise sind."
+      >
+        <div className="flex items-end gap-1 h-24">
+          {r.torHistogramm.map((h) => {
+            const maxAnzahl = Math.max(1, ...r.torHistogramm.map((x) => x.anzahl));
+            return (
+              <div key={h.tore} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                <span className="text-caption2 text-text-tertiary num-tabular">{h.anzahl || ''}</span>
+                <div className="w-full rounded-t-md bg-system-green/70"
+                  style={{ height: `${Math.max(2, (h.anzahl / maxAnzahl) * 100)}%` }} />
+                <span className="text-caption2 text-text-tertiary num-tabular">{h.tore}</span>
+              </div>
+            );
+          })}
+        </div>
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <div className="bg-bg-tertiary rounded-xl p-3 text-center">
+            <div className="stat-display text-lg text-text-primary">
+              {r.schnittTore.toFixed(1).replace('.', ',')}
+            </div>
+            <div className="text-caption2 text-text-tertiary">⌀ Tore</div>
+          </div>
+          <div className="bg-bg-tertiary rounded-xl p-3 text-center">
+            <div className="stat-display text-lg text-text-primary">
+              {String(r.medianTore).replace('.', ',')}
+            </div>
+            <div className="text-caption2 text-text-tertiary">typisches Spiel (Median)</div>
+          </div>
+        </div>
+        <p className="text-caption2 text-text-tertiary mt-2">
+          Der Median steht daneben, weil ein einzelnes Torfestival den Durchschnitt
+          spürbar anhebt, ohne dass die meisten Spiele so aussehen.
+        </p>
+      </Section>
+
+      {/* 9 — Serien */}
+      <Section
+        icon="zap" iconClass="text-system-purple" title="Längste Serien"
+        hint="Die längste Kette am Stück — chronologisch gerechnet, nicht nach Listenreihenfolge."
+      >
+        <div className="grid grid-cols-2 gap-3">
+          {['AEK', 'Real'].map((t) => {
+            const s = r.serien[t];
+            const zeilen = [
+              ['Ohne Gegentor', s.beste.zuNull, s.aktuell.zuNull],
+              ['Ungeschlagen', s.beste.ungeschlagen, s.aktuell.ungeschlagen],
+              ['Siege', s.beste.siege, s.aktuell.siege],
+            ];
+            return (
+              <div key={t} className="bg-bg-tertiary rounded-xl p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <TeamLogo team={t === 'AEK' ? 'aek' : 'real'} size="xs" />
+                  <span className="text-caption1 font-semibold text-text-secondary truncate">{getTeamDisplay(t)}</span>
+                </div>
+                {zeilen.map(([label, beste, aktuell]) => (
+                  <div key={label} className="flex items-baseline justify-between gap-2 py-0.5">
+                    <span className="text-caption2 text-text-tertiary truncate">{label}</span>
+                    <span className="num-tabular text-sm font-semibold text-text-primary">
+                      {beste}
+                      {aktuell > 1 && aktuell === beste && <span className="text-system-orange"> 🔥</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            );
+          })}
+        </div>
+        <p className="text-caption2 text-text-tertiary mt-2">
+          🔥 heißt: die Serie läuft gerade noch und ist zugleich die längste bisher.
+        </p>
       </Section>
     </div>
   );
