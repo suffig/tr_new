@@ -18,7 +18,15 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
     
     const container = containerRef.current;
     const margin = { top: 20, right: 80, bottom: 40, left: 60 };
-    const width = container.offsetWidth - margin.left - margin.right;
+    // Nicht container.offsetWidth: der Ref sitzt am aeusseren Kasten, das SVG
+    // aber INNERHALB dessen Polsterung — das Diagramm ragte dadurch auf dem
+    // Handy um genau diese Polsterung heraus. clientWidth des direkten
+    // Elternelements ist der Platz, der wirklich zur Verfuegung steht.
+    const platz = svgRef.current.parentElement?.clientWidth || container.clientWidth;
+    // Auf schmalen Schirmen fressen die Standardraender (60 + 80) zwei Drittel
+    // der Breite. Dort deutlich enger.
+    if (platz < 420) { margin.left = 34; margin.right = 16; margin.bottom = 34; }
+    const width = Math.max(80, platz - margin.left - margin.right);
     const chartHeight = height - margin.top - margin.bottom;
 
     // Create SVG

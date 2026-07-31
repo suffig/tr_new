@@ -35,6 +35,25 @@
   .text-4xl {
     font-size: 2rem;
   }
+
+  /* Untergrenze fuer Schriftgroessen auf dem Handy.
+     Verstreut standen 9px und 10px im Code — am Telefon kaum lesbar. Statt an
+     zwanzig Stellen einzeln nachzubessern hier eine Grenze; 11px ist die
+     kleinste Groesse, die auf einem Handy noch zumutbar ist. */
+  .text-\[9px\],
+  .text-\[10px\],
+  .text-caption2 {
+    font-size: 11px;
+  }
+
+  /* .btn-compact nimmt Bedienelemente bewusst vom 48px-Minimum aus (dichte
+     Listen, Stepper). Ganz ohne Untergrenze landeten sie aber bei 32px — zu
+     klein zum sicheren Treffen. 40px ist der Kompromiss: dicht genug fuer die
+     Liste, gross genug fuer den Daumen. */
+  .btn-compact {
+    min-width: 40px;
+    min-height: 40px;
+  }
 }
 
 /* Slightly larger tap area for icon-only controls everywhere */

@@ -17,15 +17,20 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
     d3.select(svgRef.current).selectAll("*").remove();
     
     const container = containerRef.current;
-    const width = Math.min(container.offsetWidth, height);
-    const radius = Math.min(width, height) / 2 - 40;
+    const platz = svgRef.current.parentElement?.clientWidth || container.clientWidth;
+    const schmal = platz < 420;
+    const width = Math.min(platz, schmal ? platz : height);
+    // Schmal: Kreis kleiner, damit unter ihm Platz fuer die Legende bleibt.
+    const radius = (schmal ? Math.min(width, height) / 2 - 62 : Math.min(width, height) / 2 - 40);
+    // Hoehe waechst um die Legendenzeilen, sonst wird sie unten abgeschnitten.
+    const hoehe = schmal ? height + data.length * 25 + 16 : height;
 
     // Create SVG
     const svg = d3.select(svgRef.current)
       .attr('width', width)
-      .attr('height', height)
+      .attr('height', hoehe)
       .append('g')
-      .attr('transform', `translate(${width / 2},${height / 2})`);
+      .attr('transform', `translate(${width / 2},${schmal ? radius + 16 : height / 2})`);
 
     // Create color scale
     const colorScale = d3.scaleOrdinal()
@@ -163,9 +168,14 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
       .delay(1200)
       .style('opacity', 1);
 
-    // Add legend
+    // Legende: auf breiten Schirmen rechts neben dem Kreis, auf schmalen
+    // DARUNTER. Rechts danebengesetzt ragten Zeilen wie "AEK Athen Siege: 1"
+    // weit ueber die SVG-Breite hinaus und schoben auf dem Handy die ganze
+    // Seite seitlich weg — der Text wird ja nicht vom SVG beschnitten.
     const legend = svg.append('g')
-      .attr('transform', `translate(${radius + 20}, ${-radius + 20})`);
+      .attr('transform', schmal
+        ? `translate(${-radius}, ${radius + 24})`
+        : `translate(${radius + 20}, ${-radius + 20})`);
 
     data.forEach((d, i) => {
       const legendRow = legend.append('g')

@@ -181,7 +181,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                           {team.displayName}
                         </h3>
                         <p className="text-footnote text-text-tertiary num-tabular">
-                          {team.players.length} {team.players.length === 1 ? 'Spieler' : 'Spieler'}
+                          {team.players.length} Spieler
                           {team.squadValue > 0 && (
                             <span className="ml-2">
                               · {formatCurrencyInMillions(team.squadValue)}
@@ -231,7 +231,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                                     e.stopPropagation();
                                     handleShowPlayerDetail(player);
                                   }}
-                                  className="btn-compact text-text-tertiary hover:text-system-blue transition-colors p-2 rounded-lg"
+                                  className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-system-blue transition-colors rounded-lg"
                                   title="Spielerstatistiken"
                                   aria-label={`Statistiken von ${player.name}`}
                                 >
@@ -243,7 +243,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                                       e.stopPropagation();
                                       handleEditPlayer(player);
                                     }}
-                                    className="btn-compact text-text-tertiary hover:text-system-green transition-colors p-2 rounded-lg"
+                                    className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-system-green transition-colors rounded-lg"
                                     title="Bearbeiten"
                                     aria-label={`${player.name} bearbeiten`}
                                   >

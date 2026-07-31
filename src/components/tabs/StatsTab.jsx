@@ -81,8 +81,14 @@ class StatsCalculator {
       } else if (realGoals > aekGoals) {
         aekForm.push('L');
         realForm.push('W');
+      } else {
+        // Hier stand "FIFA games cannot end in draws" — stimmt fuer diese App
+        // nicht, Remis werden sehr wohl erfasst (siehe Duell-Bilanz). Sie
+        // fielen dadurch stillschweigend aus der Form heraus: "letzte 5" zeigte
+        // die letzten fuenf ENTSCHIEDENEN Spiele, nicht die letzten fuenf.
+        aekForm.push('D');
+        realForm.push('D');
       }
-      // Note: FIFA games cannot end in draws, so no draw handling needed
     });
 
     return { aek: aekForm, real: realForm };
@@ -626,11 +632,12 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       <span
         key={index}
         className={`inline-block w-6 h-6 text-xs font-bold rounded-full text-center leading-6 mx-0.5 ${
-          result === 'W' ? 'bg-system-green text-white' :
-          'bg-system-red text-white'
+          result === 'W' ? 'bg-system-green text-white'
+            : result === 'D' ? 'bg-border-strong text-white'
+            : 'bg-system-red text-white'
         }`}
       >
-        {result}
+        {result === 'W' ? 'S' : result === 'D' ? 'U' : 'N'}
       </span>
     ));
   };
@@ -758,13 +765,18 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       {form.length === 0 ? (
         <span className="text-xs text-text-tertiary">—</span>
       ) : form.map((r, i) => (
+        // 10px waren auf dem Handy kaum zu lesen — jetzt 12px in einer
+        // groesseren Plakette. Unentschieden fehlte bisher ganz und wurde
+        // faelschlich als Niederlage eingefaerbt.
         <span
           key={i}
-          className={`w-5 h-5 rounded-md text-[10px] font-bold flex items-center justify-center ${
-            r === 'W' ? 'bg-system-green/20 text-system-green' : 'bg-system-red/20 text-system-red'
+          className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center ${
+            r === 'W' ? 'bg-system-green/20 text-system-green'
+              : r === 'D' ? 'bg-bg-tertiary text-text-secondary'
+              : 'bg-system-red/20 text-system-red'
           }`}
         >
-          {r === 'W' ? 'S' : 'N'}
+          {r === 'W' ? 'S' : r === 'D' ? 'U' : 'N'}
         </span>
       ))}
     </div>
@@ -1269,7 +1281,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="chart" size={18} strokeWidth={2.2} />Spielerstatistiken</h3>
       
       {/* Statistics Summary */}
-      <div className="mb-6 grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">
         <div className="text-center p-3 bg-bg-secondary rounded-lg">
           <div className="text-xl font-bold text-system-green">
             {playerStats.filter(p => p.goals > 0).length}
@@ -1293,80 +1305,74 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           <div className="text-sm text-text-secondary">SdS Träger</div>
         </div>
+        {/* Anzahl und Laenge zusammen in EINER Kachel: als fuenfte Kachel
+            blieb in der zweispaltigen Handy-Ansicht eine halbe Zeile uebrig,
+            und beide Zahlen beschreiben ohnehin dieselbe Sache. */}
         <div className="text-center p-3 bg-bg-secondary rounded-lg">
-          <div className="text-xl font-bold text-system-red">
+          <div className="text-xl font-bold text-system-red num-tabular">
             {playerStats.reduce((sum, p) => sum + p.totalBans, 0)}
           </div>
-          <div className="text-sm text-text-secondary">Gesamt Sperren</div>
-        </div>
-        {/* Stand vorher in der Übersicht unter "Erweiterte Statistiken" —
-            gehört aber neben die Sperren. */}
-        <div className="text-center p-3 bg-bg-secondary rounded-lg">
-          <div className="text-xl font-bold text-system-orange">
-            {(() => {
+          <div className="text-sm text-text-secondary">Sperren</div>
+          <div className="text-caption2 text-text-tertiary num-tabular">
+            ⌀ {(() => {
               const spiele = bans?.reduce((s, b) => s + (b.totalgames || 0), 0) || 0;
               return bans?.length ? (spiele / bans.length).toFixed(1).replace('.', ',') : '0,0';
-            })()}
+            })()} Spiele
           </div>
-          <div className="text-sm text-text-secondary">⌀ Sperrenlänge</div>
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="border-b border-border-light">
-              <th className="text-left py-2">Spieler</th>
-              <th className="text-left py-2">Team</th>
-              <th className="text-center py-2">Tore</th>
-              <th className="text-center py-2">⌀/Spiel</th>
-              <th className="text-center py-2">Spiele</th>
-              <th className="text-center py-2">SdS</th>
-              <th className="text-center py-2">SdS %</th>
-              <th className="text-center py-2">Sperren</th>
-              <th className="text-right py-2">Marktwert</th>
-            </tr>
-          </thead>
-          <tbody>
-            {playerStats.map((player) => (
-              <tr key={player.id} className="border-b border-border-light hover:bg-bg-secondary">
-                <td className="py-2 font-medium">{player.name}</td>
-                <td className="py-2">
-                  <span className={`px-2 py-1 rounded text-xs font-medium ${
-                    player.team === 'AEK' ? 'bg-system-blue/10 text-system-blue' : 
-                    player.team === 'Ehemalige' ? 'bg-bg-tertiary text-text-primary' :
-                    'bg-system-red/10 text-system-red'
-                  }`}>
-                    {getTeamDisplay(player.team)}
+      {/* Hier stand eine Tabelle mit neun Spalten. Auf dem Handy war sie
+          565 px breit in einem 343 px schmalen Fenster — man musste fuer jede
+          Zahl seitlich scrollen, und die Kopfzeile war dabei weg. Jetzt eine
+          Karte je Spieler: die vier Kennzahlen, die man wirklich vergleicht, in
+          einer Reihe; SdS und Sperren nur, wenn es sie gibt. Auf breiten
+          Schirmen stehen zwei Karten nebeneinander. */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
+        {playerStats.map((player, i) => (
+          <div key={player.id} className="bg-bg-secondary rounded-xl p-3">
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-caption2 text-text-tertiary num-tabular w-5 flex-shrink-0">{i + 1}.</span>
+              <span className="font-semibold text-text-primary truncate min-w-0 flex-1">{player.name}</span>
+              <span className={`chip chip-sm flex-shrink-0 ${
+                player.team === 'AEK' ? 'chip-blue'
+                  : player.team === 'Ehemalige' ? 'chip-gray'
+                  : 'chip-red'
+              }`}>
+                {getTeamDisplay(player.team)}
+              </span>
+            </div>
+
+            <div className="grid grid-cols-4 gap-1 text-center">
+              {[
+                ['Tore', player.goals],
+                ['⌀/Spiel', player.goalsPerGame],
+                ['Spiele', player.matchesPlayed],
+                ['Wert', formatPlayerValue(player.value)],
+              ].map(([label, wert]) => (
+                <div key={label} className="min-w-0">
+                  <div className="stat-display text-[15px] text-text-primary truncate">{wert}</div>
+                  <div className="text-caption2 text-text-tertiary truncate">{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {(player.sdsCount > 0 || player.totalBans > 0) && (
+              <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border-light">
+                {player.sdsCount > 0 && (
+                  <span className="chip chip-sm chip-yellow">
+                    {player.sdsCount}× SdS · {player.sdsPercentage}%
                   </span>
-                </td>
-                <td className="py-2 text-center font-bold">{player.goals}</td>
-                <td className="py-2 text-center">{player.goalsPerGame}</td>
-                <td className="py-2 text-center">{player.matchesPlayed}</td>
-                <td className="py-2 text-center">{player.sdsCount}</td>
-                <td className="py-2 text-center">
-                  <span className={`px-1 py-0.5 rounded text-xs ${
-                    parseFloat(player.sdsPercentage) >= 50 ? 'bg-system-green/10 text-system-green' :
-                    parseFloat(player.sdsPercentage) >= 25 ? 'bg-system-yellow/10 text-system-orange' :
-                    'bg-bg-tertiary text-text-secondary'
-                  }`}>
-                    {player.sdsPercentage}% ({player.sdsCount}/{player.totalMatches})
+                )}
+                {player.totalBans > 0 && (
+                  <span className={`chip chip-sm ${player.totalBans <= 2 ? 'chip-orange' : 'chip-red'}`}>
+                    {player.totalBans} {player.totalBans === 1 ? 'Sperre' : 'Sperren'}
                   </span>
-                </td>
-                <td className="py-2 text-center">
-                  <span className={`px-1 py-0.5 rounded text-xs ${
-                    player.totalBans === 0 ? 'bg-system-green/10 text-system-green' :
-                    player.totalBans <= 2 ? 'bg-system-yellow/10 text-system-orange' :
-                    'bg-system-red/10 text-system-red'
-                  }`}>
-                    {player.totalBans}
-                  </span>
-                </td>
-                <td className="py-2 text-right">{formatPlayerValue(player.value)}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+                )}
+              </div>
+            )}
+          </div>
+        ))}
       </div>
 
       {/* Player Insights */}
