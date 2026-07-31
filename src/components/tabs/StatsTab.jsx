@@ -2,10 +2,8 @@
 import { useState, useEffect } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
-import EnhancedDashboard from '../EnhancedDashboard';
 import HorizontalNavigation from '../HorizontalNavigation';
 import MatchDayOverview from '../MatchDayOverview';
-import QuickStatsWidget from '../QuickStatsWidget';
 import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
 import CountUp from '../CountUp';
@@ -16,6 +14,26 @@ import {
   WinDistributionChart, 
   GoalTrendAreaChart 
 } from '../charts';
+
+/**
+ * Alte Ansichts-Namen auf die fuenf verbliebenen abbilden.
+ * Noetig, weil die zuletzt gewaehlte Ansicht gespeichert wird — ohne die
+ * Tabelle staende nach dem Update bei vielen ein Name im Speicher, den es
+ * nicht mehr gibt, und die Seite fiele stumm auf die Standardansicht zurueck.
+ * Die bisherigen Ansichten sind dabei nicht verschwunden, sondern in die
+ * thematisch passende gewandert (siehe renderCurrentView).
+ */
+const STATS_VIEW_MAP = {
+  overview: 'overview',
+  dashboard: 'overview',        // war eine zweite, aermere Uebersicht
+  teams: 'teams',
+  advanced: 'teams',            // Ergebnis-Deutlichkeit gehoert zum Teamvergleich
+  players: 'players',
+  trends: 'trends',
+  visualizations: 'trends',     // Diagramme zum zeitlichen Verlauf
+  matchdays: 'trends',          // Spieltage sind auch ein Verlauf
+  insights: 'insights',
+};
 
 // Enhanced Statistics Calculator Class (ported from vanilla JS)
 class StatsCalculator {
@@ -536,7 +554,10 @@ class StatsCalculator {
 }
 
 export default function StatsTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
-  const [selectedView, setSelectedView] = useState(() => { try { return localStorage.getItem('fusta_stats_view') || 'dashboard'; } catch { return 'dashboard'; } });
+  const [selectedView, setSelectedView] = useState(() => {
+    try { return STATS_VIEW_MAP[localStorage.getItem('fusta_stats_view')] || 'overview'; }
+    catch { return 'overview'; }
+  });
   const [timePeriod, setTimePeriod] = useState(() => { try { return localStorage.getItem('fusta_stats_period') || 'all'; } catch { return 'all'; } });
   useEffect(() => { try { localStorage.setItem('fusta_stats_view', selectedView); } catch { /* ignore */ } }, [selectedView]);
   useEffect(() => { try { localStorage.setItem('fusta_stats_period', timePeriod); } catch { /* ignore */ } }, [timePeriod]);
@@ -620,16 +641,16 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     return `${(value || 0).toFixed(1)}M €`;
   };
 
+  // Fuenf Ansichten statt neun. Die alten "Dashboard", "Erweitert",
+  // "Visualisierungen" und "Spieltage" waren keine eigenen Themen, sondern
+  // weitere Karten zu Themen, die es schon gab — sie stehen jetzt dort, wo sie
+  // hingehoeren (siehe renderCurrentView und STATS_VIEW_MAP).
   const views = [
-    { id: 'dashboard', label: 'Dashboard', iconName: 'grid' },
     { id: 'overview', label: 'Übersicht', iconName: 'chart' },
-    { id: 'insights', label: 'Einblicke', iconName: 'bulb' },
-    { id: 'advanced', label: 'Erweitert', iconName: 'zap' },
-    { id: 'visualizations', label: 'Visualisierungen', iconName: 'trendingUp' },
-    { id: 'matchdays', label: 'Spieltage', iconName: 'calendar' },
-    { id: 'players', label: 'Spieler', iconName: 'users' },
     { id: 'teams', label: 'Teams', iconName: 'trophy' },
-    { id: 'trends', label: 'Trends', iconName: 'trendingUp' },
+    { id: 'players', label: 'Spieler', iconName: 'users' },
+    { id: 'trends', label: 'Verlauf', iconName: 'trendingUp' },
+    { id: 'insights', label: 'Einblicke', iconName: 'bulb' },
   ];
 
   if (loading) {
@@ -2285,9 +2306,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
   // D3.js Interactive Visualizations View
   const renderVisualizations = () => {
-    // Calculate totalGoals for all filtered matches
-    const totalGoals = filteredMatches.reduce((sum, m) => sum + (m.goalsa || 0) + (m.goalsb || 0), 0);
-
     // Prepare data for monthly trends line chart
     const monthlyTrendsData = (() => {
       if (!filteredMatches || filteredMatches.length === 0) return [];
@@ -2390,34 +2408,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           />
         )}
 
-        {/* Additional Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="modern-card p-6 text-center">
-            <div className="text-4xl mb-2">⚡</div>
-            <div className="text-2xl font-bold text-text-primary">
-              {filteredMatches.length > 0 
-                ? ((totalGoals / filteredMatches.length).toFixed(1)) 
-                : '0'}
-            </div>
-            <div className="text-sm text-text-secondary">Durchschn. Tore/Spiel</div>
-          </div>
-          
-          <div className="modern-card p-6 text-center">
-            <div className="text-4xl mb-2">🎯</div>
-            <div className="text-2xl font-bold text-text-primary">
-              {playerStats.filter(p => p.goals > 0).length}
-            </div>
-            <div className="text-sm text-text-secondary">Aktive Torschützen</div>
-          </div>
-          
-          <div className="modern-card p-6 text-center">
-            <div className="text-4xl mb-2">📊</div>
-            <div className="text-2xl font-bold text-text-primary">
-              {totalMatches}
-            </div>
-            <div className="text-sm text-text-secondary">Gespielte Matches</div>
-          </div>
-        </div>
+        {/* Die drei Kennzahlen, die hier standen (⌀ Tore/Spiel, aktive
+            Torschuetzen, gespielte Spiele), stehen in derselben Ansicht schon
+            weiter oben in den Trends — sie waren nur noch eine zweite Anzeige
+            derselben Werte. */}
 
         {/* Performance Info */}
         <div className="modern-card p-6">
@@ -2446,21 +2440,24 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
   const renderCurrentView = () => {
     switch (selectedView) {
-      case 'dashboard': return (
-        <div className="space-y-6">
-          {renderH2HBanner()}
-          <QuickStatsWidget />
-          <EnhancedDashboard onNavigate={onNavigate} />
-        </div>
-      );
-      case 'insights': return <InsightsView matches={filteredMatches} players={players} bans={bans} />;
-      case 'advanced': return renderAdvancedStats();
-      case 'visualizations': return renderVisualizations();
-      case 'matchdays': return <MatchDayOverview matches={matches} />;
-      case 'players': return renderPlayers();
-      case 'teams': return renderTeams();
-      case 'trends': return renderTrends();
-      default: return renderOverview();
+      case 'insights':
+        return <InsightsView matches={filteredMatches} players={players} bans={bans} />;
+      case 'players':
+        return renderPlayers();
+      case 'teams':
+        // Teamvergleich + wie deutlich die Ergebnisse ausfallen (frueher "Erweitert")
+        return <div className="space-y-6">{renderTeams()}{renderAdvancedStats()}</div>;
+      case 'trends':
+        // Alles Zeitliche an einem Ort: Entwicklung, Diagramme, Spieltage
+        return (
+          <div className="space-y-6">
+            {renderTrends()}
+            {renderVisualizations()}
+            <MatchDayOverview matches={matches} />
+          </div>
+        );
+      default:
+        return <div className="space-y-6">{renderH2HBanner()}{renderOverview()}</div>;
     }
   };
 
