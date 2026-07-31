@@ -1021,61 +1021,11 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         </div>
 
         {/* Enhanced Additional Statistics Section */}
-        <div className="mobile-overview-card animate-mobile-slide-in">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="w-10 h-10 bg-gradient-info rounded-full flex items-center justify-center">
-              <span className="text-white text-lg">📊</span>
-            </div>
-            <div>
-              <h3 className="text-title3 font-bold text-text-primary">Erweiterte Statistiken</h3>
-              <p className="text-caption1 text-text-secondary">Detaillierte Analyse der Liga</p>
-            </div>
-          </div>
-          
-          <div className="mobile-grid mobile-grid-auto gap-4">
-            <div className="mobile-metric-card">
-              <div className="mobile-metric-icon bg-gradient-warning">
-                <span className="text-white">⏱️</span>
-              </div>
-              <div className="mobile-metric-value text-title2">
-                {(() => {
-                  // Calculate average ban length using totalgames instead of dates
-                  const totalBanGames = bans?.reduce((sum, ban) => {
-                    const banLength = ban.totalgames || 0;
-                    return sum + banLength;
-                  }, 0) || 0;
-                  
-                  const avgBanLength = bans?.length > 0 ? (totalBanGames / bans.length).toFixed(1) : '0.0';
-                  return `${avgBanLength}`;
-                })()}
-              </div>
-              <div className="mobile-metric-label">⌀ Sperrenlänge</div>
-              <div className="mobile-metric-sublabel">Spiele</div>
-            </div>
-
-            <div className="mobile-metric-card">
-              <div className="mobile-metric-icon bg-gradient-success">
-                <span className="text-white">🎯</span>
-              </div>
-              <div className="mobile-metric-value text-title2">
-                {playerStats.filter(p => p.goals > 0).length}
-              </div>
-              <div className="mobile-metric-label">Aktive Torschützen</div>
-              <div className="mobile-metric-sublabel">von {playerStats.length}</div>
-            </div>
-            
-            <div className="mobile-metric-card">
-              <div className="mobile-metric-icon bg-gradient-danger">
-                <span className="text-white">🟥</span>
-              </div>
-              <div className="mobile-metric-value text-title2">
-                {bans?.length || 0}
-              </div>
-              <div className="mobile-metric-label">Gesamt Sperren</div>
-              <div className="mobile-metric-sublabel">aller Zeiten</div>
-            </div>
-          </div>
-        </div>
+        {/* Hier stand ein Block "Erweiterte Statistiken" mit ⌀ Sperrenlänge,
+            aktiven Torschützen und Gesamt-Sperren. Die letzten beiden zeigt die
+            Spieler-Ansicht ohnehin, die ⌀ Sperrenlänge steht jetzt dort
+            daneben — sie gehört inhaltlich zu den Sperren. Die Überschrift kam
+            zudem in der Teams-Ansicht ein zweites Mal vor. */}
 
         {/* Longest Winning Streaks */}
         <div className="modern-card">
@@ -1319,9 +1269,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="chart" size={18} strokeWidth={2.2} />Spielerstatistiken</h3>
       
       {/* Statistics Summary */}
-      <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="mb-6 grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="text-center p-3 bg-bg-secondary rounded-lg">
-          <div className="text-xl font-bold text-primary-green">
+          <div className="text-xl font-bold text-system-green">
             {playerStats.filter(p => p.goals > 0).length}
           </div>
           <div className="text-sm text-text-secondary">Aktive Torschützen</div>
@@ -1330,7 +1280,12 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           <div className="text-xl font-bold text-system-blue">
             {playerStats.reduce((sum, p) => sum + p.goals, 0)}
           </div>
-          <div className="text-sm text-text-secondary">Tore insgesamt</div>
+          {/* Bewusst anders benannt als "Tore insgesamt" in der Uebersicht:
+              dort zaehlen die Spieltore, hier die Summe der Spielerkonten.
+              Beides geht auseinander, sobald Eigentore im Spiel sind — die
+              haengen an keinem Spieler. Gleicher Name fuer zwei Zahlen war
+              die Vorlage fuer Missverstaendnisse. */}
+          <div className="text-sm text-text-secondary">Tore der Spieler</div>
         </div>
         <div className="text-center p-3 bg-bg-secondary rounded-lg">
           <div className="text-xl font-bold text-system-orange">
@@ -1343,6 +1298,17 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             {playerStats.reduce((sum, p) => sum + p.totalBans, 0)}
           </div>
           <div className="text-sm text-text-secondary">Gesamt Sperren</div>
+        </div>
+        {/* Stand vorher in der Übersicht unter "Erweiterte Statistiken" —
+            gehört aber neben die Sperren. */}
+        <div className="text-center p-3 bg-bg-secondary rounded-lg">
+          <div className="text-xl font-bold text-system-orange">
+            {(() => {
+              const spiele = bans?.reduce((s, b) => s + (b.totalgames || 0), 0) || 0;
+              return bans?.length ? (spiele / bans.length).toFixed(1).replace('.', ',') : '0,0';
+            })()}
+          </div>
+          <div className="text-sm text-text-secondary">⌀ Sperrenlänge</div>
         </div>
       </div>
 
@@ -1521,7 +1487,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
       {/* Advanced Team Stats */}
       <div className="modern-card">
-        <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="trendingUp" size={18} strokeWidth={2.2} />Erweiterte Statistiken</h3>
+        <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="trendingUp" size={18} strokeWidth={2.2} />Torausbeute &amp; Serien</h3>
         <div className="mb-4 text-sm text-text-muted">
           Diese Statistiken bieten tiefere Einblicke in die Team-Performance und wichtige Kennzahlen.
         </div>
@@ -1533,8 +1499,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           <div className="text-center p-4 bg-bg-secondary rounded-lg">
             <div className="text-2xl font-bold text-accent-orange">{advancedStats.biggestWinMargin}</div>
-            <div className="text-sm text-text-muted">Größter Sieg</div>
-            <div className="text-xs text-text-muted mt-1">Höchste Tordifferenz</div>
+            <div className="text-sm text-text-muted">Höchste Tordifferenz</div>
+            <div className="text-xs text-text-muted mt-1">über alle Spiele</div>
           </div>
           <div className="text-center p-4 bg-bg-secondary rounded-lg">
             <div className="text-2xl font-bold text-accent-blue">
