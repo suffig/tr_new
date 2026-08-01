@@ -11,7 +11,7 @@
 // Dateien, es loescht nichts.
 
 import sharp from 'sharp';
-import { readdir, mkdir } from 'node:fs/promises';
+import { readdir, mkdir, copyFile } from 'node:fs/promises';
 import path from 'node:path';
 
 const quelle = process.argv[2] || 'design/logo-quelle.png';
@@ -39,6 +39,19 @@ async function iconsErzeugen() {
       .toFile(path.join(ziel, name));
     console.log('  ', name, px + 'x' + px);
   }
+
+  // Das In-App-Logo zusaetzlich nach src/assets/: nur von dort haengt Vite einen
+  // Inhalts-Hash an den Dateinamen. Unter dem festen Pfad /assets/logo-fusta.png
+  // blieb die URL bei jedem Wechsel gleich und der Service Worker lieferte
+  // weiter das alte Bild.
+  await mkdir('src/assets', { recursive: true });
+  await copyFile(path.join(ziel, 'logo-fusta.png'), 'src/assets/logo-fusta.png');
+
+  // Wurzel-Fallback: iOS sucht /apple-touch-icon.png, wenn kein <link> greift.
+  await copyFile(path.join(ziel, 'icon-180.png'), 'public/apple-touch-icon.png');
+  console.log('   src/assets/logo-fusta.png + public/apple-touch-icon.png');
+  console.log('   HINWEIS: ?v= in index.html, manifest.json und vite.config.js hochzaehlen,');
+  console.log('            sonst behaelt iOS das alte Symbol im Zwischenspeicher.');
 }
 
 async function splashErzeugen() {

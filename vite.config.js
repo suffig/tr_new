@@ -15,7 +15,10 @@ export default defineConfig({
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg}']
       },
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+      // apple-touch-icon.png liegt im Wurzelverzeichnis: iOS sucht genau dort,
+      // wenn kein passendes <link> greift. favicon.ico und masked-icon.svg
+      // waren hier gelistet, existierten aber nie.
+      includeAssets: ['apple-touch-icon.png'],
       manifest: {
         name: 'FUSTA - FIFA Statistik-Tracker',
         short_name: 'FUSTA',
@@ -28,12 +31,12 @@ export default defineConfig({
         categories: ['sports', 'games'],
         icons: [
           {
-            src: 'assets/icon-192.png',
+            src: 'assets/icon-192.png?v=2',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'assets/icon-512.png',
+            src: 'assets/icon-512.png?v=2',
             sizes: '512x512',
             type: 'image/png'
           }

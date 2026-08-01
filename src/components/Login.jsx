@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import { supabase, switchToFallbackMode, usingFallback } from '../utils/supabase';
 import { ErrorHandler, FormValidator } from '../utils/errorHandling';
-import logoFusta from '/assets/logo-fusta.png';
+// Bewusst aus src/assets/ und nicht aus public/: nur so haengt Vite einen
+// Inhalts-Hash an den Dateinamen. Unter dem festen Pfad /assets/logo-fusta.png
+// blieb die URL bei jedem Logo-Wechsel gleich — der Service Worker lieferte
+// dann weiter das alte Bild aus dem Zwischenspeicher.
+import logoFusta from '../assets/logo-fusta.png';
 
 export default function Login() {
   // Always login mode, no registration - removed unused isLogin state
