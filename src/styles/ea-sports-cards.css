@@ -120,7 +120,7 @@
 
 /* Rating color classes */
 .rating-excellent {
-  color: #10b981; /* Green */
+  color: var(--system-green); /* "positiv" — seit dem Logo-Wechsel Tuerkis */
 }
 
 .rating-good {

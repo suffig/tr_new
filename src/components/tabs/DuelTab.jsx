@@ -353,7 +353,7 @@ function WrappedView({ d, aekName, realName }) {
 
     // Footer
     at(new Date().toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }), 90, H - 70, 30, '#5A6472', '600', 'left');
-    at('FUSTA', W - 90, H - 70, 34, '#2FD97C', '800', 'right');
+    at('FUSTA', W - 90, H - 70, 34, '#FF8A6B', '800', 'right'); // Markenfarbe (Canvas kennt keine CSS-Variablen)
   }, [d, aekName, realName]);
 
   const filename = `fusta-rueckblick-${new Date().toISOString().slice(0, 10)}.png`;

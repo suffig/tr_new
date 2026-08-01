@@ -50,7 +50,7 @@ export function celebrate({ pieces = 28 } = {}) {
     const el = document.createElement('span');
     const color = styles.getPropertyValue(
       CONFETTI_COLORS[i % CONFETTI_COLORS.length]
-    ).trim() || '#00A862';
+    ).trim() || '#FF6B4A';
     const angle = (Math.PI * 2 * i) / pieces + Math.random() * 0.4;
     const distance = 90 + Math.random() * 150;
     const dx = Math.cos(angle) * distance;

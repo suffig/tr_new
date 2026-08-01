@@ -1122,7 +1122,7 @@ button:focus {
   }
   
   .toast-success {
-    background-color: #10B981;
+    background-color: var(--system-green);
     color: white;
   }
   

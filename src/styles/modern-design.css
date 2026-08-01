@@ -194,7 +194,9 @@ button {
    5. Header polish
    -------------------------------------------------------------------------- */
 .brand-gradient-text {
-  background: linear-gradient(120deg, var(--system-green) 0%, var(--system-teal) 50%, var(--system-blue) 100%);
+  /* Farbverlauf des Logos: Koralle oben, Violett unten. Vorher lief er
+     von Gruen ueber Tuerkis nach Blau. */
+  background: linear-gradient(120deg, var(--brand) 0%, #F5333F 45%, #B661B3 100%);
   background-size: 200% auto;
   -webkit-background-clip: text;
   background-clip: text;

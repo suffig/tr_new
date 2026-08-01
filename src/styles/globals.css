@@ -25,16 +25,20 @@
   --text-muted: rgba(56, 69, 63, 0.62);
 
   /* Brand */
-  --brand: #00A862;
-  --brand-gradient: linear-gradient(135deg, #00A862 0%, #0A6CFF 100%);
+  --brand: #FF6B4A;
+  --brand-gradient: linear-gradient(135deg, #FF6B4A 0%, #B661B3 100%);
 
   /* System Colors — tuned to the FUSTA palette */
   --system-blue: #0A6CFF;
   --system-blue-light: #4D94FF;
   --system-blue-dark: #0049C2;
-  --system-green: #00A862;
-  --system-green-light: #2FC987;
-  --system-green-dark: #00794A;
+  /* Trotz des Namens KEIN Gruen mehr: das Token traegt die Bedeutung
+     "positiv" (Siege, Guthaben, zu Null, Erfolgsmeldungen) und ist auf
+     Tuerkisblau gewechselt. Umbenennen haette 309 Aufrufstellen
+     angefasst; der Wert steht hier an einer Stelle. */
+  --system-green: #0E9CD4;
+  --system-green-light: #45BDEB;
+  --system-green-dark: #0A7BA8;
   --system-indigo: #5856D6;
   --system-indigo-light: #7B79E8;
   --system-indigo-dark: #3634A3;
@@ -60,7 +64,15 @@
   /* FIFA Team Colors */
   --fifa-blue: #0A6CFF;
   --fifa-red: #FF3B30;
-  --fifa-green: #00A862;
+  --fifa-green: #FF6B4A;  /* Markenfarbe, jetzt Orange aus dem Logo */
+
+  /* Aliasse auf die Markenfarbe. Sie werden in globals.css sechsmal benutzt,
+     waren aber NIRGENDS definiert — gesetzt hat sie nur ColorCustomization
+     zur Laufzeit. Ohne geoeffnete Farbanpassung liefen die Regeln also gegen
+     eine undefinierte Variable. */
+  --primary-green: var(--fifa-green);
+  --primary-green-light: #FF9478;
+  --primary-green-dark: #E04E2E;
 
   /* Surfaces & Borders */
   --border-light: rgba(40, 60, 50, 0.1);
@@ -120,16 +132,16 @@
   --text-muted: rgba(225, 238, 232, 0.62);
 
   /* Brand */
-  --brand: #2FD97C;
-  --brand-gradient: linear-gradient(135deg, #2FD97C 0%, #4D94FF 100%);
+  --brand: #FF8A6B;
+  --brand-gradient: linear-gradient(135deg, #FF8A6B 0%, #C77CC4 100%);
 
   /* System Colors — dark variants */
   --system-blue: #3D9BFF;
   --system-blue-light: #70B5FF;
   --system-blue-dark: #1E6FD6;
-  --system-green: #2FD97C;
-  --system-green-light: #5FE69C;
-  --system-green-dark: #1AA85C;
+  --system-green: #4FC3F7;
+  --system-green-light: #81D4FA;
+  --system-green-dark: #2BA3D9;
   --system-indigo: #5E5CE6;
   --system-indigo-light: #7D7BEB;
   --system-indigo-dark: #4644B8;
@@ -155,7 +167,10 @@
   /* FIFA Team Colors - Dark variants */
   --fifa-blue: #3D9BFF;
   --fifa-red: #FF453A;
-  --fifa-green: #2FD97C;
+  --fifa-green: #FF8A6B;
+  --primary-green: var(--fifa-green);
+  --primary-green-light: #FFAE96;
+  --primary-green-dark: #E5674A;
 
   /* Surfaces & Borders */
   --border-light: rgba(140, 168, 190, 0.16);

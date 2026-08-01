@@ -137,12 +137,12 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
     if (!fifaData) return null;
 
     const attributes = [
-      { name: 'PAC', fullName: 'Pace', value: fifaData.pace, icon: '🏃', color: 'from-green-400 to-emerald-500' },
-      { name: 'SHO', fullName: 'Shooting', value: fifaData.shooting, icon: '⚽', color: 'from-red-400 to-rose-500' },
-      { name: 'PAS', fullName: 'Passing', value: fifaData.passing, icon: '🎯', color: 'from-blue-400 to-cyan-500' },
-      { name: 'DRI', fullName: 'Dribbling', value: fifaData.dribbling, icon: '⚡', color: 'from-yellow-400 to-amber-500' },
-      { name: 'DEF', fullName: 'Defending', value: fifaData.defending, icon: '🛡️', color: 'from-purple-400 to-violet-500' },
-      { name: 'PHY', fullName: 'Physical', value: fifaData.physical, icon: '💪', color: 'from-orange-400 to-red-500' }
+      { name: 'PAC', fullName: 'Pace', value: fifaData.pace, icon: '🏃', color: 'from-system-teal to-system-blue' },
+      { name: 'SHO', fullName: 'Shooting', value: fifaData.shooting, icon: '⚽', color: 'from-system-red to-system-orange' },
+      { name: 'PAS', fullName: 'Passing', value: fifaData.passing, icon: '🎯', color: 'from-system-blue to-system-teal' },
+      { name: 'DRI', fullName: 'Dribbling', value: fifaData.dribbling, icon: '⚡', color: 'from-system-yellow to-system-orange' },
+      { name: 'DEF', fullName: 'Defending', value: fifaData.defending, icon: '🛡️', color: 'from-system-purple to-system-indigo' },
+      { name: 'PHY', fullName: 'Physical', value: fifaData.physical, icon: '💪', color: 'from-system-orange to-system-red' }
     ];
 
     return (
@@ -191,37 +191,37 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
       {
         name: 'Shooting Skills',
         icon: '⚽',
-        color: 'from-red-400 to-rose-500',
+        color: 'from-system-red to-system-orange',
         skills: ['finishing', 'volleys', 'penalties', 'shotPower', 'longShots']
       },
       {
         name: 'Passing Skills',
         icon: '🎯',
-        color: 'from-blue-400 to-cyan-500',
+        color: 'from-system-blue to-system-teal',
         skills: ['vision', 'crossing', 'curve', 'shortPassing', 'longPassing']
       },
       {
         name: 'Movement Skills',
         icon: '🏃',
-        color: 'from-green-400 to-emerald-500',
+        color: 'from-system-teal to-system-blue',
         skills: ['acceleration', 'sprintSpeed', 'agility', 'reactions', 'balance']
       },
       {
         name: 'Physical Skills',
         icon: '💪',
-        color: 'from-orange-400 to-red-500',
+        color: 'from-system-orange to-system-red',
         skills: ['jumping', 'stamina', 'strength', 'aggression']
       },
       {
         name: 'Mental Skills',
         icon: '🧠',
-        color: 'from-purple-400 to-violet-500',
+        color: 'from-system-purple to-system-indigo',
         skills: ['positioning', 'composure', 'interceptions']
       },
       {
         name: 'Technical Skills',
         icon: '⚡',
-        color: 'from-yellow-400 to-amber-500',
+        color: 'from-system-yellow to-system-orange',
         skills: ['ballControl', 'headingAccuracy', 'fkAccuracy']
       }
     ];

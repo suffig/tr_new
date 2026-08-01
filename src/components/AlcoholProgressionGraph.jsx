@@ -459,7 +459,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
               opacity="0.9"
             />
             
-            {/* Philip's line (green with glow) */}
+            {/* Philips Linie — Rot (#ef4444), wie app-weit fuer Philip/Real */}
             <path 
               d={philipPath} 
               fill="none" 

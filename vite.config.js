@@ -20,7 +20,7 @@ export default defineConfig({
         name: 'FUSTA - FIFA Statistik-Tracker',
         short_name: 'FUSTA',
         description: 'FUSTA - Verfolge FIFA-Spiele, Spieler, Sperren und Finanzen mit modernem Design',
-        theme_color: '#00A862',
+        theme_color: '#FF6B4A',
         background_color: '#0A1119',
         display: 'standalone',
         orientation: 'portrait-primary',
