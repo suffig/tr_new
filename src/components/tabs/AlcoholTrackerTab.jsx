@@ -1,5 +1,8 @@
 ﻿import Icon from '../icons/Icon';
-import { gutschriftFuer, loadSterne, saveSterne, removeSterneEintrag } from '../../utils/sterneCounter';
+import {
+  gutschriftFuer, loadSterne, addSterneEintrag, removeSterneEintrag,
+  alleSterneLoeschen, sterneAbgleichen, altenSterneStandUebernehmen,
+} from '../../utils/sterneCounter';
 import SterneVerlauf from './alkohol/SterneVerlauf';
 import { useState, useEffect, useCallback } from 'react';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
@@ -165,7 +168,17 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     }
 
     // Sterne-Zaehler laden (gemeinsame Quelle: utils/sterneCounter)
+    // Reihenfolge zaehlt: erst den alten localStorage-Bestand als Ereignisse
+    // uebernehmen, DANN mit der Datenbank abgleichen — sonst wuerde der
+    // Abgleich den Altbestand ueberschreiben, bevor er hochgeladen ist.
+    altenSterneStandUebernehmen();
     setSterneData(loadSterne());
+    sterneAbgleichen().then((r) => {
+      if (r.ok) setSterneData(loadSterne());
+      else if (r.lokalMehr) {
+        console.warn(`[Sterne] Lokal ${r.lokal} Ereignisse, Datenbank ${r.db} — nicht ueberschrieben.`);
+      }
+    });
 
     // Load BJ tracking data from localStorage
     const savedBjTracking = localStorage.getItem('bjTracking');
@@ -719,46 +732,28 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     setEditingSchnapsTarget(false);
   };
 
-  // ─── Sterne-Counter helpers ───────────────────────────────────────────────
-  const saveSterneData = (newData) => {
-    setSterneData(newData);
-    saveSterne(newData);
-  };
-
+  // ─── Sterne-Counter ───────────────────────────────────────────────────────
+  // Der Tab rechnet hier nichts mehr selbst. Stand und Verlauf leitet
+  // utils/sterneCounter aus dem Ereignis-Log ab (Datenbank, db/09) — vorher
+  // wurde die Summe hier von Hand fortgeschrieben und lag nur lokal, weshalb
+  // Alexander und Philip verschiedene Zahlen sahen.
   const addSterne = () => {
     const { person, stars } = sterneInput;
-    const gained = gutschriftFuer(stars); // 6 − Sterne (siehe utils/sterneCounter)
-    const newData = {
-      ...sterneData,
-      [person]: sterneData[person] + gained,
-      history: [
-        ...sterneData.history,
-        { person, stars, gained, timestamp: new Date().toISOString() }
-      ]
-    };
-    saveSterneData(newData);
+    setSterneData(addSterneEintrag({ person, stars }).data);
   };
 
   const undoLastSterne = () => {
     if (sterneData.history.length === 0) return;
-    const history = [...sterneData.history];
-    const last = history.pop();
-    const toRemove = last.gained ?? gutschriftFuer(last.stars); // backward compat
-    const newData = {
-      ...sterneData,
-      [last.person]: Math.max(0, sterneData[last.person] - toRemove),
-      history
-    };
-    saveSterneData(newData);
+    setSterneData(removeSterneEintrag(sterneData.history.length - 1));
   };
 
-  // Einzelnen Verlaufseintrag loeschen (Gutschrift wird zurueckgerechnet).
+  // Einzelnen Verlaufseintrag loeschen (Gutschrift faellt damit weg).
   const deleteSterneEintrag = (index) => {
     setSterneData(removeSterneEintrag(index));
   };
 
   const resetSterneData = () => {
-    saveSterneData({ philip: 0, alex: 0, history: [] });
+    setSterneData(alleSterneLoeschen());
   };
 
   // Render filled / half / empty stars
