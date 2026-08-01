@@ -3,7 +3,6 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import MatchesTab from './MatchesTab';
 import KaderTab from './KaderTab';
 import BansTab from './BansTab';
-import PageHeader from '../PageHeader';
 
 // Sammel-Tab "Spiele": alles zum laufenden Spielbetrieb an einer Stelle —
 // die Spiele selbst, wer im Kader steht und wer gesperrt ist. Vorher waren das
@@ -37,8 +36,6 @@ export default function SpielbetriebTab({ viewRequest, ...props }) {
   return (
     <div>
       <div className="px-4 pt-4">
-        <PageHeader title="Spiele" icon="football" tile="tile-orange"
-          subtitle={VIEWS.find((v) => v.id === view)?.hinweis} />
         <HorizontalNavigation views={VIEWS} selectedView={view} onViewChange={setView} />
       </div>
       {view === 'spiele' && <MatchesTab {...props} />}

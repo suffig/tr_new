@@ -8,7 +8,6 @@ import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
 import CountUp from '../CountUp';
 import { getTeamDisplay } from '../../constants/teams';
-import PageHeader from '../PageHeader';
 import {
   TrendLineChart,
   PlayerBarChart,
@@ -2436,8 +2435,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
-      <PageHeader title="Statistik" icon="chart" tile="tile-blue"
-        subtitle="Zahlen, Verläufe und Muster aus euren Spielen" />
 
       {/* Discreet time-period selector */}
       <div className="mb-4 inline-flex items-center gap-2 bg-bg-tertiary rounded-xl pl-3 pr-2 py-1.5 text-text-secondary">

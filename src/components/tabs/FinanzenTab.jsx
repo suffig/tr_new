@@ -8,7 +8,6 @@ import CollapsibleCard from '../CollapsibleCard';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay } from '../../constants/teams';
 import '../../styles/match-animations.css';
-import PageHeader from '../PageHeader';
 
 export default function FinanzenTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   const [expandedMatches, setExpandedMatches] = useState(null); // null = not yet initialized
@@ -303,8 +302,6 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
-      <PageHeader title="Finanzen" icon="euro" tile="tile-green"
-        subtitle="Kontostände, Preisgelder und Echtgeld-Ausgleich" />
 
       {/* Horizontal Navigation */}
       <HorizontalNavigation

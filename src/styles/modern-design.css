@@ -378,50 +378,13 @@ button {
 /* --------------------------------------------------------------------------
    8a-0. Apple-style page anatomy: Large Title headers + icon tiles
    -------------------------------------------------------------------------- */
-.page-header {
-  margin-bottom: 1.25rem;
-  padding-top: 0.25rem;
-}
+/* Die Seitenkopf-Klassen (.page-header/.page-title/.page-subtitle/.page-icon)
+   und die dazugehoerigen Kachelfarben .tile-* standen hier. Die Koepfe sind
+   auf Wunsch wieder raus — der Bereichsname steht in der unteren Leiste,
+   eine Ueberschrift darueber war eine Wiederholung. Ohne Verwendung im JSX
+   waeren die Regeln sonst genau der tote Ballast, den wir gerade
+   weggeraeumt haben. Im Git-Verlauf stehen sie, falls sie zurueckkommen. */
 
-.page-header-row {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.page-title {
-  font-size: 32px;
-  font-weight: 800;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-  color: var(--text-primary);
-}
-
-.page-subtitle {
-  font-size: 14px;
-  color: var(--text-tertiary);
-  margin-top: 4px;
-}
-
-/* Settings-app style icon tile, one accent per page */
-.page-icon {
-  width: 42px;
-  height: 42px;
-  border-radius: 12px;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 21px;
-  color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
-}
-
-.tile-green  { background: linear-gradient(135deg, var(--system-green), var(--system-teal)); }
-.tile-red    { background: linear-gradient(135deg, var(--system-red), var(--system-pink)); }
-.tile-blue   { background: linear-gradient(135deg, var(--system-blue), var(--system-teal)); }
-.tile-indigo { background: linear-gradient(135deg, var(--system-indigo), var(--system-purple)); }
 .tile-purple { background: linear-gradient(135deg, var(--system-purple), var(--system-pink)); }
 .tile-orange { background: linear-gradient(135deg, var(--system-orange), var(--system-yellow)); }
 

@@ -10,7 +10,6 @@ import SearchTab from './admin/SearchTab';
 import TeamSettingsTab from './admin/TeamSettingsTab';
 import TeamCatalogTab from './admin/TeamCatalogTab';
 import ManagerTab from './admin/ManagerTab';
-import PageHeader from '../PageHeader';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false, user }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('matches');
@@ -160,13 +159,10 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
 
   return (
     <div className="flex flex-col h-full">
-      {/* Kopf — wie in allen anderen Bereichen ueber PageHeader, damit
-          Titelgroesse, Abstand und Icon-Kachel ueberall gleich sind. Hier stand
-          vorher als einziger Bereich eine eigene, kleinere Ueberschrift. */}
+      {/* Nur der Abmelden-Knopf — der Bereichsname steht in der unteren
+          Leiste, eine Ueberschrift daneben waere eine Wiederholung. */}
       <div className="bg-bg-secondary border-b border-separator">
-        <div className="px-4 pt-4 pb-2 flex justify-between items-start gap-3">
-          <PageHeader title="Verwaltung" icon="settings" tile="tile-indigo"
-            subtitle="Daten pflegen, Saisons und Einstellungen" />
+        <div className="px-4 py-3 flex justify-end">
           <button
             onClick={onLogout}
             className="flex items-center gap-2 px-4 py-2 btn-soft btn-soft-red rounded-xl"

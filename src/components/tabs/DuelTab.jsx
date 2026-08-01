@@ -9,7 +9,6 @@ import RecordsView from './RecordsView';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 import { aggregatePlayers } from '../../utils/playerIdentity';
-import PageHeader from '../PageHeader';
 
 // goalslist entries are either a plain name string or { player_id, player, count }
 function parseGoals(raw) {
@@ -495,8 +494,6 @@ export default function DuelTab() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <PageHeader title="Duell" icon="zap" tile="tile-red"
-        subtitle="Alexander gegen Philip über alle Saisons" />
       <HorizontalNavigation views={views} selectedView={view} onViewChange={setView} />
 
       {view === 'rekorde' ? (
