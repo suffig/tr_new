@@ -3,15 +3,16 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import MatchesTab from './MatchesTab';
 import KaderTab from './KaderTab';
 import BansTab from './BansTab';
+import PageHeader from '../PageHeader';
 
 // Sammel-Tab "Spiele": alles zum laufenden Spielbetrieb an einer Stelle —
 // die Spiele selbst, wer im Kader steht und wer gesperrt ist. Vorher waren das
 // drei eigene Eintraege in der unteren Leiste, obwohl man beim Erfassen eines
 // Spieltags ohnehin zwischen ihnen springt.
 const VIEWS = [
-  { id: 'spiele', label: 'Spiele', iconName: 'football' },
-  { id: 'kader', label: 'Kader', iconName: 'users' },
-  { id: 'sperren', label: 'Sperren', iconName: 'ban' },
+  { id: 'spiele', label: 'Spiele', iconName: 'football', hinweis: 'Alle Begegnungen und ihre Ergebnisse' },
+  { id: 'kader', label: 'Kader', iconName: 'users', hinweis: 'Wer bei welchem Team steht' },
+  { id: 'sperren', label: 'Sperren', iconName: 'ban', hinweis: 'Wer aussetzen muss und wie lange' },
 ];
 
 const KEY = 'fusta_spielbetrieb_view';
@@ -36,6 +37,8 @@ export default function SpielbetriebTab({ viewRequest, ...props }) {
   return (
     <div>
       <div className="px-4 pt-4">
+        <PageHeader title="Spiele" icon="football" tile="tile-orange"
+          subtitle={VIEWS.find((v) => v.id === view)?.hinweis} />
         <HorizontalNavigation views={VIEWS} selectedView={view} onViewChange={setView} />
       </div>
       {view === 'spiele' && <MatchesTab {...props} />}

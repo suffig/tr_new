@@ -10,6 +10,7 @@ import SearchTab from './admin/SearchTab';
 import TeamSettingsTab from './admin/TeamSettingsTab';
 import TeamCatalogTab from './admin/TeamCatalogTab';
 import ManagerTab from './admin/ManagerTab';
+import PageHeader from '../PageHeader';
 
 export default function AdminTab({ onLogout, onNavigate, showHints = false, user }) { // eslint-disable-line no-unused-vars
   const [activeSubTab, setActiveSubTab] = useState('matches');
@@ -159,22 +160,13 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
+      {/* Kopf — wie in allen anderen Bereichen ueber PageHeader, damit
+          Titelgroesse, Abstand und Icon-Kachel ueberall gleich sind. Hier stand
+          vorher als einziger Bereich eine eigene, kleinere Ueberschrift. */}
       <div className="bg-bg-secondary border-b border-separator">
-        <div className="p-6 flex justify-between items-center">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-system-green/12 text-system-green rounded-xl flex items-center justify-center">
-              <Icon name="settings" size={24} strokeWidth={2} />
-            </div>
-            <div>
-              <h2 className="text-2xl font-bold mb-1 text-text-primary">
-                Verwaltung
-              </h2>
-              <p className="text-text-secondary text-sm">
-                Zentrale Administration und Datenmanagement
-              </p>
-            </div>
-          </div>
+        <div className="px-4 pt-4 pb-2 flex justify-between items-start gap-3">
+          <PageHeader title="Verwaltung" icon="settings" tile="tile-indigo"
+            subtitle="Daten pflegen, Saisons und Einstellungen" />
           <button
             onClick={onLogout}
             className="flex items-center gap-2 px-4 py-2 btn-soft btn-soft-red rounded-xl"

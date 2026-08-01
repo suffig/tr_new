@@ -8,11 +8,12 @@ import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
 import CountUp from '../CountUp';
 import { getTeamDisplay } from '../../constants/teams';
-import { 
-  TrendLineChart, 
-  PlayerBarChart, 
-  WinDistributionChart, 
-  GoalTrendAreaChart 
+import PageHeader from '../PageHeader';
+import {
+  TrendLineChart,
+  PlayerBarChart,
+  WinDistributionChart,
+  GoalTrendAreaChart
 } from '../charts';
 
 /**
@@ -914,14 +915,14 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <div className="mobile-grid mobile-grid-2 md:grid-cols-4">
           <div className="mobile-metric-card animate-mobile-slide-in">
             <div className="mobile-metric-icon bg-gradient-success">
-              <span className="text-white">⚽</span>
+              <Icon name="football" size={18} strokeWidth={2.2} className="text-white" />
             </div>
             <div className="mobile-metric-value">{totalMatches}</div>
             <div className="mobile-metric-label">Spiele gespielt</div>
           </div>
           <div className="mobile-metric-card animate-mobile-slide-in">
             <div className="mobile-metric-icon bg-gradient-warning">
-              <span className="text-white">🎯</span>
+              <Icon name="target" size={18} strokeWidth={2.2} className="text-white" />
             </div>
             <div className="mobile-metric-value">{advancedStats.totalGoals}</div>
             <div className="mobile-metric-label">Tore insgesamt</div>
@@ -931,7 +932,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           <div className="mobile-metric-card animate-mobile-slide-in">
             <div className="mobile-metric-icon bg-gradient-info">
-              <span className="text-white">🥇</span>
+              <Icon name="award" size={18} strokeWidth={2.2} className="text-white" />
             </div>
             <div className="mobile-metric-value text-subhead font-semibold">
               {topScorer ? topScorer.name.split(' ').slice(-1)[0] : '–'}
@@ -1011,9 +1012,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           
           <div className="mobile-overview-card animate-mobile-slide-in hover:scale-105 transition-all duration-300">
             <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-purple uppercase tracking-wide">⚽ Top Performance</div>
+              <div className="text-caption1 font-semibold text-system-purple uppercase tracking-wide"><Icon name="football" size={13} strokeWidth={2.2} className="inline mr-1 -mt-0.5" />Top Performance</div>
               <div className="w-8 h-8 bg-system-purple/10 rounded-full flex items-center justify-center">
-                <span className="text-system-purple text-sm font-bold">🏆</span>
+                <Icon name="trophy" size={14} strokeWidth={2.2} className="text-system-purple" />
               </div>
             </div>
             <div className="text-title1 font-bold text-text-primary mb-2">
@@ -1201,7 +1202,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       <div className="card-ios">
         <div className="flex items-center gap-3 mb-4">
           <div className="w-10 h-10 bg-system-yellow/10 rounded-full flex items-center justify-center">
-            <span className="text-lg">🏆</span>
+            <Icon name="trophy" size={17} strokeWidth={2.2} />
           </div>
           <h3 className="text-title3 font-bold text-text-primary">Top-Torschützen</h3>
         </div>
@@ -1531,7 +1532,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* New Enhanced Statistics Section */}
         <div className="mt-6 grid md:grid-cols-3 gap-6">
           <div className="space-y-3">
-            <h4 className="font-semibold text-system-blue">🏠 Home/Away Analyse</h4>
+            <h4 className="font-semibold text-system-blue"><Icon name="swap" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Heim und Auswärts</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>{getTeamDisplay('AEK')} Heimspiele:</span>
@@ -1629,7 +1630,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           
           <div className="space-y-3">
-            <h4 className="font-semibold text-text-primary">⚖️ Team-Balance</h4>
+            <h4 className="font-semibold text-text-primary"><Icon name="scale" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Team-Balance</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Kader-Unterschied:</span>
@@ -1656,7 +1657,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
       {/* Head-to-Head Statistics */}
       <div className="modern-card">
-        <h3 className="font-bold text-lg mb-4">⚔️ Head-to-Head Bilanz</h3>
+        <h3 className="font-bold text-lg mb-4"><Icon name="zap" size={17} strokeWidth={2.2} className="inline mr-2 -mt-0.5" />Direkter Vergleich</h3>
         <div className="mb-4 text-sm text-text-muted">
           Direkter Vergleich zwischen {getTeamDisplay('AEK')} und {getTeamDisplay('Real')} über alle Spiele.
         </div>
@@ -1687,7 +1688,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Biggest Wins Details */}
         <div className="mt-6 grid md:grid-cols-2 gap-4">
           <div className="p-4 bg-system-blue/10 rounded-lg">
-            <h4 className="font-semibold text-system-blue mb-2">🔵 Größter AEK Sieg</h4>
+            <h4 className="font-semibold text-system-blue mb-2">Größter Sieg {getTeamDisplay('AEK')}</h4>
             {headToHead.biggestAekWin.diff > 0 ? (
               <div>
                 <div className="text-2xl font-bold text-system-blue mb-1">{headToHead.biggestAekWin.score}</div>
@@ -1703,7 +1704,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             )}
           </div>
           <div className="p-4 bg-system-red/10 rounded-lg">
-            <h4 className="font-semibold text-system-red mb-2">🔴 Größter Real Sieg</h4>
+            <h4 className="font-semibold text-system-red mb-2">Größter Sieg {getTeamDisplay('Real')}</h4>
             {headToHead.biggestRealWin.diff > 0 ? (
               <div>
                 <div className="text-2xl font-bold text-system-red mb-1">{headToHead.biggestRealWin.score}</div>
@@ -1723,13 +1724,13 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       
       {/* New Advanced Analytics */}
       <div className="modern-card">
-        <h3 className="font-bold text-lg mb-4">🔬 Detailanalyse</h3>
+        <h3 className="font-bold text-lg mb-4"><Icon name="search" size={17} strokeWidth={2.2} className="inline mr-2 -mt-0.5" />Detailanalyse</h3>
         <div className="mb-4 text-sm text-text-muted">
           Erweiterte Metriken für eine tiefgreifende Team-Analyse.
         </div>
         <div className="grid md:grid-cols-2 gap-6">          
           <div className="space-y-3">
-            <h4 className="font-semibold text-system-red">🎲 Spielstatistiken</h4>
+            <h4 className="font-semibold text-system-red"><Icon name="dice" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Spielstatistiken</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Spiele gespielt:</span>
@@ -1749,7 +1750,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           
           <div className="space-y-3">
-            <h4 className="font-semibold text-system-purple">🏆 Leistungs-Metriken</h4>
+            <h4 className="font-semibold text-system-purple"><Icon name="trophy" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Leistungswerte</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span>Aktive Spieler:</span>
@@ -1828,7 +1829,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     if (enhancedTrends.length === 0) {
       return (
         <div className="text-center py-8 text-text-muted">
-          <div className="text-4xl mb-2">📈</div>
+          <div className="mb-2 text-system-blue"><Icon name="trendingUp" size={30} strokeWidth={1.8} /></div>
           <p>Keine Spiele für Trends-Analyse im gewählten Zeitraum</p>
         </div>
       );
@@ -1839,7 +1840,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Trends Overview Header */}
         <div className="modern-card p-6">
           <div className="flex items-center gap-3 mb-4">
-            <span className="text-2xl">📈</span>
+            <Icon name="trendingUp" size={20} strokeWidth={2.2} />
             <div>
               <h3 className="text-lg font-bold text-text-primary">Performance-Trends</h3>
               <p className="text-sm text-text-muted">Monatliche Entwicklung der Teams</p>
@@ -1968,9 +1969,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 {trend.matchCount > 0 && (
                   <div className="mt-4 pt-4 border-t border-border-light">
                     <div className="flex items-center gap-4 text-xs text-text-muted">
-                      <span>📊 {totalGoals} Tore insgesamt</span>
-                      <span>⚽ Bestes Team: {trend.aekWins > trend.realWins ? 'AEK' : trend.realWins > trend.aekWins ? 'Real' : 'Ausgeglichen'}</span>
-                      <span>🔥 Intensität: {avgGoalsPerMatch >= 3 ? 'Hoch' : avgGoalsPerMatch >= 2 ? 'Mittel' : 'Niedrig'}</span>
+                      <span>{totalGoals} Tore insgesamt</span>
+                      <span>Bestes Team: {trend.aekWins > trend.realWins ? 'AEK' : trend.realWins > trend.aekWins ? 'Real' : 'Ausgeglichen'}</span>
+                      <span>Intensität: {avgGoalsPerMatch >= 3 ? 'Hoch' : avgGoalsPerMatch >= 2 ? 'Mittel' : 'Niedrig'}</span>
                     </div>
                   </div>
                 )}
@@ -1982,13 +1983,13 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Trend Analysis Summary */}
         <div className="modern-card p-6">
           <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <span className="text-xl">🎯</span>
+            <Icon name="target" size={18} strokeWidth={2.2} />
             Trend-Analyse
           </h4>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div>
-              <h5 className="font-medium text-text-primary mb-3">📈 Aufwärtstrends</h5>
+              <h5 className="font-medium text-text-primary mb-3"><Icon name="trendingUp" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Aufwärtstrends</h5>
               <div className="space-y-2 text-sm">
                 {enhancedTrends.length >= 2 && (
                   <>
@@ -2014,7 +2015,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             </div>
             
             <div>
-              <h5 className="font-medium text-text-primary mb-3">🏆 Beste Performance</h5>
+              <h5 className="font-medium text-text-primary mb-3"><Icon name="trophy" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Beste Leistung</h5>
               <div className="space-y-2 text-sm">
                 {(() => {
                   const bestMonth = enhancedTrends.reduce((best, current) => {
@@ -2121,7 +2122,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     if (!metrics) {
       return (
         <div className="text-center py-8 text-text-muted">
-          <div className="text-4xl mb-2">📊</div>
+          <div className="mb-2 text-system-blue"><Icon name="chart" size={30} strokeWidth={1.8} /></div>
           <p>Keine Daten für den gewählten Zeitraum verfügbar</p>
         </div>
       );
@@ -2132,7 +2133,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Score Margin Analysis */}
         <div className="modern-card p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span className="text-xl">🎯</span>
+            <Icon name="target" size={18} strokeWidth={2.2} />
             Spielintensität & Tordifferenzen
           </h3>
           
@@ -2163,7 +2164,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Player Efficiency Rankings */}
         <div className="modern-card p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span className="text-xl">⚡</span>
+            <Icon name="zap" size={18} strokeWidth={2.2} />
             Spieler-Effizienz Rankings
           </h3>
           
@@ -2196,7 +2197,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Recent Form Analysis */}
         <div className="modern-card p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span className="text-xl">🔥</span>
+            <Icon name="zap" size={18} strokeWidth={2.2} />
             Aktuelle Form (Letzte {metrics.recentForm.totalMatches} Spiele)
           </h3>
           
@@ -2244,7 +2245,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Value for Money Analysis */}
         <div className="modern-card p-6">
           <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <span className="text-xl">💰</span>
+            <Icon name="euro" size={18} strokeWidth={2.2} />
             Preis-Leistungs-Verhältnis
           </h3>
           
@@ -2332,7 +2333,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Header */}
         <div className="modern-card p-6">
           <div className="flex items-center gap-3 mb-3">
-            <span className="text-3xl">📉</span>
+            <Icon name="trendingUp" size={24} strokeWidth={2} />
             <div>
               <h3 className="text-xl font-bold text-text-primary">Interaktive Visualisierungen</h3>
               <p className="text-sm text-text-secondary">
@@ -2342,7 +2343,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           <div className="mt-4 p-4 bg-system-blue/10 rounded-lg">
             <p className="text-sm text-text-secondary">
-              💡 <strong>Tipp:</strong> Bewege die Maus über die Charts für detaillierte Informationen. 
+              <strong>Tipp:</strong> Bewege die Maus über die Charts für detaillierte Informationen. 
               Alle Visualisierungen sind animiert und interaktiv.
             </p>
           </div>
@@ -2435,6 +2436,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
+      <PageHeader title="Statistik" icon="chart" tile="tile-blue"
+        subtitle="Zahlen, Verläufe und Muster aus euren Spielen" />
 
       {/* Discreet time-period selector */}
       <div className="mb-4 inline-flex items-center gap-2 bg-bg-tertiary rounded-xl pl-3 pr-2 py-1.5 text-text-secondary">
