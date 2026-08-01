@@ -334,7 +334,11 @@ export const getFifaVersionedTables = () => {
     // Team-Sammlung: jede Saison zaehlt ihre eigenen Ziehungen.
     // Setzt db/06_team_tracker_season.sql voraus (Spalte fifa_version).
     'team_pull_events',
-    'team_collection'
+    'team_collection',
+    // Spieleabend: jede Saison zaehlt ihre eigenen Abende und Ereignisse.
+    // Setzt db/09_abende.sql voraus.
+    'abende',
+    'abend_ereignisse'
   ];
 };
 
