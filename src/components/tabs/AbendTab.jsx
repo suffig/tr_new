@@ -3,6 +3,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import TeamTrackerTab from './TeamTrackerTab';
 import AlcoholTrackerTab from './AlcoholTrackerTab';
 import SpielersaufenTab from './SpielersaufenTab';
+import AbendRueckblick from './abend/AbendRueckblick';
 
 // Sammel-Tab "Abend": alles, was rund um den Spieleabend passiert.
 // Die drei haengen inhaltlich zusammen — im Spielduell werden Teams gezogen,
@@ -12,6 +13,8 @@ const VIEWS = [
   { id: 'teams', label: 'Teams', iconName: 'trophy', hinweis: 'Gezogene Mannschaften und Spielduelle' },
   { id: 'alkohol', label: 'Alkohol', iconName: 'beer', hinweis: 'Schnaps, Bier und der Sterne-Zähler' },
   { id: 'saufen', label: 'Saufen', iconName: 'mic', hinweis: 'Aufstellung, Auslosung und Ergebnis' },
+  // Fuehrt zusammen, was in den drei Ansichten davor entsteht.
+  { id: 'rueckblick', label: 'Rückblick', iconName: 'calendar', hinweis: 'Jeder Abend auf einen Blick' },
 ];
 
 const KEY = 'fusta_abend_view';
@@ -36,6 +39,7 @@ export default function AbendTab({ viewRequest, ...props }) {
       {view === 'teams' && <TeamTrackerTab {...props} />}
       {view === 'alkohol' && <AlcoholTrackerTab {...props} />}
       {view === 'saufen' && <SpielersaufenTab {...props} />}
+      {view === 'rueckblick' && <div className="p-4 pb-24 mobile-safe-bottom"><AbendRueckblick /></div>}
     </div>
   );
 }

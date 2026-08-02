@@ -21,6 +21,28 @@ export const ARTEN = ['stern', 'bier', 'shot20', 'shot40', 'schnaps', 'bj'];
 const PERSON_DB = { alexander: 'Alexander', alex: 'Alexander', philip: 'Philip' };
 const PERSON_APP = { Alexander: 'alexander', Philip: 'philip' };
 
+/**
+ * Der Tag wechselt um 06:00, nicht um Mitternacht.
+ *
+ * Ein Spieleabend endet selten vor zwoelf. Ohne diese Regel waere der Schnaps
+ * um 00:30 ein neuer Abend mit einem einzigen Eintrag, waehrend der eigentliche
+ * Abend abgeschnitten daneben stuende.
+ *
+ * Bewusst KEIN Start/Ende-Knopf: um zwei Uhr nachts denkt niemand daran, den
+ * Abend zu beenden — und ein vergessener offener Abend wuerde die naechste
+ * Sitzung mitverschlucken. Sechs Uhr trifft die Wirklichkeit ohne Zutun.
+ */
+export const TAGESWECHSEL_STUNDE = 6;
+
+export function logischesDatum(zeitpunkt = new Date()) {
+  const d = new Date(zeitpunkt);
+  if (d.getHours() < TAGESWECHSEL_STUNDE) d.setDate(d.getDate() - 1);
+  // Lokale Zeit, nicht UTC: toISOString() wuerde je nach Zeitzone einen Tag
+  // daneben liegen.
+  const p = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}
+
 let fehlerMelder = null;
 /** Einmal registrieren, um Sync-Fehler anzuzeigen. */
 export function onAbendFehler(fn) {
@@ -112,7 +134,7 @@ export async function ladeAusDB() {
  * denselben weiter.
  */
 async function abendFuer(datum) {
-  const tag = datum || new Date().toISOString().slice(0, 10);
+  const tag = datum || logischesDatum();
   const vorhanden = await supabaseDb.select('abende', '*', { eq: { datum: tag } });
   const treffer = (vorhanden?.data || [])[0];
   if (treffer) return treffer.id;
@@ -141,7 +163,7 @@ export async function erfasse({ person, art, menge = 1, info = null, datum = nul
   const lokal = {
     id: `tmp_${Date.now()}_${Math.random().toString(36).slice(2)}`,
     person, art, menge: Number(menge) || 0, info,
-    datum: datum || new Date().toISOString().slice(0, 10),
+    datum: datum || logischesDatum(),
     ts: new Date().toISOString(),
   };
   const liste = [...ladeLokal(), lokal];
