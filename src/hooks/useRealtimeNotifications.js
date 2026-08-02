@@ -1,26 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { supabase, usingFallback } from '../utils/supabase';
 import { triggerNotification } from '../components/NotificationSystem';
-import { getPushEnabled } from '../utils/notifications';
 import { wasSelfInsert } from '../utils/selfActivity';
 
-// Cross-device notifications: subscribe to Supabase Realtime and raise a compact
-// notification whenever a new match or transaction is inserted (e.g. by the other
-// person). Works while the app is open/backgrounded on an installed iOS PWA.
-// For delivery when the app is fully closed, a Web Push server is required
-// (see docs/push-notifications-setup.md).
+// Meldungen zwischen den Geraeten: horcht auf Supabase Realtime und meldet,
+// wenn der andere etwas eintraegt.
+//
+// WICHTIG — hier stand vorher `if (!enabled) return`, gekoppelt an
+// getPushEnabled(). Damit lief die Verbindung ueberhaupt nur, wenn Push
+// erlaubt war: wer die Systemmeldungen nie eingeschaltet hatte (auf iOS geht
+// das erst nach dem Ablegen auf dem Startbildschirm), bekam GAR NICHTS mit —
+// nicht einmal den Hinweis in der App. Das sind zwei verschiedene Fragen:
+//   * "Will ich mitbekommen, was der andere macht?"  -> immer ja, in der App
+//   * "Darf das System eine Mitteilung einblenden?"  -> Push-Erlaubnis
+// Die zweite Frage entscheidet NotificationSystem fuer sich (dort zusaetzlich
+// nur bei verdecktem Fenster). Deshalb wird hier immer verbunden.
+//
+// Wenn die App ganz geschlossen ist, kommt nichts an — dafuer braeuchte es
+// einen Web-Push-Server (siehe docs/push-notifications-setup.md).
 export function useRealtimeNotifications() {
-  const [enabled, setEnabled] = useState(getPushEnabled());
-
   useEffect(() => {
-    const onChange = () => setEnabled(getPushEnabled());
-    window.addEventListener('fusta-push-changed', onChange);
-    return () => window.removeEventListener('fusta-push-changed', onChange);
-  }, []);
-
-  useEffect(() => {
-    if (!enabled) return;
-    // No Realtime in demo/offline mode
+    // Im Demo-/Offline-Betrieb gibt es kein Realtime.
     if (usingFallback || !supabase || typeof supabase.channel !== 'function') return;
 
     const channel = supabase
@@ -37,8 +37,17 @@ export function useRealtimeNotifications() {
         if (wasSelfInsert('transactions', row.id)) return;
         triggerNotification('transaction', row);
       })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'abend_ereignisse' }, (payload) => {
+        const row = payload.new || {};
+        if (wasSelfInsert('abend_ereignisse', row.id)) return;
+        // Bewusst NUR das entschiedene Spielduell. Jedes Bier und jeden Shot zu
+        // melden waere an einem Abend ein Dauerfeuer — und niemand muss wissen,
+        // dass der andere gerade nachgeschenkt hat.
+        if (row.art !== 'stern' || !row.info?.duell) return;
+        triggerNotification('duell-entschieden', row);
+      })
       .subscribe();
 
     return () => { try { supabase.removeChannel(channel); } catch { /* ignore */ } };
-  }, [enabled]);
+  }, []);
 }

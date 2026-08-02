@@ -11,6 +11,7 @@
 //   * Schreibfehler werden gemeldet, nicht geschluckt.
 
 import { supabaseDb, usingFallback } from './supabase';
+import { markSelfInsert } from './selfActivity';
 
 const SPEICHER = 'fusta_abend_ereignisse_v1';
 
@@ -181,6 +182,10 @@ export async function erfasse({ person, art, menge = 1, info = null, datum = nul
       info,
     });
     if (res?.error) { melde('Eintrag', res.error); return { ok: false, error: res.error, ereignisse: liste }; }
+    // Eigenes Insert vormerken, damit das Realtime-Echo keine Meldung an den
+    // ausloest, der gerade selbst getippt hat.
+    const zeile = Array.isArray(res?.data) ? res.data[0] : res?.data;
+    if (zeile?.id != null) markSelfInsert('abend_ereignisse', zeile.id);
     return { ok: true, ereignisse: liste };
   } catch (error) {
     melde('Eintrag', error);

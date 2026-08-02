@@ -69,16 +69,20 @@ export default function NotificationSystem({ onNavigate }) {
 
   // Initialize notification system
   useEffect(() => {
-    // Check if notifications are supported and request permission
+    // Nur den aktuellen Stand LESEN, nicht fragen.
+    // Vorher wurde beim Start ungefragt Notification.requestPermission()
+    // aufgerufen — ein Systemdialog, bevor man die App ueberhaupt gesehen hat.
+    // Browser blocken solche unaufgeforderten Abfragen zunehmend, und ein
+    // einmal abgelehntes Recht bekommt man nur ueber die Einstellungen zurueck.
+    // Gefragt wird jetzt ausschliesslich ueber den Schalter im Profil
+    // (enablePush in utils/notifications.js), also nach einer bewussten Geste.
     if ('Notification' in window) {
-      if (Notification.permission === 'granted') {
-        setIsEnabled(true);
-      } else if (Notification.permission !== 'denied') {
-        Notification.requestPermission().then(permission => {
-          setIsEnabled(permission === 'granted');
-        });
-      }
+      setIsEnabled(Notification.permission === 'granted');
     }
+    const onPushChange = () => {
+      if ('Notification' in window) setIsEnabled(Notification.permission === 'granted');
+    };
+    window.addEventListener('fusta-push-changed', onPushChange);
 
     // Listen for custom events to trigger notifications
     const handleNotificationEvent = (event) => {
@@ -87,7 +91,10 @@ export default function NotificationSystem({ onNavigate }) {
     };
 
     window.addEventListener('fifa-notification', handleNotificationEvent);
-    return () => window.removeEventListener('fifa-notification', handleNotificationEvent);
+    return () => {
+      window.removeEventListener('fifa-notification', handleNotificationEvent);
+      window.removeEventListener('fusta-push-changed', onPushChange);
+    };
   }, [showNotification]);
 
   const getNotificationUrl = (type, data) => {
@@ -97,6 +104,8 @@ export default function NotificationSystem({ onNavigate }) {
         return `/tr_new/#matches${data?.matchId ? `?match=${data.matchId}` : ''}`;
       case 'transaction':
         return '/tr_new/#finances';
+      case 'duell-entschieden':
+        return '/tr_new/#abend';
       case 'player-ban':
         return `/tr_new/#bans${data?.banId ? `?ban=${data.banId}` : ''}`;
       case 'financial-milestone':
@@ -112,6 +121,8 @@ export default function NotificationSystem({ onNavigate }) {
     switch (type) {
       case 'match-created':
         return '⚽ Neues Spiel eingetragen';
+      case 'duell-entschieden':
+        return '🎲 Spielduell entschieden';
       case 'transaction':
         return '💸 Neue Transaktion';
       case 'match-result':
@@ -136,6 +147,14 @@ export default function NotificationSystem({ onNavigate }) {
         const score = `${a} ${data.goalsa || 0}:${data.goalsb || 0} ${b}`;
         const motmText = data.manofthematch ? ` · SdS: ${data.manofthematch}` : '';
         return `${score}${motmText}`;
+      }
+      case 'duell-entschieden': {
+        const d = data?.info?.duell;
+        if (!d) return 'Ein Spielduell wurde eingetragen.';
+        const name = (k) => (k === 'alex' ? 'Alexander' : 'Philip');
+        const team = d.teams?.[d.sieger]?.name;
+        const gutschrift = String(data.menge).replace('.', ',');
+        return `${name(d.sieger)} gewinnt${team ? ` mit ${team}` : ''} · +${gutschrift} ⭐`;
       }
       case 'transaction': {
         const team = data.team ? `${getTeamDisplay(data.team)} · ` : '';
