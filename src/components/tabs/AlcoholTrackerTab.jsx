@@ -4,6 +4,10 @@ import {
   alleSterneLoeschen, sterneAbgleichen, altenSterneStandUebernehmen,
 } from '../../utils/sterneCounter';
 import SterneVerlauf from './alkohol/SterneVerlauf';
+import {
+  ladeLokal as ladeAbendLokal, erfasse as erfasseAbend, entferne as entferneAbend,
+  bierStand, shotStand, schnapsStand,
+} from '../../utils/abende';
 import { useState, useEffect, useCallback } from 'react';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
@@ -131,25 +135,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     // Load manager settings from database
     loadManagersFromDatabase();
 
-    // Load beer consumption from localStorage (keeping this in localStorage for now)
-    const savedBeer = localStorage.getItem('beerConsumption');
-    if (savedBeer) {
-      try {
-        setBeerConsumption(JSON.parse(savedBeer));
-      } catch (e) {
-        console.error('Error loading beer consumption:', e);
-      }
-    }
-
-    // Load shot consumption from localStorage (keeping this in localStorage for now)
-    const savedShots = localStorage.getItem('shotConsumption');
-    if (savedShots) {
-      try {
-        setShotConsumption(JSON.parse(savedShots));
-      } catch (e) {
-        console.error('Error loading shot consumption:', e);
-      }
-    }
+    // Bier, Shots und Schnaps kommen aus dem Ereignis-Log (db/09) und werden
+    // daraus abgeleitet — vorher lagen sie als eigene localStorage-Objekte vor,
+    // also pro Geraet und ohne Abgleich.
+    uebernimmAlteZaehler();
+    aktualisiereAusLog();
 
     // Load drinking start time from localStorage (keeping this in localStorage for now)
     const savedStartTime = localStorage.getItem('drinkingStartTime');
@@ -157,15 +147,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       setDrinkingStartTime(savedStartTime);
     }
 
-    // Load Schnaps counter from localStorage
-    const savedSchnaps = localStorage.getItem('schnapsShotsData');
-    if (savedSchnaps) {
-      try {
-        setSchnapsShotsData(JSON.parse(savedSchnaps));
-      } catch (e) {
-        console.error('Error loading Schnaps data:', e);
-      }
-    }
+    // Das Schnaps-ZIEL ist eine Einstellung, kein Ereignis — es bleibt lokal.
+    try {
+      const ziel = JSON.parse(localStorage.getItem('schnapsZiel') || 'null');
+      if (Number.isFinite(ziel)) setSchnapsShotsData((d) => ({ ...d, target: ziel }));
+    } catch { /* ignore */ }
 
     // Sterne-Zaehler laden (gemeinsame Quelle: utils/sterneCounter)
     // Reihenfolge zaehlt: erst den alten localStorage-Bestand als Ereignisse
@@ -215,72 +201,85 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     return () => window.removeEventListener('managerSettingsChanged', handleManagerChange);
   }, [loadManagersFromDatabase]);
 
-  // Save data to localStorage
-  const saveBeerConsumption = (newConsumption) => {
-    setBeerConsumption(newConsumption);
-    localStorage.setItem('beerConsumption', JSON.stringify(newConsumption));
+  // Stand IMMER aus dem Ereignis-Log ableiten. Der Tab fuehrt keine eigenen
+  // Summen mehr fort; das lag vorher doppelt vor und konnte auseinanderlaufen.
+  const aktualisiereAusLog = () => {
+    const log = ladeAbendLokal();
+    setBeerConsumption(bierStand(log));
+    setShotConsumption(shotStand(log));
+    setSchnapsShotsData((d) => ({ ...d, ...schnapsStand(log) }));
   };
 
-  const saveShotConsumption = (newConsumption) => {
-    setShotConsumption(newConsumption);
-    localStorage.setItem('shotConsumption', JSON.stringify(newConsumption));
+  /** Ein Ereignis erfassen und die Anzeige nachziehen. */
+  const erfasseUndZeige = (person, art) => {
+    erfasseAbend({ person, art });
+    aktualisiereAusLog();
+  };
+
+  /**
+   * Einmalige Uebernahme der alten Zaehler aus dem localStorage.
+   * Laeuft nur, solange die alten Schluessel existieren, und raeumt sie weg.
+   */
+  const uebernimmAlteZaehler = () => {
+    const lies = (k) => { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch { return null; } };
+    const bier = lies('beerConsumption');
+    const shots = lies('shotConsumption');
+    const schnaps = lies('schnapsShotsData');
+
+    for (const p of ['alexander', 'philip']) {
+      for (let i = 0; i < (bier?.[p] || 0); i++) erfasseAbend({ person: p, art: 'bier' });
+      for (let i = 0; i < (shots?.[p]?.shots20 || 0); i++) erfasseAbend({ person: p, art: 'shot20' });
+      for (let i = 0; i < (shots?.[p]?.shots40 || 0); i++) erfasseAbend({ person: p, art: 'shot40' });
+    }
+    for (const h of (schnaps?.history || [])) {
+      erfasseAbend({
+        person: h.person === 'alex' ? 'alexander' : 'philip',
+        art: 'schnaps',
+        datum: (h.timestamp || '').slice(0, 10) || undefined,
+      });
+    }
+    // Das Ziel als Einstellung retten, dann die alten Schluessel entfernen.
+    if (Number.isFinite(schnaps?.target)) {
+      try { localStorage.setItem('schnapsZiel', String(schnaps.target)); } catch { /* ignore */ }
+    }
+    for (const k of ['beerConsumption', 'shotConsumption', 'schnapsShotsData']) {
+      try { localStorage.removeItem(k); } catch { /* ignore */ }
+    }
+  };
+
+  /** Startzeit beim ersten Getraenk setzen (fuer die Promille-Rechnung). */
+  const merkeStartzeit = () => {
+    if (drinkingStartTime) return;
+    const startTime = new Date().toISOString();
+    setDrinkingStartTime(startTime);
+    localStorage.setItem('drinkingStartTime', startTime);
   };
 
   const addBeer = (person) => {
-    const newConsumption = {
-      ...beerConsumption,
-      [person]: beerConsumption[person] + 1
-    };
-    saveBeerConsumption(newConsumption);
-    
-    // Set drinking start time if not already set
-    if (!drinkingStartTime) {
-      const startTime = new Date().toISOString();
-      setDrinkingStartTime(startTime);
-      localStorage.setItem('drinkingStartTime', startTime);
-    }
+    erfasseUndZeige(person, 'bier');
+    merkeStartzeit();
   };
 
   const addBeerToBoth = () => {
-    const newConsumption = {
-      alexander: beerConsumption.alexander + 1,
-      philip: beerConsumption.philip + 1
-    };
-    saveBeerConsumption(newConsumption);
-    
-    // Set drinking start time if not already set
-    if (!drinkingStartTime) {
-      const startTime = new Date().toISOString();
-      setDrinkingStartTime(startTime);
-      localStorage.setItem('drinkingStartTime', startTime);
-    }
+    erfasseAbend({ person: 'alexander', art: 'bier' });
+    erfasseAbend({ person: 'philip', art: 'bier' });
+    aktualisiereAusLog();
+    merkeStartzeit();
   };
 
   const addShot = (person, alcoholPercent) => {
-    const shotType = alcoholPercent === 40 ? 'shots40' : 'shots20';
-    const newConsumption = {
-      ...shotConsumption,
-      [person]: {
-        ...shotConsumption[person],
-        [shotType]: shotConsumption[person][shotType] + 1
-      }
-    };
-    saveShotConsumption(newConsumption);
-    
-    // Set drinking start time if not already set
-    if (!drinkingStartTime) {
-      const startTime = new Date().toISOString();
-      setDrinkingStartTime(startTime);
-      localStorage.setItem('drinkingStartTime', startTime);
-    }
+    erfasseUndZeige(person, alcoholPercent === 40 ? 'shot40' : 'shot20');
+    merkeStartzeit();
   };
 
   const resetConsumption = () => {
-    saveBeerConsumption({ alexander: 0, philip: 0 });
-    saveShotConsumption({
-      alexander: { shots20: 0, shots40: 0 },
-      philip: { shots20: 0, shots40: 0 }
-    });
+    // Zuruecksetzen heisst jetzt: die Ereignisse zuruecknehmen. Frueher wurde
+    // nur der Zaehler auf 0 geschrieben — der Verlauf blieb als Geisterwert
+    // liegen und tauchte nach einem Neuladen wieder auf.
+    for (const e of ladeAbendLokal()) {
+      if (['bier', 'shot20', 'shot40'].includes(e.art)) entferneAbend(e);
+    }
+    aktualisiereAusLog();
     setDrinkingStartTime(null);
     localStorage.removeItem('drinkingStartTime');
   };
@@ -688,46 +687,35 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     }));
   };
 
-  // ─── Schnaps-Counter helpers ──────────────────────────────────────────────
-  const saveSchnapsShotsData = (newData) => {
-    setSchnapsShotsData(newData);
-    localStorage.setItem('schnapsShotsData', JSON.stringify(newData));
-  };
-
+  // ─── Schnaps-Counter ──────────────────────────────────────────────────────
+  // Wer trinkt, ist ein Ereignis und liegt in der Datenbank. Das ZIEL ist eine
+  // Einstellung und bleibt geraetelokal — es beschreibt den Abend, nicht was
+  // passiert ist.
   const addSchnapShot = (person) => {
-    const total = schnapsShotsData.alex + schnapsShotsData.philip;
-    if (total >= schnapsShotsData.target) return;
-    const newData = {
-      ...schnapsShotsData,
-      [person]: schnapsShotsData[person] + 1,
-      history: [
-        ...schnapsShotsData.history,
-        { person, timestamp: new Date().toISOString() }
-      ]
-    };
-    saveSchnapsShotsData(newData);
+    if (schnapsShotsData.alex + schnapsShotsData.philip >= schnapsShotsData.target) return;
+    erfasseUndZeige(person === 'alex' ? 'alexander' : 'philip', 'schnaps');
   };
 
   const undoLastShot = () => {
-    if (schnapsShotsData.history.length === 0) return;
-    const history = [...schnapsShotsData.history];
-    const last = history.pop();
-    const newData = {
-      ...schnapsShotsData,
-      [last.person]: Math.max(0, schnapsShotsData[last.person] - 1),
-      history
-    };
-    saveSchnapsShotsData(newData);
+    const verlauf = schnapsShotsData.history || [];
+    const letzter = verlauf[verlauf.length - 1];
+    if (!letzter?._ereignis) return;
+    entferneAbend(letzter._ereignis);
+    aktualisiereAusLog();
   };
 
   const resetSchnapsShotsData = () => {
-    saveSchnapsShotsData({ target: schnapsShotsData.target, alex: 0, philip: 0, history: [] });
+    for (const v of (schnapsShotsData.history || [])) {
+      if (v._ereignis) entferneAbend(v._ereignis);
+    }
+    aktualisiereAusLog();
   };
 
   const applySchnapsTarget = () => {
     const val = parseInt(schnapsTargetInput, 10);
     if (!isNaN(val) && val >= 1 && val <= 200) {
-      saveSchnapsShotsData({ ...schnapsShotsData, target: val });
+      setSchnapsShotsData((d) => ({ ...d, target: val }));
+      try { localStorage.setItem('schnapsZiel', String(val)); } catch { /* ignore */ }
     }
     setEditingSchnapsTarget(false);
   };
@@ -773,21 +761,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // ─────────────────────────────────────────────────────────────────────────
 
   const addSchnapShotToBoth = () => {
-    const total = schnapsShotsData.alex + schnapsShotsData.philip;
-    const spotsLeft = schnapsShotsData.target - total;
-    if (spotsLeft <= 0) return;
-    const now = new Date().toISOString();
-    const addAlex = spotsLeft >= 2 || spotsLeft === 1;
-    const addPhilip = spotsLeft >= 2;
-    const newHistory = [...schnapsShotsData.history];
-    if (addAlex) newHistory.push({ person: 'alex', timestamp: now });
-    if (addPhilip) newHistory.push({ person: 'philip', timestamp: now });
-    saveSchnapsShotsData({
-      ...schnapsShotsData,
-      alex: schnapsShotsData.alex + (addAlex ? 1 : 0),
-      philip: schnapsShotsData.philip + (addPhilip ? 1 : 0),
-      history: newHistory
-    });
+    // Bleibt nur noch EIN Platz bis zum Ziel, bekommt ihn Alexander — so war es
+    // vorher auch, nur ueber eine unnoetig verschachtelte Bedingung.
+    const frei = schnapsShotsData.target - (schnapsShotsData.alex + schnapsShotsData.philip);
+    if (frei <= 0) return;
+    erfasseAbend({ person: 'alexander', art: 'schnaps' });
+    if (frei >= 2) erfasseAbend({ person: 'philip', art: 'schnaps' });
+    aktualisiereAusLog();
   };
   // ─────────────────────────────────────────────────────────────────────────
 

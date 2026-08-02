@@ -233,6 +233,56 @@ export function standFuer(ereignisse, datum = null) {
   };
 }
 
+/* --------------------------------------------------------------------------
+   Formen, wie der Alkohol-Tab sie erwartet
+   --------------------------------------------------------------------------
+   Bewusst hier und nicht im Tab: so gibt es EINE Stelle, an der aus Ereignissen
+   Zahlen werden. Vorher fuehrte der Tab die Summen selbst fort — bei den
+   Sternen lag dieselbe Rechnung dadurch doppelt vor.
+   -------------------------------------------------------------------------- */
+
+const zaehle = (l, art, person) => l.filter((e) => e.art === art && e.person === person).length;
+
+export function bierStand(ereignisse) {
+  return {
+    alexander: zaehle(ereignisse, 'bier', 'alexander'),
+    philip: zaehle(ereignisse, 'bier', 'philip'),
+  };
+}
+
+export function shotStand(ereignisse) {
+  return {
+    alexander: {
+      shots20: zaehle(ereignisse, 'shot20', 'alexander'),
+      shots40: zaehle(ereignisse, 'shot40', 'alexander'),
+    },
+    philip: {
+      shots20: zaehle(ereignisse, 'shot20', 'philip'),
+      shots40: zaehle(ereignisse, 'shot40', 'philip'),
+    },
+  };
+}
+
+/**
+ * Schnaps-Zaehler. `target` ist eine Einstellung und kein Ereignis — sie bleibt
+ * vorerst geraetelokal. Wer trinkt, steht dagegen in der Datenbank.
+ */
+export function schnapsStand(ereignisse) {
+  const verlauf = ereignisse
+    .filter((e) => e.art === 'schnaps')
+    .sort((a, b) => new Date(a.ts) - new Date(b.ts))
+    .map((e) => ({
+      person: e.person === 'alexander' ? 'alex' : 'philip',
+      timestamp: e.ts,
+      _ereignis: e,
+    }));
+  return {
+    alex: verlauf.filter((v) => v.person === 'alex').length,
+    philip: verlauf.filter((v) => v.person === 'philip').length,
+    history: verlauf,
+  };
+}
+
 /** Alle Abende, neuester zuerst, mit ihrem jeweiligen Stand. */
 export function abendListe(ereignisse) {
   const tage = [...new Set(ereignisse.map((e) => e.datum).filter(Boolean))];
