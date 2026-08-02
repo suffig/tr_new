@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { FIFADataService } from '../utils/fifaDataService';
 import { getTeamDisplay } from '../constants/teams';
 import Icon from './icons/Icon';
+import PlayerKarriere from './PlayerKarriere';
 
 const PlayerDetailModal = ({ player, isOpen, onClose }) => {
   const [fifaData, setFifaData] = useState(null);
@@ -369,6 +370,10 @@ const PlayerDetailModal = ({ player, isOpen, onClose }) => {
               {/* Basic Info */}
               <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
                 {renderBasicInfo()}
+                {/* Die Laufbahn ueber alle Saisons. Steht direkt unter den
+                    Stammdaten, weil sie aus ECHTEN Daten kommt — die
+                    FIFA-Werte darunter sind aus dem Namen abgeleitet. */}
+                <PlayerKarriere player={player} />
               </div>
               
               {fifaData?.found ? (
