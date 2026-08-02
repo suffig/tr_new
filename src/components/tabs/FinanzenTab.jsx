@@ -7,6 +7,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import CollapsibleCard from '../CollapsibleCard';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay } from '../../constants/teams';
+import OffeneRechnung from './finanzen/OffeneRechnung';
 import '../../styles/match-animations.css';
 
 export default function FinanzenTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
@@ -302,6 +303,16 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
+
+      {/* Ganz oben, weil es die Frage nach jedem Abend ist. Die Zahl gab es
+          schon in finances.debt, sie stand aber nur als zwei getrennte
+          Schulden-Kacheln in der Analyse-Ansicht — man musste selbst
+          subtrahieren, und abhaken ging gar nicht. */}
+      <OffeneRechnung
+        aekFinances={aekFinances}
+        realFinances={realFinances}
+        onChange={refetchFinances}
+      />
 
       {/* Horizontal Navigation */}
       <HorizontalNavigation
