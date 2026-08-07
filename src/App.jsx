@@ -18,6 +18,7 @@ import LoadingSpinner, { FullScreenLoader } from './components/LoadingSpinner';
 import GlobalSearch from './components/GlobalSearch';
 import NotificationSystem from './components/NotificationSystem';
 import AddToHomeHint from './components/AddToHomeHint';
+import LegacyHinweis from './components/LegacyHinweis';
 
 // Lazy load tab components for better performance
 const SpielbetriebTab = lazy(() => import('./components/tabs/SpielbetriebTab'));
@@ -356,6 +357,9 @@ function App() {
 
         {/* Main Content */}
         <main ref={mainRef} className="flex-1 overflow-y-auto overscroll-contain ios-scroll-smooth pb-28" role="main">
+          {/* In einer Legacy-Saison (FC15) gibt es nur Gesamtzahlen. Ohne diesen
+              Hinweis wirken die leeren Bilanz-/Duell-Ansichten wie ein Fehler. */}
+          <LegacyHinweis className="mx-4 mt-3" />
           <Suspense fallback={<LoadingSpinner message="Lade Tab..." />}>
             <ErrorBoundary>
               <div key={activeTab} className="tab-transition">

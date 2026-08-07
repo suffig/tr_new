@@ -9,6 +9,8 @@ import RecordsView from './RecordsView';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 import { aggregatePlayers } from '../../utils/playerIdentity';
+import { saisonNummern } from '../../utils/saisonNummern';
+import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
 
 // goalslist entries are either a plain name string or { player_id, player, count }
 function parseGoals(raw) {
@@ -75,9 +77,12 @@ function computeDuel(matches, resolveName) {
     const s = bySeason[v] || (bySeason[v] = { aekW: 0, realW: 0, draws: 0 });
     if (a > b) s.aekW++; else if (b > a) s.realW++; else s.draws++;
   }
+  // Nummer kommt spaeter aus saisonNummern() — hier nur die Reihenfolge.
+  // Selbst nummerieren wuerde Saisons ohne Spiele (FC15) ueberspringen und
+  // FC25 hier "Saison 1", in der Saisonansicht aber "Saison 2" nennen.
   const seasonH2H = Object.entries(bySeason)
     .sort((p, q) => (parseInt(String(p[0]).replace(/\D/g, ''), 10) || 0) - (parseInt(String(q[0]).replace(/\D/g, ''), 10) || 0))
-    .map(([v, s], i) => ({ version: v, number: i + 1, ...s }));
+    .map(([v, s]) => ({ version: v, ...s }));
 
   return { total: list.length, aekW, realW, draws, aekG, realG, prizeA, prizeR, biggest, streak, last10, topScorer, topScorers, seasonH2H };
 }
@@ -436,6 +441,12 @@ export default function DuelTab() {
 
   const dRaw = useMemo(() => computeDuel(matches, resolveName), [matches, resolveName]);
 
+  // Saisonnummern aus derselben Quelle wie die Saisonansicht.
+  const nummern = useMemo(
+    () => saisonNummern(matches, players, getCurrentFifaVersion()),
+    [matches, players]
+  );
+
   // Torschuetzen kommen aus den SPIELERZEILEN, nicht aus den Match-Torlisten.
   // Grund: players.goals ist der gepflegte Karrierestand je Saison, waehrend
   // die Torlisten nur so weit zurueckreichen, wie Spiele erhalten sind. Und
@@ -711,7 +722,9 @@ export default function DuelTab() {
               return (
                 <div key={s.version}>
                   <div className="flex items-center justify-between text-[11px] mb-0.5">
-                    <span className="text-text-secondary font-medium">Saison {s.number} · {s.version}</span>
+                    <span className="text-text-secondary font-medium">
+                      Saison {nummern.get(s.version) ?? '?'} · {s.version}
+                    </span>
                     <span className="tabular-nums">
                       <span className="text-system-blue font-semibold">{s.aekW}</span>
                       <span className="text-text-tertiary"> · {s.draws} · </span>

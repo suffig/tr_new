@@ -3,6 +3,9 @@ import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay } from '../../constants/teams';
 import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
+import { istLegacySaison } from '../../utils/legacySaison';
+import { saisonListe } from '../../utils/saisonNummern';
+import LegacyHinweis from '../LegacyHinweis';
 
 // A "Saison" == a FIFA version. Matches already carry `fifa_version`
 // (legacy rows without one count as FC25), so seasons are derived purely from
@@ -43,22 +46,15 @@ function saisonTorschuetzen(players, version) {
     .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name));
 }
 
-const versionNum = (v) => parseInt(String(v).replace(/\D/g, ''), 10) || 0;
-
 export default function SeasonView({ matches, players, aekName, realName }) {
   const currentVersion = getCurrentFifaVersion();
 
   // Seasons = the FIFA versions that appear in the data (plus the current one),
   // ordered oldest→newest so FC25 = Saison 1, FC26 = Saison 2, …
-  const seasons = useMemo(() => {
-    const set = new Set((matches || []).map((m) => m.fifa_version || 'FC25'));
-    set.add(currentVersion);
-    return [...set].sort((a, b) => versionNum(a) - versionNum(b)).map((v, i) => ({
-      version: v,
-      number: i + 1,
-      label: `Saison ${i + 1} · ${v}`,
-    }));
-  }, [matches, currentVersion]);
+  const seasons = useMemo(
+    () => saisonListe(matches, players, currentVersion),
+    [matches, players, currentVersion]
+  );
 
   const [selected, setSelected] = useState(currentVersion);
   const current = seasons.find((s) => s.version === selected) || seasons[seasons.length - 1];
@@ -80,6 +76,7 @@ export default function SeasonView({ matches, players, aekName, realName }) {
   }
 
   const total = seasonMatches.length;
+  const legacy = istLegacySaison(current?.version);
   const isActive = current?.version === currentVersion;
   const leader = A.pts === R.pts ? null : (A.pts > R.pts ? 'AEK' : 'Real');
 
@@ -110,10 +107,14 @@ export default function SeasonView({ matches, players, aekName, realName }) {
             </option>
           ))}
         </select>
+        {/* "Läuft" waere fuer eine Legacy-Saison falsch, auch wenn man sie
+            gerade ausgewaehlt hat — gespielt wird darin nicht mehr. */}
         <span className={`text-footnote font-medium px-2.5 py-1 rounded-full whitespace-nowrap ${
-          isActive ? 'bg-system-green/15 text-system-green' : 'bg-text-tertiary/15 text-text-secondary'
+          legacy ? 'bg-system-yellow/15 text-system-yellow'
+                 : isActive ? 'bg-system-green/15 text-system-green'
+                 : 'bg-text-tertiary/15 text-text-secondary'
         }`}>
-          {isActive ? 'Läuft' : 'Beendet'}
+          {legacy ? 'Archiv' : isActive ? 'Läuft' : 'Beendet'}
         </span>
       </div>
 
@@ -122,25 +123,34 @@ export default function SeasonView({ matches, players, aekName, realName }) {
         {getTeamDisplay('AEK', current?.version)} <span className="text-text-muted">vs</span> {getTeamDisplay('Real', current?.version)}
       </div>
 
-      {/* Standings */}
-      <div className="modern-card p-4">
-        <div className="grid grid-cols-[auto_1fr_repeat(5,minmax(0,2.2rem))] gap-1 text-[10px] uppercase tracking-wide text-text-tertiary pb-1 border-b border-border-light">
-          <span /><span />
-          <span className="text-center">S</span>
-          <span className="text-center">U</span>
-          <span className="text-center">N</span>
-          <span className="text-center">TD</span>
-          <span className="text-center">Pkt</span>
+      {/* Standings — in einer Legacy-Saison gaebe die Tabelle nur 0/0/0/0 aus.
+          Eine Nullzeile behauptet "null Siege", richtig ist "nicht erfasst".
+          Bewusst die kompakte Zeile: der ausfuehrliche Hinweis steht schon ganz
+          oben, sobald die Legacy-Saison die laufende ist. */}
+      {legacy ? (
+        <div className="modern-card p-4">
+          <LegacyHinweis version={current?.version} kompakt />
         </div>
-        {(A.pts >= R.pts)
-          ? (<><Row side="AEK" name={aekName} s={A} /><Row side="Real" name={realName} s={R} /></>)
-          : (<><Row side="Real" name={realName} s={R} /><Row side="AEK" name={aekName} s={A} /></>)}
-        <div className="text-[11px] text-text-tertiary mt-2">
-          {total} {total === 1 ? 'Spiel' : 'Spiele'} in dieser Saison
+      ) : (
+        <div className="modern-card p-4">
+          <div className="grid grid-cols-[auto_1fr_repeat(5,minmax(0,2.2rem))] gap-1 text-[10px] uppercase tracking-wide text-text-tertiary pb-1 border-b border-border-light">
+            <span /><span />
+            <span className="text-center">S</span>
+            <span className="text-center">U</span>
+            <span className="text-center">N</span>
+            <span className="text-center">TD</span>
+            <span className="text-center">Pkt</span>
+          </div>
+          {(A.pts >= R.pts)
+            ? (<><Row side="AEK" name={aekName} s={A} /><Row side="Real" name={realName} s={R} /></>)
+            : (<><Row side="Real" name={realName} s={R} /><Row side="AEK" name={aekName} s={A} /></>)}
+          <div className="text-[11px] text-text-tertiary mt-2">
+            {total} {total === 1 ? 'Spiel' : 'Spiele'} in dieser Saison
+          </div>
         </div>
-      </div>
+      )}
 
-      {total === 0 ? (
+      {legacy ? null : total === 0 ? (
         <p className="text-center text-footnote text-text-tertiary py-4">
           Für diese Saison sind noch keine Spiele erfasst.
         </p>
