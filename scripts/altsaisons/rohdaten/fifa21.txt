@@ -1,0 +1,210 @@
+FIFA 21
+
+
+
+A
+
+0,15
+
+P
+
+11,31 (103,50€)
+
+
+Anzahl Spiele: 101
+
+
+Torschützen
+Ronaldo 175
+Eder 136
+Di Maria 14
+Lewandowski 93
+Ibrahimovic 82
+Matheus 21
+Aubameyang 31
+Vardy 38
+Mane 10
+Hulk 46
+Modric 8
+Gervinio 7
+Kolarov 2
+Mendy 1
+Ribery 13
+Robben 9
+Iniesta 7
+Portu 11
+Van Dijk 1
+Mascherano 1
+Silva 4
+Zakaria 2
+Navas 1
+Salah 23
+Dyballa 22
+Pauliniho 21
+Advincula 2
+Fuenzalida 2
+Opazo 1
+Ramos 2
+Fernandiho 3
+Chiellini 1
+Costa 1
+
+Keine Vergabe 1
+
+
+SdS
+Ronaldo 29
+Di Maria 1
+Matheus 1
+Aubameyang 2
+Eder 20
+Ibrahimovic 5
+Hulk 4
+Handanovic 2
+Modric 3
+Vardy 5
+Silva 1
+Mane 1
+Lewandowski 11
+Neuer 1
+Pauliniho 5
+Iniesta 1
+Dyballa 1
+Van Dijk 1
+Advincula 1
+
+Sperren
+Navas 1 (x)
+Di Maria 2 (xx)
+Ramos 1 (x)
+Varane 1 (x)
+Silva 1 (x)
+Silva 2 (xx)
+Varane 6 (xxx00)
+
+Ergebnisse
+1:2 
+2:3 (3 GK: //)
+2:3 (//: 1 GK)
+2:5 (1 GRK: //)
+1:5 (1 GK: //)
+---
+4:3 (1 GK ://)
+5:4 (1 GK: 2 GK)
+5:2 (//://)
+7:5 (//: 1 GK)
+4:5 (//;//)
+---
+1:2 (//: 2 GK)
+4:1 (1 GK: 3 GK)
+3:2 (2 GK: 2 GK)
+1:3 (//: 1 GK)
+2:7 (//: 1 GK)
+---
+1:5 (//: 2 GK)
+4:8 (//://)
+2:5 (//://)
+1:7 (2 GK: 1 GK)
+3:7 ( 1 GK: 1 GK)
+---
+2:5 (//: 2 GK)
+4:2 (//: 2 GK)
+3:8 (//: 1 GK)
+3:8 (//: 2 GK)
+1:9 (//: 1 GK)
+---
+5:8 (//: 1 GK)
+5:3 (//://)
+5:6 (//: 1 GK)
+4:6 (//://)
+8:3 (//: 2 GK)
+---
+3:4 (//: 1 GK)
+2:5 (1 GK: //)
+4:5 (4 GK: //)
+1:5 (1 GK: 1 GK)
+6:6 (2 GK: //) nE P
+---
+2:4 (//: 1 GK)
+4:2 (//: //)
+3:4 (//: 2 GK)
+6:7 (1 GK: //)
+4:0 (1 GK: 1 GK)
+---
+6:4 (//: //)
+3:7 (//: 1 GK)
+5:3 (//: 1 GK)
+4:3 (//: 1 GK)
+6:8 (1 GK: 2 GK)
+---
+1:4 (//: //)
+8:4 (//: //)
+3:5 (//: //)
+1:7 (//: //)
+4:5 (//: //)
+---
+0:4 (//: //)
+2:3 (//: //)
+-:-
+-:-
+-:-
+---
+0:2 (2 GK: 1 GK)
+1:4 (3 GK: 1 GK)
+3:2 (//: //)
+2:3 (//: //)
+6:5 (//: 1 GK)
+---
+2:2 (1 GK: 1 GK) nE P
+7:7 (//: 2 GK) nE A
+2:3 (1 GK: //)
+4:2 (//: //)
+4:3 (1 GK: //)
+---
+5:2 (// ://)
+4:8 (//: //)
+3:2 (//: //)
+2:3 (1 GK: //)
+3:3 (//: //) nE P
+---
+9:6 (//: 1 GK)
+2:6 (//: 1 GK)
+2:3 (//: 1 GK)
+4:4 (//: 1 GK) nE A
+6:5 (//: //)
+---
+5:3 (//://)
+4:0 (//: //)
+--:--
+4-6 (1 GRK: 1 GRK)
+1:6 (//: 2 GK)
+---
+2:4 (//: 2 GK)
+2:5 (//: 1 GK)
+3:6 (1 GK: 1 GK)
+2:4 (//: //)
+6:3 (//: 1 GK)
+---
+3:4 (1 GK: //)
+4:6 (1 GK: 1 GK)
+3:4 (//: 1 GK)
+2:7 (//: 1 GK)
+1:4 (1 GK: //)
+---
+6:3 (1 GK: //)
+3:2 (//: //)
+3:2 (2 GK: 2 GK)
+2:5 (//: 2 GK)
+2:3 (1 GK: //)
+---
+5:9 (//: //)
+6:4 (1 RK: //)
+1:3 (1 GK: //)
+2:4 (1 GK: 1 GK)
+1:2 (1 GK: //)
+---
+3:5 (//: //)
+7:8 (//: 1 RK)
+1:2 (//: //)
+6:5 (//: //)
+3:4 (//: 1 GK)

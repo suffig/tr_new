@@ -1,0 +1,412 @@
+FIFA 20
+
+Geld
+
+A
+0,00
+
+P
+25,62 
+
+
+Torschützen
+Bakambu 194
+Ibrahimovic 184
+Quaresma 8
+Aubameyang 64
+Mertens 17
+Heller 23
+Mbabu 7
+Lewandowski 118
+Ronaldo 100
+Coman 12
+Kimmisch 4
+Modric 37
+Ramos 4
+Der Rossi 31
+Agierre 1
+Rojas 3
+Rayhner 3
+Bifuma 24
+Barbut 1
+Manneh 1
+Hernandez 6
+Lavezzi 117
+Ibarra 2
+Chiellini 1
+Mathieu 2 
+Nani 4
+Pepe 1
+Valbuena 1
+Cuadrado 29
+Visca 13
+Chara 32
+Varane 3
+Navas 8
+Promes 8
+Advincula 1
+Williams 7
+Marega 7
+Mariano 2
+Hulk 42
+Buffon 2
+Silva 1
+Heller 2
+Depay 3
+Hallo 1
+
+SdS
+Mertens 2
+Bakambu 33
+Aubameyang 13
+Ibrahimovic 26
+Ronaldo 16
+Quaresma 3
+Ramos 3
+Rayhner 1
+Rojas 1
+Lavezzi 22
+De Rossi 5
+Ibarra 1
+Chiellini 1
+Heller 2
+Bifuma 1
+Mathieu 1
+Modric 4
+Chara 1
+Cuadrado 3
+Visca 1
+Varane 1
+Lewandowski 27
+Pepe 3
+Chara 2
+Silva 4
+Hulk 5
+Issoko 1
+Prommes 1
+Williams 4
+Mathieu 1
+Depay 1
+Mbabu 1
+
+
+Sperren
+Ramos 3 (xxx)
+Mathieu 1 (x)
+Ibrahimovic 1 (x)
+Mathieu 1 (x)
+Aubameyang 5 (xxxxx)
+Silva 5 (xxxxx)
+Pepe 4 (xxxx)
+Mathieu 2 (xx)
+Ramos 6 (xxxxxx)
+Hernandez 6 (xxxxxx)
+Chiellini 1 (x)
+Lavezzi 6 (xxxxxx)
+Varane 1 (x)
+Mbabu 5 (xxxxx)
+Ramos 4 (xxxx)
+Lewandowski 2 (xx)
+Ramos 1 (x) 
+Varane 1 (x) 
+Lavezzi 1 (x) 
+Aubameyang 1 (x) 
+Hernandez 5 (xxxxx) 
+Ramos 1 (x) 
+De Rossi 5 (xxxxx) 
+Varane 4 (xxxx) 
+Ronaldo 6 (xxxxxx) 
+Lewandowski 1(x) 
+Bolingoli 1 (x) 
+Varane 3 (xxx) 
+Ramos 1 (x) 
+Advincula 3 (xxx) 
+Chara 1 (x) 
+Pepe 4 (xxx) 
+Aubameyang 2 (XX) 
+Mbabu 4 (xxxx) 
+Varane 1 (x) 
+Hernandez 1 (x) 
+Lewandowski 2 (xx) 
+Silva 5 (xxxxx)
+Ronaldo 4 (xxxx)
+Mbabu 4 (xxxx)
+Hernandez 5 (xxxxx)
+Pepe 6 (xxxxxx)
+Lewandowski 3 (xxx)
+Hilton 4 (xxxx)
+Mbabu 4 (xxxx)
+Ronaldo 5 (xxxxx)
+Curdrado 1 (x)
+Visca 5 (xxxxx) 
+Pepe 4 (xxxx) 
+Ibrahimovic 2 (xx)
+Mariano 1 (x)
+Mathieu 3 (xxx) 
+Varane 2 (xx)
+Hernandez 5 (xxxxx)
+Silva 6 (xxxxxx)
+Hakimi  6 (xxxxxx)
+Ramos 3 (xxx)
+Der Rossi 5 (xxx00)
+Chiellini 2 (xx)
+Pepe 5 (xx000)
+Chara 1 (x)
+Ibrahimovic 1 (x)
+Hulk 1 (x)
+Mathieu 5 (x0000)
+Bifuma 1 (x)
+Aubameyang 6 (000000)
+
+Ergebnisse
+Alexander 2:4 Philip (2 GK: //)
+Alexander 4:3 Philip (1 GK: 1 GK)
+Alexander 0:4 Philip (2 GK: 1 RK 1 GK)
+Alexander 2:3 Philip (1 GK: 1 GK)
+Alexander 2:7 Philip (//: 1 GK)
+---
+Alexander 0:2 Philip (2 GK: 2 GK)
+A 2:5 P (//://)
+A 6:4 P (2 GK: //)
+A 1:2 P (1 GK: 1 GK)
+A 2:3 P (1 GK: 1 GK)
+---
+A 2:1 P (4 GK: 1 GK)
+A 3:1 P (3 GK: 1 GK)
+A 1:2 P (2 GK: 2 GK)
+A 2:2 P (2 GK: 1 GK) nE P
+A 3:8 P (2 GK: //)
+---
+A 3:5 P (//://)
+A 0:2 P (1 GK: 2 GK)
+A 4:6 P (3 GK: 3 GK)
+A 3:2 P (1 GK: 1 GK)
+A 2:3 P (1 GK: 2 GK)
+---
+A 3:3 P (0 GK: 1 GK) nE P
+A 4:4 P (2 GK: 1 GK) nE A
+A 3:1 P (//: 1 GK)
+A 4:2 P (2 GK: 3 GK)
+A 1:2 P (1 GK: 1 GK)
+---
+A 2:3 P (1 GK: //)
+A 1:2 P (1 GK: //)
+A 1:6 P (1 GK: //)
+A 2:3 P (//: 2 GK)
+A 3:3 P (2 GK: 1 GK) nE P
+---
+A 1:0 P (2 GK: 1 GK) 
+A 4:5 P (2 GK: //)
+A 1:3 P (//: //)
+A 2:1 P (3 GK: 3 GK)
+A 1:9 P (2 GK: 1 GK)
+---
+A 3:1 P (2 GK: 1 GK)
+A 4:3 P (1 GK: //)
+A 3:5 P (//: 3 GK)
+A 0:1 P (//: 1 GK)
+A 3:3 P (1 GK: 2 GK) nE A
+---
+A 5:1 P (1 GK: //) 
+A 
+A 4:6 P (1 GK: 3 GK)
+A 4:2 P (//: 1 GK)
+A 1:2 P (//: 1 GK)
+---
+A 4:3 P (//: 1 GK)
+A 2:1 P (2 GK: 1 GK)
+A 1:2 P (//: 2 GK)
+A 3:2 P (//://)
+A 1:3 P (2 GK 1 RK: 2 GK)
+---
+A 4:7 P (1 GK: 1 GK)
+A 5:5 P (//://) nE P
+A 6:3 P (2 GK: 2 GK)
+A 3:2 P (1 GK: //)
+A 1:3 P (1 GK: 1 GK)
+--
+A 1:7 P (1 GK: 1 GK)
+A 3:4 P (//: 2 GK)
+A 4:1 P (//: 3 RK)
+A 2:8 P (//: 1 GK)
+A 2:3 P (1 GK: 1 GK)
+---
+A 1:6 P (//: 1 GK)
+A 4:3 P (//: 1 GK)
+A 3:2 P (2 GK: 3 GK)
+A 4:2 P (1 RK: //)
+A 5:4 P (1 GK: 1 GK)
+---
+A 3:4 P (//: 1 GK)
+A 2:7 P (//: 1 RK)
+A 3:2 P (1 GK: //)
+A 2:4 P (//: 3 GK)
+A 4:4 P (//: 1 GK) nE P
+---
+A 1:2 P (//://)
+A 2:3 P (//:1 GK)
+A 4:2 P (1 GK://)
+A 2:1 P (//://)
+A 2:5 P (1 GK: 1 GK) 
+---
+A 2:3 P (1 GK: //)
+A 3:3 P (//://) nE A
+A 4:3 P (1 GK: 1 GK) 
+A 2:3 P (//: 1 GK 1 RK)
+A 2:3 P (1 GK: 3 GK)
+---
+A 1:2 P (1 GK://)
+A 0:4 P (1 GK: 1 GK)
+A 2:3 P (//://)
+A 4:3 P (1 GK://)
+A 1:3 P (//: 1 GK 1 RK)
+---
+A 4:1 P (1 GK: 2 GK)
+A 5:2 P (//: 1 GK)
+A 2:3 P (1 GK: 2 GK)
+A 2:5 P (//://)
+A 0:2 P (1 GK: //)
+---
+A 0:1 P (//: 1 GK)
+A 3:3 P (2 GK: 3 GK) nE A
+A 3:2 P (//: 4 GK)
+A 0:5 P (1 GK: //)
+---
+A 8:1 P (2 GK: 1 RK 5 GK) 
+A 2:4
+A 5:2 P (1 RK: //) 
+A 2:6 P (2 GK: 2 GK) 
+A 5:2 P ( 2 GK: //) 
+---
+A 5:4 P (1 GK: 1 GK 1 RK) 
+A 4:2 P (4GK : 2 GK) 
+A 2:1 P (//: 1 RK 3 GK) 
+A 
+A 5:2 P (2 GK: 1 RK 2 GK) 
+---
+A 2:1 P (1 GK 1 RK: 1 GK) 
+A 3:1 P (3 GK : 1 GK) 
+A 4:0 P (//: 2 GK) 
+A 2:4 P (1 RK: 2 GK 1 RK) 
+A 5:3 P (1 GK: 1 GK 1 RK) 
+---
+A 0:5 P (1 GK: 1 GK) 
+A 6:3 P (//: 4 GK) 
+A 0:2 P (//://) 
+A 2:3 P (//: 2 RK) 
+A 2:0 P (1 GK 1 RK: 1 GK) 
+---
+A 1:2 P (//: 1 GK) 
+A 3:3 P (1 GK: 3 GK) nE A
+A 2:3 P (1 GK: 1 GK) 
+A 2:2 P (//: 1 GK) nE P
+A 2:2 P (1 GK: //)  nE P
+---
+A 4:3 P (1 GK: //) 
+A 2:0 P (//://) 
+A 1:3 P (1 GK: 1 GK) 
+A 3:1 P (2 GK: //) 
+A 2:6 P (//: 1 GK) 
+---
+A 3:1 P (1 RK 1 GK: 1 GK) 
+A 1:5 P (1 GK: 1 RK) 
+A 3:3 P (//: 1 GK) nE A
+A 5:1 P (//://) 
+A 3:1 P (2 GK: 9 GK 1 RK) 
+---
+A 2:6 P (1 GK: //) 
+A 2:6 P (//: 1 GK) 
+A 3:7 P (//://) 
+A 0:1 P (1 GK: 1 GK) 
+A 1:2 P (1 GK: 3 GK) 
+---
+A 1:4 P (1 GK: 2 GK) 
+A 4:3 P (1 GK: 1 GK) 
+A 1:3 P (1 GK: //) 
+A 2:7 P (//://) 
+_____
+---
+A 0:2 P (//://)
+A 5:3 P (2 GK: 1 GK) nV
+A 4:2 P (//://)
+A 6:2 P (1 GK: 1 GK 2 RK)
+A 1:0 P (2 GK: //)
+---
+A 4:2 P (//:3 GK)
+A 2:1 P (1 GK: 1 GK)
+A 1:4 P (1 GK: //)
+A 4:6 P (1 GK://)
+A 4:5 P (//: 1 GK)
+---
+A 1:2 P (//: 1 GK)
+A 3:4 P (//: 1 GK 1 RK)
+A 2:3 P (//://)
+A 6:5 P (//: 2 GK)
+A 1:2 P (//://)
+--
+A 1:3 P (//://)
+A 3:5 P (//://)
+A 4:6 P (2 GK: 2 GK)
+A 2:4 P (1 RK: //)
+A 4:5 P (1 GK: 3 GK)
+
+---
+A 1:4 P (1 RK://)
+A 5:2 P (//: 1 RK)
+A 2:4 P (//://)
+A 1:2 P (1 GK://) 
+A 2:6 P (//:2 GK)
+A 3:3 P (//:1 GK) nE
+---
+A 0:1 P (1 GK: //)
+A 3:4 P (1 GK: //)
+A 3:2 P (//: 1 GK)
+A 1:2 P (1 GK: 1 GK)
+A 1:3 P (//: 1 GK)
+A 1:2 P (//://)
+A 1:4 P (1 GK: //)
+---
+A 2:4 P (1 GK: 1 GK)
+A 0:5 P (1 GK: 3 GK)
+A 4:2 P (1 GK: 2 GK)
+A 2:2 P (//: 2 GK) nE P
+A 5:0 P (1 RK: 2 GK)
+---
+A 3:3 P (2 GK: 1 GK 1 RK) nE A
+A 2:8 P (//: 2 GK)
+A 3:4 P (//://)
+A 3:5 P (//: 3 GK)
+A 8:0 P (//: 5 GK 1 RK)
+---
+A 3:1 P (2 GK: 1 RK)
+A 6:5 P (3 RK: 1 GK)
+A 1:3 P (1 GK 1 RK: //)
+---
+A 6:2 P (2 GK: //)
+A 0:2 P (//://)
+A 0:1 P (2 GK: 1 GK)
+A 2:6 P (2 GK: //)
+A 2:5 P (//: 1 GK)
+A 2:3 P (//: 1 GK)
+A 1:3 P (1 GK: //)
+---
+A 3:1 P (//: 1 GK)
+A 1:5 P (//://)
+A 5:3 P (//: 2 GK)
+A 6:3 P (//: 1 RK 1 GK)
+A 3:1 P (//://)
+---
+A 0:7 P (//: 2 GK)
+A 1:6 P (//: 1 GK)
+A 1:10 P (1 RK : 2 GK)
+---
+A 3:5 P (//: 3 GK)
+A 6:3 P (1 GK: //)
+A 3:1 P (//: 1 RK)
+A  5:2 P (// : 1 GK 1 RK)
+A 3:5 P (1 GK: 3 GK) 
+---
+A 2:4 P (1 GK: 1 GK)
+A 1:2 P (1 GK 1 RK: 1 GK 1 RK)
+A 0:3 P (5 GK 5 RK: 2 GK)
+A 0:3 P (1 GK: 2 GK 1 RK)

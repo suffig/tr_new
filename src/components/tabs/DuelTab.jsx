@@ -461,7 +461,7 @@ export default function DuelTab() {
         version,
         aekW: siegeGesamt(info.bilanz.AEK),
         realW: siegeGesamt(info.bilanz.Real),
-        draws: 0,
+        draws: info.bilanz.unentschieden || 0,
         quelle: 'strichliste',
       });
     }

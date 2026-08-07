@@ -1,0 +1,420 @@
+FIFA 19
+
+Alex
+
+0,00 
+
+Philip
+
+68,01 
+
+
+Torschützen
+
+Cavani 38
+Ibrahimovic 52
+Hurtado 8
+Barkhuizen 26
+Kante 26
+Aduriz 91
+Manneh 12
+Elia 4
+Bale 1
+Modric 64
+Lewandowski 188
+Lucas 12
+Chiellini 8
+Taison 47
+Naldo 7
+Aguierre 11
+Heller 63
+Senior 8
+Pavon 15
+Yedlin 1
+Ramos 14
+Mbabu 3
+Mazek 7
+Mohammad 5
+Aubameyang 114
+Barzagli 3
+Silva 3
+Hallaran 18
+Hilton 1
+Buffon 2
+Martins 41
+Hernandez 1
+Advincula 4
+Williams 81
+Adriano 1
+Pepe 1
+
+SdS
+
+Cavani 12
+Kante 8
+Aduriz 10
+Hallowan 2
+Mazek 2
+Hurtado 2
+Heller 13
+Lewandowski 34
+Chiellini 4
+Agguire 2
+Lucas 4
+Ibrahimovic 8
+Hernandez 1
+Barzagli 2
+Taison 9
+Barkhuizen 6
+Modric 20
+Ramos 4
+Manneh 2
+Buffon 1
+Aubameyang 28
+Naldo 6
+Aguierre 1
+Valentin 3
+Pepe 2
+Silva 1
+Senior 1
+Pavon 4
+Martins 14
+Williams 22
+Advincula 1
+Mabau 1
+
+
+
+Sperren
+
+Chiellini 6 (xxxxxx)
+Lewandowski 4 (xxxx)
+Ramos 6 (xxxxxx)
+Barzagli 6 (xxxxxx)
+Barkhuizen 1 (x)
+Ramos 6 (xxxxxx)
+Heller 1 (x)
+Kante 6 (xxxxxx)
+Manneh 2 (xx)
+Ibrahimovic 1 (x)
+Ramos 6 (xxxxxx)
+Barzagli 5 (xxxxx)
+Valentin 1 (x)
+Barkhuizen 5 (xxxxx)
+Naldo 3 (xxx)
+Ohalloran 3(xxx)
+Kante 1 (x)
+Naldo 4 (xxxx)
+Ramos 1 (x)
+Mazek 3 (xxx)
+Barzagli 2 (xx)
+Barzagli 5 (xxxxx)
+Mazek 2 (xx)
+Senior 6 (xxxxxx)
+Buffon 6 (xxxxxx)
+Barzagli 2 (xx)
+Hernandez 3 (xxx)
+Silva 6 (xxxxxx)
+Barzagli 5 (xxxxx)
+Hilton 1 (x)
+Valentin 6 (xxxxxx)
+Barzagli 1 (x)
+Manneh 1 (x)
+Kante 1 (x)
+Ibrahimovic 1 (x)
+Martins 1 (x)
+Chiellini 5 (xxxxx)
+Hernandez 1 (x)
+Ramos 1 (x)
+Barzagli 1 (x)
+Naldo 1 (x)
+Aubameyang 6 (xxxxxx)
+Williams 3 (xxx)
+Chiellini 5 (xxxxx)
+Neuer 6 (xxxxxx)
+Naldo 4 (xxxx)
+Aduriz 6 (xxx000)
+
+Karten
+
+1) A 1/0/0 || P 0/0/0 (2:3)
+2) A 0/0/0 || P 0/0/0 (0:3)
+3) A 2/0/0 || P 1/0/0 (0:2)
+4) A 0/0/0 || P 0/0/0 (3:1)
+5) A 1/0/0 || P 1/0/0 (4:5 nE)
+6) A 0/0/0 || P 0/0/0 (1:2)
+7) A 1/0/0 || P 1/0/1 (1:3)
+8) A 0/0/0 || P 0/0/0 (1:3)
+9) A 0/0/0 || P 1/0/0 (2:3)
+---
+10) A 1/0/0 || P 1/0/0 (0:1)
+11) A 0/0/0 || P 0/0/0 (0:2)
+12) A 0/0/0 || P 2/0/0 (0:1)
+13) A 2/0/0 || P 0/0/0 (1:0)
+14) A 0/0/0 || P 0/0/0 (0:2)
+15) A 0/0/0 || P 0/0/0 (0:2)
+16) A 0/0/0 || P 0/0/0 (3:4)
+17) A 0/0/1 || P 0/0/0 (3:5)
+---
+18) A 4/0/1 || P 2/0/0 (1:3)
+19) A 0/0/0 || P 0/0/1 (3:2)
+20) A 1/1/0 || P 2/0/0 (0:3)
+21) A 1/0/0 || P 0/0/0 (0:2)
+22) A 1/0/0 || P 1/0/0 (1:3)
+23) A 1/0/0 || P 0/0/0 (0:2)
+24) A 1/0/0 || P 0/0/0 (1:7)
+---
+25) A 0/0/1 || P 0/0/0 (2:1)
+26) A 0/0/0 || P 0/0/0 (1:2)
+27) A 1/1/0 || P 0/0/0 (0:2)
+28) A 2/0/0 || P 1/0/0 (1:3 nE)
+29) A 0/0/0 || P 0/0/0 (3:0)
+30) A 1/0/0 || P 0/0/0 (1:3)
+---
+	1) Keine Karten (1:3)
+	2) 3 GK Alexander 1 RK Philip (1:3)
+	3) 1 GK Alexander 1 GK Philip (2:3)
+	4) 3 GK Philip (3:2)
+	5) 1 GK Philip (4:3)
+----
+	36) Keine Karten (0:1)
+	37) 1 RK Alexander (1:5)
+	38) Keine Karten (1:2)
+	39) 1 GK Alexander (0:3)
+	40) Keine Karten (0:2)
+---
+	41) 1GK Philip (0:1)
+	42) Keine Karten (0:2)
+---
+	43) 2 GK Alexander (2:3)
+	44) 2 GK Alexander 1 GK Philip (0:2)
+	45) 3 GK Alexander 3 RK Alexander 1 GK Philip (2:5)
+	46) 2 GK Philip (2:5)
+	47) 1 GK Alexander (1:4)
+---
+	48) Keine Karten (0:3)
+	49) 2 GK Alexander 2 GK Philip (3:4)
+	50) 2 GK Alexander 1 GK Philip (2:4)
+	51) 3 GK Alexander 2 GK Philip (2:1)
+	52) 1 GK Alexander 1 GK Philip (1:2)
+	53) Keine Karten (0:3)
+	54) Keine Karten (0:3)
+	55) Keine Karten (2:1)
+---
+	56) 1 GK Alexander 1 GK Philip (2:0)
+	57) 1 GK Alexander (1:3)
+	58) 2 GK Alexander 1 GK Philip (6:3)
+	59) 1 GK Alexander 2 GK Philip (2:1)
+	60) 1 GK Philip (3:6)
+---
+	61) 1 GK Alexander (3:1)
+	62) Keine Karten (3:0)
+	63) 3 GK Alexander (3:5)
+	64) Keine Karten (1:5)
+	65) 2 GK Philip (0:2)
+---
+	66) 1 GK Alexander 1 GK Philip (1:3)
+	67) 1 GK Alexander (2:1)
+	68) 1 GK Alexander 2 GK Philip (1:2) nE
+	69) Keine Karten (1:2)
+	70) Keine Karten (0:3)
+---
+	71) 1 GK Alexander 1 RK Alexander (0:5)
+	72) Keine Karten (1:3) nV
+	73) 1 GK Alexander (4:1)
+	74) 1 GK Alexander 1 GK Philip 1 RK Philip (3:4) nE
+	75) 1 GK Alexander (2:1)
+---
+	76) 1 GK Alexander (1:4)
+	77) 3 GK Philip (3:2)
+	78) 1 GK Alexander 1 GK Philip (1:3)
+	79) 2 GK Alexander 2 GK Philip (0:7)
+	80) 1 GK Alexander 4 GK Philip (2:4)
+---
+	81) 2 GK Alexander (0:2)
+	82) 1 GK Alexander 1 GK Philip (0:3)
+	83) 1 RK Alexander 1 GK Philip (0:4)
+	84) 1 GK Alexander 1 GK Philip (0:7)
+	85) 1 GK Philip (0:3)
+---
+	86) 1 GK Alexander (0:2)
+	87) 1 GK Philip (4:3)
+	88) 1 GK Philip (4:0)
+	89) 1 RK Alexander (2:7)
+	90) Keine Karten (2:3)
+---
+91) 1 GK Alexander 1 GK Philip (0:1)
+92) keine Karten (3:3) nE
+93) keine Karten (0:4)
+94) keine Karten (3:2)
+95) 3 RK Alexander 1 GK Philip (1:4)
+--
+	96) 1 GK Alexander 1 GK Philip (2:7)
+	97) 1 GK Alexander (1:4)
+	98) 1 GK Philip (1:7)
+	99) Keine Karten (4:3)
+	100) 1 RK Alexander (1:5)
+--
+	101) 2 GK Alexander (1:4)
+	102) 1 GK Alexander (2:2) nE
+--
+	103) 2 GK Alexander 1 GK Philip (3:2)
+	104) 1 GK Alexander (0:3)
+	105) 1 GK Alexander 1 GK Philip (0:4)
+	106) 1 GK Alexander 1 GK Philip (1:2)
+	107) 1 GK Alexander (3:6)
+--
+108)  1 GK Alexander (0:6)
+109) 1 GK Alexander (2:3)
+110) 1 RK Alexander 1 GK Philip (0:1)
+111) 1 GK Alexander 1 GK Philip (0:5)
+112) 1 GK Alexander 1 GK 1 RK Philip (2:1)
+---
+113) 2 GK Philip (4:3)
+114) 1 GK Philip (1:5)
+115) 2 GK Alexander 1 RK Alexander (2:5)
+116) keine Karten (0:2)
+117) 2 GK Alexander (3:2)
+---
+118) 1 GK Philip (1:4)
+119) 1 GK Alexander 1 RK Alexander (1:2)
+120) 1 GK Philip (0:2)
+121)  1 GK Alexander 2 GK Philip (1:0)
+122) Keine Karten (2:4)
+---
+123) keine Karten (2:3)
+124) 1 GK Alexander 1 GK Philip (1:5)
+125) keine Karten (2:1)
+126) keine Karten (0:1)
+	127) 2 GK Alexander (0:7)
+---
+	128) 3 GK Alexander (3:3) ES Alex
+	129) 1 GK Philip 1 GK Alexander (3:2)
+	130) 2 GK Philip (0:5)
+	131) 1 GK Philip (3:2)
+	132) 1 GK Philip (2:0)
+---
+	133) 1 GK Alexander (0:1)
+	134) 1 GK Philip (2:5)
+	135) Keine Karten (1:5)
+	136) Keine Karten (2:4)
+	137) 2 GK Alexander (2:3)
+---
+	138) 3 GK Alexander 1 GK Philip (2:1)
+	139) 1 GK Alexander (2:2) ES Alex
+	140) 2 GK Alexander (1:0)
+	141) Keine Karten (3:1)
+	142) 9 GK Alexander 1 GK Philip (0:4)
+---
+	143) 3 GK Philip (1:1) ES Philip
+	144) 1 GK Alexander (0:1)
+	145) 1 GK Alexander (1:3)
+	146) 1 GK Alexander 1 GK Philip (2:2) ES Alex
+	147) 2 GK Philip (1:1) ES Alex
+---
+	148) 1 GK Alexander (1:0)
+	149) Keine Karten (1:1) ES Philip
+	150) Keine Karten (1:1) ES Philip
+	151) 1 GK Alexander 1 GK Philip (1:2) nV
+	152) Keine Karten (1:2)
+---
+	153) 1 GK Alexander (0:1)
+	154) 1 GK Alexander (0:2)
+	155) Keine Karten (1:2)
+	156) 3 GK Alexander (1:1) ES Alexander
+	157) Keine Karten (2:3)
+---
+	158) 1 GK Philip (0:1)
+	159) 1 GK Alexander 3 GK Philip (1:2)
+	160) 2 GK Philip 3 GK Alexander (4:1)
+	161) 2 GK Alexander (4:4) ES Philip
+	162) 1 GK Alexander (0:2)
+---
+	163) 2 GK Alexander 1 GK Philip (2:4)
+	164) Keine Karten (0:7)
+	165) 1 GK Philip (1:0)
+	166) 1 GK Alexander 1 GK Philip (0:1)
+	167) 2 GK Philip (1:3)
+---
+	168) 1 GK Philip (3:1)
+	169) 1 GK Philip (2:3)
+	170) 1 GK Philip (0:6)
+	171) 1 GK Alexander (2:2) ES Philip
+	172) 1 GK Philip (2:4)
+---
+	173) 1 GK Philip (1:4)
+	174) Keine Karten (1:2)
+	175) 1 RK Philip 1 GK Alexander (4:5)
+	176) 2 GK Philip (2:3)
+	177) 1 GK Philip (0:3)
+---
+	178) 1 GK Philip 2 GK Alexander (1:2) nV
+	179) 2 GK Alexander (1:5)
+	180) 1 GK Philip 3 GK Alexander (2:4) nV
+---
+	181) 1 GK Alexander (2:3)
+	182) 1 GK Alexander (0:1)
+	183) 1 GK Alexander 1 GK Philip (1:5)
+	184) 2 GK Philip (1:3)
+	185) 2 GK Alexander 1 GK Philip (1:6)
+---
+	186) 2 GK Philip (1:6)
+	187) 1 RK Philip (4:3) nV
+	188) 1 GK Alexander 1 GK Philip (1:2)
+	189) 1 GK Alexander 1 GK Philip (1:4)
+	190) 1 GK Philip (3:3) nE (9:10)
+---
+	191) 1 GK Alexander (1:2)
+	192) Keine Karten (0:3)
+	193) 1 GK Alexander (1:6)
+	194) Keine Karten (2:3)
+	195) 1 GK Philip (0:2)
+---
+	196) 2 GK Philip (2:5)
+	197) 1 GK Philip (1:2)
+	198) 5 GK Philip 2 GK Alexander (2:1)
+	199) 3 GK Philip (1:4)
+	200) 2 GK Alexander (3:4)
+---
+	201) 1 GK Alexander 2 GK Philip (0:1)
+	202) 3 GK Alexander 1 RK Philip (0:4)
+	203) 2 GK Philip (1:3)
+	204) 1 GK Philip (0:2)
+	205) Keine Karten (0:3)
+--
+	206) (0:5)
+	207) (3:4)
+	208) (1:4)
+	209) (1:2)
+	210) (0:3)
+--
+	211) 1 GK Philip 1 GK Alexander (4:3)
+	212) Keine Karten (1:4)
+	213) (4:2)
+	214) (2:3)
+	215) (0:5)
+--
+	216) (1:2)
+	217) (1:7)
+	218) (1:3)
+	219) (2:1)
+	220) (1:5)
+---
+	221) (3:2)
+	222) (1:2)
+	223) (0:1)
+	224) (2:2) ES Philip
+	225) (2:3)
+---
+	226) (2:2) ES Alexander
+	227) (2:5)
+	228) (1:2)
+	229) (1:2)
+	230) (0:7)
+---
+	231) (2:5)
+	232) (1:5)
+	233) (0:2)
+	234) (0:5)
+	235) (0:2)
+

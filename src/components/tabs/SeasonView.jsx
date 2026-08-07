@@ -60,14 +60,28 @@ function LegacySiege({ bilanz, aekName, realName }) {
   ]
     .map((s) => ({ ...s, siege: siegeGesamt(s) }))
     .sort((a, b) => b.siege - a.siege);
-  const spiele = seiten.reduce((s, x) => s + x.siege, 0);
+  const spiele = bilanz.spiele ?? seiten.reduce((s, x) => s + x.siege, 0);
   const beste = Math.max(...seiten.map((s) => s.siege), 1);
+
+  // Je Saison ist unterschiedlich viel ueberliefert: FIFA 16 hat die
+  // Aufschluesselung nach Verlaengerung und Elfmeterschiessen, die uebrigen
+  // dafuer die Tore. Gezeigt wird, was da ist — nichts wird ergaenzt.
+  const zusatz = (s) => {
+    const teile = [];
+    if (s.regulaer != null) teile.push(`${s.regulaer} regulär`);
+    if (s.nachVerlaengerung) teile.push(`${s.nachVerlaengerung} n.V.`);
+    if (s.nachElfmeter) teile.push(`${s.nachElfmeter} n.E.`);
+    if (s.tore != null) teile.push(`${s.tore} Tore`);
+    return teile.join(' · ');
+  };
 
   return (
     <div>
       <div className="flex items-baseline justify-between mb-2">
         <span className="text-footnote font-medium text-text-muted">Überlieferte Siege</span>
-        <span className="text-caption2 text-text-tertiary num-tabular">{spiele} Spiele</span>
+        <span className="text-caption2 text-text-tertiary num-tabular">
+          {spiele} Spiele{bilanz.unentschieden ? ` · ${bilanz.unentschieden} unentschieden` : ''}
+        </span>
       </div>
       <div className="space-y-2">
         {seiten.map((s) => (
@@ -80,11 +94,7 @@ function LegacySiege({ bilanz, aekName, realName }) {
             <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1">
               <div className={`h-full ${s.balken}`} style={{ width: `${(s.siege / beste) * 100}%` }} />
             </div>
-            <p className="text-caption2 text-text-tertiary mt-1">
-              {s.regulaer} regulär
-              {s.nachVerlaengerung ? ` · ${s.nachVerlaengerung} n.V.` : ''}
-              {s.nachElfmeter ? ` · ${s.nachElfmeter} n.E.` : ''}
-            </p>
+            {zusatz(s) && <p className="text-caption2 text-text-tertiary mt-1">{zusatz(s)}</p>}
           </div>
         ))}
       </div>

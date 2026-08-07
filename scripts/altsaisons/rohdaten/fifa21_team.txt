@@ -1,0 +1,45 @@
+Alexander
+
+Handanovic 4
+Chiellini 3
+Silva 4,8
+Gervinio 5
+Navas 3
+Ibrahimovic 3,5
+Hulk 5
+Kolarov 5
+Ribery 3
+Robben 2
+Babel 2
+Eder 1,6
+Matthäus 0,2
+Pepe 0,8
+Iniesta 3,2
+Podolski 0,8
+Hilton 0,1
+Miura 0,1
+
+
+Philip
+
+Advincula 1,5
+Silva 5
+Matuidi 6
+Opazo 1,2
+Fuenzalida 0,4
+Buffon 1
+Mayada 1,8
+Modric 10
+Neuer 18
+Portu 16
+Vardy 16
+Varane 70
+Van Dijk 80
+Mendy 40
+Lewandowski 60
+Ronaldo 60
+Mane 120
+Kante 80
+Aubameyang 56
+Di Maria 32
+Ramos 14

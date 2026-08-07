@@ -21,9 +21,13 @@ export default {
 
   // Ueberlieferte Bilanz. Die drei Zeilen sind getrennt gezaehlt worden, also
   // addiert: Milan 17+2+1 = 20, Berlin 18+4+2 = 24 -> 44 Spiele.
+  // Gleiche Form wie bei den Saisons, deren Bilanz aus den Ergebnissen
+  // gezaehlt wird — plus die Aufschluesselung, die es nur hier gibt.
   bilanz: {
-    AEK: { regulaer: 17, nachVerlaengerung: 2, nachElfmeter: 1 },
-    Real: { regulaer: 18, nachVerlaengerung: 4, nachElfmeter: 2 },
+    spiele: 44,
+    unentschieden: 0,
+    AEK: { siege: 20, regulaer: 17, nachVerlaengerung: 2, nachElfmeter: 1 },
+    Real: { siege: 24, regulaer: 18, nachVerlaengerung: 4, nachElfmeter: 2 },
   },
 
   sds: `Aubameyang 11x|Buffon 7x|Neuer 5x|Vidic 3x|Gerrard 3x|Hulk 2x|Ibrahimovic 2x|

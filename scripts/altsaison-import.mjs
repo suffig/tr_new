@@ -96,10 +96,40 @@ function sperrZeile(zeile) {
     const [n, a] = roh.split('|');
     return { name: n.trim(), art: artNormal(a), abgesessen: true };
   }
+
+  // Dritte Schreibweise (FIFA 19-24): "Pepe 6 (xxxxxx)" oder "Adegbenro 6 (xxxx00)".
+  // Die Zahl ist die Dauer, die Haken sind die abgesessenen Spiele — eine 0
+  // heisst "noch offen". Die ART steht dort NICHT; sie wird aus der Dauer
+  // abgeleitet (siehe ART_AUS_DAUER) und ist damit geraten, nicht ueberliefert.
+  const z = roh.match(/^(.+?)\s+(\d+)\s*\(\s*([xX0oO]*)\s*\)\s*$/);
+  if (z) {
+    const dauer = Number(z[2]);
+    const marken = z[3];
+    const abgesessenZahl = (marken.match(/[xX]/g) || []).length;
+    return {
+      name: z[1].trim(),
+      art: ART_AUS_DAUER(dauer),
+      dauer,
+      // Ohne Marken (leere Klammer) gilt die Sperre als abgesessen — sonst
+      // saehen alte Saisons voller offener Sperren aus.
+      abgesessenZahl: marken ? abgesessenZahl : dauer,
+      abgesessen: !marken || abgesessenZahl >= dauer,
+    };
+  }
+
   const m = roh.match(/^(.+?)\s+(V|R|G-?R|Verletzung|Rote[- ]?Karte|Gelb-?Rote[- ]?Karte)\s*([✔✓x])?\s*(❌|✗)?\s*$/i);
   if (!m) return null;
   return { name: m[1].trim(), art: artNormal(m[2]), abgesessen: !m[4] };
 }
+
+/**
+ * Sperrart aus der Dauer schaetzen — noetig fuer die Saisons, in denen nur die
+ * Spielzahl notiert wurde. Die Zuordnung folgt den Vorgaben der App
+ * (Gelb-Rot 1, Rot 2, Verletzung 3); alles darueber war eine laengere
+ * Verletzung. Das ist eine Annahme und steht so auch im erzeugten SQL.
+ */
+const ART_AUS_DAUER = (d) =>
+  d <= 1 ? 'Gelb-Rote Karte' : d === 2 ? 'Rote Karte' : 'Verletzung';
 
 export function baue(saison) {
   const { version, name, teams, kader = {}, tore, sds, sperren = '', konten = {} } = saison;
@@ -160,7 +190,13 @@ export function baue(saison) {
     if (!zeile.trim()) continue;
     const s = sperrZeile(zeile);
     if (!s) { sperrenUnlesbar.push(zeile.trim()); continue; }
-    sperrListe.push({ k: merke(s.name), art: s.art, abgesessen: s.abgesessen });
+    sperrListe.push({
+      k: merke(s.name),
+      art: s.art,
+      dauer: s.dauer ?? null,
+      abgesessenZahl: s.abgesessenZahl ?? null,
+      abgesessen: s.abgesessen,
+    });
   }
   if (sperrenUnlesbar.length) {
     throw new Error(
@@ -259,9 +295,11 @@ export function baue(saison) {
     A('select p.id, p.team, s.art, s.dauer, s.abgesessen, s.art, ' + q(version));
     A('from (values');
     A(sperrListe
-      .map(({ k, art, abgesessen }) => {
-        const d = DAUER[art] ?? 2;
-        return `  (${q(spieler.get(k).name)}, ${q(art)}, ${d}, ${abgesessen ? d : 0})`;
+      .map(({ k, art, dauer, abgesessenZahl, abgesessen }) => {
+        // Steht die Dauer in den Rohdaten, gilt sie; sonst die App-Vorgabe.
+        const d = dauer ?? DAUER[art] ?? 2;
+        const ab = abgesessenZahl ?? (abgesessen ? d : 0);
+        return `  (${q(spieler.get(k).name)}, ${q(art)}, ${d}, ${Math.min(ab, d)})`;
       })
       .join(',\n'));
     A(') as s(name, art, dauer, abgesessen)');
@@ -333,15 +371,94 @@ export function baue(saison) {
 }
 
 // --- Aufruf ----------------------------------------------------------------
+const alleSaisons = () =>
+  readdirSync(resolve(wurzel, 'scripts/altsaisons'))
+    .filter((f) => f.endsWith('.mjs') && !f.startsWith('_'))
+    .map((f) => f.replace('.mjs', ''))
+    .sort();
+
 const arg = process.argv[2];
 if (!arg) {
-  const da = readdirSync(resolve(wurzel, 'scripts/altsaisons')).filter((f) => f.endsWith('.mjs'));
-  console.error(`Aufruf: node scripts/altsaison-import.mjs <saison>\nVorhanden: ${da.map((f) => f.replace('.mjs', '')).join(', ')}`);
+  console.error(`Aufruf: node scripts/altsaison-import.mjs <saison>|--alle\nVorhanden: ${alleSaisons().join(', ')}`);
   process.exit(1);
 }
 
-const quelle = resolve(wurzel, `scripts/altsaisons/${arg}.mjs`);
-const saison = (await import(pathToFileURL(quelle).href)).default;
+const laden = async (n) =>
+  (await import(pathToFileURL(resolve(wurzel, `scripts/altsaisons/${n}.mjs`)).href)).default;
+
+/**
+ * Was die App ueber eine Altsaison wissen muss — aus den Daten abgeleitet,
+ * nicht von Hand gepflegt. Frueher stand das doppelt: einmal hier, einmal in
+ * legacySaison.js, und beim Abtippen verrutscht eine Zahl.
+ */
+function appEintrag(saison) {
+  const vorhanden = ['Tore', 'Spieler des Spiels', 'Sperren', 'Kontostand'];
+  if (Object.keys(saison.kader || {}).length) vorhanden.splice(3, 0, 'Kader');
+  if (saison.bilanz) vorhanden.push('Siege');
+  const fehlt = ['Einzelne Spiele', 'Form', 'Echtgeld'];
+  if (!saison.bilanz) fehlt.splice(1, 0, 'Bilanz');
+  return {
+    label: saison.name,
+    vorhanden,
+    fehlt,
+    ...(saison.bilanz ? { bilanz: saison.bilanz } : {}),
+  };
+}
+
+function schreibeAppDaten(eintraege) {
+  const nr = (v) => parseInt(String(v).replace(/\D/g, ''), 10) || 0;
+  const sortiert = Object.keys(eintraege).sort((a, b) => nr(a) - nr(b));
+  const zeilen = [
+    '/**',
+    ' * AUTOMATISCH ERZEUGT von scripts/altsaison-import.mjs — nicht von Hand',
+    ' * aendern. Neue Altsaison? scripts/altsaisons/<name>.mjs anlegen und',
+    ' *     node scripts/altsaison-import.mjs --alle',
+    ' * laufen lassen.',
+    ' *',
+    ' * Die Bilanzen sind aus den ueberlieferten Ergebniszeilen GEZAEHLT. Die',
+    ' * einzelnen Spiele werden bewusst nicht importiert: zu ihnen gibt es keine',
+    ' * Daten, und erfundene Daten waeren schlechter als gar keine.',
+    ' */',
+    'export const LEGACY_DATEN = {',
+  ];
+  for (const v of sortiert) {
+    zeilen.push(`  ${v}: ${JSON.stringify(eintraege[v], null, 2).split('\n').join('\n  ')},`);
+  }
+  zeilen.push('};', '');
+  writeFileSync(resolve(wurzel, 'src/utils/legacySaisonDaten.js'), zeilen.join('\n'), 'utf8');
+}
+
+if (arg === '--alle') {
+  const eintraege = {};
+  let fehler = 0;
+  for (const n of alleSaisons()) {
+    const s = await laden(n);
+    try {
+      const { sql, bericht } = baue(s);
+      const { parse } = await import('pgsql-parser');
+      await parse(sql);
+      const nr = String(s.dateiNummer ?? 11).padStart(2, '0');
+      writeFileSync(resolve(wurzel, `db/${nr}_${String(s.version).toLowerCase()}_import.sql`), sql, 'utf8');
+      eintraege[s.version] = appEintrag(s);
+      const b = s.bilanz;
+      console.log(
+        `${s.version}  ${String(bericht.spieler).padStart(3)} Spieler, ${String(bericht.tore).padStart(4)} Tore ` +
+        `${bericht.stimmt ? '✓' : '✗'}, ${String(bericht.sperren).padStart(3)} Sperren, ` +
+        `${String(bericht.sdsGesamt).padStart(3)} SdS` +
+        (b ? `, Bilanz ${b.AEK.siege}:${b.unentschieden}:${b.Real.siege} aus ${b.spiele} Spielen` : '')
+      );
+      if (!bericht.stimmt) fehler++;
+    } catch (e) {
+      console.error(`${s.version}  FEHLER: ${e.message}`);
+      fehler++;
+    }
+  }
+  schreibeAppDaten(eintraege);
+  console.log(`\nsrc/utils/legacySaisonDaten.js geschrieben (${Object.keys(eintraege).length} Saisons).`);
+  process.exit(fehler ? 2 : 0);
+}
+
+const saison = await laden(arg);
 const { sql, bericht } = baue(saison);
 
 // Syntax pruefen, BEVOR die Datei jemanden erreicht. libpg_query ist dieselbe
