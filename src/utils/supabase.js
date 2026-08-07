@@ -82,7 +82,13 @@ const fallbackData = {
     { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 1, value: 12.0, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
     { id: 4, name: 'Jan Becker', team: 'Real', position: 'ST', goals: 7, value: 18.3, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
     { id: 5, name: 'Paul Klein', team: 'Real', position: 'TH', goals: 0, value: 9.1, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
-    { id: 6, name: 'Ben Richter', team: 'Real', position: 'ZM', goals: 2, value: 14.7, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' }
+    { id: 6, name: 'Ben Richter', team: 'Real', position: 'ZM', goals: 2, value: 14.7, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
+    // Ein Ehemaliger und ein Spieler ueber zwei Saisons: seit dem Import der
+    // Altsaisons sind das die haeufigsten Faelle in den echten Daten, waren
+    // hier aber gar nicht vertreten — Darstellungsfehler bei beiden fielen
+    // deshalb im Demo-Modus nicht auf.
+    { id: 7, name: 'Kai Vogel', team: 'Ehemalige', position: 'LF', goals: 9, value: 0, created_at: '2023-01-01T10:00:00Z', fifa_version: 'FC24' },
+    { id: 8, name: 'Max Müller', team: 'Real', position: 'ST', goals: 12, value: 11.0, created_at: '2023-01-01T10:00:00Z', fifa_version: 'FC24' }
   ],
   bans: [
     { id: 1, player_id: 1, team: 'AEK', type: 'Gelb-Rote Karte', totalgames: 1, matchesserved: 0, reason: 'Gelb-Rot', fifa_version: 'FC25' },

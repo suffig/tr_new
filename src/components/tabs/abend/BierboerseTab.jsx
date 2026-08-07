@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
@@ -611,34 +612,49 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
 }
 
 /**
- * Dialog auf z-[70], nicht z-50.
+ * Dialog — als Portal an document.body, nicht an Ort und Stelle.
  *
- * Die untere Navigation liegt selbst auf z-50 und steht im DOM danach — bei
- * gleichem Rang gewinnt sie. Auf dem Handy dockt der Dialog unten an, und
- * genau dort sass der Absende-Knopf: verdeckt, also unklickbar. z-[70] ist
- * der Rang, den die anderen Dialoge der App (TeamTrackerTab) auch benutzen.
+ * Ein hoeherer z-index allein reicht NICHT: der Tab-Inhalt steckt in
+ * `.tab-transition`, und die Klasse setzt `will-change: opacity`. Das erzeugt
+ * einen eigenen Stapelkontext. Jeder z-index darin — auch z-[70] — gilt nur
+ * INNERHALB dieses Kontexts, und der Kontext selbst liegt im DOM vor der
+ * unteren Navigation (z-50). Der Dialog landete dadurch zwangslaeufig
+ * darunter, egal wie hoch die Zahl war.
+ *
+ * Das Portal haengt den Dialog direkt an body und umgeht damit jeden
+ * Stapelkontext der Vorfahren. Zusaetzlich haelt der Inhalt unten Abstand zur
+ * Navigation, damit der Absende-Knopf auch bei kurzem Bildschirm frei liegt.
  */
 function Modal({ titel, onSchliessen, children }) {
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
     document.addEventListener('keydown', esc);
-    return () => document.removeEventListener('keydown', esc);
+    // Hintergrund nicht mitscrollen lassen, solange der Dialog offen ist.
+    const vorher = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', esc);
+      document.body.style.overflow = vorher;
+    };
   }, [onSchliessen]);
 
-  return (
-    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
-         onClick={onSchliessen}>
-      <div className="bg-bg-secondary w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85dvh] overflow-y-auto safe-area-bottom"
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+         onClick={onSchliessen} role="dialog" aria-modal="true" aria-label={titel}>
+      <div className="bg-bg-secondary w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[88dvh] overflow-y-auto"
            onClick={(e) => e.stopPropagation()}>
-        <div className="sticky top-0 bg-bg-secondary px-4 py-3 border-b border-border-light flex items-center justify-between">
+        <div className="sticky top-0 bg-bg-secondary px-4 py-3 border-b border-border-light flex items-center justify-between z-10">
           <h3 className="text-callout font-semibold text-text-primary">{titel}</h3>
-          <button onClick={onSchliessen} className="w-8 h-8 rounded-full bg-bg-tertiary text-text-secondary flex items-center justify-center"
+          <button onClick={onSchliessen} className="w-8 h-8 rounded-full bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
                   aria-label="Schließen">
             <Icon name="x" size={16} strokeWidth={2.4} />
           </button>
         </div>
-        <div className="p-4">{children}</div>
+        {/* Der untere Abstand haelt den Absende-Knopf von der Systemleiste
+            und der App-Navigation frei. */}
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }

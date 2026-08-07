@@ -1,6 +1,6 @@
 import { useMemo } from 'react';
 import Icon from './icons/Icon';
-import TeamLogo from './TeamLogo';
+import SpielerWappen from './SpielerWappen';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import { getTeamDisplay } from '../constants/teams';
 import { identityOf, nameKey } from '../utils/playerIdentity';
@@ -57,7 +57,7 @@ export default function PlayerKarriere({ player }) {
             <span className="w-14 text-xs font-semibold text-white/70 num-tabular flex-shrink-0">
               {s.version}
             </span>
-            {s.team && <TeamLogo team={s.team === 'AEK' ? 'aek' : s.team === 'Real' ? 'real' : 'aek'} size="xs" />}
+            <SpielerWappen team={s.team} version={s.version} size="xs" />
             <span className="text-xs text-white/60 truncate min-w-0 flex-1">
               {s.team ? getTeamDisplay(s.team, s.version) : '—'}
             </span>

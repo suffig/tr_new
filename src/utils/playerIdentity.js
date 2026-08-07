@@ -59,6 +59,9 @@ export function aggregatePlayers(players) {
     }
     e.goals += Number(p.goals) || 0;
     e.seasons.push({
+      // Die Zeilen-ID wird gebraucht, um Sperren zuzuordnen: bans.player_id
+      // zeigt auf genau diese Zeile, nicht auf den Namen.
+      id: p.id ?? null,
       version: p.fifa_version || null,
       team: p.team || null,
       goals: Number(p.goals) || 0,

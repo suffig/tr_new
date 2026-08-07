@@ -1,9 +1,11 @@
 import { useMemo, useState } from 'react';
 import Icon from '../../icons/Icon';
-import TeamLogo from '../../TeamLogo';
+import SpielerWappen from '../../SpielerWappen';
 import { aggregatePlayers } from '../../../utils/playerIdentity';
 import { getTeamDisplay } from '../../../constants/teams';
 import { saisonListe } from '../../../utils/saisonNummern';
+import { useSupabaseQuery } from '../../../hooks/useSupabase';
+import SpielerVerlauf from './SpielerVerlauf';
 
 /**
  * Alle Torschützen über alle Saisons — durchsuchbar und filterbar.
@@ -23,6 +25,11 @@ export default function TorschuetzenListe({ players, loading }) {
   const [team, setTeam] = useState('alle');
   const [sortierung, setSortierung] = useState('tore');
   const [zeigeAlle, setZeigeAlle] = useState(false);
+  const [gewaehlt, setGewaehlt] = useState(null);
+
+  // Fuer die Spieleransicht: Auszeichnungen und Sperren aller Saisons.
+  const { data: sds } = useSupabaseQuery('spieler_des_spiels', '*', { skipFifaFilter: true });
+  const { data: sperren } = useSupabaseQuery('bans', '*', { skipFifaFilter: true });
 
   const saisons = useMemo(
     () => saisonListe([], players, null).map((s) => s.version).reverse(),
@@ -122,15 +129,17 @@ export default function TorschuetzenListe({ players, loading }) {
       ) : (
         <div className="modern-card divide-y divide-border-light">
           {sichtbar.map((p, i) => (
-            <div key={p.key} className="flex items-center gap-2.5 px-3 py-2.5">
+            <button
+              key={p.key}
+              onClick={() => setGewaehlt(p)}
+              className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors hover:bg-bg-tertiary active:bg-bg-tertiary"
+            >
               <span className={`w-6 text-center text-sm font-bold flex-shrink-0 num-tabular ${
                 i === 0 ? 'text-system-yellow' : i === 1 ? 'text-text-secondary'
                 : i === 2 ? 'text-system-orange' : 'text-text-tertiary'}`}>
                 {i + 1}
               </span>
-              <TeamLogo
-                team={p.currentTeam === 'AEK' ? 'aek' : p.currentTeam === 'Real' ? 'real' : 'aek'}
-                size="xs" />
+              <SpielerWappen team={p.currentTeam} size="xs" />
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-medium text-text-primary truncate">{p.name}</div>
                 <div className="text-caption2 text-text-tertiary truncate">
@@ -145,7 +154,9 @@ export default function TorschuetzenListe({ players, loading }) {
               <span className="stat-display text-[15px] num-tabular text-text-primary w-11 text-right flex-shrink-0">
                 {p.goals}
               </span>
-            </div>
+              <Icon name="chevronRight" size={14} strokeWidth={2.4}
+                    className="text-text-tertiary flex-shrink-0" />
+            </button>
           ))}
         </div>
       )}
@@ -158,8 +169,18 @@ export default function TorschuetzenListe({ players, loading }) {
 
       <p className="text-caption2 text-text-tertiary px-1">
         Aus den Spielerzeilen aller Saisons — derselbe Spieler wird über Saisons
-        und Schreibweisen hinweg zusammengefasst.
+        und Schreibweisen hinweg zusammengefasst. Tippe auf einen Namen für
+        seine Laufbahn.
       </p>
+
+      {gewaehlt && (
+        <SpielerVerlauf
+          spieler={alle.find((x) => x.key === gewaehlt.key) || gewaehlt}
+          sds={sds}
+          sperren={sperren}
+          onSchliessen={() => setGewaehlt(null)}
+        />
+      )}
     </div>
   );
 }

@@ -8,6 +8,7 @@ import { saisonListe } from '../../utils/saisonNummern';
 import LegacyHinweis from '../LegacyHinweis';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { istArchiv } from '../../utils/laufendeSaison';
+import SpielerWappen from '../SpielerWappen';
 
 // A "Saison" == a FIFA version. Matches already carry `fifa_version`
 // (legacy rows without one count as FC25), so seasons are derived purely from
@@ -286,7 +287,7 @@ export default function SeasonView({ matches, players, aekName, realName }) {
             {torschuetzen.slice(0, 8).map((p, i) => (
               <div key={`${p.name}-${i}`} className="flex items-center gap-2.5">
                 <span className="w-4 text-caption2 text-text-tertiary num-tabular flex-shrink-0">{i + 1}.</span>
-                <TeamLogo team={p.team === 'AEK' ? 'aek' : p.team === 'Real' ? 'real' : 'aek'} size="xs" />
+                <SpielerWappen team={p.team} version={v} size="xs" />
                 <span className="text-sm text-text-primary truncate min-w-0 flex-1">{p.name}</span>
                 <div className="hidden min-[380px]:block flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden max-w-[6rem]">
                   <div className="h-full bg-system-green/70"
