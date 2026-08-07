@@ -22,7 +22,24 @@ export const LEGACY_SAISONS = {
     vorhanden: ['Tore', 'Spieler des Spiels', 'Sperren', 'Kader', 'Kontostand'],
     fehlt: ['Einzelne Spiele', 'Bilanz', 'Duell', 'Form', 'Echtgeld'],
   },
+  FC16: {
+    label: 'FIFA 16 Ultimate Team',
+    vorhanden: ['Tore', 'Spieler des Spiels', 'Sperren', 'Kader', 'Kontostand', 'Siege'],
+    fehlt: ['Einzelne Spiele', 'Ergebnisse', 'Form', 'Echtgeld'],
+    // Aus FC16 ist die Siegbilanz ueberliefert — nicht aber, WIE die Spiele
+    // ausgingen. Damit laesst sich eine echte Tabelle zeigen statt 0/0/0.
+    bilanz: {
+      AEK: { regulaer: 17, nachVerlaengerung: 2, nachElfmeter: 1 },
+      Real: { regulaer: 18, nachVerlaengerung: 4, nachElfmeter: 2 },
+    },
+  },
 };
+
+/** Siege gesamt aus der ueberlieferten Bilanz. */
+export function siegeGesamt(eintrag) {
+  if (!eintrag) return 0;
+  return (eintrag.regulaer || 0) + (eintrag.nachVerlaengerung || 0) + (eintrag.nachElfmeter || 0);
+}
 
 /** Ist diese Saison eine reine Zahlen-Saison? */
 export function istLegacySaison(version) {

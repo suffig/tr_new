@@ -3,7 +3,7 @@ import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay } from '../../constants/teams';
 import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
-import { istLegacySaison } from '../../utils/legacySaison';
+import { istLegacySaison, legacyInfo, siegeGesamt } from '../../utils/legacySaison';
 import { saisonListe } from '../../utils/saisonNummern';
 import LegacyHinweis from '../LegacyHinweis';
 
@@ -46,6 +46,52 @@ function saisonTorschuetzen(players, version) {
     .sort((a, b) => b.goals - a.goals || a.name.localeCompare(b.name));
 }
 
+/**
+ * Siegbilanz einer Altsaison, aus der Strichliste statt aus Spielen.
+ *
+ * Bewusst KEINE Punkte und keine Tordifferenz: die Ergebnisse wurden damals
+ * nicht notiert, eine "0" dort waere eine Behauptung. Gezeigt wird nur, was
+ * belegt ist — Siege, davon nach Verlaengerung und nach Elfmeterschiessen.
+ */
+function LegacySiege({ bilanz, aekName, realName }) {
+  const seiten = [
+    { side: 'AEK', name: aekName, farbe: 'text-system-blue', balken: 'bg-system-blue', ...bilanz.AEK },
+    { side: 'Real', name: realName, farbe: 'text-system-red', balken: 'bg-system-red', ...bilanz.Real },
+  ]
+    .map((s) => ({ ...s, siege: siegeGesamt(s) }))
+    .sort((a, b) => b.siege - a.siege);
+  const spiele = seiten.reduce((s, x) => s + x.siege, 0);
+  const beste = Math.max(...seiten.map((s) => s.siege), 1);
+
+  return (
+    <div>
+      <div className="flex items-baseline justify-between mb-2">
+        <span className="text-footnote font-medium text-text-muted">Überlieferte Siege</span>
+        <span className="text-caption2 text-text-tertiary num-tabular">{spiele} Spiele</span>
+      </div>
+      <div className="space-y-2">
+        {seiten.map((s) => (
+          <div key={s.side}>
+            <div className="flex items-center gap-2.5">
+              <TeamLogo team={s.side === 'AEK' ? 'aek' : 'real'} size="xs" />
+              <span className={`text-sm font-semibold truncate min-w-0 flex-1 ${s.farbe}`}>{s.name}</span>
+              <span className="stat-display text-xl num-tabular text-text-primary">{s.siege}</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1">
+              <div className={`h-full ${s.balken}`} style={{ width: `${(s.siege / beste) * 100}%` }} />
+            </div>
+            <p className="text-caption2 text-text-tertiary mt-1">
+              {s.regulaer} regulär
+              {s.nachVerlaengerung ? ` · ${s.nachVerlaengerung} n.V.` : ''}
+              {s.nachElfmeter ? ` · ${s.nachElfmeter} n.E.` : ''}
+            </p>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SeasonView({ matches, players, aekName, realName }) {
   const currentVersion = getCurrentFifaVersion();
 
@@ -77,6 +123,7 @@ export default function SeasonView({ matches, players, aekName, realName }) {
 
   const total = seasonMatches.length;
   const legacy = istLegacySaison(current?.version);
+  const legacyBilanz = legacyInfo(current?.version)?.bilanz || null;
   const isActive = current?.version === currentVersion;
   const leader = A.pts === R.pts ? null : (A.pts > R.pts ? 'AEK' : 'Real');
 
@@ -129,7 +176,12 @@ export default function SeasonView({ matches, players, aekName, realName }) {
           oben, sobald die Legacy-Saison die laufende ist. */}
       {legacy ? (
         <div className="modern-card p-4">
-          <LegacyHinweis version={current?.version} kompakt />
+          {/* Manche Altsaisons haben immerhin die Siege ueberliefert (FC16).
+              Dann ist eine echte Tabelle moeglich — nur ohne Tordifferenz und
+              Punkte, weil niemand die Ergebnisse notiert hat. */}
+          {legacyBilanz ? <LegacySiege bilanz={legacyBilanz} aekName={aekName} realName={realName} /> : null}
+          <LegacyHinweis version={current?.version} kompakt
+                         className={legacyBilanz ? 'mt-3 pt-3 border-t border-border-light' : ''} />
         </div>
       ) : (
         <div className="modern-card p-4">

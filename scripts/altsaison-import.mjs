@@ -30,28 +30,76 @@ export const nkey = (n) =>
     .toLowerCase()
     .replace(/[^a-z0-9]/g, '');
 
-/** "Martins 189|Uche 152" -> [['Martins', 189], ['Uche', 152]] */
+/**
+ * "Martins 189|Uche 152" -> [['Martins', 189], ['Uche', 152]]
+ *
+ * Absichtlich nachsichtig, weil jede Saison anders getippt wurde: mal
+ * "Uche 152", mal "Aubameyang 58x", mal "Stranzl 1,5Mx" oder "Neuer 45M x".
+ * Erlaubt sind also Komma als Dezimaltrenner und ein Schwanz aus M/x/€/Haken.
+ */
 export function paare(text) {
   const out = [];
   for (const teil of String(text ?? '').split(/[|\n]/)) {
     const t = teil.trim();
     if (!t) continue;
-    const m = t.match(/^(.+?)\s+([\d.]+)$/);
-    if (m) out.push([m[1].trim(), Number(m[2])]);
+    const m = t.match(/^(.+?)\s+([\d]+(?:[.,][\d]+)?)\s*[Mm]?\s*[x✔✓]?\s*€?\s*$/);
+    if (m) out.push([m[1].trim(), Number(m[2].replace(',', '.'))]);
+    else out.push([t, NaN]); // faellt unten als unlesbar auf, statt still zu fehlen
   }
-  return out;
+  return out.filter(([, n]) => {
+    if (Number.isNaN(n)) return false;
+    return true;
+  });
+}
+
+/** Zeilen, die paare() NICHT lesen konnte — damit nichts still verschwindet. */
+export function unlesbar(text) {
+  return String(text ?? '')
+    .split(/[|\n]/)
+    .map((t) => t.trim())
+    .filter((t) => t && !/^(.+?)\s+([\d]+(?:[.,][\d]+)?)\s*[Mm]?\s*[x✔✓]?\s*€?\s*$/.test(t));
 }
 
 const q = (s) => `'${String(s).replace(/'/g, "''")}'`;
 
-/** Sperrdauern wie die App sie vorgibt — die Rohdaten sagen nur "abgesessen". */
+/** Sperrdauern wie die App sie vorgibt. */
 const DAUER = { 'Gelb-Rote Karte': 1, 'Rote Karte': 2, Verletzung: 3 };
 
-const artNormal = (a) =>
-  String(a).trim()
+/** Kuerzel aus den handgetippten Listen. */
+const ART_KURZ = {
+  v: 'Verletzung', verletzung: 'Verletzung',
+  r: 'Rote Karte', rot: 'Rote Karte', rotekarte: 'Rote Karte',
+  gr: 'Gelb-Rote Karte', gelbrot: 'Gelb-Rote Karte', gelbrotekarte: 'Gelb-Rote Karte',
+};
+
+const artNormal = (a) => {
+  const roh = String(a).trim();
+  const k = roh.toLowerCase().replace(/[^a-z]/g, '');
+  if (ART_KURZ[k]) return ART_KURZ[k];
+  return roh
     .replace(/Gelb-Rote-Karte/g, 'Gelb-Rote Karte')
     .replace(/Rote-Karte/g, 'Rote Karte')
     .replace(/Gelb-Rote Karte Karte/g, 'Gelb-Rote Karte');
+};
+
+/**
+ * Eine Sperr-Zeile lesen. Zwei Schreibweisen, beide kommen in den Rohdaten vor:
+ *   "Carvalho|Gelb-Rote-Karte"   (FC15)
+ *   "Martins V ✔"                (FC16 — Kuerzel + abgesessen-Haken)
+ * Der Haken ist keine Deko: ❌ heisst, die Sperre lief noch. Dann bleibt
+ * matchesserved 0 und die Sperre steht in der App als offen.
+ */
+function sperrZeile(zeile) {
+  const roh = zeile.trim();
+  if (!roh) return null;
+  if (roh.includes('|')) {
+    const [n, a] = roh.split('|');
+    return { name: n.trim(), art: artNormal(a), abgesessen: true };
+  }
+  const m = roh.match(/^(.+?)\s+(V|R|G-?R|Verletzung|Rote[- ]?Karte|Gelb-?Rote[- ]?Karte)\s*([✔✓x])?\s*(❌|✗)?\s*$/i);
+  if (!m) return null;
+  return { name: m[1].trim(), art: artNormal(m[2]), abgesessen: !m[4] };
+}
 
 export function baue(saison) {
   const { version, name, teams, kader = {}, tore, sds, sperren = '', konten = {} } = saison;
@@ -107,10 +155,18 @@ export function baue(saison) {
   }
 
   const sperrListe = [];
+  const sperrenUnlesbar = [];
   for (const zeile of String(sperren).trim().split('\n')) {
-    if (!zeile.includes('|')) continue;
-    const [roh, art] = zeile.split('|').map((x) => x.trim());
-    sperrListe.push([merke(roh), artNormal(art)]);
+    if (!zeile.trim()) continue;
+    const s = sperrZeile(zeile);
+    if (!s) { sperrenUnlesbar.push(zeile.trim()); continue; }
+    sperrListe.push({ k: merke(s.name), art: s.art, abgesessen: s.abgesessen });
+  }
+  if (sperrenUnlesbar.length) {
+    throw new Error(
+      `Sperr-Zeilen nicht lesbar: ${sperrenUnlesbar.join(' / ')} — ` +
+      'sonst fehlen sie still im Import.'
+    );
   }
 
   // Wer keinem Kader zuzuordnen ist: die Kaderliste ist der Endstand, die Tore
@@ -200,12 +256,15 @@ export function baue(saison) {
     A('--    Die Namen sind je Saison eindeutig (eine Zeile pro Spieler oben),');
     A('--    der join trifft also genau einmal.');
     A('insert into public.bans (player_id, team, type, totalgames, matchesserved, reason, fifa_version)');
-    A('select p.id, p.team, s.art, s.dauer, s.dauer, s.art, ' + q(version));
+    A('select p.id, p.team, s.art, s.dauer, s.abgesessen, s.art, ' + q(version));
     A('from (values');
     A(sperrListe
-      .map(([k, art]) => `  (${q(spieler.get(k).name)}, ${q(art)}, ${DAUER[art] ?? 2})`)
+      .map(({ k, art, abgesessen }) => {
+        const d = DAUER[art] ?? 2;
+        return `  (${q(spieler.get(k).name)}, ${q(art)}, ${d}, ${abgesessen ? d : 0})`;
+      })
       .join(',\n'));
-    A(') as s(name, art, dauer)');
+    A(') as s(name, art, dauer, abgesessen)');
     A(`join public.players p on p.fifa_version = ${q(version)} and p.name = s.name;`);
     A('');
   }
@@ -231,17 +290,28 @@ export function baue(saison) {
     ...torListe.map(([n]) => n),
     ...sdsListe.map(([n]) => n),
     ...Object.values(kader).flatMap((l) => paare(l).map(([n]) => n)),
-    ...String(sperren).trim().split('\n').filter((x) => x.includes('|')).map((x) => x.split('|')[0].trim()),
+    ...String(sperren).trim().split('\n').map(sperrZeile).filter(Boolean).map((s) => s.name),
   ]) {
     const [, k] = ziel(roh);
     if (!gesehen.has(k)) gesehen.set(k, new Set());
     gesehen.get(k).add(roh.trim());
   }
 
+  // Unlesbare Zeilen melden — eine vertippte Zeile faellt sonst still weg.
+  const uebrig = [
+    ...unlesbar(tore).map((t) => `Tore: ${t}`),
+    ...unlesbar(sds).map((t) => `SdS: ${t}`),
+    ...Object.entries(kader).flatMap(([team, l]) => unlesbar(l).map((t) => `Kader ${team}: ${t}`)),
+  ];
+  if (uebrig.length) {
+    throw new Error(`Nicht lesbare Zeilen:\n  ${uebrig.join('\n  ')}`);
+  }
+
   return {
     sql: z.join('\n') + '\n',
     bericht: {
       spieler: spieler.size,
+      offeneSperren: sperrListe.filter((s) => !s.abgesessen).length,
       proTeam: [...new Set([...spieler.values()].map((e) => e.team))].map((t) => {
         const l = [...spieler.values()].filter((e) => e.team === t);
         return { team: t, anzahl: l.length, tore: l.reduce((s, e) => s + e.goals, 0) };
@@ -303,7 +373,8 @@ for (const t of bericht.proTeam) {
   console.log(`  ${t.team.padEnd(10)} ${String(t.anzahl).padStart(2)} Spieler, ${String(t.tore).padStart(4)} Tore`);
 }
 console.log(`Tore gesamt:   ${bericht.tore}  (Rohdaten: ${bericht.rohTore}) ${bericht.stimmt ? '✓' : '✗ WEICHT AB'}`);
-console.log(`Sperren:       ${bericht.sperren}`);
+console.log(`Sperren:       ${bericht.sperren}` +
+  (bericht.offeneSperren ? `  (davon ${bericht.offeneSperren} nicht abgesessen)` : ''));
 console.log(`SdS:           ${bericht.sdsZeilen} Zeilen, ${bericht.sdsGesamt} gesamt (roh ${bericht.sdsRoh})`);
 if (bericht.zusammengefasst.length) {
   console.log('\nZusammengefasste Schreibweisen:');
