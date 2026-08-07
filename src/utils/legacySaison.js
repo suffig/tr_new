@@ -12,6 +12,9 @@
  * und wuerde faelschlich als Legacy markiert.
  */
 
+// Neue Altsaison? Hier eine Zeile ergaenzen — dieselbe Version wie in
+// scripts/altsaisons/<name>.mjs. Ohne den Eintrag zeigt die App dort ueberall
+// Nullen, statt zu sagen, dass es nur Gesamtzahlen gibt.
 export const LEGACY_SAISONS = {
   FC15: {
     label: 'FIFA 15 Ultimate Team',

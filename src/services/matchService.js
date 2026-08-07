@@ -147,7 +147,18 @@ export async function deleteMatch(id) {
         console.warn(`Player ${playerName} (${team}) not found for goal removal`);
         continue;
       }
-      const player = players.find((p) => (p.fifa_version || 'FC25') === (matchVersion || 'FC25')) || players[0];
+      // Nur die Zeile DIESER Saison. Frueher fiel das auf players[0] zurueck —
+      // seit es Altsaisons gibt (FC15), kann derselbe Name in mehreren Saisons
+      // beim selben Team stehen, und das Loeschen eines aktuellen Spiels haette
+      // still die Tore eines FIFA-15-Spielers verringert. Lieber nichts tun.
+      const player = players.find((p) => (p.fifa_version || 'FC25') === (matchVersion || 'FC25'));
+      if (!player) {
+        console.warn(
+          `Player ${playerName} (${team}) hat keine Zeile in ${matchVersion || 'FC25'} — ` +
+          'Tore nicht zurueckgerechnet, um keine andere Saison zu veraendern'
+        );
+        continue;
+      }
       const newGoals = Math.max(0, (player.goals || 0) - count);
       await supabaseDb.update('players', { goals: newGoals }, player.id);
     }
@@ -163,16 +174,30 @@ export async function deleteMatch(id) {
     if (inList(match.goalslista)) sdsTeam = 'AEK';
     else if (inList(match.goalslistb)) sdsTeam = 'Real';
     else {
-      const { data: players } = await supabaseDb.select('players', 'team', { eq: { name: match.manofthematch } });
-      if (players && players.length > 0) sdsTeam = players[0].team;
+      // Team aus der Saison DES SPIELS holen, nicht aus der gerade laufenden.
+      // Sonst bestimmt beim Loeschen eines alten Spiels die FC26-Zeile das Team.
+      const { data: players } = await supabaseDb.select('players', 'team,fifa_version', {
+        eq: { name: match.manofthematch }, skipFifaFilter: true,
+      });
+      const treffer = (players || []).find(
+        (p) => (p.fifa_version || 'FC25') === (matchVersion || 'FC25')
+      );
+      if (treffer) sdsTeam = treffer.team;
     }
     if (sdsTeam) {
       const { data: sdsRows } = await supabaseDb.select('spieler_des_spiels', '*', {
         eq: { name: match.manofthematch, team: sdsTeam }, skipFifaFilter: true,
       });
-      if (sdsRows && sdsRows.length > 0) {
-        const sds = sdsRows.find((s) => (s.fifa_version || 'FC25') === (matchVersion || 'FC25')) || sdsRows[0];
+      // Wie oben: ohne Zeile in der Saison des Spiels lieber gar nichts.
+      const sds = (sdsRows || []).find(
+        (s) => (s.fifa_version || 'FC25') === (matchVersion || 'FC25')
+      );
+      if (sds) {
         await supabaseDb.update('spieler_des_spiels', { count: Math.max(0, (sds.count || 0) - 1) }, sds.id);
+      } else if (sdsRows && sdsRows.length > 0) {
+        console.warn(
+          `SdS ${match.manofthematch} (${sdsTeam}) hat keine Zeile in ${matchVersion || 'FC25'} — nicht zurueckgerechnet`
+        );
       }
     }
   }
