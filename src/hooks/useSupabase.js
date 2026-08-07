@@ -43,10 +43,20 @@ export function useSupabaseQuery(table, query = '*', options = {}, dependencies 
   }, [fetchData]);
 
   // Global pull-to-refresh: every query re-fetches when the app broadcasts it.
+  //
+  // 'fifaVersionChanged' haengt bewusst mit dran: die Saison steckt NICHT in
+  // den Abhaengigkeiten von fetchData, sondern wird erst in supabaseDb.select
+  // aus dem localStorage gelesen. Ohne dieses Abo bliebe nach einem
+  // Saisonwechsel jede Ansicht auf den alten Daten stehen — genau deshalb hat
+  // der alte Umschalter die Seite komplett neu geladen.
   useEffect(() => {
     const onGlobalRefresh = () => fetchData();
     window.addEventListener('fusta-refresh', onGlobalRefresh);
-    return () => window.removeEventListener('fusta-refresh', onGlobalRefresh);
+    window.addEventListener('fifaVersionChanged', onGlobalRefresh);
+    return () => {
+      window.removeEventListener('fusta-refresh', onGlobalRefresh);
+      window.removeEventListener('fifaVersionChanged', onGlobalRefresh);
+    };
   }, [fetchData]);
 
   const refetch = useCallback(() => {

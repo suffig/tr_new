@@ -11,6 +11,7 @@ import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 import { aggregatePlayers } from '../../utils/playerIdentity';
 import { saisonNummern } from '../../utils/saisonNummern';
 import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
+import { LEGACY_SAISONS, siegeGesamt } from '../../utils/legacySaison';
 
 // goalslist entries are either a plain name string or { player_id, player, count }
 function parseGoals(raw) {
@@ -447,6 +448,28 @@ export default function DuelTab() {
     [matches, players]
   );
 
+  // Altsaisons ohne Einzelspiele tauchen in seasonH2H nicht auf — die kennt nur
+  // Saisons, aus denen es Spiele GIBT. Wo eine Bilanz ueberliefert ist (FC16),
+  // gehoert sie trotzdem in die Liste, sonst fehlt eine ganze Saison.
+  const alleBilanzen = useMemo(() => {
+    const ausSpielen = dRaw.seasonH2H.map((s) => ({ ...s, quelle: 'spiele' }));
+    const bekannt = new Set(ausSpielen.map((s) => s.version));
+    const ausListe = [];
+    for (const [version, info] of Object.entries(LEGACY_SAISONS)) {
+      if (!info.bilanz || bekannt.has(version)) continue;
+      ausListe.push({
+        version,
+        aekW: siegeGesamt(info.bilanz.AEK),
+        realW: siegeGesamt(info.bilanz.Real),
+        draws: 0,
+        quelle: 'strichliste',
+      });
+    }
+    return [...ausSpielen, ...ausListe].sort(
+      (a, b) => (nummern.get(a.version) ?? 99) - (nummern.get(b.version) ?? 99)
+    );
+  }, [dRaw.seasonH2H, nummern]);
+
   // Torschuetzen kommen aus den SPIELERZEILEN, nicht aus den Match-Torlisten.
   // Grund: players.goals ist der gepflegte Karrierestand je Saison, waehrend
   // die Torlisten nur so weit zurueckreichen, wie Spiele erhalten sind. Und
@@ -710,20 +733,27 @@ export default function DuelTab() {
       )}
 
       {/* Head-to-Head je Saison */}
-      {d.seasonH2H.length > 0 && (
+      {alleBilanzen.length > 0 && (
         <div className="modern-card p-4">
           <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
             <Icon name="calendar" size={15} strokeWidth={2.2} className="text-system-blue" />
             Bilanz je Saison
           </div>
           <div className="space-y-2.5">
-            {d.seasonH2H.map((s) => {
+            {alleBilanzen.map((s) => {
               const tot = s.aekW + s.realW + s.draws || 1;
               return (
                 <div key={s.version}>
                   <div className="flex items-center justify-between text-[11px] mb-0.5">
-                    <span className="text-text-secondary font-medium">
+                    <span className="text-text-secondary font-medium flex items-center gap-1.5">
                       Saison {nummern.get(s.version) ?? '?'} · {s.version}
+                      {/* Ohne Kennzeichen liest sich eine Strichlisten-Bilanz
+                          wie eine aus Spielen gerechnete. */}
+                      {s.quelle === 'strichliste' && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-system-yellow/15 text-system-yellow">
+                          gezählt
+                        </span>
+                      )}
                     </span>
                     <span className="tabular-nums">
                       <span className="text-system-blue font-semibold">{s.aekW}</span>

@@ -1,6 +1,7 @@
 ﻿import Icon from '../icons/Icon';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
+import { useAktuelleSaison } from '../../hooks/useAktuelleSaison';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import MatchDayOverview from '../MatchDayOverview';
@@ -568,10 +569,33 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   useEffect(() => { try { localStorage.setItem('fusta_stats_view', selectedView); } catch { /* ignore */ } }, [selectedView]);
   useEffect(() => { try { localStorage.setItem('fusta_stats_period', timePeriod); } catch { /* ignore */ } }, [timePeriod]);
   
-  const { data: matches, loading: matchesLoading } = useSupabaseQuery('matches', '*');
-  const { data: players, loading: playersLoading } = useSupabaseQuery('players', '*');
-  const { data: sdsData, loading: sdsLoading } = useSupabaseQuery('spieler_des_spiels', '*');
-  const { data: bans, loading: bansLoading } = useSupabaseQuery('bans', '*');
+  const aktuelleSaison = useAktuelleSaison();
+
+  // Saison-Umfang: nur die gewaehlte Saison oder alle zusammen. Der Schalter
+  // wirkt ueber skipFifaFilter direkt auf die Abfragen — useSupabaseQuery haengt
+  // an JSON.stringify(options) und laedt deshalb von selbst neu.
+  const [umfang, setUmfang] = useState(() => {
+    try { return localStorage.getItem('fusta_stats_umfang') || 'saison'; } catch { return 'saison'; }
+  });
+  useEffect(() => { try { localStorage.setItem('fusta_stats_umfang', umfang); } catch { /* ignore */ } }, [umfang]);
+  const abfrageOptionen = useMemo(
+    () => (umfang === 'alle' ? { skipFifaFilter: true } : {}),
+    [umfang]
+  );
+
+  const { data: matches, loading: matchesLoading } = useSupabaseQuery('matches', '*', abfrageOptionen);
+  const { data: players, loading: playersLoading } = useSupabaseQuery('players', '*', abfrageOptionen);
+  const { data: sdsData, loading: sdsLoading } = useSupabaseQuery('spieler_des_spiels', '*', abfrageOptionen);
+  const { data: bans, loading: bansLoading } = useSupabaseQuery('bans', '*', abfrageOptionen);
+
+  // Welche Saisons stecken gerade in den Zahlen? Ohne das steht bei "Alle
+  // Saisons" eine Summe ohne Herkunft.
+  const enthalteneSaisons = useMemo(() => {
+    const s = new Set();
+    for (const m of matches || []) s.add(m.fifa_version || 'FC25');
+    for (const p of players || []) s.add(p.fifa_version || 'FC25');
+    return [...s].sort((a, b) => (parseInt(a.replace(/\D/g, ''), 10) || 0) - (parseInt(b.replace(/\D/g, ''), 10) || 0));
+  }, [matches, players]);
   
   const loading = matchesLoading || playersLoading || sdsLoading || bansLoading;
 
@@ -2436,21 +2460,48 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
 
-      {/* Discreet time-period selector */}
-      <div className="mb-4 inline-flex items-center gap-2 bg-bg-tertiary rounded-xl pl-3 pr-2 py-1.5 text-text-secondary">
-        <Icon name="calendar" size={16} strokeWidth={2.2} />
-        <select
-          value={timePeriod}
-          onChange={(e) => setTimePeriod(e.target.value)}
-          className="bg-transparent text-sm font-medium text-text-primary focus:outline-none pr-1"
-        >
-          <option value="all">Alle Spiele</option>
-          <option value="1week">Letzte Woche</option>
-          <option value="1month">Letzter Monat</option>
-          <option value="3months">Letzte 3 Monate</option>
-          <option value="6months">Letzte 6 Monate</option>
-        </select>
+      {/* Umfang + Zeitraum. Beide dezent, beide in einer Zeile — sie
+          beantworten dieselbe Frage: "worueber rechnen wir hier eigentlich?" */}
+      <div className="mb-4 flex flex-wrap items-center gap-2">
+        <div className="inline-flex bg-bg-tertiary rounded-xl p-0.5">
+          {[
+            { id: 'saison', label: aktuelleSaison },
+            { id: 'alle', label: 'Alle Saisons' },
+          ].map((o) => (
+            <button
+              key={o.id}
+              onClick={() => setUmfang(o.id)}
+              className={`px-3 h-8 rounded-[0.6rem] text-footnote font-semibold transition-all
+                ${umfang === o.id
+                  ? 'bg-bg-elevated text-text-primary shadow-ios-sm'
+                  : 'text-text-secondary hover:text-text-primary'}`}
+            >
+              {o.label}
+            </button>
+          ))}
+        </div>
+        <div className="inline-flex items-center gap-2 bg-bg-tertiary rounded-xl pl-3 pr-2 h-9 text-text-secondary">
+          <Icon name="calendar" size={16} strokeWidth={2.2} />
+          <select
+            value={timePeriod}
+            onChange={(e) => setTimePeriod(e.target.value)}
+            className="bg-transparent text-sm font-medium text-text-primary focus:outline-none pr-1"
+          >
+            <option value="all">Alle Spiele</option>
+            <option value="1week">Letzte Woche</option>
+            <option value="1month">Letzter Monat</option>
+            <option value="3months">Letzte 3 Monate</option>
+            <option value="6months">Letzte 6 Monate</option>
+          </select>
+        </div>
       </div>
+
+      {umfang === 'alle' && enthalteneSaisons.length > 1 && (
+        <p className="-mt-2 mb-4 text-caption2 text-text-tertiary">
+          Enthält {enthalteneSaisons.join(' · ')}. Altsaisons haben keine
+          einzelnen Spiele — dort zählen nur Tore, Sperren und Auszeichnungen mit.
+        </p>
+      )}
 
       {/* Enhanced View Navigation with iOS 26 Design - Horizontal Layout */}
       {/* Horizontal Navigation */}

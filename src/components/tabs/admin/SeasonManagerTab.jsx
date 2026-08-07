@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Icon from '../../icons/Icon';
-import SeasonSelector from '../../SeasonSelector';
+import SaisonWechsler from '../../SaisonWechsler';
 import { 
   getAvailableSeasons, 
   exportSeasonData,
@@ -131,8 +131,21 @@ const SeasonManagerTab = () => {
         </div>
       </div>
 
-      {/* Season Selector */}
-      <SeasonSelector />
+      {/* Der Wechsel sitzt jetzt im Kopf der App und wirkt sofort. Hier stand
+          ein zweiter Umschalter, der nur FC25/FC26 kannte (FC15/FC16 tauchten
+          gar nicht auf) und die Seite komplett neu lud. */}
+      <div className="modern-card p-4 flex items-center gap-3">
+        <div className="w-10 h-10 rounded-xl bg-system-blue/12 text-system-blue flex items-center justify-center flex-shrink-0">
+          <Icon name="calendar" size={20} strokeWidth={2.2} />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="text-footnote font-semibold text-text-primary">Saison wechseln</p>
+          <p className="text-caption1 text-text-secondary">
+            Oben rechts im Kopf der App — wirkt sofort, ohne Neuladen.
+          </p>
+        </div>
+        <SaisonWechsler />
+      </div>
 
       {/* Season Overview */}
       <div className="space-y-4">

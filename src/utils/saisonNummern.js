@@ -10,6 +10,8 @@
  * im Duell "Saison 1 · FC25" — dieselbe Saison, zwei Nummern.
  */
 
+import { LEGACY_SAISONS } from './legacySaison';
+
 const versionNum = (v) => parseInt(String(v ?? '').replace(/\D/g, ''), 10) || 0;
 
 /**
@@ -24,6 +26,11 @@ export function saisonListe(matches, players, current) {
   for (const m of matches || []) set.add(m.fifa_version || 'FC25');
   for (const p of players || []) set.add(p.fifa_version || 'FC25');
   if (current) set.add(current);
+  // Bekannte Altsaisons immer mitzaehlen, auch wenn die aufrufende Ansicht
+  // gerade keine Zeile daraus geladen hat (das Duell laedt z. B. nur Spiele
+  // und Spieler — eine Saison mit reiner Strichlisten-Bilanz faellt sonst
+  // durch und bekommt "Saison ?").
+  for (const v of Object.keys(LEGACY_SAISONS)) set.add(v);
   return [...set]
     .sort((a, b) => versionNum(a) - versionNum(b))
     .map((v, i) => ({ version: v, number: i + 1, label: `Saison ${i + 1} · ${v}` }));

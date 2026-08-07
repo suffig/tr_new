@@ -17,6 +17,12 @@ import { BUILT_IN_FIFA_VERSIONS } from './fifaVersionManager';
 
 const K_CUSTOM = 'fifa_custom_versions';
 const K_TEAMS = 'fifa_version_teams';
+/**
+ * Die Saison, in der GESPIELT wird — laut gemeinsamer Datenbank.
+ * Getrennt von der Saison, die man sich gerade ANSIEHT (fifa_current_version):
+ * Altsaisons durchblaettern darf nicht heissen, dass neue Spiele dort landen.
+ */
+export const K_AKTIV = 'fifa_active_version';
 
 const TABLE = 'fifa_versions';
 
@@ -29,9 +35,11 @@ export async function hydrateFifaVersionsFromDB() {
 
     const custom = {};
     const teams = {};
+    let aktiv = null;
     for (const row of data) {
       if (!BUILT_IN_FIFA_VERSIONS[row.id]) custom[row.id] = row.id;
       if (row.teams && Object.keys(row.teams).length) teams[row.id] = row.teams;
+      if (row.is_active) aktiv = row.id;
     }
 
     // Sync only the shared registry: the version LIST + per-version team config.
@@ -39,6 +47,9 @@ export async function hydrateFifaVersionsFromDB() {
     // the DB's active version on every load would revert a local season switch.
     localStorage.setItem(K_CUSTOM, JSON.stringify(custom));
     localStorage.setItem(K_TEAMS, JSON.stringify(teams));
+    // Merken, WELCHE Saison laut DB laeuft — nicht um sie zu erzwingen, sondern
+    // damit die App sagen kann "du siehst gerade eine Archiv-Saison an".
+    if (aktiv) localStorage.setItem(K_AKTIV, aktiv);
 
     // Let mounted components refresh team names/logos (does not change the season).
     window.dispatchEvent(new CustomEvent('fifaVersionsHydrated', { detail: {} }));
