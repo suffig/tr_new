@@ -154,223 +154,122 @@ insert into public.spieler_des_spiels (name, team, count, fifa_version) values
   ('Romeron', 'Real', 1, 'FC15'),
   ('Terry', 'Ehemalige', 1, 'FC15');
 
--- 5) Sperren — player_id ueber den Namen der Zeile dieser Saison
+-- 5) Sperren — player_id ueber den Namen der Zeile dieser Saison.
+--    Die Namen sind je Saison eindeutig (eine Zeile pro Spieler oben),
+--    der join trifft also genau einmal.
 insert into public.bans (player_id, team, type, totalgames, matchesserved, reason, fifa_version)
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Carvalho' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hilton' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Yedlin' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Pepe' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Totti' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Romeron' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hernandez' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Carvalho' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Navarro' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Carvalho' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Maicon' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Kehl' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Klose' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Terry' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Maicon' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Pepe' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Lampard' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Di Natale' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'De Sanctis' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Pepe' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Navarro' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Pepe' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Pirlo' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Pepe' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Töre' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Pirlo' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Yedlin' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Maicon' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Al Muwallad' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Odu' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Yedlin' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Olic' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Yedlin' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Carvalho' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Ferdinand' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Keita' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cesar' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Uche' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Carvalho' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Evra' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Maicon' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Carvalho' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Olic' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cesar' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Yedlin' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Ferdinand' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hilton' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Pirlo' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Ibrahimovic' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Maicon' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Touré' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cavanda' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Maicon' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Alex' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cesar' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hernandez' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Olic' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Olic' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Remy' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Maicon' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Uche' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hernandez' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cesar' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Olic' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Di Natale' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Lee Seung Hyun' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Touré' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Mbakogu' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Ferdinand' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cesar' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'A. Cole' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Olic' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Töre' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Martins' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Alex' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Yedlin' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Touré' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Uche' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Touré' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hilton' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Fekir' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Lee Seung Hyun' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hilton' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cedrick' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cesar' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Alex' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Alex' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Di Natale' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Martins' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hilton' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hilton' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Di Natale' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Keita' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Alex' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Yedlin' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Di Natale' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hilton' limit 1
-union all
-select p.id, p.team, 'Gelb-Rote Karte', 1, 1, 'Gelb-Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Alex' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Tevez' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Alex' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hernandez' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Keita' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Campagnaro' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Cesar' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Alex' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Keita' limit 1
-union all
-select p.id, p.team, 'Rote Karte', 2, 2, 'Rote Karte', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Oduamadi' limit 1
-union all
-select p.id, p.team, 'Verletzung', 3, 3, 'Verletzung', 'FC15' from public.players p where p.fifa_version = 'FC15' and p.name = 'Hernandez' limit 1;
+select p.id, p.team, s.art, s.dauer, s.dauer, s.art, 'FC15'
+from (values
+  ('Carvalho', 'Gelb-Rote Karte', 1),
+  ('Hilton', 'Gelb-Rote Karte', 1),
+  ('Yedlin', 'Rote Karte', 2),
+  ('Pepe', 'Verletzung', 3),
+  ('Totti', 'Verletzung', 3),
+  ('Romeron', 'Verletzung', 3),
+  ('Hernandez', 'Rote Karte', 2),
+  ('Carvalho', 'Rote Karte', 2),
+  ('Navarro', 'Rote Karte', 2),
+  ('Carvalho', 'Rote Karte', 2),
+  ('Maicon', 'Rote Karte', 2),
+  ('Kehl', 'Verletzung', 3),
+  ('Klose', 'Rote Karte', 2),
+  ('Terry', 'Verletzung', 3),
+  ('Maicon', 'Verletzung', 3),
+  ('Pepe', 'Verletzung', 3),
+  ('Lampard', 'Verletzung', 3),
+  ('Di Natale', 'Verletzung', 3),
+  ('De Sanctis', 'Rote Karte', 2),
+  ('Pepe', 'Verletzung', 3),
+  ('Navarro', 'Verletzung', 3),
+  ('Pepe', 'Verletzung', 3),
+  ('Pirlo', 'Verletzung', 3),
+  ('Pepe', 'Verletzung', 3),
+  ('Töre', 'Gelb-Rote Karte', 1),
+  ('Pirlo', 'Verletzung', 3),
+  ('Yedlin', 'Verletzung', 3),
+  ('Maicon', 'Rote Karte', 2),
+  ('Al Muwallad', 'Verletzung', 3),
+  ('Odu', 'Verletzung', 3),
+  ('Yedlin', 'Rote Karte', 2),
+  ('Olic', 'Rote Karte', 2),
+  ('Yedlin', 'Rote Karte', 2),
+  ('Carvalho', 'Verletzung', 3),
+  ('Ferdinand', 'Verletzung', 3),
+  ('Keita', 'Gelb-Rote Karte', 1),
+  ('Cesar', 'Rote Karte', 2),
+  ('Uche', 'Verletzung', 3),
+  ('Carvalho', 'Rote Karte', 2),
+  ('Evra', 'Gelb-Rote Karte', 1),
+  ('Maicon', 'Gelb-Rote Karte', 1),
+  ('Carvalho', 'Rote Karte', 2),
+  ('Olic', 'Verletzung', 3),
+  ('Cesar', 'Rote Karte', 2),
+  ('Yedlin', 'Rote Karte', 2),
+  ('Ferdinand', 'Verletzung', 3),
+  ('Hilton', 'Verletzung', 3),
+  ('Pirlo', 'Verletzung', 3),
+  ('Ibrahimovic', 'Gelb-Rote Karte', 1),
+  ('Maicon', 'Rote Karte', 2),
+  ('Touré', 'Rote Karte', 2),
+  ('Cavanda', 'Gelb-Rote Karte', 1),
+  ('Maicon', 'Rote Karte', 2),
+  ('Alex', 'Gelb-Rote Karte', 1),
+  ('Cesar', 'Rote Karte', 2),
+  ('Hernandez', 'Gelb-Rote Karte', 1),
+  ('Olic', 'Verletzung', 3),
+  ('Olic', 'Verletzung', 3),
+  ('Remy', 'Verletzung', 3),
+  ('Maicon', 'Gelb-Rote Karte', 1),
+  ('Uche', 'Verletzung', 3),
+  ('Hernandez', 'Verletzung', 3),
+  ('Cesar', 'Rote Karte', 2),
+  ('Olic', 'Verletzung', 3),
+  ('Di Natale', 'Verletzung', 3),
+  ('Lee Seung Hyun', 'Verletzung', 3),
+  ('Touré', 'Rote Karte', 2),
+  ('Mbakogu', 'Verletzung', 3),
+  ('Ferdinand', 'Rote Karte', 2),
+  ('Cesar', 'Rote Karte', 2),
+  ('A. Cole', 'Rote Karte', 2),
+  ('Olic', 'Verletzung', 3),
+  ('Töre', 'Verletzung', 3),
+  ('Martins', 'Verletzung', 3),
+  ('Alex', 'Rote Karte', 2),
+  ('Yedlin', 'Rote Karte', 2),
+  ('Touré', 'Rote Karte', 2),
+  ('Uche', 'Verletzung', 3),
+  ('Touré', 'Gelb-Rote Karte', 1),
+  ('Hilton', 'Verletzung', 3),
+  ('Fekir', 'Verletzung', 3),
+  ('Lee Seung Hyun', 'Gelb-Rote Karte', 1),
+  ('Hilton', 'Gelb-Rote Karte', 1),
+  ('Cedrick', 'Verletzung', 3),
+  ('Cesar', 'Rote Karte', 2),
+  ('Alex', 'Rote Karte', 2),
+  ('Alex', 'Rote Karte', 2),
+  ('Di Natale', 'Verletzung', 3),
+  ('Martins', 'Verletzung', 3),
+  ('Hilton', 'Verletzung', 3),
+  ('Hilton', 'Verletzung', 3),
+  ('Di Natale', 'Verletzung', 3),
+  ('Keita', 'Gelb-Rote Karte', 1),
+  ('Alex', 'Rote Karte', 2),
+  ('Yedlin', 'Rote Karte', 2),
+  ('Di Natale', 'Verletzung', 3),
+  ('Hilton', 'Rote Karte', 2),
+  ('Alex', 'Gelb-Rote Karte', 1),
+  ('Tevez', 'Verletzung', 3),
+  ('Alex', 'Rote Karte', 2),
+  ('Hernandez', 'Verletzung', 3),
+  ('Keita', 'Rote Karte', 2),
+  ('Campagnaro', 'Rote Karte', 2),
+  ('Cesar', 'Rote Karte', 2),
+  ('Alex', 'Rote Karte', 2),
+  ('Keita', 'Rote Karte', 2),
+  ('Oduamadi', 'Rote Karte', 2),
+  ('Hernandez', 'Verletzung', 3)
+) as s(name, art, dauer)
+join public.players p on p.fifa_version = 'FC15' and p.name = s.name;
 
 -- 6) Kontostaende. balance in Euro (wie die Preisgeld-Logik), debt 0.
 insert into public.finances (team, balance, debt, fifa_version) values

@@ -117,6 +117,18 @@ export function baue(saison) {
   // liefen ueber die ganze Saison — inklusive abgegebener Spieler.
   for (const e of spieler.values()) if (!e.team) e.team = 'Ehemalige';
 
+  // Die Sperren haengen ueber den NAMEN an der Spielerzeile. Zwei Spieler mit
+  // demselben Anzeigenamen wuerden den join verdoppeln — dann lieber abbrechen.
+  const proName = new Map();
+  for (const e of spieler.values()) proName.set(e.name, (proName.get(e.name) || 0) + 1);
+  const doppelt = [...proName].filter(([, n]) => n > 1).map(([n]) => n);
+  if (doppelt.length) {
+    throw new Error(
+      `Anzeigenamen doppelt vergeben: ${doppelt.join(', ')} — ` +
+      'die Sperren wuerden sich vervielfachen. Varianten in der Saisondatei klaeren.'
+    );
+  }
+
   // --- SQL ------------------------------------------------------------------
   const z = [];
   const A = (s) => z.push(s);
@@ -181,16 +193,20 @@ export function baue(saison) {
     .join(',\n') + ';');
   A('');
   if (sperrListe.length) {
-    A('-- 5) Sperren — player_id ueber den Namen der Zeile dieser Saison');
+    // Werteliste + join, NICHT ein "select … limit 1 union all select … limit 1":
+    // Postgres verbietet LIMIT direkt vor UNION (ERROR 42601, syntax error at
+    // or near "union"). Ausserdem ist das hier kuerzer und lesbar.
+    A('-- 5) Sperren — player_id ueber den Namen der Zeile dieser Saison.');
+    A('--    Die Namen sind je Saison eindeutig (eine Zeile pro Spieler oben),');
+    A('--    der join trifft also genau einmal.');
     A('insert into public.bans (player_id, team, type, totalgames, matchesserved, reason, fifa_version)');
+    A('select p.id, p.team, s.art, s.dauer, s.dauer, s.art, ' + q(version));
+    A('from (values');
     A(sperrListe
-      .map(([k, art]) => {
-        const d = DAUER[art] ?? 2;
-        return `select p.id, p.team, ${q(art)}, ${d}, ${d}, ${q(art)}, ${q(version)} ` +
-          `from public.players p where p.fifa_version = ${q(version)} ` +
-          `and p.name = ${q(spieler.get(k).name)} limit 1`;
-      })
-      .join('\nunion all\n') + ';');
+      .map(([k, art]) => `  (${q(spieler.get(k).name)}, ${q(art)}, ${DAUER[art] ?? 2})`)
+      .join(',\n'));
+    A(') as s(name, art, dauer)');
+    A(`join public.players p on p.fifa_version = ${q(version)} and p.name = s.name;`);
     A('');
   }
   if (Object.keys(konten).length) {
@@ -257,6 +273,25 @@ if (!arg) {
 const quelle = resolve(wurzel, `scripts/altsaisons/${arg}.mjs`);
 const saison = (await import(pathToFileURL(quelle).href)).default;
 const { sql, bericht } = baue(saison);
+
+// Syntax pruefen, BEVOR die Datei jemanden erreicht. libpg_query ist dieselbe
+// Grammatik, die der Server benutzt — was hier durchgeht, geht auch in Supabase
+// durch. Anlass: ein "select … limit 1 union all select … limit 1" ist gueltig
+// aussehendes, aber unzulaessiges SQL (Postgres verbietet LIMIT vor UNION) und
+// fiel erst im SQL-Editor auf.
+try {
+  const { parse } = await import('pgsql-parser');
+  const { stmts } = await parse(sql);
+  console.log(`Syntax geprueft (libpg_query): ${stmts.length} Anweisungen ✓`);
+} catch (e) {
+  if (e?.code === 'ERR_MODULE_NOT_FOUND') {
+    console.warn('Hinweis: pgsql-parser fehlt — Syntax ungeprueft (npm i -D pgsql-parser).');
+  } else {
+    console.error(`\nSYNTAXFEHLER im erzeugten SQL: ${e.message}`);
+    console.error('Nicht geschrieben. Bitte den Generator korrigieren.');
+    process.exit(3);
+  }
+}
 
 const nr = String(saison.dateiNummer ?? 11).padStart(2, '0');
 const ziel = resolve(wurzel, `db/${nr}_${String(saison.version).toLowerCase()}_import.sql`);
