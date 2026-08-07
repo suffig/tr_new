@@ -17,7 +17,7 @@ import { istLegacySaison } from '../../../utils/legacySaison';
  * und deren `will-change: opacity` erzeugt einen Stapelkontext, aus dem ein
  * z-index allein nicht herauskommt.
  */
-export default function SpielerVerlauf({ spieler, sds, sperren, onSchliessen }) {
+export default function SpielerVerlauf({ spieler, onSchliessen }) {
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
     document.addEventListener('keydown', esc);
@@ -29,29 +29,23 @@ export default function SpielerVerlauf({ spieler, sds, sperren, onSchliessen }) 
     };
   }, [onSchliessen]);
 
+  // Die Saisonzeilen bringen Tore, Auszeichnungen und Sperren schon mit
+  // (spielerStatistik). Hier nur noch sortieren — zweimal dieselbe Zuordnung
+  // zu bauen hiesse, sie zweimal unterschiedlich falsch zu machen.
   const zeilen = useMemo(() => {
     if (!spieler) return [];
-    const namen = new Set(spieler.spellings.map((n) => n.toLowerCase()));
-    return [...spieler.seasons]
-      .sort((a, b) => (parseInt(String(b.version).replace(/\D/g, ''), 10) || 0)
-                    - (parseInt(String(a.version).replace(/\D/g, ''), 10) || 0))
-      .map((s) => ({
-        ...s,
-        // Auszeichnungen und Sperren derselben Saison, ueber alle
-        // Schreibweisen des Spielers.
-        sds: (sds || [])
-          .filter((x) => (x.fifa_version || 'FC25') === s.version && namen.has(String(x.name).toLowerCase()))
-          .reduce((sum, x) => sum + (x.count || 0), 0),
-        // Sperren haengen ueber player_id an genau dieser Saisonzeile.
-        sperren: s.id == null ? 0
-          : (sperren || []).filter((x) => x.player_id === s.id).length,
-      }));
-  }, [spieler, sds, sperren]);
+    return [...spieler.seasons].sort(
+      (a, b) => (parseInt(String(b.version).replace(/\D/g, ''), 10) || 0)
+              - (parseInt(String(a.version).replace(/\D/g, ''), 10) || 0)
+    );
+  }, [spieler]);
 
   if (!spieler) return null;
 
   const gesamtTore = zeilen.reduce((s, z) => s + z.goals, 0);
-  const gesamtSds = zeilen.reduce((s, z) => s + z.sds, 0);
+  const gesamtSds = zeilen.reduce((s, z) => s + (z.sds || 0), 0);
+  const gesamtSperren = zeilen.reduce((s, z) => s + (z.sperren || 0), 0);
+  const gesamtSperrSpiele = zeilen.reduce((s, z) => s + (z.sperrSpiele || 0), 0);
   const beste = Math.max(...zeilen.map((z) => z.goals), 1);
   const besteSaison = zeilen.reduce((a, b) => (b.goals > (a?.goals ?? -1) ? b : a), null);
   // Vereinsnamen je Saison aufloesen, nicht ueber die laufende Saison: FC25
@@ -91,7 +85,7 @@ export default function SpielerVerlauf({ spieler, sds, sperren, onSchliessen }) 
             {[
               ['Tore', gesamtTore, 'football', 'text-system-orange'],
               ['Auszeichnungen', gesamtSds, 'star', 'text-system-blue'],
-              ['Saisons', zeilen.length, 'calendar', 'text-system-purple'],
+              ['Sperren', gesamtSperren, 'ban', 'text-system-red'],
             ].map(([label, wert, icon, farbe]) => (
               <div key={label} className="panel-gray rounded-xl p-3 text-center">
                 <Icon name={icon} size={15} strokeWidth={2.2} className={`${farbe} mx-auto mb-1`} />
@@ -100,6 +94,12 @@ export default function SpielerVerlauf({ spieler, sds, sperren, onSchliessen }) 
               </div>
             ))}
           </div>
+
+          {gesamtSperrSpiele > 0 && (
+            <p className="text-caption1 text-text-secondary">
+              Wegen Sperren {gesamtSperrSpiele} {gesamtSperrSpiele === 1 ? 'Spiel' : 'Spiele'} verpasst.
+            </p>
+          )}
 
           {besteSaison && zeilen.length > 1 && (
             <p className="text-caption1 text-text-secondary">

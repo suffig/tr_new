@@ -6,7 +6,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import SeasonView from './SeasonView';
 import RecordsView from './RecordsView';
-import TorschuetzenListe from './duell/TorschuetzenListe';
+import SpielerListe from './duell/SpielerListe';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 import { aggregatePlayers } from '../../utils/playerIdentity';
@@ -14,6 +14,7 @@ import { saisonNummern } from '../../utils/saisonNummern';
 import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
 import { LEGACY_SAISONS, siegeGesamt } from '../../utils/legacySaison';
 import { istArchiv } from '../../utils/laufendeSaison';
+import { spielerStatistik, summenJePerson } from '../../utils/spielerStatistik';
 
 // goalslist entries are either a plain name string or { player_id, player, count }
 function parseGoals(raw) {
@@ -541,6 +542,10 @@ export default function DuelTab() {
   const { data: matches, loading: mLoading, error: mError, refetch: refetchMatches } = useSupabaseQuery('matches', '*', { skipFifaFilter: true });
   const { data: players } = useSupabaseQuery('players', '*', { skipFifaFilter: true });
   const { data: managers } = useSupabaseQuery('manager', '*');
+  // Auszeichnungen und Sperren ueber ALLE Saisons — 1111 bzw. 322 Eintraege,
+  // die im Duell bisher nirgends auftauchten.
+  const { data: sdsAlle } = useSupabaseQuery('spieler_des_spiels', '*', { skipFifaFilter: true });
+  const { data: sperrenAlle } = useSupabaseQuery('bans', '*', { skipFifaFilter: true });
 
   const aekName = managers?.find((m) => m.id === 1)?.name || 'Alexander';
   const realName = managers?.find((m) => m.id === 2)?.name || 'Philip';
@@ -623,6 +628,10 @@ export default function DuelTab() {
   const ergebnisse = useMemo(() => haeufigsteErgebnisse(matches), [matches]);
   const diffs = useMemo(() => tordifferenzen(matches), [matches]);
   const serien = useMemo(() => serienUndZuNull(matches), [matches]);
+  const personen = useMemo(
+    () => summenJePerson(spielerStatistik({ players, sds: sdsAlle, bans: sperrenAlle })),
+    [players, sdsAlle, sperrenAlle]
+  );
 
   if (mLoading) return <LoadingSpinner message="Lade Duell…" />;
 
@@ -641,7 +650,7 @@ export default function DuelTab() {
   const views = [
     { id: 'uebersicht', label: 'Übersicht', iconName: 'zap' },
     { id: 'rekorde', label: 'Rekorde', iconName: 'trophy' },
-    { id: 'torschuetzen', label: 'Torschützen', iconName: 'star' },
+    { id: 'torschuetzen', label: 'Spieler', iconName: 'users' },
     { id: 'rueckblick', label: 'Rückblick', iconName: 'calendar' },
   ];
   // Nur das, was tatsaechlich passiert ist — nicht Erreichbares mit
@@ -667,7 +676,7 @@ export default function DuelTab() {
       {view === 'rekorde' ? (
         <RecordsView matches={matches} players={players} aekName={aekName} realName={realName} />
       ) : view === 'torschuetzen' ? (
-        <TorschuetzenListe players={players} loading={!players} />
+        <SpielerListe players={players} loading={!players} />
       ) : view === 'rueckblick' ? (
         <WrappedView d={d} aekName={aekName} realName={realName} />
       ) : (
@@ -1011,6 +1020,56 @@ export default function DuelTab() {
                 <div className="text-caption2 text-text-tertiary">{e.anzahl}×</div>
               </div>
             ))}
+          </div>
+        </Karte>
+      )}
+
+      {/* Auszeichnungen — 1111 Eintraege lagen in der Datenbank und tauchten
+          im Duell nirgends auf. Aus ALLEN Saisons, auch den gezaehlten. */}
+      {(personen.AEK.sds + personen.Real.sds) > 0 && (
+        <Karte icon="star" iconClass="text-system-blue" titel="Spieler des Spiels"
+               zusatz={`${personen.AEK.sds + personen.Real.sds + personen.Ehemalige.sds} vergeben`}
+               hinweis={personen.Ehemalige.sds > 0
+                 ? `${personen.Ehemalige.sds} entfallen auf Spieler ohne Teamzuordnung.`
+                 : null}>
+          <Gegenueber aek={personen.AEK.sds} real={personen.Real.sds}
+                      aekName={aekName} realName={realName} />
+        </Karte>
+      )}
+
+      {/* Disziplin — Sperren nach Art. Ebenfalls neu im Duell. */}
+      {(personen.AEK.sperren + personen.Real.sperren) > 0 && (
+        <Karte icon="ban" iconClass="text-system-red" titel="Disziplin"
+               zusatz={`${personen.AEK.sperren + personen.Real.sperren + personen.Ehemalige.sperren} Sperren`}
+               hinweis={`Zusammen ${personen.AEK.sperrSpiele + personen.Real.sperrSpiele + personen.Ehemalige.sperrSpiele} verpasste Spiele.`}>
+          <Gegenueber aek={personen.AEK.sperren} real={personen.Real.sperren}
+                      aekName={aekName} realName={realName} />
+          {/* Aufschluesselung nach Art: Rot und Verletzung sind zwei sehr
+              verschiedene Aussagen ueber jemanden. */}
+          <div className="mt-3 space-y-1.5">
+            {[...new Set([
+              ...Object.keys(personen.AEK.arten),
+              ...Object.keys(personen.Real.arten),
+            ])].sort().map((art) => {
+              const a = personen.AEK.arten[art] || 0;
+              const r = personen.Real.arten[art] || 0;
+              const max = Math.max(a, r, 1);
+              return (
+                <div key={art} className="flex items-center gap-2">
+                  <span className="w-28 text-caption2 text-text-secondary truncate flex-shrink-0">{art}</span>
+                  <span className="num-tabular text-caption2 text-system-blue w-6 text-right">{a}</span>
+                  <div className="flex-1 flex items-center gap-0.5">
+                    <div className="flex-1 h-2 rounded-l-full bg-bg-tertiary overflow-hidden flex justify-end">
+                      <div className="h-full bg-system-blue" style={{ width: `${(a / max) * 100}%` }} />
+                    </div>
+                    <div className="flex-1 h-2 rounded-r-full bg-bg-tertiary overflow-hidden">
+                      <div className="h-full bg-system-red" style={{ width: `${(r / max) * 100}%` }} />
+                    </div>
+                  </div>
+                  <span className="num-tabular text-caption2 text-system-red w-6">{r}</span>
+                </div>
+              );
+            })}
           </div>
         </Karte>
       )}

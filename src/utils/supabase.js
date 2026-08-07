@@ -108,8 +108,13 @@ const fallbackData = {
     { id: 2, team: 'Real', balance: 18000, debt: 2000, fifa_version: 'FC25' }
   ],
   spieler_des_spiels: [
-    // This would normally be populated by matches, but adding demo data for testing
-    // In reality, this would be calculated from matches.manofthematch
+    // Die Tabelle haelt inzwischen ueber tausend Auszeichnungen aus neun
+    // Saisons, war hier aber leer — Auswertungen darueber liessen sich im
+    // Demo-Modus deshalb gar nicht pruefen.
+    { id: 1, name: 'Jan Becker', team: 'Real', count: 4, fifa_version: 'FC25' },
+    { id: 2, name: 'Max Müller', team: 'AEK', count: 3, fifa_version: 'FC25' },
+    { id: 3, name: 'Max Müller', team: 'Real', count: 6, fifa_version: 'FC24' },
+    { id: 4, name: 'Kai Vogel', team: 'Ehemalige', count: 2, fifa_version: 'FC24' }
   ]
 };
 let fallbackSession = null;
