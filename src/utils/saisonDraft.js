@@ -15,11 +15,18 @@ export const TEAMS = ['AEK', 'Real'];
 export const PERSON = { AEK: 'Alexander', Real: 'Philip' };
 export const MINDEST_PICKS = 14;
 
-/** Laufender Draft einer Saison, sonst null. */
-export async function ladeOffenenDraft(version) {
+/**
+ * Laufender Draft, sonst null.
+ *
+ * Ohne `version` wird JEDER offene Draft gefunden. Das ist Absicht: gedraftet
+ * wird fuer die KOMMENDE Saison, waehrend die App noch in der alten steht.
+ * Wuerde hier nach der angesehenen Saison gefiltert, waere ein laufender
+ * Draft fuer FC27 unsichtbar, sobald man FC26 ansieht.
+ */
+export async function ladeOffenenDraft(version = null) {
+  const eq = version ? { fifa_version: version, status: 'laufend' } : { status: 'laufend' };
   const { data, error } = await supabaseDb.select('draft_sessions', '*', {
-    eq: { fifa_version: version, status: 'laufend' },
-    skipFifaFilter: true,
+    eq, skipFifaFilter: true,
   });
   if (error) throw error;
   return (data || [])[0] || null;

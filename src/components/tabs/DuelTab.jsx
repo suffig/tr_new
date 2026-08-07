@@ -77,8 +77,9 @@ function computeDuel(matches, resolveName) {
   for (const x of list) {
     const v = x.fifa_version || 'FC25';
     const a = x.goalsa || 0, b = x.goalsb || 0;
-    const s = bySeason[v] || (bySeason[v] = { aekW: 0, realW: 0, draws: 0 });
+    const s = bySeason[v] || (bySeason[v] = { aekW: 0, realW: 0, draws: 0, aekG: 0, realG: 0 });
     if (a > b) s.aekW++; else if (b > a) s.realW++; else s.draws++;
+    s.aekG += a; s.realG += b;
   }
   // Nummer kommt spaeter aus saisonNummern() — hier nur die Reihenfolge.
   // Selbst nummerieren wuerde Saisons ohne Spiele (FC15) ueberspringen und
@@ -355,12 +356,16 @@ function computeAchievements(matches, resolveName, names) {
 function Karte({ icon, iconClass = 'text-text-tertiary', titel, zusatz, hinweis, children, className = '' }) {
   return (
     <div className={`modern-card p-4 ${className}`}>
+      {/* Umbrechend statt abschneidend: in den schmalen Karten des
+          Zweier-Rasters passte "Aktuelle Serie" neben dem Zusatz nicht mehr
+          und wurde zu "Aktuelle S…". Der Titel hat Vorrang, der Zusatz
+          rutscht notfalls in die zweite Zeile. */}
       {(titel || zusatz) && (
-        <div className="flex items-center gap-2 mb-2.5">
+        <div className="flex flex-wrap items-center gap-x-2 gap-y-0.5 mb-2.5">
           {icon && <Icon name={icon} size={15} strokeWidth={2.2} className={`${iconClass} flex-shrink-0`} />}
-          <span className="text-footnote font-semibold text-text-muted truncate">{titel}</span>
+          <span className="text-footnote font-semibold text-text-muted">{titel}</span>
           {zusatz != null && (
-            <span className="ml-auto text-caption2 text-text-tertiary num-tabular flex-shrink-0">{zusatz}</span>
+            <span className="ml-auto text-caption2 text-text-tertiary num-tabular">{zusatz}</span>
           )}
         </div>
       )}
@@ -571,6 +576,11 @@ export default function DuelTab() {
         aekW: siegeGesamt(info.bilanz.AEK),
         realW: siegeGesamt(info.bilanz.Real),
         draws: info.bilanz.unentschieden || 0,
+        // Nicht jede Altsaison hat Tore — FC16 zaehlte nur Siege. Dann bleibt
+        // die Zeile ohne Torangabe, statt eine 0:0 zu behaupten.
+        aekG: info.bilanz.AEK?.tore ?? null,
+        realG: info.bilanz.Real?.tore ?? null,
+        spiele: info.bilanz.spiele || null,
         quelle: 'strichliste',
       });
     }
@@ -870,8 +880,6 @@ export default function DuelTab() {
                   <div className="flex items-center justify-between text-[11px] mb-0.5">
                     <span className="text-text-secondary font-medium flex items-center gap-1.5">
                       Saison {nummern.get(s.version) ?? '?'} · {s.version}
-                      {/* Ohne Kennzeichen liest sich eine Strichlisten-Bilanz
-                          wie eine aus Spielen gerechnete. */}
                       {/* Zwei verschiedene Aussagen: "Archiv" heisst
                           abgeschlossen, "gezaehlt" heisst aus einer
                           Strichliste statt aus Einzelspielen. FC25 ist
@@ -898,6 +906,20 @@ export default function DuelTab() {
                     <div className="bg-text-tertiary/40 h-full" style={{ width: `${(s.draws / tot) * 100}%` }} />
                     <div className="bg-system-red h-full" style={{ width: `${(s.realW / tot) * 100}%` }} />
                   </div>
+                  {/* Tore, wo sie ueberliefert sind. FC15 hat gar keine
+                      Bilanz, FC16 nur Siege — dort bleibt die Zeile leer,
+                      statt eine 0:0 zu behaupten. */}
+                  {s.aekG != null && s.realG != null && (
+                    <div className="flex items-center justify-between text-[10px] text-text-tertiary mt-0.5 num-tabular">
+                      <span>
+                        <span className="text-system-blue">{s.aekG}</span>
+                        {' : '}
+                        <span className="text-system-red">{s.realG}</span>
+                        {' Tore'}
+                      </span>
+                      <span>Ø {((s.aekG + s.realG) / (s.spiele || tot)).toLocaleString('de-DE', { maximumFractionDigits: 1 })} pro Spiel</span>
+                    </div>
+                  )}
                 </div>
               );
             })}

@@ -610,6 +610,14 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
   );
 }
 
+/**
+ * Dialog auf z-[70], nicht z-50.
+ *
+ * Die untere Navigation liegt selbst auf z-50 und steht im DOM danach — bei
+ * gleichem Rang gewinnt sie. Auf dem Handy dockt der Dialog unten an, und
+ * genau dort sass der Absende-Knopf: verdeckt, also unklickbar. z-[70] ist
+ * der Rang, den die anderen Dialoge der App (TeamTrackerTab) auch benutzen.
+ */
 function Modal({ titel, onSchliessen, children }) {
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
@@ -618,9 +626,9 @@ function Modal({ titel, onSchliessen, children }) {
   }, [onSchliessen]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
+    <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center bg-black/50 p-0 sm:p-4"
          onClick={onSchliessen}>
-      <div className="bg-bg-secondary w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[90dvh] overflow-y-auto safe-area-bottom"
+      <div className="bg-bg-secondary w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[85dvh] overflow-y-auto safe-area-bottom"
            onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-bg-secondary px-4 py-3 border-b border-border-light flex items-center justify-between">
           <h3 className="text-callout font-semibold text-text-primary">{titel}</h3>

@@ -6,6 +6,7 @@ import LoadingSpinner from '../../LoadingSpinner';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { getCurrentFifaVersion } from '../../../utils/fifaVersionManager';
 import { saisonListe } from '../../../utils/saisonNummern';
+import { getTeamDisplay } from '../../../constants/teams';
 import {
   TEAMS, PERSON, MINDEST_PICKS, ladeOffenenDraft, ladePicks, budgetVorschlag,
   amZug, restBudget, anzahlProTeam, starteDraft, ziehe, nimmZurueck, setzeFertig,
@@ -33,7 +34,9 @@ export default function SaisonDraft() {
   const neuLaden = useCallback(async () => {
     setLaden(true); setFehler(null);
     try {
-      const s = await ladeOffenenDraft(version);
+      // Ohne Saison: ein Draft fuer die kommende Saison bleibt sichtbar,
+      // auch waehrend man noch die alte ansieht.
+      const s = await ladeOffenenDraft();
       setSession(s);
       setPicks(s ? await ladePicks(s.id) : []);
     } catch (e) {
@@ -41,7 +44,7 @@ export default function SaisonDraft() {
     } finally {
       setLaden(false);
     }
-  }, [version]);
+  }, []);
 
   useEffect(() => { neuLaden(); }, [neuLaden]);
 
@@ -68,7 +71,10 @@ export default function SaisonDraft() {
 /** Vor dem Draft: Budgets festlegen und wer beginnt. */
 function DraftStart({ version, spieler, finanzen, onGestartet }) {
   const saisons = useMemo(() => saisonListe([], spieler, version), [spieler, version]);
-  const vorherige = saisons.filter((s) => s.version !== version);
+  // Zielsaison: die, fuer die gedraftet wird. Meist die naechste, deshalb auch
+  // frei eintippbar — FC27 gibt es noch nicht, wenn man dafuer draftet.
+  const [zielsaison, setZielsaison] = useState(version);
+  const vorherige = saisons.filter((s) => s.version !== zielsaison);
   const [vorsaison, setVorsaison] = useState(() => vorherige[vorherige.length - 1]?.version || '');
   const [budgets, setBudgets] = useState({ AEK: '', Real: '' });
   const [beginner, setBeginner] = useState('AEK');
@@ -86,10 +92,11 @@ function DraftStart({ version, spieler, finanzen, onGestartet }) {
   const start = async () => {
     const a = Number(budgets.AEK) || 0;
     const r = Number(budgets.Real) || 0;
+    if (!zielsaison.trim()) { toast.error('Für welche Saison wird gedraftet?'); return; }
     if (a <= 0 || r <= 0) { toast.error('Beide brauchen ein Budget über null.'); return; }
     setStartet(true);
     try {
-      await starteDraft({ version, budgetAek: a, budgetReal: r, beginner });
+      await starteDraft({ version: zielsaison, budgetAek: a, budgetReal: r, beginner });
       toast.success('Draft gestartet.');
       onGestartet();
     } catch (e) {
@@ -106,12 +113,26 @@ function DraftStart({ version, spieler, finanzen, onGestartet }) {
             <Icon name="users" size={20} strokeWidth={2} />
           </div>
           <div>
-            <div className="text-callout font-semibold text-text-primary">Draft für {version}</div>
+            <div className="text-callout font-semibold text-text-primary">Neuer Draft</div>
             <div className="text-caption1 text-text-secondary">
               Mindestens {MINDEST_PICKS} Spieler je Person (11 + 3)
             </div>
           </div>
         </div>
+
+        <label className="block mb-3">
+          <span className="text-footnote text-text-secondary">Für welche Saison?</span>
+          <input
+            value={zielsaison}
+            onChange={(e) => setZielsaison(e.target.value.toUpperCase().trim())}
+            className="form-input w-full mt-1"
+            placeholder="z. B. FC27"
+            aria-label="Zielsaison des Drafts"
+          />
+          <span className="block text-caption2 text-text-tertiary mt-1">
+            Die Spieler werden am Ende in dieser Saison angelegt.
+          </span>
+        </label>
 
         {vorherige.length > 0 && (
           <label className="block mb-3">
@@ -265,7 +286,9 @@ function DraftLaeuft({ session, picks, onAendern }) {
       <div className="modern-card p-4">
         <div className="flex items-center justify-between mb-2.5">
           <span className="text-footnote font-semibold text-text-muted">Budget</span>
-          <span className="text-caption2 text-text-tertiary">{session.fifa_version}</span>
+          <span className="text-caption2 font-semibold px-2 py-0.5 rounded-full bg-system-purple/12 text-system-purple">
+            Draft für {session.fifa_version}
+          </span>
         </div>
         <div className="grid grid-cols-2 gap-3">
           {TEAMS.map((team) => {
@@ -307,6 +330,15 @@ function DraftLaeuft({ session, picks, onAendern }) {
               Pick {picks.length + 1}
             </span>
           </div>
+          {/* Das Team ergibt sich daraus, wer zieht — der Spieler landet
+              genau dort, und in der Datenbank steht es auch so. */}
+          <div className="flex items-center gap-2 panel-gray rounded-xl px-3 py-2">
+            <TeamLogo team={dran === 'AEK' ? 'aek' : 'real'} size="xs" />
+            <span className="text-caption1 text-text-secondary">Wird eingetragen für</span>
+            <span className={`text-caption1 font-semibold ml-auto ${dran === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
+              {getTeamDisplay(dran, session.fifa_version)}
+            </span>
+          </div>
 
           <input value={name} onChange={(e) => setName(e.target.value)}
                  className="form-input w-full" placeholder="Spielername" autoFocus />
@@ -322,11 +354,17 @@ function DraftLaeuft({ session, picks, onAendern }) {
             </div>
           )}
           <div className="grid grid-cols-2 gap-2">
-            <input type="number" step="0.05" min="0" inputMode="decimal"
-                   value={preis} onChange={(e) => setPreis(e.target.value)}
-                   className="form-input w-full" placeholder="Preis in Mio" />
-            <input value={position} onChange={(e) => setPosition(e.target.value.toUpperCase())}
-                   className="form-input w-full" placeholder="Position" maxLength={4} />
+            <label className="block">
+              <span className="text-caption2 text-text-tertiary">Marktwert (Mio €)</span>
+              <input type="number" step="0.05" min="0" inputMode="decimal"
+                     value={preis} onChange={(e) => setPreis(e.target.value)}
+                     className="form-input w-full mt-0.5" placeholder="12.5" />
+            </label>
+            <label className="block">
+              <span className="text-caption2 text-text-tertiary">Position</span>
+              <input value={position} onChange={(e) => setPosition(e.target.value.toUpperCase())}
+                     className="form-input w-full mt-0.5" placeholder="ST" maxLength={4} />
+            </label>
           </div>
           <button type="submit" disabled={arbeitet} className="btn-primary w-full">
             {arbeitet ? 'Speichert…' : `Für ${PERSON[dran]} ziehen`}
