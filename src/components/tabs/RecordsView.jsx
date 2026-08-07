@@ -128,7 +128,10 @@ export default function RecordsView({ matches, players, aekName, realName }) {
 
   return (
     <div className="space-y-4">
-      <div className="text-footnote text-text-muted">Über alle Saisons · {r.total} Spiele</div>
+      {/* Rekorde brauchen das einzelne Spiel — aus den Altsaisons sind nur
+          Summen ueberliefert, die koennen hier nicht mitzaehlen. Frueher stand
+          hier "Über alle Saisons", was mit den Altsaisons falsch wurde. */}
+      <div className="text-footnote text-text-muted">Aus {r.total} erfassten Spielen</div>
       <div className="grid grid-cols-2 gap-3">
         {r.biggest.margin >= 0 && (
           <Record icon="trophy" iconClass="text-system-yellow" label="Höchster Sieg"

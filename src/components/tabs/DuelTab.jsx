@@ -88,21 +88,107 @@ function computeDuel(matches, resolveName) {
   return { total: list.length, aekW, realW, draws, aekG, realG, prizeA, prizeR, biggest, streak, last10, topScorer, topScorers, seasonH2H };
 }
 
-// Elo over all matches (K=24, Start 1000) — a form barometer for the rivalry.
-function computeElo(matches) {
-  const chrono = [...(matches || [])].sort(chronoAsc);
-  let a = 1000, r = 1000;
-  const series = [{ a, r }];
-  for (const m of chrono) {
-    const ga = m.goalsa || 0, gb = m.goalsb || 0;
-    const expA = 1 / (1 + Math.pow(10, (r - a) / 400));
-    const scoreA = ga > gb ? 1 : ga < gb ? 0 : 0.5;
-    const delta = 24 * (scoreA - expA);
-    a += delta; r -= delta;
-    series.push({ a: Math.round(a), r: Math.round(r) });
+/**
+ * Bilanz ueber WIRKLICH alle Saisons.
+ *
+ * Der Kopf sagte "Über alle Saisons", rechnete aber nur mit `matches` — und
+ * Einzelspiele gibt es nur aus FC25 und FC26. Die sieben Altsaisons steuern
+ * ihre gezaehlten Bilanzen bei; ohne sie fehlten hier ueber 800 Spiele.
+ *
+ * Die Herkunft wird mitgefuehrt, weil beides nicht dasselbe ist: erfasste
+ * Spiele lassen sich nachschlagen, gezaehlte nicht.
+ */
+function gesamtBilanz(ausSpielen) {
+  const g = {
+    aekW: ausSpielen.aekW, realW: ausSpielen.realW, draws: ausSpielen.draws,
+    total: ausSpielen.total, aekG: ausSpielen.aekG, realG: ausSpielen.realG,
+    erfasst: ausSpielen.total, gezaehlt: 0,
+    toreAus: ausSpielen.total > 0 ? 1 : 0, // Saisons, deren Tore mitzaehlen
+    ohneBilanz: [],
+  };
+  for (const [version, info] of Object.entries(LEGACY_SAISONS)) {
+    if (!info.bilanz) { g.ohneBilanz.push(version); continue; }
+    const b = info.bilanz;
+    g.aekW += siegeGesamt(b.AEK);
+    g.realW += siegeGesamt(b.Real);
+    g.draws += b.unentschieden || 0;
+    g.total += b.spiele || 0;
+    g.gezaehlt += b.spiele || 0;
+    // Tore hat nicht jede Altsaison (FC16 zaehlte nur Siege).
+    if (b.AEK?.tore != null && b.Real?.tore != null) {
+      g.aekG += b.AEK.tore;
+      g.realG += b.Real.tore;
+      g.toreAus++;
+    }
   }
-  return { series, aek: Math.round(a), real: Math.round(r) };
+  return g;
 }
+
+/** Haeufigste Endstaende — "wie geht ein Spiel zwischen euch typischerweise aus". */
+function haeufigsteErgebnisse(matches, grenze = 6) {
+  const zaehler = new Map();
+  for (const m of matches || []) {
+    const a = m.goalsa || 0, b = m.goalsb || 0;
+    const k = `${a}:${b}`;
+    zaehler.set(k, (zaehler.get(k) || 0) + 1);
+  }
+  return [...zaehler.entries()]
+    .map(([ergebnis, anzahl]) => {
+      const [a, b] = ergebnis.split(':').map(Number);
+      return { ergebnis, anzahl, sieger: a > b ? 'AEK' : b > a ? 'Real' : null };
+    })
+    .sort((x, y) => y.anzahl - x.anzahl || y.ergebnis.localeCompare(x.ergebnis))
+    .slice(0, grenze);
+}
+
+/** Wie deutlich fallen Siege aus — volle Verteilung, nicht bei 3+ abgeschnitten. */
+function tordifferenzen(matches) {
+  const zaehler = new Map();
+  for (const m of matches || []) {
+    const diff = Math.abs((m.goalsa || 0) - (m.goalsb || 0));
+    if (diff === 0) continue;
+    const e = zaehler.get(diff) || { aek: 0, real: 0 };
+    if ((m.goalsa || 0) > (m.goalsb || 0)) e.aek++; else e.real++;
+    zaehler.set(diff, e);
+  }
+  return [...zaehler.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([diff, e]) => ({ diff, ...e, gesamt: e.aek + e.real }));
+}
+
+/** Zu-Null-Siege und laengste Siegesserie je Person. */
+function serienUndZuNull(matches) {
+  // chronoAsc ist ein Vergleicher, keine Sortierfunktion.
+  const chrono = [...(matches || [])].sort(chronoAsc);
+  const raus = {
+    zuNull: { AEK: 0, Real: 0 },
+    laengste: { AEK: 0, Real: 0 },
+    abende: { AEK: 0, Real: 0, geteilt: 0 },
+  };
+  let lauf = null, laenge = 0;
+  for (const m of chrono) {
+    const a = m.goalsa || 0, b = m.goalsb || 0;
+    if (a > b && b === 0) raus.zuNull.AEK++;
+    if (b > a && a === 0) raus.zuNull.Real++;
+    const sieger = a > b ? 'AEK' : b > a ? 'Real' : null;
+    if (sieger && sieger === lauf) laenge++;
+    else { lauf = sieger; laenge = sieger ? 1 : 0; }
+    if (sieger && laenge > raus.laengste[sieger]) raus.laengste[sieger] = laenge;
+  }
+  // Abendbilanz: wer hat den Abend fuer sich entschieden, nicht nur Spiele.
+  const proTag = {};
+  for (const m of chrono) (proTag[String(m.date || '?')] ||= []).push(m);
+  for (const spiele of Object.values(proTag)) {
+    let a = 0, r = 0;
+    for (const m of spiele) {
+      if ((m.goalsa || 0) > (m.goalsb || 0)) a++;
+      else if ((m.goalsb || 0) > (m.goalsa || 0)) r++;
+    }
+    if (a > r) raus.abende.AEK++; else if (r > a) raus.abende.Real++; else raus.abende.geteilt++;
+  }
+  return raus;
+}
+
 
 // "Abendform": win split by game number within an evening (same date, by id).
 // Game 1 = sober, game 3+ = later in the evening — the beer curve, basically.
@@ -112,19 +198,24 @@ function computeEvenings(matches) {
     const key = String(m.date || '?');
     (byDate[key] = byDate[key] || []).push(m);
   }
-  const buckets = { 1: { aekW: 0, realW: 0, draws: 0 }, 2: { aekW: 0, realW: 0, draws: 0 }, 3: { aekW: 0, realW: 0, draws: 0 } };
+  // Jede Position einzeln — frueher wurde ab dem dritten Spiel alles in einen
+  // Topf "3+" geworfen. Damit war die eigentliche Frage nicht zu beantworten:
+  // wie weit traegt die Form ueber den Abend, und wo kippt sie.
+  const buckets = new Map();
   for (const games of Object.values(byDate)) {
     games.sort((p, q) => (p.id || 0) - (q.id || 0));
     games.forEach((m, i) => {
-      const pos = Math.min(i + 1, 3); // 3 == "Spiel 3+"
+      const pos = i + 1;
+      const s = buckets.get(pos) || { aekW: 0, realW: 0, draws: 0 };
       const a = m.goalsa || 0, b = m.goalsb || 0;
-      if (a > b) buckets[pos].aekW++; else if (b > a) buckets[pos].realW++; else buckets[pos].draws++;
+      if (a > b) s.aekW++; else if (b > a) s.realW++; else s.draws++;
+      buckets.set(pos, s);
     });
   }
-  return [1, 2, 3].map((pos) => {
-    const s = buckets[pos];
-    return { pos, label: pos === 3 ? 'Spiel 3+' : `Spiel ${pos}`, ...s, games: s.aekW + s.realW + s.draws };
-  }).filter((b) => b.games > 0);
+  return [...buckets.entries()]
+    .sort((a, b) => a[0] - b[0])
+    .map(([pos, s]) => ({ pos, label: `Spiel ${pos}`, ...s, games: s.aekW + s.realW + s.draws }))
+    .filter((b) => b.games > 0);
 }
 
 // Sum goals per player within a single match (both goalslist formats).
@@ -280,14 +371,58 @@ function AchievementCard({ a }) {
   );
 }
 
-function StatCard({ iconName, iconClass, label, children }) {
+/**
+ * Einheitlicher Rahmen fuer den ganzen Duell-Bereich.
+ *
+ * Vorher hatte fast jeder Abschnitt seinen eigenen Kopf: mal Icon links, mal
+ * ohne, mal mit Zusatz rechts, mal in anderer Groesse. Ein Rahmen fuer alle
+ * macht den Tab ruhig — und neue Auswertungen fuegen sich von selbst ein.
+ */
+function Karte({ icon, iconClass = 'text-text-tertiary', titel, zusatz, hinweis, children, className = '' }) {
   return (
-    <div className="modern-card p-4">
-      <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-1.5">
-        <Icon name={iconName} size={15} strokeWidth={2.2} className={iconClass} />
-        {label}
-      </div>
+    <div className={`modern-card p-4 ${className}`}>
+      {(titel || zusatz) && (
+        <div className="flex items-center gap-2 mb-2.5">
+          {icon && <Icon name={icon} size={15} strokeWidth={2.2} className={`${iconClass} flex-shrink-0`} />}
+          <span className="text-footnote font-semibold text-text-muted truncate">{titel}</span>
+          {zusatz != null && (
+            <span className="ml-auto text-caption2 text-text-tertiary num-tabular flex-shrink-0">{zusatz}</span>
+          )}
+        </div>
+      )}
+      {children}
+      {hinweis && <p className="text-caption2 text-text-tertiary mt-2">{hinweis}</p>}
+    </div>
+  );
+}
+
+/** Kompakte Kennzahl im Raster — gleiche Optik wie Karte, nur kleiner. */
+function StatCard({ iconName, iconClass, label, zusatz, children }) {
+  return (
+    <Karte icon={iconName} iconClass={iconClass} titel={label} zusatz={zusatz}>
       <div className="text-text-primary">{children}</div>
+    </Karte>
+  );
+}
+
+/** Zwei Personen, ein Balken — das wiederkehrende Muster im Duell. */
+function Gegenueber({ aek, real, aekName, realName, einheit = '', klein = false }) {
+  const summe = (Number(aek) || 0) + (Number(real) || 0);
+  const anteil = summe > 0 ? (aek / summe) * 100 : 50;
+  return (
+    <div>
+      <div className={`flex items-baseline justify-between ${klein ? 'text-caption1' : 'text-sm'}`}>
+        <span className="text-system-blue font-semibold truncate">
+          {klein ? '' : `${aekName} · `}<span className="num-tabular">{aek}{einheit}</span>
+        </span>
+        <span className="text-system-red font-semibold truncate">
+          <span className="num-tabular">{real}{einheit}</span>{klein ? '' : ` · ${realName}`}
+        </span>
+      </div>
+      <div className="mt-1 h-2 rounded-full overflow-hidden bg-bg-tertiary flex">
+        <div className="bg-system-blue h-full" style={{ width: `${anteil}%` }} />
+        <div className="bg-system-red h-full" style={{ width: `${100 - anteil}%` }} />
+      </div>
     </div>
   );
 }
@@ -496,8 +631,14 @@ export default function DuelTab() {
     () => computeAchievements(matches, resolveName, { aek: aekName, real: realName }),
     [matches, resolveName, aekName, realName]
   );
-  const elo = useMemo(() => computeElo(matches), [matches]);
   const evenings = useMemo(() => computeEvenings(matches), [matches]);
+
+  // Alles ueber ALLE Saisons — erfasste Spiele plus die gezaehlten Bilanzen
+  // der Altsaisons. Der Kopf behauptete das schon, rechnete es aber nicht.
+  const gesamt = useMemo(() => gesamtBilanz(dRaw), [dRaw]);
+  const ergebnisse = useMemo(() => haeufigsteErgebnisse(matches), [matches]);
+  const diffs = useMemo(() => tordifferenzen(matches), [matches]);
+  const serien = useMemo(() => serienUndZuNull(matches), [matches]);
 
   if (mLoading) return <LoadingSpinner message="Lade Duell…" />;
 
@@ -522,7 +663,14 @@ export default function DuelTab() {
   const unlockedCount = achievements.filter((a) => a.unlocked).length;
 
   const prizeDiff = d.prizeA - d.prizeR;
-  const avgGoals = d.total ? ((d.aekG + d.realG) / d.total).toFixed(1) : '0.0';
+  // Schnitt aus den Saisons, deren Tore ueberliefert sind — nicht aus allen
+  // Spielen: sonst teilte man 6707 Tore durch 902 Spiele, obwohl aus FC15/FC16
+  // keine Tore bekannt sind.
+  const spieleMitToren = gesamt.erfasst + Object.values(LEGACY_SAISONS)
+    .filter((i) => i.bilanz?.AEK?.tore != null)
+    .reduce((s, i) => s + (i.bilanz.spiele || 0), 0);
+  const toreProSpiel = spieleMitToren
+    ? ((gesamt.aekG + gesamt.realG) / spieleMitToren).toFixed(1) : '0.0';
   const fmtEuro = (n) => `${(n / 1).toLocaleString('de-DE')} €`;
   const fmtDate = (s) => s ? new Date(s).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
 
@@ -558,7 +706,7 @@ export default function DuelTab() {
           </div>
           {mode === 'saison' ? (
             <SeasonView matches={matches} players={players} aekName={aekName} realName={realName} />
-          ) : !d.total ? (
+          ) : !gesamt.total ? (
             <div className="text-center py-16">
               <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-orange/12 text-system-orange flex items-center justify-center">
                 <Icon name="zap" size={30} strokeWidth={1.8} />
@@ -575,45 +723,49 @@ export default function DuelTab() {
           Namen einer anderen ausgewiesen. Die Personen bleiben konstant. */}
       <div className="modern-card p-5 relative overflow-hidden verlauf-duell">
         <div className="text-caption2 text-text-tertiary text-center mb-2">
-          Über alle Saisons
-          {d.seasonH2H.length > 1 ? ` · ${d.seasonH2H.length} Saisons` : ''}
+          Über alle Saisons · {alleBilanzen.length} Saisons
         </div>
         <div className="flex items-stretch">
           <div className="flex-1 flex flex-col items-center text-center">
             <TeamLogo team="aek" size="md" />
             <div className="mt-2 text-footnote font-semibold text-system-blue truncate max-w-full">{aekName}</div>
-            <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-blue">{d.aekW}</div>
+            <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-blue">{gesamt.aekW}</div>
             <div className="text-[10px] uppercase tracking-widest text-text-tertiary">Siege</div>
           </div>
 
           <div className="flex flex-col items-center justify-center px-2">
-            <div className="text-title3 font-bold text-text-tertiary">{d.draws}</div>
+            <div className="text-title3 font-bold text-text-tertiary">{gesamt.draws}</div>
             <div className="text-[10px] text-text-tertiary uppercase tracking-wide">Remis</div>
-            <div className="mt-2 text-[10px] text-text-muted">{d.total} Spiele</div>
+            <div className="mt-2 text-[10px] text-text-muted">{gesamt.total} Spiele</div>
           </div>
 
           <div className="flex-1 flex flex-col items-center text-center">
             <TeamLogo team="real" size="md" />
             <div className="mt-2 text-footnote font-semibold text-system-red truncate max-w-full">{realName}</div>
-            <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-red">{d.realW}</div>
+            <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-red">{gesamt.realW}</div>
             <div className="text-[10px] uppercase tracking-widest text-text-tertiary">Siege</div>
           </div>
         </div>
 
         {/* Win-share bar */}
         <div className="mt-4 h-2.5 rounded-full overflow-hidden bg-bg-tertiary flex">
-          <div className="bg-system-blue h-full" style={{ width: `${(d.aekW / d.total) * 100}%` }} />
-          <div className="bg-text-tertiary/40 h-full" style={{ width: `${(d.draws / d.total) * 100}%` }} />
-          <div className="bg-system-red h-full" style={{ width: `${(d.realW / d.total) * 100}%` }} />
+          <div className="bg-system-blue h-full" style={{ width: `${(gesamt.aekW / gesamt.total) * 100}%` }} />
+          <div className="bg-text-tertiary/40 h-full" style={{ width: `${(gesamt.draws / gesamt.total) * 100}%` }} />
+          <div className="bg-system-red h-full" style={{ width: `${(gesamt.realW / gesamt.total) * 100}%` }} />
         </div>
+
+        {/* Herkunft der Zahlen. Erfasste Spiele lassen sich nachschlagen,
+            gezaehlte nicht — und aus FC15 ist ueberhaupt keine Bilanz da. */}
+        <p className="mt-3 text-caption2 text-text-tertiary text-center">
+          {gesamt.erfasst} Spiele erfasst
+          {gesamt.gezaehlt > 0 ? ` · ${gesamt.gezaehlt} aus Strichlisten gezählt` : ''}
+          {gesamt.ohneBilanz.length > 0 ? ` · ${gesamt.ohneBilanz.join(', ')} ohne Bilanz` : ''}
+        </p>
       </div>
 
       {/* Form (last 10) */}
-      <div className="modern-card p-4">
-        <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
-          <Icon name="chart" size={15} strokeWidth={2.2} className="text-system-green" />
-          Formkurve (letzte {d.last10.length})
-        </div>
+      <Karte icon="chart" iconClass="text-system-green" titel="Formkurve"
+             zusatz={`letzte ${d.last10.length} · erfasst`}>
         <div className="flex flex-wrap gap-1.5">
           {d.last10.map((r, i) => (
             <span
@@ -628,20 +780,24 @@ export default function DuelTab() {
           ))}
           <span className="text-[10px] text-text-tertiary self-center ml-1">neueste zuerst</span>
         </div>
-      </div>
+      </Karte>
 
       {/* Stat grid */}
       <div className="grid grid-cols-2 gap-3">
+        {/* Tore ueber alle Saisons, die welche ueberliefert haben — FC15 und
+            FC16 zaehlten nur Siege, deshalb steht die Zahl der Saisons dabei. */}
         <StatCard iconName="football" iconClass="text-system-green" label="Torverhältnis">
           <span className="text-title3 font-bold">
-            <span className="text-system-blue">{d.aekG}</span>
+            <span className="text-system-blue">{gesamt.aekG}</span>
             <span className="text-text-tertiary"> : </span>
-            <span className="text-system-red">{d.realG}</span>
+            <span className="text-system-red">{gesamt.realG}</span>
           </span>
-          <div className="text-[11px] text-text-tertiary mt-0.5">Ø {avgGoals} Tore/Spiel</div>
+          <div className="text-[11px] text-text-tertiary mt-0.5">
+            Ø {toreProSpiel} Tore/Spiel · {gesamt.toreAus} Saisons
+          </div>
         </StatCard>
 
-        <StatCard iconName="zap" iconClass="text-system-orange" label="Aktuelle Serie">
+        <StatCard iconName="zap" iconClass="text-system-orange" label="Aktuelle Serie" zusatz="erfasst">
           {d.streak ? (
             <>
               <span className={`text-title3 font-bold ${d.streak.who === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
@@ -656,7 +812,7 @@ export default function DuelTab() {
           )}
         </StatCard>
 
-        <StatCard iconName="trophy" iconClass="text-system-yellow" label="Höchster Sieg">
+        <StatCard iconName="trophy" iconClass="text-system-yellow" label="Höchster Sieg" zusatz="erfasst">
           {d.biggest.margin >= 0 ? (
             <>
               <span className={`text-title3 font-bold ${d.biggest.winner === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
@@ -669,7 +825,7 @@ export default function DuelTab() {
           ) : <span className="text-footnote text-text-tertiary">—</span>}
         </StatCard>
 
-        <StatCard iconName="euro" iconClass="text-system-green" label="Preisgeld-Saldo">
+        <StatCard iconName="euro" iconClass="text-system-green" label="Preisgeld-Saldo" zusatz="erfasst">
           {prizeDiff === 0 ? (
             <span className="text-title3 font-bold text-text-tertiary">±0</span>
           ) : (
@@ -698,25 +854,26 @@ export default function DuelTab() {
           </StatCard>
         )}
 
-        <StatCard iconName="football" iconClass="text-text-tertiary" label="Bilanz">
+        {/* Hier stand nochmal die Bilanz — dieselbe Zahl wie ganz oben, nur
+            ohne die Altsaisons. Die Quote sagt etwas Neues. */}
+        <StatCard iconName="chart" iconClass="text-system-teal" label="Siegquote">
           <span className="text-title3 font-bold">
-            <span className="text-system-blue">{d.aekW}</span>
-            <span className="text-text-tertiary"> · {d.draws} · </span>
-            <span className="text-system-red">{d.realW}</span>
+            <span className="text-system-blue">{Math.round((gesamt.aekW / gesamt.total) * 100)}%</span>
+            <span className="text-text-tertiary"> : </span>
+            <span className="text-system-red">{Math.round((gesamt.realW / gesamt.total) * 100)}%</span>
           </span>
           <div className="text-[11px] text-text-tertiary mt-0.5">
-            {d.aekW === d.realW ? 'Ausgeglichen' : `${d.aekW > d.realW ? aekName : realName} führt`}
+            {gesamt.draws > 0
+              ? `${Math.round((gesamt.draws / gesamt.total) * 100)} % unentschieden`
+              : 'keine Unentschieden'}
           </div>
         </StatCard>
       </div>
 
       {/* Top-Torschützen (all-time) */}
       {d.topScorers.length > 0 && (
-        <div className="modern-card p-4">
-          <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
-            <Icon name="star" size={15} strokeWidth={2.2} className="text-system-orange" />
-            Top-Torschützen
-          </div>
+        <Karte icon="star" iconClass="text-system-orange" titel="Top-Torschützen"
+               zusatz="alle Saisons">
           <div className="space-y-1.5">
             {d.topScorers.map((s, i) => (
               <div key={s.name} className="flex items-center gap-3">
@@ -729,16 +886,13 @@ export default function DuelTab() {
               </div>
             ))}
           </div>
-        </div>
+        </Karte>
       )}
 
       {/* Head-to-Head je Saison */}
       {alleBilanzen.length > 0 && (
-        <div className="modern-card p-4">
-          <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
-            <Icon name="calendar" size={15} strokeWidth={2.2} className="text-system-blue" />
-            Bilanz je Saison
-          </div>
+        <Karte icon="calendar" iconClass="text-system-blue" titel="Bilanz je Saison"
+               zusatz={`${alleBilanzen.length} Saisons`}>
           <div className="space-y-2.5">
             {alleBilanzen.map((s) => {
               const tot = s.aekW + s.realW + s.draws || 1;
@@ -770,48 +924,14 @@ export default function DuelTab() {
               );
             })}
           </div>
-        </div>
+        </Karte>
       )}
-      {/* Formbarometer: Elo-Verlauf beider Personen */}
-      {elo.series.length > 2 && (() => {
-        const all = elo.series.flatMap((p) => [p.a, p.r]);
-        const min = Math.min(...all), max = Math.max(...all);
-        const span = Math.max(1, max - min);
-        const W = 300, H = 64;
-        const pts = (key) => elo.series.map((p, i) =>
-          `${(i / (elo.series.length - 1)) * W},${H - 6 - ((p[key] - min) / span) * (H - 12)}`).join(' ');
-        const leader = elo.aek === elo.real ? null : (elo.aek > elo.real ? 'AEK' : 'Real');
-        return (
-          <div className="modern-card p-4">
-            <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-footnote font-medium text-text-muted">
-                <Icon name="chart" size={15} strokeWidth={2.2} className="text-system-green" />
-                Formbarometer (Elo)
-              </div>
-              <span className="text-[11px] tabular-nums">
-                <span className="text-system-blue font-bold">{elo.aek}</span>
-                <span className="text-text-tertiary"> : </span>
-                <span className="text-system-red font-bold">{elo.real}</span>
-              </span>
-            </div>
-            <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-16" preserveAspectRatio="none">
-              <polyline points={pts('a')} fill="none" strokeWidth="2" stroke="currentColor" className="text-system-blue" />
-              <polyline points={pts('r')} fill="none" strokeWidth="2" stroke="currentColor" className="text-system-red" />
-            </svg>
-            <div className="text-[11px] text-text-tertiary mt-1">
-              {leader ? `${leader === 'AEK' ? aekName : realName} ist aktuell in Form` : 'Aktuell exakt gleichauf'} · K=24, Start 1000
-            </div>
-          </div>
-        );
-      })()}
 
-      {/* Abendform: Siegquote nach Spiel-Nummer des Abends */}
+      {/* Abendform: jede Spielposition einzeln, nicht mehr ab 3 zusammengefasst */}
       {evenings.length > 1 && (
-        <div className="modern-card p-4">
-          <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-2">
-            <Icon name="beer" size={15} strokeWidth={2.2} className="text-system-orange" />
-            Abendform
-          </div>
+        <Karte icon="beer" iconClass="text-system-orange" titel="Abendform"
+               zusatz={`${evenings.length} Positionen`}
+               hinweis="Wie weit trägt die Form über den Abend? Spiel 1 ist nüchtern, danach wird es ehrlicher.">
           <div className="space-y-2.5">
             {evenings.map((b) => {
               const tot = b.games || 1;
@@ -835,11 +955,77 @@ export default function DuelTab() {
               );
             })}
           </div>
-          <p className="text-[11px] text-text-tertiary mt-2">
-            Wer wird im Laufe des Abends stärker? Spiel 1 = nüchtern, Spiel 3+ = später am Abend.
-          </p>
-        </div>
+        </Karte>
       )}
+
+      {/* Abendbilanz: wer holt den ABEND, nicht nur einzelne Spiele */}
+      {(serien.abende.AEK + serien.abende.Real + serien.abende.geteilt) > 1 && (
+        <Karte icon="calendar" iconClass="text-system-purple" titel="Gewonnene Abende"
+               zusatz={`${serien.abende.AEK + serien.abende.Real + serien.abende.geteilt} Abende`}
+               hinweis={serien.abende.geteilt
+                 ? `${serien.abende.geteilt} ${serien.abende.geteilt === 1 ? 'Abend ging' : 'Abende gingen'} unentschieden aus.`
+                 : null}>
+          <Gegenueber aek={serien.abende.AEK} real={serien.abende.Real}
+                      aekName={aekName} realName={realName} />
+        </Karte>
+      )}
+
+      {/* Wie deutlich faellt ein Sieg aus — volle Verteilung */}
+      {diffs.length > 0 && (
+        <Karte icon="chart" iconClass="text-system-teal" titel="Deutlichkeit der Siege"
+               zusatz={`${diffs.reduce((s, x) => s + x.gesamt, 0)} Entscheidungen`}
+               hinweis="Je weiter rechts, desto klarer ging das Spiel aus.">
+          <div className="space-y-1.5">
+            {diffs.map((x) => {
+              const max = Math.max(...diffs.map((y) => y.gesamt), 1);
+              return (
+                <div key={x.diff} className="flex items-center gap-2">
+                  <span className="w-14 text-caption2 text-text-secondary flex-shrink-0 num-tabular">
+                    {x.diff} {x.diff === 1 ? 'Tor' : 'Tore'}
+                  </span>
+                  <div className="flex-1 h-3 rounded-full bg-bg-tertiary overflow-hidden flex"
+                       style={{ maxWidth: `${(x.gesamt / max) * 100}%` }}>
+                    <div className="bg-system-blue h-full" style={{ width: `${(x.aek / x.gesamt) * 100}%` }} />
+                    <div className="bg-system-red h-full" style={{ width: `${(x.real / x.gesamt) * 100}%` }} />
+                  </div>
+                  <span className="text-caption2 text-text-tertiary num-tabular w-6 text-right flex-shrink-0">
+                    {x.gesamt}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </Karte>
+      )}
+
+      {/* Haeufigste Endstaende */}
+      {ergebnisse.length > 1 && (
+        <Karte icon="football" iconClass="text-system-green" titel="Häufigste Ergebnisse"
+               zusatz={`aus ${d.total} Spielen`}>
+          <div className="grid grid-cols-3 gap-2">
+            {ergebnisse.map((e) => (
+              <div key={e.ergebnis}
+                   className={`rounded-xl px-2 py-2 text-center ${
+                     e.sieger === 'AEK' ? 'panel-blue' : e.sieger === 'Real' ? 'panel-red' : 'panel-gray'}`}>
+                <div className="stat-display text-lg num-tabular text-text-primary">{e.ergebnis}</div>
+                <div className="text-caption2 text-text-tertiary">{e.anzahl}×</div>
+              </div>
+            ))}
+          </div>
+        </Karte>
+      )}
+
+      {/* Bestmarken, die es vorher nicht gab */}
+      <div className="grid grid-cols-2 gap-3">
+        <Karte icon="trophy" iconClass="text-system-yellow" titel="Längste Siegesserie">
+          <Gegenueber aek={serien.laengste.AEK} real={serien.laengste.Real}
+                      aekName={aekName} realName={realName} klein />
+        </Karte>
+        <Karte icon="ban" iconClass="text-system-teal" titel="Zu-Null-Siege">
+          <Gegenueber aek={serien.zuNull.AEK} real={serien.zuNull.Real}
+                      aekName={aekName} realName={realName} klein />
+        </Karte>
+      </div>
             </>
           )}
         </>
