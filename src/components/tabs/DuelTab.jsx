@@ -6,12 +6,14 @@ import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import SeasonView from './SeasonView';
 import RecordsView from './RecordsView';
+import TorschuetzenListe from './duell/TorschuetzenListe';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 import { aggregatePlayers } from '../../utils/playerIdentity';
 import { saisonNummern } from '../../utils/saisonNummern';
 import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
 import { LEGACY_SAISONS, siegeGesamt } from '../../utils/legacySaison';
+import { istArchiv } from '../../utils/laufendeSaison';
 
 // goalslist entries are either a plain name string or { player_id, player, count }
 function parseGoals(raw) {
@@ -212,7 +214,11 @@ function computeEvenings(matches) {
       buckets.set(pos, s);
     });
   }
+  // Nur die ersten fuenf Positionen: laenger wird ein Abend selten, und die
+  // Ausreisser danach (ein einzelnes sechstes Spiel) verzerren das Bild mehr,
+  // als sie erklaeren.
   return [...buckets.entries()]
+    .filter(([pos]) => pos <= 5)
     .sort((a, b) => a[0] - b[0])
     .map(([pos, s]) => ({ pos, label: `Spiel ${pos}`, ...s, games: s.aekW + s.realW + s.draws }))
     .filter((b) => b.games > 0);
@@ -338,38 +344,6 @@ function computeAchievements(matches, resolveName, names) {
   ];
 }
 
-function AchievementCard({ a }) {
-  const pct = a.progress ? Math.round((a.progress.current / a.progress.target) * 100) : 0;
-  return (
-    <div className={`modern-card p-4 ${a.unlocked ? '' : 'opacity-60'}`}>
-      <div className="flex items-start gap-3">
-        <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-          a.unlocked ? 'bg-system-green/12' : 'bg-bg-tertiary'
-        }`}>
-          <Icon name={a.unlocked ? a.icon : 'ban'} size={20} strokeWidth={2}
-                className={a.unlocked ? a.iconClass : 'text-text-tertiary'} />
-        </div>
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-1.5">
-            <span className="text-callout font-semibold text-text-primary">{a.title}</span>
-            {a.unlocked && <Icon name="check" size={14} strokeWidth={3} className="text-system-green" />}
-          </div>
-          <p className="text-[11px] text-text-tertiary leading-snug">{a.desc}</p>
-          {a.context && (
-            <p className={`text-[11px] mt-1 ${a.unlocked ? 'text-text-secondary font-medium' : 'text-text-tertiary'}`}>
-              {a.context}
-            </p>
-          )}
-          {!a.unlocked && a.progress && (
-            <div className="mt-1.5 h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
-              <div className="h-full bg-system-green/60" style={{ width: `${pct}%` }} />
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 /**
  * Einheitlicher Rahmen fuer den ganzen Duell-Bereich.
@@ -657,10 +631,12 @@ export default function DuelTab() {
   const views = [
     { id: 'uebersicht', label: 'Übersicht', iconName: 'zap' },
     { id: 'rekorde', label: 'Rekorde', iconName: 'trophy' },
-    { id: 'erfolge', label: 'Erfolge', iconName: 'star' },
+    { id: 'torschuetzen', label: 'Torschützen', iconName: 'star' },
     { id: 'rueckblick', label: 'Rückblick', iconName: 'calendar' },
   ];
-  const unlockedCount = achievements.filter((a) => a.unlocked).length;
+  // Nur das, was tatsaechlich passiert ist — nicht Erreichbares mit
+  // Fortschrittsbalken.
+  const besondereMomente = achievements.filter((a) => a.unlocked && a.context);
 
   const prizeDiff = d.prizeA - d.prizeR;
   // Schnitt aus den Saisons, deren Tore ueberliefert sind — nicht aus allen
@@ -680,15 +656,8 @@ export default function DuelTab() {
 
       {view === 'rekorde' ? (
         <RecordsView matches={matches} players={players} aekName={aekName} realName={realName} />
-      ) : view === 'erfolge' ? (
-        <div>
-          <div className="text-footnote text-text-muted mb-3">
-            {unlockedCount} von {achievements.length} freigeschaltet
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            {achievements.map((a) => <AchievementCard key={a.id} a={a} />)}
-          </div>
-        </div>
+      ) : view === 'torschuetzen' ? (
+        <TorschuetzenListe players={players} loading={!players} />
       ) : view === 'rueckblick' ? (
         <WrappedView d={d} aekName={aekName} realName={realName} />
       ) : (
@@ -903,6 +872,15 @@ export default function DuelTab() {
                       Saison {nummern.get(s.version) ?? '?'} · {s.version}
                       {/* Ohne Kennzeichen liest sich eine Strichlisten-Bilanz
                           wie eine aus Spielen gerechnete. */}
+                      {/* Zwei verschiedene Aussagen: "Archiv" heisst
+                          abgeschlossen, "gezaehlt" heisst aus einer
+                          Strichliste statt aus Einzelspielen. FC25 ist
+                          Archiv, aber nicht gezaehlt. */}
+                      {istArchiv(s.version) && (
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-bg-tertiary text-text-secondary">
+                          Archiv
+                        </span>
+                      )}
                       {s.quelle === 'strichliste' && (
                         <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-system-yellow/15 text-system-yellow">
                           gezählt
@@ -1026,6 +1004,30 @@ export default function DuelTab() {
                       aekName={aekName} realName={realName} klein />
         </Karte>
       </div>
+
+      {/* Besondere Momente. Standen frueher als eigener Bereich "Erfolge" mit
+          Fortschrittsbalken — als Sammelspiel gedacht, aber das hier sind
+          schlicht Tatsachen aus euren Spielen. Deshalb nur noch die, die es
+          wirklich gab, als Info-Zeilen. */}
+      {besondereMomente.length > 0 && (
+        <Karte icon="sparkles" iconClass="text-system-yellow" titel="Besondere Momente"
+               zusatz={`${besondereMomente.length}`}>
+          <div className="space-y-2">
+            {besondereMomente.map((a) => (
+              <div key={a.id} className="flex items-start gap-2.5">
+                <Icon name={a.icon} size={15} strokeWidth={2.2}
+                      className={`${a.iconClass} mt-0.5 flex-shrink-0`} />
+                <div className="min-w-0">
+                  <span className="text-sm font-medium text-text-primary">{a.title}</span>
+                  {a.context && (
+                    <span className="text-caption1 text-text-secondary"> — {a.context}</span>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+        </Karte>
+      )}
             </>
           )}
         </>
