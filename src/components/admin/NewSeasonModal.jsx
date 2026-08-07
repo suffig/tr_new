@@ -1,18 +1,15 @@
 import { useState } from 'react';
 import Icon from '../icons/Icon';
 import toast from 'react-hot-toast';
-import {
-  addCustomFifaVersion,
-  setCurrentFifaVersion,
-  getCurrentFifaVersion,
-} from '../../utils/fifaVersionManager';
-import { getVersionTeams, setVersionTeams } from '../../utils/versionTeamManager';
-import { pushVersionToDB, pushTeamsToDB, setActiveVersionInDB } from '../../utils/fifaVersionsSync';
+import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
+import { legeSaisonAn } from '../../utils/saisonAnlegen';
 
-// One consolidated form to create a new season (= FIFA version): version id,
-// display name, both team names/short codes/logos, and the two toggles.
-// Replaces the previous flow that split this across "FIFA Versionen" and
-// "Versions-Teams". Reuses the existing manager functions, so nothing breaks.
+// Saison anlegen aus dem Admin-Bereich — fuer den Fall, dass man nur eine
+// Version braucht (Nachtragen, Korrektur) und nicht den ganzen Saisonwechsel.
+// Der gefuehrte Weg steht unter Spiele -> Saisonwechsel.
+//
+// Die eigentliche Arbeit macht legeSaisonAn(): Reihenfolge und Fehlerbehandlung
+// stehen dort an EINER Stelle, damit beide Wege sich nicht auseinanderleben.
 
 const MAX_LOGO_BYTES = 1024 * 1024; // 1 MB
 
@@ -40,57 +37,17 @@ export default function NewSeasonModal({ onClose, onCreated }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    const id = versionId.trim().toUpperCase();
-    if (!/^[A-Za-z]+\d*$/.test(id)) {
-      toast.error('Versions-ID ungültig (z. B. FC27, EA25)');
-      return;
-    }
     setLoading(true);
     try {
-      // 1) Register the version.
-      await addCustomFifaVersion(id, {
-        displayName: displayName.trim() || id,
-        description: `Saison ${id}`,
-        createdAt: new Date().toISOString(),
-        createdBy: 'admin',
+      const { version, anzeige } = await legeSaisonAn({
+        id: versionId,
+        name: displayName,
+        teams,
+        basisVon: copyPrevious ? getCurrentFifaVersion() : null,
+        aktivieren: setActive,
       });
-
-      // 2) Build the team config. Start from a base (previous version if requested,
-      //    else the new version's defaults) so color/icon/Ehemalige stay intact,
-      //    then override name/short/logo from the form.
-      const base = copyPrevious ? getVersionTeams(getCurrentFifaVersion()) : getVersionTeams(id);
-      const teamConfig = JSON.parse(JSON.stringify(base));
-      for (const key of ['AEK', 'Real']) {
-        teamConfig[key] = teamConfig[key] || { color: key === 'AEK' ? 'blue' : 'red', icon: key.toLowerCase(), customIcon: null };
-        if (teams[key].label.trim()) teamConfig[key].label = teams[key].label.trim();
-        if (teams[key].short.trim()) teamConfig[key].short = teams[key].short.trim();
-        if (teams[key].logo) teamConfig[key].customIcon = teams[key].logo;
-      }
-      setVersionTeams(teamConfig, id);
-
-      // 3) ZUERST in der DB registrieren — und das Ergebnis pruefen.
-      //    Reihenfolge ist Absicht: eine Saison, die nur lokal existiert, ist
-      //    fuer die andere Person unsichtbar. Sobald fifa_version zusaetzlich
-      //    ein Fremdschluessel auf fifa_versions ist, wuerde in einer nicht
-      //    registrierten Saison ausserdem JEDER Insert abgewiesen. Deshalb
-      //    wird sie hier nicht aktiviert, solange die Registrierung nicht steht.
-      const reg = await pushVersionToDB(id, { name: displayName.trim() || id, teams: teamConfig });
-      if (!reg.ok) {
-        throw new Error(
-          'Saison konnte nicht in der Datenbank registriert werden. Sie wurde NICHT aktiviert — ' +
-          'bitte Verbindung prüfen und erneut versuchen.'
-        );
-      }
-      await pushTeamsToDB(id, teamConfig);
-
-      // 4) Erst jetzt lokal aktivieren.
-      if (setActive) {
-        setCurrentFifaVersion(id);
-        await setActiveVersionInDB(id);
-      }
-
-      toast.success(`Saison „${displayName.trim() || id}" angelegt`);
-      onCreated?.();
+      toast.success(`Saison „${anzeige}" angelegt`);
+      onCreated?.(version);
       onClose?.();
     } catch (err) {
       toast.error(err.message || 'Konnte Saison nicht anlegen');

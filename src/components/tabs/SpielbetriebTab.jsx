@@ -3,7 +3,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import MatchesTab from './MatchesTab';
 import KaderTab from './KaderTab';
 import BansTab from './BansTab';
-import SaisonDraft from './kader/SaisonDraft';
+import Saisonwechsel from './kader/Saisonwechsel';
 
 // Sammel-Tab "Spiele": alles zum laufenden Spielbetrieb an einer Stelle —
 // die Spiele selbst, wer im Kader steht und wer gesperrt ist. Vorher waren das
@@ -13,9 +13,9 @@ const VIEWS = [
   { id: 'spiele', label: 'Spiele', iconName: 'football', hinweis: 'Alle Begegnungen und ihre Ergebnisse' },
   { id: 'kader', label: 'Kader', iconName: 'users', hinweis: 'Wer bei welchem Team steht' },
   { id: 'sperren', label: 'Sperren', iconName: 'ban', hinweis: 'Wer aussetzen muss und wie lange' },
-  // Erzeugt den Kader der neuen Saison — gehoert deshalb hierher und nicht
-  // in den Admin-Bereich.
-  { id: 'draft', label: 'Draft', iconName: 'dice', hinweis: 'Mannschaft für die neue Saison ziehen' },
+  // Der Saisonwechsel erzeugt den Kader der naechsten Saison — gehoert
+  // deshalb hierher und nicht in den Admin-Bereich.
+  { id: 'draft', label: 'Saisonwechsel', iconName: 'dice', hinweis: 'Alte Saison abschließen, neue anlegen, Kader draften' },
 ];
 
 const KEY = 'fusta_spielbetrieb_view';
@@ -45,7 +45,7 @@ export default function SpielbetriebTab({ viewRequest, ...props }) {
       {view === 'spiele' && <MatchesTab {...props} />}
       {view === 'kader' && <KaderTab {...props} />}
       {view === 'sperren' && <BansTab {...props} />}
-      {view === 'draft' && <div className="p-4 pb-24 mobile-safe-bottom"><SaisonDraft /></div>}
+      {view === 'draft' && <div className="p-4 pb-24 mobile-safe-bottom"><Saisonwechsel /></div>}
     </div>
   );
 }
