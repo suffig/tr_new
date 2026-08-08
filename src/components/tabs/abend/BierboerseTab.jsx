@@ -8,9 +8,13 @@ import { supabaseDb } from '../../../utils/supabase';
 import {
   PERSONEN, BIERARTEN, ladeBoersen, ladeKatalog, ladeVerkostungen,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
+  ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
 } from '../../../utils/bierboerse';
 
 const euro = (n) => `${(Number(n) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+// Alkoholangaben kommen als Zahl aus der Datenbank und wuerden sonst als
+// "5.2 %" mitten im deutschen Text stehen.
+const prozent = (n) => `${Number(n).toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
 const datum = (s) => s ? new Date(s).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
 
 /**
@@ -72,6 +76,7 @@ export default function BierboerseTab() {
   const [offen, setOffen] = useState(null);        // id der geöffneten Börse
   const [formular, setFormular] = useState(null);  // 'boerse' | 'bier' | {bearbeiten}
   const [ansicht, setAnsicht] = useState('boersen'); // boersen | katalog
+  const [bierOffen, setBierOffen] = useState(null);   // Bier-Detailansicht
 
   const laden4 = useCallback(async () => {
     setLaden(true); setFehler(null);
@@ -126,7 +131,8 @@ export default function BierboerseTab() {
       </div>
 
       {ansicht === 'katalog' ? (
-        <KatalogAnsicht katalog={katalog} verkostungen={verkostungen} boersen={boersen} />
+        <KatalogAnsicht katalog={katalog} verkostungen={verkostungen} boersen={boersen}
+                        onBier={(b) => setBierOffen(b)} />
       ) : (
         <>
           <button onClick={() => setFormular({ art: 'boerse' })} className="btn-primary w-full">
@@ -152,6 +158,7 @@ export default function BierboerseTab() {
               onToggle={() => setOffen(offen === b.id ? null : b.id)}
               onNeuesBier={() => setFormular({ art: 'bier', boerse: b })}
               onBearbeiten={(v) => setFormular({ art: 'bier', boerse: b, verkostung: v })}
+              onBier={(bier) => setBierOffen(bier)}
               onAendern={laden4}
             />
           ))}
@@ -164,6 +171,10 @@ export default function BierboerseTab() {
           onSchliessen={() => setFormular(null)}
           onFertig={() => { setFormular(null); laden4(); }}
         />
+      )}
+      {bierOffen && (
+        <BierDetail bier={bierOffen} verkostungen={verkostungen} boersen={boersen}
+                    onSchliessen={() => setBierOffen(null)} />
       )}
       {formular?.art === 'bier' && (
         <BierFormular
@@ -179,9 +190,28 @@ export default function BierboerseTab() {
 }
 
 /** Eine Börse: Kopfzahlen, aufklappbar zur Bestenliste. */
-function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesBier, onBearbeiten, onAendern }) {
+function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesBier, onBearbeiten, onBier, onAendern }) {
   const stat = useMemo(() => boersenStatistik(verkostungen, katalog), [verkostungen, katalog]);
   const beste = useMemo(() => bestenListe(verkostungen, katalog), [verkostungen, katalog]);
+  const kasse = useMemo(() => rechnung(verkostungen), [verkostungen]);
+
+  // Boerse loeschen. Die Verkostungen haengen per ON DELETE CASCADE daran und
+  // gehen mit — deshalb steht die Zahl in der Rueckfrage, sonst loescht man
+  // ahnungslos einen ganzen Abend.
+  const boerseLoeschen = async () => {
+    const anzahl = verkostungen.length;
+    if (!window.confirm(
+      `„${boerse.name}“ wirklich löschen?\n\n`
+      + (anzahl === 0
+        ? 'Auf dieser Börse steht noch kein Bier.'
+        : `${anzahl} ${anzahl === 1 ? 'eingetragenes Bier' : 'eingetragene Biere'} werden `
+          + 'mitgelöscht. Im Katalog bleiben die Biere erhalten.')
+      + '\n\nDas lässt sich nicht rückgängig machen.'
+    )) return;
+    const { error } = await supabaseDb.delete('bierboersen', boerse.id);
+    if (error) toast.error('Konnte nicht gelöscht werden.');
+    else { toast.success('Bierbörse gelöscht.'); onAendern(); }
+  };
 
   const loeschen = async (v) => {
     if (!window.confirm(`„${katalog.find((b) => b.id === v.bier_id)?.name || 'Dieses Bier'}" von dieser Börse entfernen?`)) return;
@@ -268,13 +298,55 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
             </p>
           )}
 
+          {/* Wer hat bezahlt — erst sinnvoll, sobald an einer Runde ein Zahler steht */}
+          {kasse.zugeordnet > 0 && (
+            <div className="panel-gray rounded-xl p-3">
+              <div className="text-footnote font-semibold text-text-muted mb-2">Rechnung</div>
+              <div className="space-y-1">
+                {PERSONEN.map((p) => (
+                  <div key={p.key} className="flex items-baseline gap-2 text-caption1">
+                    <span className={`font-semibold flex-shrink-0 ${p.farbe}`}>{p.name}</span>
+                    <span className="text-text-secondary truncate">
+                      {euro(kasse[p.team].bezahlt)} gezahlt
+                    </span>
+                    <span className="ml-auto num-tabular text-text-primary flex-shrink-0">
+                      {euro(kasse[p.team].getrunken)} vertrunken
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 pt-2 border-t border-border-light text-caption1">
+                {Math.abs(kasse.ausgleich) < 0.01 ? (
+                  <span className="text-system-green font-semibold">Ausgeglichen — keiner schuldet dem anderen etwas.</span>
+                ) : (
+                  <span className="text-text-primary">
+                    <span className={kasse.ausgleich > 0 ? 'text-system-red font-semibold' : 'text-system-blue font-semibold'}>
+                      {kasse.ausgleich > 0 ? 'Philip' : 'Alexander'}
+                    </span>
+                    {' schuldet '}
+                    {kasse.ausgleich > 0 ? 'Alexander' : 'Philip'}
+                    {' '}
+                    <span className="num-tabular font-bold">{euro(Math.abs(kasse.ausgleich))}</span>.
+                  </span>
+                )}
+              </div>
+              {kasse.offeneRunden > 0 && (
+                <p className="text-caption2 text-text-tertiary mt-1.5">
+                  {kasse.offeneRunden === 1 ? 'Bei einem Bier' : `Bei ${kasse.offeneRunden} Bieren`} steht kein Zahler
+                  ({euro(kasse.offen)}) — nicht mitgerechnet.
+                </p>
+              )}
+            </div>
+          )}
+
           {/* Bestenliste */}
           {beste.length > 0 && (
             <div>
               <div className="text-footnote font-semibold text-text-muted mb-2">Bestenliste</div>
               <div className="space-y-1.5">
                 {beste.map((v, i) => (
-                  <div key={v.id} className="flex items-center gap-2.5">
+                  <button key={v.id} type="button" onClick={() => v.bier && onBier(v.bier)}
+                          className="w-full flex items-center gap-2.5 text-left">
                     <span className={`w-5 text-center text-sm font-bold flex-shrink-0 ${
                       i === 0 ? 'text-system-yellow' : i === 1 ? 'text-text-secondary'
                       : i === 2 ? 'text-system-orange' : 'text-text-tertiary'}`}>{i + 1}</span>
@@ -282,7 +354,7 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
                       <div className="text-sm text-text-primary truncate">{v.bier?.name}</div>
                       <div className="text-caption2 text-text-tertiary truncate">
                         {[v.bier?.brauerei, v.bier?.art,
-                          v.bier?.alkohol ? `${v.bier.alkohol} %` : null,
+                          v.bier?.alkohol ? prozent(v.bier.alkohol) : null,
                           v.groesse_ml ? `${v.groesse_ml} ml` : null,
                           v.preis != null ? euro(v.preis) : null].filter(Boolean).join(' · ')}
                       </div>
@@ -291,7 +363,7 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
                     <span className="num-tabular text-sm font-bold text-text-primary w-8 text-right flex-shrink-0">
                       {v.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
                     </span>
-                  </div>
+                  </button>
                 ))}
               </div>
             </div>
@@ -304,9 +376,11 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
               <div className="divide-y divide-border-light">
                 {verkostungen.map((v) => {
                   const bier = katalog.find((b) => b.id === v.bier_id);
+                  const zahler = ZAHLER.find((z) => z.id === v.bezahlt_von);
                   return (
                     <div key={v.id} className="flex items-center gap-2 py-2">
-                      <div className="min-w-0 flex-1">
+                      <button type="button" onClick={() => bier && onBier(bier)} disabled={!bier}
+                              className="min-w-0 flex-1 text-left disabled:cursor-default">
                         <div className="text-sm text-text-primary truncate">{bier?.name || '—'}</div>
                         <div className="text-caption2 text-text-tertiary">
                           {PERSONEN.map((p) => {
@@ -319,8 +393,13 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
                               </span>
                             );
                           })}
+                          {zahler && (
+                            <span className={zahler.farbe}>
+                              {zahler.id === 'geteilt' ? 'geteilt' : `zahlt ${zahler.label}`}
+                            </span>
+                          )}
                         </div>
-                      </div>
+                      </button>
                       <button onClick={() => onBearbeiten(v)}
                               className="w-8 h-8 rounded-lg bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
                               aria-label="Bearbeiten">
@@ -338,10 +417,20 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
             </div>
           )}
 
-          <button onClick={onNeuesBier} className="btn-secondary w-full">
-            <Icon name="plus" size={16} strokeWidth={2.6} className="mr-1.5" />
-            Bier eintragen
-          </button>
+          <div className="flex gap-2">
+            <button onClick={onNeuesBier} className="btn-secondary flex-1">
+              <Icon name="plus" size={16} strokeWidth={2.6} className="mr-1.5" />
+              Bier eintragen
+            </button>
+            {/* Die ganze Börse löschen liegt bewusst hier unten im aufgeklappten
+                Bereich — nicht neben dem Kopf, wo man beim Auf- und Zuklappen
+                danebentippen kann. */}
+            <button onClick={boerseLoeschen}
+                    className="w-11 rounded-xl bg-system-red/10 text-system-red flex items-center justify-center flex-shrink-0"
+                    aria-label="Bierbörse löschen" title="Bierbörse löschen">
+              <Icon name="trash" size={16} strokeWidth={2.2} />
+            </button>
+          </div>
         </div>
       )}
     </div>
@@ -349,9 +438,12 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
 }
 
 /** Katalogansicht: alle Biere über alle Börsen hinweg. */
-function KatalogAnsicht({ katalog, verkostungen, boersen }) {
+function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
   const [suche, setSuche] = useState('');
   const [art, setArt] = useState('alle');
+
+  const funde = useMemo(() => bierFundstuecke(verkostungen, katalog), [verkostungen, katalog]);
+  const sorten = useMemo(() => sortenVerteilung(verkostungen, katalog), [verkostungen, katalog]);
 
   const liste = useMemo(() => {
     const alle = katalogBestenListe(verkostungen, katalog);
@@ -392,13 +484,14 @@ function KatalogAnsicht({ katalog, verkostungen, boersen }) {
       ) : (
         <div className="modern-card divide-y divide-border-light">
           {liste.map((e, i) => (
-            <div key={e.bier_id} className="flex items-center gap-2.5 px-3 py-2.5">
+            <button key={e.bier_id} type="button" onClick={() => onBier(e.bier)}
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left">
               <span className={`w-5 text-center text-sm font-bold flex-shrink-0 ${
                 i === 0 ? 'text-system-yellow' : 'text-text-tertiary'}`}>{i + 1}</span>
               <div className="min-w-0 flex-1">
                 <div className="text-sm text-text-primary truncate">{e.bier.name}</div>
                 <div className="text-caption2 text-text-tertiary truncate">
-                  {[e.bier.brauerei, e.bier.art, e.bier.alkohol ? `${e.bier.alkohol} %` : null,
+                  {[e.bier.brauerei, e.bier.art, e.bier.alkohol ? prozent(e.bier.alkohol) : null,
                     `${e.glaeser}× getrunken`,
                     e.preisSchnitt != null ? `Ø ${euro(e.preisSchnitt)}` : null].filter(Boolean).join(' · ')}
                 </div>
@@ -407,9 +500,65 @@ function KatalogAnsicht({ katalog, verkostungen, boersen }) {
               <span className="num-tabular text-sm font-bold text-text-primary w-8 text-right flex-shrink-0">
                 {e.note == null ? '—' : e.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
               </span>
-            </div>
+              <Icon name="chevronRight" size={14} strokeWidth={2.4} className="text-text-tertiary flex-shrink-0" />
+            </button>
           ))}
         </div>
+      )}
+
+      {/* Auswertungen — sie beziehen sich auf ALLE Biere, deshalb erst unter der
+          Liste und nur, solange nicht gefiltert wird. Sonst stünden hier Zahlen,
+          die zu dem darüber nicht passen. */}
+      {suche.trim() === '' && art === 'alle' && (
+        <>
+          {sorten.length > 1 && (
+            <div className="modern-card p-4">
+              <div className="text-footnote font-semibold text-text-muted mb-2.5">Nach Sorte</div>
+              <div className="space-y-2">
+                {sorten.map((s) => {
+                  const anteil = sorten[0].glaeser ? (s.glaeser / sorten[0].glaeser) * 100 : 0;
+                  return (
+                    <div key={s.art}>
+                      <div className="flex items-baseline gap-2 text-caption1 mb-0.5">
+                        <span className="text-text-primary truncate">{s.art}</span>
+                        <span className="ml-auto num-tabular text-text-secondary flex-shrink-0">
+                          {s.glaeser} {s.glaeser === 1 ? 'Glas' : 'Gläser'}
+                        </span>
+                        <span className="num-tabular text-text-tertiary w-8 text-right flex-shrink-0">
+                          {s.schnitt == null ? '—' : s.schnitt.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                        </span>
+                      </div>
+                      <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                        <div className="h-full rounded-full bg-system-yellow" style={{ width: `${anteil}%` }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-caption2 text-text-tertiary mt-2">
+                Balken zeigen die Gläser, die Zahl rechts die Durchschnittsnote der Sorte.
+              </p>
+            </div>
+          )}
+
+          {funde.length > 0 && (
+            <div className="modern-card p-4">
+              <div className="text-footnote font-semibold text-text-muted mb-2.5">Fundstücke</div>
+              <div className="space-y-2.5">
+                {funde.map((f) => (
+                  <div key={f.id} className="flex items-start gap-2.5">
+                    <Icon name={f.icon} size={16} strokeWidth={2.2}
+                          className={`${f.farbe} flex-shrink-0 mt-0.5`} />
+                    <div className="min-w-0">
+                      <div className="text-caption1 font-semibold text-text-primary">{f.titel}</div>
+                      <div className="text-caption1 text-text-secondary">{f.text}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
       )}
     </div>
   );
@@ -472,7 +621,10 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
   const [anzahlReal, setAnzahlReal] = useState(verkostung?.anzahl_real ?? 0);
   const [noteAek, setNoteAek] = useState(verkostung?.note_aek ?? null);
   const [noteReal, setNoteReal] = useState(verkostung?.note_real ?? null);
+  const [zahler, setZahler] = useState(verkostung?.bezahlt_von ?? null);
   const [speichert, setSpeichert] = useState(false);
+
+  const summe = (Number(preis) || 0) * ((Number(anzahlAek) || 0) + (Number(anzahlReal) || 0));
 
   // Vorschläge aus dem Katalog, damit dasselbe Bier nicht zweimal entsteht.
   const vorschlaege = useMemo(() => {
@@ -502,6 +654,7 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
         anzahl_real: Number(anzahlReal) || 0,
         note_aek: noteAek,
         note_real: noteReal,
+        bezahlt_von: zahler,
       };
       const { error } = verkostung
         ? await supabaseDb.update('bier_verkostungen', daten, verkostung.id)
@@ -603,10 +756,173 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
           );
         })}
 
+        {/* Wer die Runde bezahlt hat. Bleibt bewusst freiwillig — ein Abend
+            ohne Zahler ist immer noch ein erfasster Abend, nur eben einer
+            ohne Rechnung. */}
+        <div className="panel-gray rounded-xl p-3">
+          <div className="flex items-baseline gap-2 mb-2">
+            <span className="text-footnote font-semibold text-text-secondary">Wer zahlt?</span>
+            {summe > 0 && (
+              <span className="ml-auto text-caption2 text-text-tertiary num-tabular">
+                Runde: {euro(summe)}
+              </span>
+            )}
+          </div>
+          <div className="flex gap-1.5">
+            {ZAHLER.map((z) => (
+              <button key={z.id} type="button"
+                      onClick={() => setZahler(zahler === z.id ? null : z.id)}
+                      className={`flex-1 py-2 rounded-lg text-caption1 font-semibold transition-colors ${
+                        zahler === z.id
+                          ? `bg-bg-elevated ring-2 ring-current ${z.farbe}`
+                          : 'bg-bg-tertiary text-text-secondary'}`}>
+                {z.label}
+              </button>
+            ))}
+          </div>
+          <p className="text-caption2 text-text-tertiary mt-1.5">
+            {zahler ? 'Nochmal antippen, um es wieder offen zu lassen.' : 'Kann auch offen bleiben.'}
+          </p>
+        </div>
+
         <button type="submit" disabled={speichert} className="btn-primary w-full">
           {speichert ? 'Speichert…' : verkostung ? 'Änderungen sichern' : 'Eintragen'}
         </button>
       </form>
+    </Modal>
+  );
+}
+
+/**
+ * Ein Bier über alle Börsen hinweg.
+ *
+ * Erst hier zahlt sich der Katalog aus: dasselbe Bier auf drei Abenden ist
+ * drei Zeilen in der Datenbank, aber ein Bier — und die Frage, ob es beim
+ * zweiten Mal besser ankam oder nur billiger war, lässt sich vorher nirgends
+ * beantworten.
+ */
+function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
+  const v = useMemo(() => bierVerlauf(bier.id, verkostungen, boersen), [bier.id, verkostungen, boersen]);
+  const literSchnitt = v.literpreise.length
+    ? v.literpreise.reduce((s, p) => s + p, 0) / v.literpreise.length : null;
+
+  return (
+    <Modal titel={bier.name} onSchliessen={onSchliessen}>
+      <div className="space-y-3">
+        <div className="text-center">
+          <div className="text-caption1 text-text-secondary">
+            {[bier.brauerei, bier.art, bier.alkohol ? prozent(bier.alkohol) : null,
+              bier.land].filter(Boolean).join(' · ') || 'Keine weiteren Angaben'}
+          </div>
+          <div className="stat-display text-[34px] num-tabular text-text-primary mt-2 leading-none">
+            {v.schnitt == null ? '—' : v.schnitt.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+          </div>
+          <div className="mt-1.5"><Kruege note={v.schnitt} groesse={20} /></div>
+          <div className="text-caption2 text-text-tertiary mt-1">
+            {v.schnitt == null ? 'noch nicht bewertet' : 'von 10'}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            ['Börsen', v.boersen],
+            ['Gläser', v.glaeser],
+            ['Ø Preis', v.preisSchnitt == null ? '—' : euro(v.preisSchnitt)],
+          ].map(([label, wert]) => (
+            <div key={label} className="panel-gray rounded-xl p-2.5 text-center">
+              <div className="stat-display text-[15px] num-tabular text-text-primary truncate">{wert}</div>
+              <div className="text-caption2 text-text-tertiary">{label}</div>
+            </div>
+          ))}
+        </div>
+
+        {/* Wie die beiden es sehen */}
+        <div className="grid grid-cols-2 gap-2">
+          {PERSONEN.map((p) => {
+            const s = v.jePerson[p.team];
+            return (
+              <div key={p.key} className="panel-gray rounded-xl p-3">
+                <div className="flex items-center gap-1.5 mb-1.5">
+                  <TeamLogo team={p.key} size="xs" />
+                  <span className={`text-footnote font-semibold truncate ${p.farbe}`}>{p.name}</span>
+                </div>
+                <div className="flex items-baseline gap-1.5">
+                  <span className="stat-display text-[17px] num-tabular text-text-primary">
+                    {s.schnitt == null ? '—' : s.schnitt.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                  </span>
+                  <span className="text-caption2 text-text-tertiary">
+                    {s.glaeser} {s.glaeser === 1 ? 'Glas' : 'Gläser'}
+                  </span>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {v.einig != null && (
+          <p className="text-caption1 text-text-secondary">
+            {v.einig < 0.5
+              ? 'Da sind sich beide einig.'
+              : v.einig >= 3
+                ? `Streitfall — ${v.einig.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Punkte auseinander.`
+                : `${v.einig.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Punkte auseinander.`}
+          </p>
+        )}
+
+        {/* Preise. Der Literpreis steht dabei, weil ein Glaspreis ohne die
+            Größe nichts über teuer oder billig aussagt. */}
+        {v.preisSchnitt != null && (
+          <div className="panel-gray rounded-xl p-3 space-y-1 text-caption1">
+            <div className="flex justify-between">
+              <span className="text-text-secondary">Günstigstes Glas</span>
+              <span className="num-tabular text-text-primary">{euro(v.preisMin)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-text-secondary">Teuerstes Glas</span>
+              <span className="num-tabular text-text-primary">{euro(v.preisMax)}</span>
+            </div>
+            {literSchnitt != null && (
+              <div className="flex justify-between">
+                <span className="text-text-secondary">Ø je Liter</span>
+                <span className="num-tabular text-text-primary">{euro(literSchnitt)}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Wo es getrunken wurde */}
+        <div>
+          <div className="text-footnote font-semibold text-text-muted mb-2">
+            Getrunken auf {v.boersen} {v.boersen === 1 ? 'Börse' : 'Börsen'}
+          </div>
+          <div className="divide-y divide-border-light">
+            {v.verkostungen.map((e) => {
+              const zahler = ZAHLER.find((z) => z.id === e.bezahlt_von);
+              return (
+                <div key={e.id} className="flex items-center gap-2 py-2">
+                  <div className="min-w-0 flex-1">
+                    <div className="text-sm text-text-primary truncate">{e.boerse?.name || 'Unbekannte Börse'}</div>
+                    {/* Kein truncate: sonst faellt genau der Zahler hinten
+                        weg, der hier die interessanteste Angabe ist. */}
+                    <div className="text-caption2 text-text-tertiary">
+                      {[datum(e.boerse?.datum),
+                        e.preis != null ? euro(e.preis) : null,
+                        e.groesse_ml ? `${e.groesse_ml} ml` : null,
+                        `${(e.anzahl_aek || 0) + (e.anzahl_real || 0)}×`,
+                        zahler ? (zahler.id === 'geteilt' ? 'geteilt' : `zahlt ${zahler.label}`) : null,
+                      ].filter(Boolean).join(' · ')}
+                    </div>
+                  </div>
+                  <Kruege note={e.note} />
+                  <span className="num-tabular text-sm font-bold text-text-primary w-8 text-right flex-shrink-0">
+                    {e.note == null ? '—' : e.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      </div>
     </Modal>
   );
 }

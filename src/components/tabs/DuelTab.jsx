@@ -575,7 +575,15 @@ export default function DuelTab() {
     const bekannt = new Set(ausSpielen.map((s) => s.version));
     const ausListe = [];
     for (const [version, info] of Object.entries(LEGACY_SAISONS)) {
-      if (!info.bilanz || bekannt.has(version)) continue;
+      if (bekannt.has(version)) continue;
+      if (!info.bilanz) {
+        // FC15 hat gar keine Bilanz — aus der Zeit sind nur Strichlisten fuer
+        // Tore und Auszeichnungen ueberliefert, keine Ergebnisse. Die Saison
+        // trotzdem auffuehren: eine Luecke in der Reihe laesst einen suchen,
+        // und "gibt es nicht" ist etwas anderes als "war nicht dabei".
+        ausListe.push({ version, aekW: 0, realW: 0, draws: 0, quelle: 'ohne' });
+        continue;
+      }
       ausListe.push({
         version,
         aekW: siegeGesamt(info.bilanz.AEK),
@@ -904,17 +912,27 @@ export default function DuelTab() {
                         </span>
                       )}
                     </span>
-                    <span className="tabular-nums">
-                      <span className="text-system-blue font-semibold">{s.aekW}</span>
-                      <span className="text-text-tertiary"> · {s.draws} · </span>
-                      <span className="text-system-red font-semibold">{s.realW}</span>
-                    </span>
+                    {s.quelle === 'ohne' ? (
+                      <span className="text-text-tertiary">keine Bilanz</span>
+                    ) : (
+                      <span className="tabular-nums">
+                        <span className="text-system-blue font-semibold">{s.aekW}</span>
+                        <span className="text-text-tertiary"> · {s.draws} · </span>
+                        <span className="text-system-red font-semibold">{s.realW}</span>
+                      </span>
+                    )}
                   </div>
+                  {s.quelle === 'ohne' ? (
+                    <p className="text-[10px] text-text-tertiary">
+                      Nur Tore, Auszeichnungen und Sperren überliefert — keine Ergebnisse.
+                    </p>
+                  ) : (
                   <div className="h-2 rounded-full overflow-hidden bg-bg-tertiary flex">
                     <div className="bg-system-blue h-full" style={{ width: `${(s.aekW / tot) * 100}%` }} />
                     <div className="bg-text-tertiary/40 h-full" style={{ width: `${(s.draws / tot) * 100}%` }} />
                     <div className="bg-system-red h-full" style={{ width: `${(s.realW / tot) * 100}%` }} />
                   </div>
+                  )}
                   {/* Tore, wo sie ueberliefert sind. FC15 hat gar keine
                       Bilanz, FC16 nur Siege — dort bleibt die Zeile leer,
                       statt eine 0:0 zu behaupten. */}
