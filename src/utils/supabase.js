@@ -455,8 +455,14 @@ const createDatabaseOperations = (client) => {
       // Use fallback data when authenticated (demo mode with data)
       if (authSession || fallbackSession) {
         console.log(`🔑 Authenticated fallback: returning demo data for ${table}`);
-        let data = fallbackData[table] || [];
-        
+        // Kopie, nicht das Original. Ohne sie gibt jede Abfrage DIESELBE
+        // Array-Referenz zurueck, die insert() vorher veraendert hat — ein
+        // useMemo([daten]) sieht dann nie eine Aenderung und zeigt nach dem
+        // Speichern weiter die alten Zahlen. Die echte Datenbank liefert
+        // jedes Mal ein frisches Array; der Demo-Modus muss sich genauso
+        // verhalten, sonst testet man hier etwas anderes als die App tut.
+        let data = [...(fallbackData[table] || [])];
+
         // Apply basic filtering for options
         if (enhancedOptions.eq) {
           Object.entries(enhancedOptions.eq).forEach(([key, value]) => {

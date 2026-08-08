@@ -36,7 +36,9 @@ export async function ladeBoersen() {
 export async function ladeKatalog() {
   const { data, error } = await supabaseDb.select('bier_katalog', '*', { skipFifaFilter: true });
   if (error) throw error;
-  return (data || []).sort((a, b) => String(a.name).localeCompare(String(b.name)));
+  // Kopie vor dem Sortieren: sort() arbeitet in place und wuerde sonst die
+  // Reihenfolge im Aufrufer mitverändern.
+  return [...(data || [])].sort((a, b) => String(a.name).localeCompare(String(b.name)));
 }
 
 /** Verkostungen — alle oder nur die einer Börse. */

@@ -1,9 +1,11 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
 import LoadingSpinner from '../../LoadingSpinner';
+import ZahlFeld from '../../ZahlFeld';
+import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
 import {
   PERSONEN, BIERARTEN, ladeBoersen, ladeKatalog, ladeVerkostungen,
@@ -302,17 +304,23 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
           {kasse.zugeordnet > 0 && (
             <div className="panel-gray rounded-xl p-3">
               <div className="text-footnote font-semibold text-text-muted mb-2">Rechnung</div>
-              <div className="space-y-1">
+              {/* Kleine Tabelle statt drei Angaben je Zeile: Name, Betrag und
+                  zweiter Betrag passten auf 375px nicht nebeneinander, der
+                  erste Betrag wurde abgeschnitten. */}
+              <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-1 text-caption1">
+                <span />
+                <span className="text-caption2 text-text-tertiary text-right">gezahlt</span>
+                <span className="text-caption2 text-text-tertiary text-right">vertrunken</span>
                 {PERSONEN.map((p) => (
-                  <div key={p.key} className="flex items-baseline gap-2 text-caption1">
-                    <span className={`font-semibold flex-shrink-0 ${p.farbe}`}>{p.name}</span>
-                    <span className="text-text-secondary truncate">
-                      {euro(kasse[p.team].bezahlt)} gezahlt
+                  <Fragment key={p.key}>
+                    <span className={`font-semibold truncate ${p.farbe}`}>{p.name}</span>
+                    <span className="num-tabular text-text-secondary text-right">
+                      {euro(kasse[p.team].bezahlt)}
                     </span>
-                    <span className="ml-auto num-tabular text-text-primary flex-shrink-0">
-                      {euro(kasse[p.team].getrunken)} vertrunken
+                    <span className="num-tabular text-text-primary text-right">
+                      {euro(kasse[p.team].getrunken)}
                     </span>
-                  </div>
+                  </Fragment>
                 ))}
               </div>
               <div className="mt-2 pt-2 border-t border-border-light text-caption1">
@@ -346,23 +354,25 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
               <div className="space-y-1.5">
                 {beste.map((v, i) => (
                   <button key={v.id} type="button" onClick={() => v.bier && onBier(v.bier)}
-                          className="w-full flex items-center gap-2.5 text-left">
-                    <span className={`w-5 text-center text-sm font-bold flex-shrink-0 ${
+                          className="w-full flex items-start gap-2.5 text-left">
+                    <span className={`w-5 text-center text-sm font-bold flex-shrink-0 mt-0.5 ${
                       i === 0 ? 'text-system-yellow' : i === 1 ? 'text-text-secondary'
                       : i === 2 ? 'text-system-orange' : 'text-text-tertiary'}`}>{i + 1}</span>
                     <div className="min-w-0 flex-1">
-                      <div className="text-sm text-text-primary truncate">{v.bier?.name}</div>
-                      <div className="text-caption2 text-text-tertiary truncate">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-sm text-text-primary truncate">{v.bier?.name}</span>
+                        <span className="ml-auto num-tabular text-sm font-bold text-text-primary flex-shrink-0">
+                          {v.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                        </span>
+                      </div>
+                      <div className="text-caption2 text-text-tertiary">
                         {[v.bier?.brauerei, v.bier?.art,
                           v.bier?.alkohol ? prozent(v.bier.alkohol) : null,
                           v.groesse_ml ? `${v.groesse_ml} ml` : null,
                           v.preis != null ? euro(v.preis) : null].filter(Boolean).join(' · ')}
                       </div>
+                      <div className="mt-1"><Kruege note={v.note} /></div>
                     </div>
-                    <Kruege note={v.note} />
-                    <span className="num-tabular text-sm font-bold text-text-primary w-8 text-right flex-shrink-0">
-                      {v.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
-                    </span>
                   </button>
                 ))}
               </div>
@@ -484,23 +494,29 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
       ) : (
         <div className="modern-card divide-y divide-border-light">
           {liste.map((e, i) => (
+            /* Gestapelt statt alles in einer Zeile: Krüge, Note und Rang
+               fressen auf 375px so viel Breite, dass für den Text keine 100px
+               blieben — da wurde schon der Biername abgeschnitten. Jetzt
+               stehen Name und Note oben, die Angaben darunter über die volle
+               Breite. */
             <button key={e.bier_id} type="button" onClick={() => onBier(e.bier)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 text-left">
-              <span className={`w-5 text-center text-sm font-bold flex-shrink-0 ${
+                    className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left">
+              <span className={`w-5 text-center text-sm font-bold flex-shrink-0 mt-0.5 ${
                 i === 0 ? 'text-system-yellow' : 'text-text-tertiary'}`}>{i + 1}</span>
               <div className="min-w-0 flex-1">
-                <div className="text-sm text-text-primary truncate">{e.bier.name}</div>
-                <div className="text-caption2 text-text-tertiary truncate">
+                <div className="flex items-baseline gap-2">
+                  <span className="text-sm text-text-primary truncate">{e.bier.name}</span>
+                  <span className="ml-auto num-tabular text-sm font-bold text-text-primary flex-shrink-0">
+                    {e.note == null ? '—' : e.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                  </span>
+                </div>
+                <div className="text-caption2 text-text-tertiary">
                   {[e.bier.brauerei, e.bier.art, e.bier.alkohol ? prozent(e.bier.alkohol) : null,
                     `${e.glaeser}× getrunken`,
                     e.preisSchnitt != null ? `Ø ${euro(e.preisSchnitt)}` : null].filter(Boolean).join(' · ')}
                 </div>
+                <div className="mt-1"><Kruege note={e.note} /></div>
               </div>
-              <Kruege note={e.note} />
-              <span className="num-tabular text-sm font-bold text-text-primary w-8 text-right flex-shrink-0">
-                {e.note == null ? '—' : e.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
-              </span>
-              <Icon name="chevronRight" size={14} strokeWidth={2.4} className="text-text-tertiary flex-shrink-0" />
             </button>
           ))}
         </div>
@@ -614,9 +630,9 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
   const [name, setName] = useState(vorhandenes?.name || '');
   const [brauerei, setBrauerei] = useState(vorhandenes?.brauerei || '');
   const [art, setArt] = useState(vorhandenes?.art || '');
-  const [alkohol, setAlkohol] = useState(vorhandenes?.alkohol ?? '');
-  const [preis, setPreis] = useState(verkostung?.preis ?? '');
-  const [ml, setMl] = useState(verkostung?.groesse_ml ?? '');
+  const [alkohol, setAlkohol] = useState(alsText(vorhandenes?.alkohol));
+  const [preis, setPreis] = useState(alsText(verkostung?.preis));
+  const [ml, setMl] = useState(alsText(verkostung?.groesse_ml));
   const [anzahlAek, setAnzahlAek] = useState(verkostung?.anzahl_aek ?? 0);
   const [anzahlReal, setAnzahlReal] = useState(verkostung?.anzahl_real ?? 0);
   const [noteAek, setNoteAek] = useState(verkostung?.note_aek ?? null);
@@ -624,7 +640,7 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
   const [zahler, setZahler] = useState(verkostung?.bezahlt_von ?? null);
   const [speichert, setSpeichert] = useState(false);
 
-  const summe = (Number(preis) || 0) * ((Number(anzahlAek) || 0) + (Number(anzahlReal) || 0));
+  const summe = (zahl(preis) || 0) * ((Number(anzahlAek) || 0) + (Number(anzahlReal) || 0));
 
   // Vorschläge aus dem Katalog, damit dasselbe Bier nicht zweimal entsteht.
   const vorschlaege = useMemo(() => {
@@ -635,21 +651,29 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
 
   const uebernehmen = (b) => {
     setName(b.name); setBrauerei(b.brauerei || ''); setArt(b.art || '');
-    setAlkohol(b.alkohol ?? '');
+    setAlkohol(alsText(b.alkohol));
   };
 
   const speichern = async (e) => {
     e.preventDefault();
     if (!name.trim()) { toast.error('Das Bier braucht einen Namen.'); return; }
     if (anzahlAek + anzahlReal === 0) { toast.error('Mindestens ein Glas eintragen.'); return; }
+    // Das Textfeld hat kein min/max mehr, die Grenzen müssen also hierher.
+    // Absichtlich grosszuegig: das soll Vertipper abfangen, nicht bevormunden.
+    const a = zahl(alkohol);
+    if (a != null && (a < 0 || a > 80)) { toast.error('Alkohol zwischen 0 und 80 % angeben.'); return; }
+    const g = zahl(ml);
+    if (g != null && (g < 1 || g > 5000)) { toast.error('Größe zwischen 1 und 5000 ml angeben.'); return; }
+    const p = zahl(preis);
+    if (p != null && (p < 0 || p > 1000)) { toast.error('Preis zwischen 0 und 1000 € angeben.'); return; }
     setSpeichert(true);
     try {
-      const bier = await findeOderLegeBierAn({ name, brauerei, art, alkohol });
+      const bier = await findeOderLegeBierAn({ name, brauerei, art, alkohol: a });
       const daten = {
         boerse_id: boerse.id,
         bier_id: bier.id,
-        preis: preis === '' ? null : Number(preis),
-        groesse_ml: ml === '' ? null : Number(ml),
+        preis: p,
+        groesse_ml: g,
         anzahl_aek: Number(anzahlAek) || 0,
         anzahl_real: Number(anzahlReal) || 0,
         note_aek: noteAek,
@@ -706,21 +730,18 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
           </label>
           <label className="block">
             <span className="text-footnote text-text-secondary">Alkohol %</span>
-            <input type="number" step="0.1" min="0" max="80" inputMode="decimal"
-                   value={alkohol} onChange={(e) => setAlkohol(e.target.value)}
-                   className="form-input w-full mt-1" placeholder="5.2" />
+            <ZahlFeld wert={alkohol} onChange={setAlkohol}
+                      className="form-input w-full mt-1" placeholder="5,2" />
           </label>
           <label className="block">
             <span className="text-footnote text-text-secondary">Größe ml</span>
-            <input type="number" min="1" inputMode="numeric"
-                   value={ml} onChange={(e) => setMl(e.target.value)}
-                   className="form-input w-full mt-1" placeholder="500" />
+            <ZahlFeld wert={ml} onChange={setMl} ganzzahl
+                      className="form-input w-full mt-1" placeholder="500" />
           </label>
           <label className="block col-span-2">
             <span className="text-footnote text-text-secondary">Preis je Glas €</span>
-            <input type="number" step="0.1" min="0" inputMode="decimal"
-                   value={preis} onChange={(e) => setPreis(e.target.value)}
-                   className="form-input w-full mt-1" placeholder="4.50" />
+            <ZahlFeld wert={preis} onChange={setPreis}
+                      className="form-input w-full mt-1" placeholder="4,50" />
           </label>
         </div>
 
@@ -736,11 +757,14 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
                 <TeamLogo team={p.key} size="xs" />
                 <span className={`text-footnote font-semibold ${p.farbe}`}>{p.name}</span>
                 <div className="ml-auto flex items-center gap-1.5">
-                  <button type="button" onClick={() => setAnzahl(Math.max(0, anzahl - 1))}
+                  {/* Funktional hochzaehlen: zwei schnelle Taps landen sonst
+                      im selben React-Batch und lesen beide denselben alten
+                      Wert — aus zweimal Plus wird dann eins. */}
+                  <button type="button" onClick={() => setAnzahl((n) => Math.max(0, n - 1))}
                           className="w-8 h-8 rounded-lg bg-bg-tertiary text-text-primary font-bold"
                           aria-label="Weniger">−</button>
                   <span className="w-8 text-center num-tabular font-bold text-text-primary">{anzahl}</span>
-                  <button type="button" onClick={() => setAnzahl(anzahl + 1)}
+                  <button type="button" onClick={() => setAnzahl((n) => n + 1)}
                           className="w-8 h-8 rounded-lg bg-bg-tertiary text-text-primary font-bold"
                           aria-label="Mehr">+</button>
                 </div>

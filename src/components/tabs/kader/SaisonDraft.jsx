@@ -2,6 +2,8 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import toast from 'react-hot-toast';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
+import ZahlFeld from '../../ZahlFeld';
+import { zahl } from '../../../utils/zahlen';
 import LoadingSpinner from '../../LoadingSpinner';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { getCurrentFifaVersion } from '../../../utils/fifaVersionManager';
@@ -90,8 +92,8 @@ function DraftStart({ version, spieler, finanzen, onGestartet }) {
   }, [vorsaison, finanzen, spieler]);
 
   const start = async () => {
-    const a = Number(budgets.AEK) || 0;
-    const r = Number(budgets.Real) || 0;
+    const a = zahl(budgets.AEK) || 0;
+    const r = zahl(budgets.Real) || 0;
     if (!zielsaison.trim()) { toast.error('Für welche Saison wird gedraftet?'); return; }
     if (a <= 0 || r <= 0) { toast.error('Beide brauchen ein Budget über null.'); return; }
     setStartet(true);
@@ -153,13 +155,13 @@ function DraftStart({ version, spieler, finanzen, onGestartet }) {
                   {PERSON[team]}
                 </span>
                 <span className="ml-auto text-caption2 text-text-tertiary num-tabular">
-                  {mio(Number(budgets[team]) || 0)}
+                  {mio(zahl(budgets[team]) || 0)}
                 </span>
               </div>
-              <input
-                type="number" min="0" step="100000" inputMode="numeric"
-                value={budgets[team]}
-                onChange={(e) => setBudgets((b) => ({ ...b, [team]: e.target.value }))}
+              <ZahlFeld
+                ganzzahl
+                wert={budgets[team]}
+                onChange={(w) => setBudgets((b) => ({ ...b, [team]: w }))}
                 className="form-input w-full"
                 aria-label={`Budget ${PERSON[team]} in Euro`}
               />
@@ -230,7 +232,7 @@ function DraftLaeuft({ session, picks, onAendern }) {
     e?.preventDefault?.();
     if (!dran) return;
     if (!name.trim()) { toast.error('Wen ziehst du?'); return; }
-    const betrag = Math.round((Number(preis) || 0) * 1_000_000);
+    const betrag = Math.round((zahl(preis) || 0) * 1_000_000);
     setArbeitet(true);
     try {
       await ziehe({ session, picks, team: dran, name, preis: betrag, position });
@@ -356,9 +358,8 @@ function DraftLaeuft({ session, picks, onAendern }) {
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <span className="text-caption2 text-text-tertiary">Marktwert (Mio €)</span>
-              <input type="number" step="0.05" min="0" inputMode="decimal"
-                     value={preis} onChange={(e) => setPreis(e.target.value)}
-                     className="form-input w-full mt-0.5" placeholder="12.5" />
+              <ZahlFeld wert={preis} onChange={setPreis}
+                        className="form-input w-full mt-0.5" placeholder="12,5" />
             </label>
             <label className="block">
               <span className="text-caption2 text-text-tertiary">Position</span>

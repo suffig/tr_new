@@ -99,6 +99,10 @@ export async function starteDraft({ version, budgetAek, budgetReal, beginner }) 
     budget_real: Math.round(budgetReal),
     beginner,
     mindest_picks: MINDEST_PICKS,
+    // Steht so schon als Spalten-Default in db/18_draft.sql. Hier trotzdem
+    // ausdruecklich: ladeOffenenDraft() filtert genau danach, und ein Wert,
+    // der erst in der Datenbank entsteht, macht den Zusammenhang unsichtbar.
+    status: 'laufend',
   });
   if (error) throw error;
   return data;
