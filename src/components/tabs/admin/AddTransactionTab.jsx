@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ZahlFeld from '../../ZahlFeld';
+import { zahl } from '../../../utils/zahlen';
 import Icon from '../../icons/Icon';
 import { supabaseDb } from '../../../utils/supabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
@@ -39,7 +41,7 @@ export default function AddTransactionTab() {
       // weiterreichen, rundet die Datenbank jede der beiden integer-Spalten
       // einzeln — gebuchter Betrag und Kontostand-Aenderung koennten dann
       // auseinanderlaufen.
-      const parsed = parseFloat(formData.amount);
+      const parsed = zahl(formData.amount);
       if (!Number.isFinite(parsed)) {
         throw new Error('Bitte einen gültigen Betrag eingeben.');
       }
@@ -225,11 +227,12 @@ export default function AddTransactionTab() {
                       nicht mehr eingeben. Der Schalter daneben dreht das
                       Vorzeichen unabhaengig von der Tastatur. */}
                   <div className="flex items-center gap-2">
-                    <input
-                      type="number"
-                      step="1"
-                      value={formData.amount}
-                      onChange={(e) => handleInputChange('amount', e.target.value)}
+                    <ZahlFeld
+                      ganzzahl
+                      vorzeichen
+                      inputMode="text"
+                      wert={formData.amount}
+                      onChange={(w) => handleInputChange('amount', w)}
                       onFocus={(e) => e.target.select()}
                       className="form-input flex-1"
                       placeholder="0"
@@ -239,7 +242,7 @@ export default function AddTransactionTab() {
                     <button
                       type="button"
                       onClick={() => {
-                        const n = parseFloat(formData.amount);
+                        const n = zahl(formData.amount);
                         if (!Number.isFinite(n) || n === 0) return;
                         handleInputChange('amount', String(-n));
                       }}
@@ -247,12 +250,12 @@ export default function AddTransactionTab() {
                       aria-label="Vorzeichen umdrehen (Einnahme / Ausgabe)"
                       title="Vorzeichen umdrehen"
                       className={`flex-shrink-0 px-3 py-3 rounded-xl text-sm font-bold transition-colors ${
-                        parseFloat(formData.amount) < 0
+                        zahl(formData.amount) < 0
                           ? 'bg-system-red/12 text-system-red'
                           : 'bg-system-green/12 text-system-green'
                       }`}
                     >
-                      {parseFloat(formData.amount) < 0 ? '− Ausgabe' : '+ Einnahme'}
+                      {zahl(formData.amount) < 0 ? '− Ausgabe' : '+ Einnahme'}
                     </button>
                   </div>
                   <p className="text-xs text-text-muted mt-1">

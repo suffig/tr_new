@@ -1,4 +1,6 @@
 import { useState } from 'react';
+import ZahlFeld from '../../ZahlFeld';
+import { zahl } from '../../../utils/zahlen';
 import Icon from '../../icons/Icon';
 import { supabaseDb } from '../../../utils/supabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
@@ -42,7 +44,7 @@ export default function AddPlayerTab() {
     setLoading(true);
 
     try {
-      const parsedValue = parseFloat(formData.value);
+      const parsedValue = zahl(formData.value);
       if (Number.isFinite(parsedValue) && parsedValue < 0) {
         throw new Error('Marktwert darf nicht negativ sein');
       }
@@ -59,8 +61,8 @@ export default function AddPlayerTab() {
         name: formData.name.trim(),
         team: formData.team.trim(),
         position: formData.position.trim().toUpperCase(),
-        goals: parseInt(formData.goals) || 0,
-        value: parseFloat(formData.value) || 0,
+        goals: zahl(formData.goals) || 0,
+        value: parsedValue || 0,
         //status: formData.status || 'active'
       });
 
@@ -199,19 +201,16 @@ export default function AddPlayerTab() {
                   <label className="block text-sm font-medium text-text-primary mb-2">
                     Marktwert (Millionen €) *
                   </label>
-                  <input
-                    type="number" inputMode="decimal"
-                    min="0"
-                    step="0.1"
-                    value={formData.value}
-                    onChange={(e) => handleInputChange('value', e.target.value)}
+                  <ZahlFeld
+                    wert={formData.value}
+                    onChange={(w) => handleInputChange('value', w)}
                     onFocus={(e) => e.target.select()}
                     className="form-input"
-                    placeholder="0.0"
+                    placeholder="0,0"
                     disabled={loading}
                   />
                   <p className="text-xs text-text-muted mt-1">
-                    Marktwert in Millionen Euro (z.B. 1.5 für 1.5M €)
+                    Marktwert in Millionen Euro (z. B. 1,5 für 1,5 Mio €)
                   </p>
                 </div>
 				
@@ -220,11 +219,10 @@ export default function AddPlayerTab() {
                   <label className="block text-sm font-medium text-text-primary mb-2">
                     Anzahl Tore
                   </label>
-                  <input
-                    type="number" inputMode="decimal"
-                    min="0"
-                    value={formData.goals}
-                    onChange={(e) => handleInputChange('goals', e.target.value)}
+                  <ZahlFeld
+                    ganzzahl
+                    wert={formData.goals}
+                    onChange={(w) => handleInputChange('goals', w)}
                     onFocus={(e) => e.target.select()}
                     className="form-input"
                     placeholder="0"

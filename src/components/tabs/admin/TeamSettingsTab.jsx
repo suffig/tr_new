@@ -1,4 +1,6 @@
 import { useState, useEffect } from 'react';
+import ZahlFeld from '../../ZahlFeld';
+import { zahl } from '../../../utils/zahlen';
 import { dataManager } from '../../../../dataManager.js';
 import ThemeSettings from '../../ThemeSettings';
 import ColorCustomization from '../../ColorCustomization';
@@ -87,13 +89,14 @@ export default function TeamSettingsTab() {
     }
   };
 
+  // Der eingetippte Text bleibt hier stehen und wird erst beim Speichern in
+  // eine Zahl gewandelt. Vorher lief jeder Tastendruck durch parseInt: aus
+  // "82," wurde sofort wieder "82", und ein Gewicht mit Nachkommastelle liess
+  // sich gar nicht eingeben.
   const handleManagerChange = (team, field, value) => {
     setManagers(prev => ({
       ...prev,
-      [team]: {
-        ...prev[team],
-        [field]: field === 'name' ? value : parseInt(value) || 0
-      }
+      [team]: { ...prev[team], [field]: value }
     }));
     setHasChanges(true);
   };
@@ -106,8 +109,10 @@ export default function TeamSettingsTab() {
       console.log('💾 [TeamSettings] Saving manager settings:', managers);
       
       // Update both managers in the database
-      const aekData = { name: managers.aek.name, gewicht: managers.aek.weight, age: managers.aek.age };
-      const realData = { name: managers.real.name, gewicht: managers.real.weight, age: managers.real.age };
+      // zahl() statt Rohwert: die Felder liefern jetzt Text, und "82,5" waere
+      // fuer die Zahlenspalten der Datenbank kein gueltiger Wert.
+      const aekData = { name: managers.aek.name, gewicht: zahl(managers.aek.weight), age: zahl(managers.aek.age) };
+      const realData = { name: managers.real.name, gewicht: zahl(managers.real.weight), age: zahl(managers.real.age) };
       
       console.log('💾 [TeamSettings] AEK Data:', aekData);
       console.log('💾 [TeamSettings] Real Data:', realData);
@@ -217,24 +222,19 @@ export default function TeamSettingsTab() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Alter</label>
-                <input
-                  type="number" inputMode="decimal"
-                  min="18"
-                  max="80"
-                  value={managers.aek.age}
-                  onChange={(e) => handleManagerChange('aek', 'age', e.target.value)}
+                <ZahlFeld
+                  ganzzahl
+                  wert={managers.aek.age}
+                  onChange={(w) => handleManagerChange('aek', 'age', w)}
                   onFocus={(e) => e.target.select()}
                   className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-blue"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Gewicht (kg)</label>
-                <input
-                  type="number" inputMode="decimal"
-                  min="40"
-                  max="200"
-                  value={managers.aek.weight}
-                  onChange={(e) => handleManagerChange('aek', 'weight', e.target.value)}
+                <ZahlFeld
+                  wert={managers.aek.weight}
+                  onChange={(w) => handleManagerChange('aek', 'weight', w)}
                   onFocus={(e) => e.target.select()}
                   className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-blue"
                 />
@@ -263,24 +263,19 @@ export default function TeamSettingsTab() {
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium mb-1">Alter</label>
-                <input
-                  type="number" inputMode="decimal"
-                  min="18"
-                  max="80"
-                  value={managers.real.age}
-                  onChange={(e) => handleManagerChange('real', 'age', e.target.value)}
+                <ZahlFeld
+                  ganzzahl
+                  wert={managers.real.age}
+                  onChange={(w) => handleManagerChange('real', 'age', w)}
                   onFocus={(e) => e.target.select()}
                   className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-red"
                 />
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1">Gewicht (kg)</label>
-                <input
-                  type="number" inputMode="decimal"
-                  min="40"
-                  max="200"
-                  value={managers.real.weight}
-                  onChange={(e) => handleManagerChange('real', 'weight', e.target.value)}
+                <ZahlFeld
+                  wert={managers.real.weight}
+                  onChange={(w) => handleManagerChange('real', 'weight', w)}
                   onFocus={(e) => e.target.select()}
                   className="w-full px-3 py-2 border border-border-light rounded-lg bg-bg-elevated text-text-primary focus:outline-none focus:ring-2 focus:ring-system-red"
                 />

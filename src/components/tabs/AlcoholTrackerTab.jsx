@@ -9,6 +9,8 @@ import {
   bierStand, shotStand, schnapsStand,
 } from '../../utils/abende';
 import { useState, useEffect, useCallback } from 'react';
+import ZahlFeld from '../ZahlFeld';
+import { zahl } from '../../utils/zahlen';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
 
@@ -631,7 +633,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   };
 
   const addCustomAmount = (player) => {
-    const amount = parseFloat(customAmounts[player]);
+    const amount = zahl(customAmounts[player]);
     if (amount && amount > 0) {
       addToPlayerAccount(player, amount);
       // Clear the input after adding
@@ -712,8 +714,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   };
 
   const applySchnapsTarget = () => {
-    const val = parseInt(schnapsTargetInput, 10);
-    if (!isNaN(val) && val >= 1 && val <= 200) {
+    const val = zahl(schnapsTargetInput);
+    if (Number.isFinite(val) && val >= 1 && val <= 200) {
       setSchnapsShotsData((d) => ({ ...d, target: val }));
       try { localStorage.setItem('schnapsZiel', String(val)); } catch { /* ignore */ }
     }
@@ -1354,12 +1356,10 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       <div className="flex items-center gap-2">
                         {editingSchnapsTarget ? (
                           <>
-                            <input
-                              type="number" inputMode="decimal"
-                              min="1"
-                              max="200"
-                              value={schnapsTargetInput}
-                              onChange={e => setSchnapsTargetInput(e.target.value)}
+                            <ZahlFeld
+                              ganzzahl
+                              wert={schnapsTargetInput}
+                              onChange={setSchnapsTargetInput}
                               onKeyDown={e => { if (e.key === 'Enter') applySchnapsTarget(); if (e.key === 'Escape') setEditingSchnapsTarget(false); }}
                               className="w-16 text-center border border-system-orange/45 rounded-lg px-1 py-0.5 text-sm font-bold text-system-orange bg-bg-elevated focus:outline-none focus:ring-2 focus:ring-system-orange"
                               autoFocus
@@ -1848,18 +1848,15 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <div className="mt-3 p-2 bg-system-blue/10 rounded-lg border border-system-blue/25">
                   <h6 className="text-xs font-medium text-system-blue mb-1 inline-flex items-center gap-1"><Icon name="euro" size={12} strokeWidth={2.4} />Eigener Betrag:</h6>
                   <div className="flex gap-1">
-                    <input
-                      type="number" inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      value={customAmounts.alexander}
-                      onChange={(e) => handleCustomAmountChange('alexander', e.target.value)}
-                      placeholder="0.00"
+                    <ZahlFeld
+                      wert={customAmounts.alexander}
+                      onChange={(w) => handleCustomAmountChange('alexander', w)}
+                      placeholder="0,00"
                       className="flex-1 px-2 py-2 border border-system-blue/45 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-system-blue min-h-[36px] max-w-[80px]"
                     />
                     <button
                       onClick={() => addCustomAmount('alexander')}
-                      disabled={!customAmounts.alexander || parseFloat(customAmounts.alexander) <= 0}
+                      disabled={!(zahl(customAmounts.alexander) > 0)}
                       className="bg-system-blue hover:bg-system-blue disabled:bg-border-strong text-white px-2 py-2 rounded-md text-xs font-medium transition-all min-h-[36px] min-w-[36px]"
                     >
                       +€
@@ -1929,18 +1926,15 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <div className="mt-3 p-2 bg-system-green/10 rounded-lg border border-system-green/25">
                   <h6 className="text-xs font-medium text-system-green mb-1 inline-flex items-center gap-1"><Icon name="euro" size={12} strokeWidth={2.4} />Eigener Betrag:</h6>
                   <div className="flex gap-1">
-                    <input
-                      type="number" inputMode="decimal"
-                      min="0"
-                      step="0.01"
-                      value={customAmounts.philip}
-                      onChange={(e) => handleCustomAmountChange('philip', e.target.value)}
-                      placeholder="0.00"
+                    <ZahlFeld
+                      wert={customAmounts.philip}
+                      onChange={(w) => handleCustomAmountChange('philip', w)}
+                      placeholder="0,00"
                       className="flex-1 px-2 py-2 border border-system-green/45 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-system-green min-h-[36px] max-w-[80px]"
                     />
                     <button
                       onClick={() => addCustomAmount('philip')}
-                      disabled={!customAmounts.philip || parseFloat(customAmounts.philip) <= 0}
+                      disabled={!(zahl(customAmounts.philip) > 0)}
                       className="bg-system-green hover:bg-system-green disabled:bg-border-strong text-white px-2 py-2 rounded-md text-xs font-medium transition-all min-h-[36px] min-w-[36px]"
                     >
                       +€

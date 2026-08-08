@@ -1,5 +1,7 @@
 ﻿import Icon from '../icons/Icon';
 import { useState } from 'react';
+import ZahlFeld from '../ZahlFeld';
+import { zahl, alsText } from '../../utils/zahlen';
 import { useSupabaseQuery, useSupabaseMutation } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import ExportImportManager from '../ExportImportManager';
@@ -355,7 +357,7 @@ function PlayerForm({ player, onSave, onCancel }) {
   const [formData, setFormData] = useState({
     name: player.name || '',
     position: player.position || '',
-    value: player.value || 0,
+    value: alsText(player.value || 0),
     team: player.team || ''
   });
 
@@ -365,7 +367,7 @@ function PlayerForm({ player, onSave, onCancel }) {
       toast.error('Bitte alle Pflichtfelder ausfüllen');
       return;
     }
-    onSave(formData);
+    onSave({ ...formData, value: zahl(formData.value) || 0 });
   };
 
   return (
@@ -422,15 +424,15 @@ function PlayerForm({ player, onSave, onCancel }) {
         <label className="block text-footnote font-medium text-text-secondary mb-1.5">
           Marktwert (in Millionen €)
         </label>
-        <input
-          type="number" inputMode="decimal"
-          min="0"
-          step="0.1"
-          value={formData.value}
-          onChange={(e) => setFormData({ ...formData, value: parseFloat(e.target.value) || 0 })}
+        {/* Der Wert bleibt beim Tippen Text. Vorher stand hier parseFloat im
+            onChange — damit liess sich nicht einmal ein Komma oder ein Punkt
+            eintippen: "1," wurde sofort wieder zu "1". */}
+        <ZahlFeld
+          wert={formData.value}
+          onChange={(w) => setFormData({ ...formData, value: w })}
           onFocus={(e) => e.target.select()}
           className="form-input"
-          placeholder="0.0"
+          placeholder="0,0"
         />
       </div>
       

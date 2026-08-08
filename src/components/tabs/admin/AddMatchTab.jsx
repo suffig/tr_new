@@ -921,32 +921,21 @@ export default function AddMatchTab() {
                 <div className="border-t pt-4">
                   <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="euro" size={16} strokeWidth={2.2} className="text-system-green" />Preisgelder (automatisch berechnet)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-text-primary mb-2">
-                        Preisgeld {getTeamDisplay('AEK')} (€)
-                      </label>
-                      <input
-                        type="number" inputMode="decimal"
-                        value={formData.prizeaek}
-                        className="form-input bg-bg-tertiary"
-                        placeholder="Automatisch berechnet"
-                        disabled
-                        readOnly
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-text-primary mb-2">
-                        Preisgeld {getTeamDisplay('Real')} (€)
-                      </label>
-                      <input
-                        type="number" inputMode="decimal"
-                        value={formData.prizereal}
-                        className="form-input bg-bg-tertiary"
-                        placeholder="Automatisch berechnet"
-                        disabled
-                        readOnly
-                      />
-                    </div>
+                    {/* Kein Eingabefeld: die Betraege werden gerechnet, nicht
+                        getippt. Als <input type="number"> stand hier "1000000"
+                        statt "1.000.000 €" — zwei Zeilen weiter unten steht
+                        dieselbe Zahl bereits formatiert. */}
+                    {[['AEK', formData.prizeaek], ['Real', formData.prizereal]].map(([team, betrag]) => (
+                      <div key={team}>
+                        <label className="block text-sm font-medium text-text-primary mb-2">
+                          Preisgeld {getTeamDisplay(team)} (€)
+                        </label>
+                        <div className="form-input bg-bg-tertiary num-tabular"
+                             aria-label={`Preisgeld ${getTeamDisplay(team)}`}>
+                          {(Number(betrag) || 0).toLocaleString('de-DE')} €
+                        </div>
+                      </div>
+                    ))}
                   </div>
                   <p className="text-xs text-text-muted mt-2">
                     Basierend auf Ergebnis und Karten: Gewinner 1M€ - (Verlierer-Tore × 50k€) - (Karten × 20k€/50k€)

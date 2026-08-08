@@ -1,5 +1,7 @@
 ﻿import Icon from '../icons/Icon';
 import { useState, useEffect, useRef } from 'react';
+import ZahlFeld from '../ZahlFeld';
+import { zahl } from '../../utils/zahlen';
 import toast from 'react-hot-toast';
 
 const STORAGE_KEY = 'spielersaufenData';
@@ -161,7 +163,7 @@ export default function SpielersaufenTab() {
 
   // ════════════════ SETTINGS ════════════════════════════════════════════════
   const setMPS = (v) => {
-    const val = Math.max(1, parseInt(v) || 1);
+    const val = Math.max(1, zahl(v) || 1);
     save({ ...data, settings: { ...data.settings, mentionsPerShot: val } });
   };
 
@@ -441,8 +443,8 @@ export default function SpielersaufenTab() {
               ))}
               <div className="flex items-center gap-1.5">
                 <span className="text-xs text-text-tertiary">Eigener:</span>
-                <input type="number" inputMode="decimal" min="1" max="20" value={data.settings.mentionsPerShot}
-                  onChange={e => setMPS(e.target.value)}
+                <ZahlFeld ganzzahl wert={String(data.settings.mentionsPerShot)}
+                  onChange={setMPS}
                   className="w-14 h-10 text-center border border-border-medium rounded-lg text-sm font-bold focus:outline-none focus:ring-2 focus:ring-system-orange" />
               </div>
             </div>
