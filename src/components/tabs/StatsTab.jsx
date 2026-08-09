@@ -1389,9 +1389,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       {/* Advanced Team Stats */}
       <div className="modern-card">
         <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="trendingUp" size={18} strokeWidth={2.2} />Torausbeute &amp; Serien</h3>
-        <div className="mb-4 text-sm text-text-muted">
-          Diese Statistiken bieten tiefere Einblicke in die Team-Performance und wichtige Kennzahlen.
-        </div>
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="text-center p-4 bg-bg-secondary rounded-lg">
             <div className="text-2xl font-bold text-primary-green">{advancedStats.highScoringGames}</div>
@@ -1432,7 +1429,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               als keine. */}
 
           <div className="space-y-3">
-            <h4 className="font-semibold text-system-green inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Torstatistiken</h4>
+            <h4 className="font-semibold text-system-green inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Wie die Spiele ausgehen</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-text-secondary">Beide Teams treffen:</span>
@@ -1450,7 +1447,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
 
           <div className="space-y-3">
-            <h4 className="font-semibold text-system-purple inline-flex items-center gap-2"><Icon name="target" size={16} strokeWidth={2.2} />Spielqualität</h4>
+            <h4 className="font-semibold text-system-purple inline-flex items-center gap-2"><Icon name="target" size={16} strokeWidth={2.2} />Wie eng es zugeht</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-text-secondary">Enge Spiele (≤1 Tor):</span>
@@ -1472,51 +1469,12 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
         </div>
         
-        {/* Performance Analysis */}
-        <div className="mt-6 grid md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h4 className="font-semibold text-text-primary inline-flex items-center gap-2"><Icon name="target" size={16} strokeWidth={2.2} />Offensive Highlights</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Torreichstes Team:</span>
-                <span className="font-medium text-text-primary">
-                  {advancedStats.aekTotalGoals >= advancedStats.realTotalGoals ? getTeamDisplay('AEK') : getTeamDisplay('Real')}
-                  {' '}({Math.max(advancedStats.aekTotalGoals, advancedStats.realTotalGoals)} Tore)
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Aktivster Torschütze:</span>
-                <span className="font-medium text-text-primary">
-                  {playerStats.length > 0 ? `${playerStats[0].name} (${playerStats[0].goals} Tore)` : 'Keine Daten'}
-                </span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <h4 className="font-semibold text-text-primary"><Icon name="scale" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Team-Balance</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Kader-Unterschied:</span>
-                <span className="font-medium text-text-primary">
-                  {Math.abs(aekPlayers.length - realPlayers.length)} Spieler
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Marktwert-Verhältnis:</span>
-                <span className="font-medium text-text-primary">
-                  {aekPlayers.reduce((sum, p) => sum + (p.value || 0), 0) > realPlayers.reduce((sum, p) => sum + (p.value || 0), 0) ? 'AEK führt' : 'Real führt'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Dominanteres Team:</span>
-                <span className="font-medium text-text-primary">
-                  {aekWins > realWins ? getTeamDisplay('AEK') : realWins > aekWins ? getTeamDisplay('Real') : 'Ausgeglichen'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* "Offensive Highlights" und "Team-Balance" entfernt: torreichstes
+            Team und aktivster Torschuetze stehen schon im Banner bzw. in der
+            Ansicht "Spieler", der Kader-Unterschied ergibt sich aus "Aktive
+            Spieler" zwei Karten weiter oben, "Marktwert-Verhaeltnis: Real
+            fuehrt" sagt weniger als die Marktwert-Ansicht, und "Dominanteres
+            Team" wiederholt den Siegestand. */}
       </div>
 
       {/* Head-to-Head Statistics */}
