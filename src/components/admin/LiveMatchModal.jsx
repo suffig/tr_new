@@ -75,12 +75,15 @@ export default function LiveMatchModal({ players, onClose, onFinish }) {
       for (const g of live.goals) if (g.team === team) counts[g.player] = (counts[g.player] || 0) + 1;
       return Object.entries(counts).map(([player, count]) => ({ player, count }));
     };
-    clearStore();
+    // Erst uebergeben, dann loeschen. Andersherum ist das Live-Spiel schon
+    // aus dem Speicher, wenn beim Uebernehmen etwas schiefgeht — und ein
+    // Abend Toreschiessen laesst sich nicht rekonstruieren.
     onFinish({
       goalslista: toList('AEK'),
       goalslistb: toList('Real'),
       yellowa: live.yellowa, reda: live.reda, yellowb: live.yellowb, redb: live.redb,
     });
+    clearStore();
   };
 
   const lastGoal = live.goals[live.goals.length - 1];

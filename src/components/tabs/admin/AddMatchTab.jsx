@@ -119,6 +119,29 @@ export default function AddMatchTab() {
     persistDrafts(drafts);
   }, [drafts]);
 
+  // Torschuetzenliste in echte Schuetzen und Eigentore zerlegen.
+  //
+  // Eigentore stehen in derselben Liste wie die Schuetzen, als Pseudo-Name
+  // "Eigentore_<Team>". Wer das nicht heraustrennt, zeigt im Formular einen
+  // Spieler namens "Eigentore_Real" an, waehrend der Eigentor-Zaehler auf 0
+  // steht — genau das tat der Live-Pfad, waehrend der Bearbeiten-Pfad es
+  // richtig machte. Deshalb liegt es jetzt an einer Stelle.
+  const parseList = (r) => {
+    try { return typeof r === 'string' ? (JSON.parse(r) || []) : (Array.isArray(r) ? r : []); }
+    catch { return []; }
+  };
+  const splitScorers = (list) => {
+    const scorers = []; let own = 0;
+    for (const g of parseList(list)) {
+      const isObj = typeof g === 'object' && g !== null;
+      const name = isObj ? g.player : g;
+      const cnt = isObj ? (g.count || 1) : 1;
+      if (String(name).startsWith('Eigentore_')) own += cnt;
+      else scorers.push({ player: name, count: cnt });
+    }
+    return { scorers, own };
+  };
+
   // A draft is worth keeping once any score / scorer / card has been entered
   const hasMeaningfulInput = () => {
     return (
@@ -142,20 +165,7 @@ export default function AddMatchTab() {
       if (!raw) return;
       sessionStorage.removeItem('fusta_edit_match');
       const m = JSON.parse(raw);
-      const parseList = (r) => { try { return typeof r === 'string' ? (JSON.parse(r) || []) : (Array.isArray(r) ? r : []); } catch { return []; } };
-      // Eigentore_-Einträge aus den Listen in die ownGoals-Stepper extrahieren
-      const split = (list) => {
-        const scorers = []; let own = 0;
-        for (const g of parseList(list)) {
-          const isObj = typeof g === 'object' && g !== null;
-          const name = isObj ? g.player : g;
-          const cnt = isObj ? (g.count || 1) : 1;
-          if (String(name).startsWith('Eigentore_')) own += cnt;
-          else scorers.push({ player: name, count: cnt });
-        }
-        return { scorers, own };
-      };
-      const A = split(m.goalslista), B = split(m.goalslistb);
+      const A = splitScorers(m.goalslista), B = splitScorers(m.goalslistb);
       // Liste A enthält Eigentore des Gegners (Real) → zählen als ownGoalsB, umgekehrt für B
       const ownGoalsB = A.own, ownGoalsA = B.own;
       const goalsa = A.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsB;
@@ -196,15 +206,20 @@ export default function AddMatchTab() {
     // Ein einziger, vollständig berechneter setFormData (kein Update-Batching):
     // Tore = Summe der Torschützen-Counts (inkl. inline Eigentore_-Einträge),
     // Preisgeld direkt mitberechnet — Formular ist sofort speicherbereit.
-    const goalsa = live.goalslista.reduce((s, g) => s + (g.count || 0), 0);
-    const goalsb = live.goalslistb.reduce((s, g) => s + (g.count || 0), 0);
+    const A = splitScorers(live.goalslista), B = splitScorers(live.goalslistb);
+    // Liste A enthaelt die Eigentore des GEGNERS — dieselbe Zuordnung wie im
+    // Bearbeiten-Pfad, sonst landet ein Eigentor beim falschen Team.
+    const ownGoalsB = A.own, ownGoalsA = B.own;
+    const goalsa = A.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsB;
+    const goalsb = B.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsA;
     const { prizeaek, prizereal } = MatchBusinessLogic.calculatePrizeMoney(
       goalsa, goalsb, live.yellowa, live.reda, live.yellowb, live.redb
     );
     setFormData({
       ...makeEmptyForm(),
-      goalslista: live.goalslista,
-      goalslistb: live.goalslistb,
+      goalslista: A.scorers,
+      goalslistb: B.scorers,
+      ownGoalsA, ownGoalsB,
       yellowa: live.yellowa, reda: live.reda,
       yellowb: live.yellowb, redb: live.redb,
       goalsa, goalsb, prizeaek, prizereal,
