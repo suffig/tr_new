@@ -938,13 +938,13 @@ export default function DuelTab() {
                       statt eine 0:0 zu behaupten. */}
                   {s.aekG != null && s.realG != null && (
                     <div className="flex items-center justify-between text-[10px] text-text-tertiary mt-0.5 num-tabular">
-                      <span>
+                      <span className="text-text-secondary">
                         <span className="text-system-blue">{s.aekG}</span>
                         {' : '}
                         <span className="text-system-red">{s.realG}</span>
                         {' Tore'}
                       </span>
-                      <span>Ø {((s.aekG + s.realG) / (s.spiele || tot)).toLocaleString('de-DE', { maximumFractionDigits: 1 })} pro Spiel</span>
+                      <span className="text-text-secondary">Ø {((s.aekG + s.realG) / (s.spiele || tot)).toLocaleString('de-DE', { maximumFractionDigits: 1 })} pro Spiel</span>
                     </div>
                   )}
                 </div>

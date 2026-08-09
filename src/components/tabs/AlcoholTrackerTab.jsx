@@ -10,7 +10,7 @@ import {
 } from '../../utils/abende';
 import { useState, useEffect, useCallback } from 'react';
 import ZahlFeld from '../ZahlFeld';
-import { zahl } from '../../utils/zahlen';
+import { zahl, dez, dezKurz } from '../../utils/zahlen';
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
 
@@ -364,9 +364,9 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     return (
       <div className="mt-3">
         <div className="flex justify-between text-xs text-text-secondary mb-1">
-          <span>0‰</span>
-          <span>{name} BAC</span>
-          <span>2‰</span>
+          <span className="text-text-secondary">0‰</span>
+          <span className="text-text-secondary">{name} BAC</span>
+          <span className="text-text-secondary">2‰</span>
         </div>
         <div className="w-full bg-bg-tertiary rounded-full h-4 relative">
           <div 
@@ -378,8 +378,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           </div>
         </div>
         <div className="flex justify-between text-xs text-text-tertiary mt-1">
-          <span>Nüchtern</span>
-          <span>Betrunken</span>
+          <span className="text-text-secondary">Nüchtern</span>
+          <span className="text-text-secondary">Betrunken</span>
         </div>
       </div>
     );
@@ -396,7 +396,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       const minutes = Math.floor(hoursElapsed * 60);
       return `${minutes} Minuten`;
     } else {
-      return `${hoursElapsed.toFixed(1)} Stunden`;
+      return `${dez(hoursElapsed, 1)} Stunden`;
     }
   };
 
@@ -788,7 +788,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             }`}
           >
             <Icon name="beer" size={17} strokeWidth={2.1} />
-            <span>Alkohol</span>
+            <span className="text-text-secondary">Alkohol</span>
           </button>
           <button
             onClick={() => setActiveSection('schnaps')}
@@ -799,7 +799,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             }`}
           >
             <Icon name="glass" size={17} strokeWidth={2.1} />
-            <span>Schnaps</span>
+            <span className="text-text-secondary">Schnaps</span>
             {(() => {
               const done = schnapsShotsData.alex + schnapsShotsData.philip;
               const rem = schnapsShotsData.target - done;
@@ -817,11 +817,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             }`}
           >
             <Icon name="star" size={17} strokeWidth={2.1} />
-            <span>Sterne</span>
+            <span className="text-text-secondary">Sterne</span>
             {(() => {
               const net = Math.abs(sterneData.philip - sterneData.alex);
               return net > 0
-                ? <span className="text-xs bg-system-yellow/15 text-system-yellow px-1.5 py-0.5 rounded-full">{net % 1 === 0 ? net : net.toFixed(1)}</span>
+                ? <span className="text-xs bg-system-yellow/15 text-system-yellow px-1.5 py-0.5 rounded-full">{dezKurz(net)}</span>
                 : null;
             })()}
           </button>
@@ -834,7 +834,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             }`}
           >
             <Icon name="spade" size={17} strokeWidth={2.1} />
-            <span>BJ</span>
+            <span className="text-text-secondary">BJ</span>
           </button>
         </div>
       </div>
@@ -852,7 +852,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       <div className="modern-card mb-6">
         <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-text-primary">
           <Icon name="zap" size={18} strokeWidth={2.2} className="text-system-green" />
-          <span>Schnell-Aktionen</span>
+          <span className="text-text-secondary">Schnell-Aktionen</span>
         </h3>
         <div className="grid grid-cols-1 gap-3">
           <button
@@ -860,14 +860,14 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             className="btn-brand px-6 py-4 rounded-xl text-lg flex items-center justify-center gap-2"
           >
             <span className="text-2xl">🍻</span>
-            <span>Beiden ein Bier hinzufügen</span>
+            <span className="text-text-secondary">Beiden ein Bier hinzufügen</span>
           </button>
           <button
             onClick={() => { if (window.confirm('Alle Getränke (Bier & Shots) und die Trinkzeit zurücksetzen?')) resetConsumption(); }}
             className="btn-soft btn-soft-gray px-4 py-3 rounded-xl flex items-center justify-center gap-2"
           >
             <span className="text-xl">🔄</span>
-            <span>Zurücksetzen</span>
+            <span className="text-text-secondary">Zurücksetzen</span>
           </button>
         </div>
       </div>
@@ -879,7 +879,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg text-system-blue flex items-center gap-2">
               <span className="text-2xl">🔵</span>
-              <span>{managers.aek.name}</span>
+              <span className="text-text-secondary">{managers.aek.name}</span>
             </h3>
             <div className="text-sm text-system-blue bg-system-blue/25 px-3 py-1 rounded-full font-medium">
               {managers.aek.weight}kg
@@ -996,7 +996,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           <div className="flex justify-between items-center mb-4">
             <h3 className="font-bold text-lg text-system-red flex items-center gap-2">
               <span className="text-2xl">🔴</span>
-              <span>{managers.real.name}</span>
+              <span className="text-text-secondary">{managers.real.name}</span>
             </h3>
             <div className="text-sm text-system-red bg-system-red/25 px-3 py-1 rounded-full font-medium">
               {managers.real.weight}kg
@@ -1125,7 +1125,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             </div>
             <div className="p-3 bg-bg-tertiary rounded-lg">
               <div className="text-xl font-bold text-text-primary">
-                {((beerConsumption.alexander + beerConsumption.philip) * 0.5).toFixed(1)}L
+                {dez((beerConsumption.alexander + beerConsumption.philip) * 0.5, 1)} l
               </div>
               <div className="text-sm text-text-muted">Biervolumen</div>
             </div>
@@ -1158,25 +1158,25 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               </h5>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Biere:</span>
+                  <span className="text-text-secondary">Biere:</span>
                   <span className="font-semibold">{beerConsumption.alexander}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shots (20%):</span>
+                  <span className="text-text-secondary">Shots (20%):</span>
                   <span className="font-semibold">{shotConsumption.alexander.shots20}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shots (40%):</span>
+                  <span className="text-text-secondary">Shots (40%):</span>
                   <span className="font-semibold">{shotConsumption.alexander.shots40}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
-                  <span>Aktueller BAK:</span>
+                  <span className="text-text-secondary">Aktueller BAK:</span>
                   <span className="font-bold text-system-blue">
                     {calculateBloodAlcohol(beerConsumption.alexander, shotConsumption.alexander, managers.aek, drinkingStartTime)}‰
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Alkohol-Volumen:</span>
+                  <span className="text-text-secondary">Alkohol-Volumen:</span>
                   <span className="font-semibold">
                     {(beerConsumption.alexander * 0.5 * 0.05 + 
                       shotConsumption.alexander.shots20 * 0.02 * 0.20 +
@@ -1194,25 +1194,25 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               </h5>
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span>Biere:</span>
+                  <span className="text-text-secondary">Biere:</span>
                   <span className="font-semibold">{beerConsumption.philip}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shots (20%):</span>
+                  <span className="text-text-secondary">Shots (20%):</span>
                   <span className="font-semibold">{shotConsumption.philip.shots20}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Shots (40%):</span>
+                  <span className="text-text-secondary">Shots (40%):</span>
                   <span className="font-semibold">{shotConsumption.philip.shots40}</span>
                 </div>
                 <div className="flex justify-between border-t pt-2">
-                  <span>Aktueller BAK:</span>
+                  <span className="text-text-secondary">Aktueller BAK:</span>
                   <span className="font-bold text-system-green">
                     {calculateBloodAlcohol(beerConsumption.philip, shotConsumption.philip, managers.real, drinkingStartTime)}‰
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span>Alkohol-Volumen:</span>
+                  <span className="text-text-secondary">Alkohol-Volumen:</span>
                   <span className="font-semibold">
                     {(beerConsumption.philip * 0.5 * 0.05 + 
                       shotConsumption.philip.shots20 * 0.02 * 0.20 +
@@ -1373,7 +1373,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                             className="flex items-center gap-1 text-text-tertiary hover:text-system-orange active:scale-95 transition-all"
                             title="Ziel anpassen"
                           >
-                            <span>Ziel: <span className="text-system-orange font-bold">{schnapsShotsData.target}</span></span>
+                            <span className="text-text-secondary">Ziel: <span className="text-system-orange font-bold">{schnapsShotsData.target}</span></span>
                             <span className="text-xs">✏️</span>
                           </button>
                         )}
@@ -1495,7 +1495,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 {schnapsShotsData.history.length > 0 && (
                   <div className="modern-card">
                     <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
-                      <span>📜</span> Verlauf
+                      <span className="text-text-secondary">📜</span> Verlauf
                     </h4>
                     <div className="space-y-1 max-h-64 overflow-y-auto">
                       {[...schnapsShotsData.history].reverse().map((entry, i) => {
@@ -1503,7 +1503,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         return (
                           <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg ${isAlex ? 'panel-blue' : 'panel-red'}`}>
                             <div className="flex items-center gap-2">
-                              <span>{isAlex ? '🔵' : '🔴'}</span>
+                              <span className="text-text-secondary">{isAlex ? '🔵' : '🔴'}</span>
                               <span className={`font-medium text-sm ${isAlex ? 'text-system-blue' : 'text-system-red'}`}>
                                 {isAlex ? managers.aek.name : managers.real.name}
                               </span>
@@ -1548,7 +1548,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       {renderStars(absNet, 5)}
                     </div>
                     <div className="text-system-yellow font-semibold">
-                      {absNet % 1 === 0 ? absNet : absNet.toFixed(1)} Stern{absNet !== 1 ? 'e' : ''} Vorsprung
+                      {dezKurz(absNet)} Stern{absNet !== 1 ? 'e' : ''} Vorsprung
                     </div>
                   </>
                 ) : (
@@ -1565,7 +1565,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <div className="text-system-blue font-bold text-sm mb-1">🔵 {managers.aek.name}</div>
                   <div className="flex justify-center gap-0.5 text-xl mb-1">{renderStars(sterneData.alex, 5)}</div>
                   <div className="text-2xl font-black text-system-blue">
-                    {sterneData.alex % 1 === 0 ? sterneData.alex : sterneData.alex.toFixed(1)}
+                    {dezKurz(sterneData.alex)}
                   </div>
                   <div className="text-xs text-system-blue">Sterne gesamt</div>
                 </div>
@@ -1573,7 +1573,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <div className="text-system-red font-bold text-sm mb-1">🔴 {managers.real.name}</div>
                   <div className="flex justify-center gap-0.5 text-xl mb-1">{renderStars(sterneData.philip, 5)}</div>
                   <div className="text-2xl font-black text-system-red">
-                    {sterneData.philip % 1 === 0 ? sterneData.philip : sterneData.philip.toFixed(1)}
+                    {dezKurz(sterneData.philip)}
                   </div>
                   <div className="text-xs text-system-red">Sterne gesamt</div>
                 </div>
@@ -1607,7 +1607,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       onClick={() => setSterneInput(p => ({ ...p, stars: s }))}
                       className={`w-12 h-10 rounded-lg text-sm font-bold transition-all active:scale-95 ${sterneInput.stars === s ? 'bg-system-yellow text-white shadow-md scale-105' : 'bg-bg-tertiary text-text-secondary border border-border-light'}`}
                     >
-                      {s % 1 === 0 ? s : s.toFixed(1)}
+                      {dezKurz(s)}
                     </button>
                   ))}
                 </div>
@@ -1620,7 +1620,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <div className="text-xs text-text-tertiary">
                     Team-Stärke: <strong className="text-text-secondary">{sterneInput.stars}</strong>
                     {' → '}
-                    Gutschrift: <strong className="text-system-yellow">+{gutschriftFuer(sterneInput.stars) % 1 === 0 ? gutschriftFuer(sterneInput.stars) : gutschriftFuer(sterneInput.stars).toFixed(1)} ⭐</strong>
+                    Gutschrift: <strong className="text-system-yellow">+{dezKurz(gutschriftFuer(sterneInput.stars))} ⭐</strong>
                     {' '}(6 − {sterneInput.stars})
                   </div>
                 </div>
@@ -1634,7 +1634,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       : 'bg-system-green border-system-green'
                   }`}
                 >
-                  ⭐ +{(6 - sterneInput.stars) % 1 === 0 ? 6 - sterneInput.stars : (6 - sterneInput.stars).toFixed(1)} für {sterneInput.person === 'alex' ? managers.aek.name : managers.real.name}
+                  ⭐ +{dezKurz(6 - sterneInput.stars)} für {sterneInput.person === 'alex' ? managers.aek.name : managers.real.name}
                 </button>
               </div>
 
@@ -1666,7 +1666,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             {sterneData.history.length > 0 && (
               <div className="modern-card">
                 <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
-                  <span>📜</span> Verlauf
+                  <span className="text-text-secondary">📜</span> Verlauf
                 </h4>
                 <div className="space-y-1.5 max-h-64 overflow-y-auto">
                   {[...sterneData.history].reverse().map((entry, i) => {
@@ -1680,7 +1680,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg ${isAlex ? 'panel-blue' : 'panel-red'}`}
                       >
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <span>{isAlex ? '🔵' : '🔴'}</span>
+                          <span className="text-text-secondary">{isAlex ? '🔵' : '🔴'}</span>
                           <span className={`font-semibold text-sm ${isAlex ? 'text-system-blue' : 'text-system-red'}`}>
                             {wer}
                           </span>
@@ -2072,7 +2072,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         {round.games.map((game) => (
                           <div key={game.id} className="text-xs p-2 bg-bg-elevated rounded border border-border-light flex justify-between items-center">
                             <span className="text-text-secondary">Spiel {game.gameNumber}</span>
-                            <span className="font-medium">{game.description}</span>
+                            <span className="font-medium text-text-primary">{game.description}</span>
                             <span className="text-text-tertiary">
                               {new Date(game.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
                             </span>

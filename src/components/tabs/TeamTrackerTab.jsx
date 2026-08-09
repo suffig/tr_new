@@ -1111,8 +1111,8 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
             return (
               <div key={p.id} className="bg-bg-tertiary rounded-xl p-2.5">
                 <div className={`text-xs font-semibold ${a.text} mb-1 inline-flex items-center gap-1.5`}><span className={`w-2 h-2 rounded-full ${a.bar}`} />{p.name}</div>
-                <div className="flex justify-between text-[11px] text-text-tertiary"><span>Top-Teams ≥4,5★</span><span className="font-semibold text-text-primary tabular-nums">{topTeams(s)}</span></div>
-                <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5"><span>Sternwert</span><span className="font-semibold text-text-primary tabular-nums">{starSum.toFixed(1).replace('.', ',')}</span></div>
+                <div className="flex justify-between text-[11px] text-text-tertiary"><span className="text-text-secondary">Top-Teams ≥4,5★</span><span className="font-semibold text-text-primary tabular-nums">{topTeams(s)}</span></div>
+                <div className="flex justify-between text-[11px] text-text-tertiary mt-0.5"><span className="text-text-secondary">Sternwert</span><span className="font-semibold text-text-primary tabular-nums">{starSum.toFixed(1).replace('.', ',')}</span></div>
               </div>
             );
           })}
@@ -1192,7 +1192,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
 
             {/* Collapsible: collection & per-tier completion */}
             <button onClick={() => setOpenDetails((o) => ({ ...o, [p.id]: !o[p.id] }))} className="mt-3 w-full flex items-center justify-between py-2 text-xs font-medium text-text-secondary">
-              <span>Sammlung &amp; Vollständigkeit</span>
+              <span className="text-text-secondary">Sammlung &amp; Vollständigkeit</span>
               <span className={`transition-transform duration-200 ${open ? 'rotate-90' : ''}`}><Icon name="chevronRight" size={16} strokeWidth={2.2} /></span>
             </button>
             {open && (() => {
@@ -1202,7 +1202,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
               const tiers = RATING_TIERS.filter((r) => tierTotals[r] && owned[r]);
               return (
                 <div className="pt-1">
-                  <div className="flex justify-between text-[11px] text-text-tertiary mb-1"><span>Sammlung gesamt</span><span className="tabular-nums">{done}/{catalogTotal} · {pct}%</span></div>
+                  <div className="flex justify-between text-[11px] text-text-tertiary mb-1"><span className="text-text-secondary">Sammlung gesamt</span><span className="tabular-nums">{done}/{catalogTotal} · {pct}%</span></div>
                   <div className="h-2 rounded-full bg-bg-tertiary overflow-hidden mb-3"><div className={`h-full ${a.bar}`} style={{ width: `${Math.max(2, pct)}%` }} /></div>
                   {tiers.length > 0 && (
                     <div className="grid grid-cols-2 gap-x-3 gap-y-1.5">

@@ -29,3 +29,24 @@ export function zahl(text) {
 export function alsText(n) {
   return n == null || n === '' ? '' : String(n).replace('.', ',');
 }
+
+/**
+ * Dezimalzahl fuer die ANZEIGE, deutsch: 2,33 statt 2.33.
+ *
+ * Lag vorher als lokale Kopie in StatsTab, InsightsView und anderswo — mit
+ * der Folge, dass "2.3" neben "2,33" stand, je nachdem welche Karte man
+ * ansah.
+ */
+export function dez(n, stellen = 2) {
+  return Number(n || 0).toLocaleString('de-DE', {
+    minimumFractionDigits: stellen, maximumFractionDigits: stellen,
+  });
+}
+
+/** Wie dez(), laesst aber ganze Zahlen ohne Nachkommastellen stehen: 3 statt 3,0. */
+export function dezKurz(n, stellen = 1) {
+  const z = Number(n || 0);
+  return z % 1 === 0
+    ? z.toLocaleString('de-DE')
+    : z.toLocaleString('de-DE', { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
+}
