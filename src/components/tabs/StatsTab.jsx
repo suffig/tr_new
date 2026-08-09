@@ -7,6 +7,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import MatchDayOverview from '../MatchDayOverview';
 import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
+import HistorieView from './HistorieView';
 import CountUp from '../CountUp';
 import { getTeamDisplay } from '../../constants/teams';
 import {
@@ -696,6 +697,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     { id: 'players', label: 'Spieler', iconName: 'users' },
     { id: 'trends', label: 'Verlauf', iconName: 'trendingUp' },
     { id: 'insights', label: 'Einblicke', iconName: 'bulb' },
+    // Alles, was ueber EINE Saison hinausgeht — ewige Bilanz, Sperren
+    // ueber die Jahre, Steckbrief je Saison. Der Saisonfilter oben
+    // gilt hier bewusst nicht.
+    { id: 'historie', label: 'Historie', iconName: 'clock' },
   ];
 
   if (loading) {
@@ -2277,6 +2282,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     switch (selectedView) {
       case 'insights':
         return <InsightsView matches={filteredMatches} players={players} bans={bans} />;
+      case 'historie':
+        return <HistorieView />;
       case 'players':
         return renderPlayers();
       case 'teams':
