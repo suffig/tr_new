@@ -201,20 +201,18 @@ function App() {
 
   // Global search shortcut and event listener - only work on admin page for authorized users
   useEffect(() => {
-    const isAdminUser = user?.email === ADMIN_EMAIL;
-    
+    // Die Suche laeuft ueber alle Saisons und alle Bereiche — sie an den
+    // Admin-Tab zu binden hiess, dass sie auf dem Handy nie erreichbar war
+    // (kein Strg+K) und dass man erst in die Verwaltung wechseln musste, um
+    // etwas zu finden. Beide Bedingungen sind weg.
     const handleKeyDown = (e) => {
-      if (e.ctrlKey && e.key === 'k' && activeTab === 'admin' && isAdminUser) {
+      if (e.ctrlKey && e.key === 'k') {
         e.preventDefault();
         setShowGlobalSearch(true);
       }
     };
 
-    const handleGlobalSearchToggle = () => {
-      if (activeTab === 'admin' && isAdminUser) {
-        setShowGlobalSearch(true);
-      }
-    };
+    const handleGlobalSearchToggle = () => setShowGlobalSearch(true);
 
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('global-search-toggle', handleGlobalSearchToggle);
@@ -433,9 +431,11 @@ function App() {
           }}
         />
 
-        {/* Global Search Modal - Only available on admin page for authorized users */}
-        {showGlobalSearch && activeTab === 'admin' && user?.email === ADMIN_EMAIL && (
-          <GlobalSearch 
+        {/* Suche ueber alle Bereiche und Saisons — aus dem Kopfbereich oder
+            per Strg+K, nicht mehr nur im Admin-Bereich. */}
+        {showGlobalSearch && (
+          <GlobalSearch
+            sofortOffen
             onNavigate={handleGlobalSearchNavigate}
             onClose={() => setShowGlobalSearch(false)}
           />

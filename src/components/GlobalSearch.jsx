@@ -2,19 +2,29 @@ import Icon from './icons/Icon';
 import { useState, useEffect, useCallback } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 
-export default function GlobalSearch({ onNavigate, onClose }) {
+/**
+ * `sofortOffen` wird gesetzt, wenn die Suche von aussen geoeffnet wird (Knopf
+ * im Kopfbereich oder Strg+K). Ohne das startet die Komponente geschlossen
+ * und zeigt nur ihren eigenen Ausloeser — wer sie von aussen einblendet,
+ * bekommt dann einen Knopf statt der Suche.
+ */
+export default function GlobalSearch({ onNavigate, onClose, sofortOffen = false }) {
   const [query, setQuery] = useState('');
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(sofortOffen);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState('all');
 
-  // Fetch all data for search
-  const { data: players } = useSupabaseQuery('players', '*');
-  const { data: matches } = useSupabaseQuery('matches', '*', { order: { column: 'date', ascending: false } });
-  const { data: bans } = useSupabaseQuery('bans', '*');
-  const { data: transactions } = useSupabaseQuery('transactions', '*', { order: { column: 'date', ascending: false } });
+  // skipFifaFilter: die Suche geht ueber ALLE Saisons. Genau das ist ihr Zweck
+  // — sonst muesste man erst die Saison umstellen und dann suchen, und wer
+  // einen Spieler von vor drei Jahren sucht, weiss die Saison ja gerade nicht.
+  const alle = { skipFifaFilter: true };
+  const { data: players } = useSupabaseQuery('players', '*', alle);
+  const { data: matches } = useSupabaseQuery('matches', '*', { ...alle, order: { column: 'date', ascending: false } });
+  const { data: bans } = useSupabaseQuery('bans', '*', alle);
+  const { data: transactions } = useSupabaseQuery('transactions', '*', { ...alle, order: { column: 'date', ascending: false } });
+  const { data: biere } = useSupabaseQuery('bier_katalog', '*', alle);
 
-  const allResults = getSearchResults(query, { players, matches, bans, transactions });
+  const allResults = getSearchResults(query, { players, matches, bans, transactions, biere });
   const searchResults = activeFilter === 'all' ? allResults : allResults.filter(result => result.type === activeFilter);
 
   const filters = [
@@ -22,7 +32,8 @@ export default function GlobalSearch({ onNavigate, onClose }) {
     { id: 'player', label: 'Spieler', icon: 'users' },
     { id: 'match', label: 'Spiele', icon: 'football' },
     { id: 'transaction', label: 'Finanzen', icon: 'euro' },
-    { id: 'ban', label: 'Sperren', icon: 'ban' }
+    { id: 'ban', label: 'Sperren', icon: 'ban' },
+    { id: 'bier', label: 'Biere', icon: 'beer' }
   ];
 
   const handleClose = useCallback(() => {
@@ -93,7 +104,9 @@ export default function GlobalSearch({ onNavigate, onClose }) {
 
   return (
     <>
-      {/* Search Trigger Button */}
+      {/* Eigener Ausloeser nur im eingebetteten Fall — im Overlay-Fall sitzt
+          der Knopf schon im Kopfbereich. */}
+      {!sofortOffen && (
       <button
         onClick={handleOpen}
         className="flex items-center gap-2 px-3 py-2 bg-bg-secondary border border-border-light rounded-lg text-text-secondary hover:bg-bg-tertiary hover:text-text-primary transition-all duration-200"
@@ -105,6 +118,7 @@ export default function GlobalSearch({ onNavigate, onClose }) {
           Strg+K
         </span>
       </button>
+      )}
 
       {/* Search Modal */}
       {isOpen && (
@@ -120,7 +134,7 @@ export default function GlobalSearch({ onNavigate, onClose }) {
                   type="text"
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
-                  placeholder="Spieler, Spiele, Transaktionen suchen..."
+                  placeholder="Spieler, Spiele, Biere, Sperren – alle Saisons"
                   className="w-full pl-10 pr-4 py-3 bg-bg-secondary border border-border-light rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent"
                 />
               </div>
@@ -206,7 +220,7 @@ export default function GlobalSearch({ onNavigate, onClose }) {
                   <span>⏎ Auswählen</span>
                   <span>Esc Schließen</span>
                 </div>
-                <span>{searchResults.length} Ergebnisse</span>
+                <span>{searchResults.length} {searchResults.length === 1 ? 'Ergebnis' : 'Ergebnisse'}</span>
               </div>
             </div>
           </div>
@@ -216,11 +230,38 @@ export default function GlobalSearch({ onNavigate, onClose }) {
   );
 }
 
+/** "FC24 · " vor die Beschreibung, sonst weiss man beim Treffer nicht, wann. */
+const saison = (zeile) => (zeile?.fifa_version ? `${zeile.fifa_version} · ` : '');
+
 function getSearchResults(query, data) {
   if (!query || query.length < 2) return [];
 
   const results = [];
   const searchTerm = query.toLowerCase();
+
+  // Biere aus dem Katalog der Bierboerse
+  if (data.biere) {
+    data.biere.forEach((bier) => {
+      if (
+        bier.name?.toLowerCase().includes(searchTerm) ||
+        bier.brauerei?.toLowerCase().includes(searchTerm) ||
+        bier.art?.toLowerCase().includes(searchTerm)
+      ) {
+        results.push({
+          type: 'bier',
+          id: `bier-${bier.id}`,
+          icon: 'beer',
+          title: bier.name,
+          description: [bier.brauerei, bier.art,
+            bier.alkohol ? `${Number(bier.alkohol).toLocaleString('de-DE', { maximumFractionDigits: 1 })} %` : null]
+            .filter(Boolean).join(' • ') || 'Keine weiteren Angaben',
+          category: 'Bier',
+          tab: 'abend',
+          action: { type: 'showBier', bierId: bier.id }
+        });
+      }
+    });
+  }
 
   // Search Players
   if (data.players) {
@@ -235,7 +276,7 @@ function getSearchResults(query, data) {
           id: player.id,
           icon: 'user',
           title: player.name,
-          description: `${player.team} • ${player.position} • ${player.value?.toFixed(1)}M €`,
+          description: `${saison(player)}${player.team} • ${player.position} • ${(Number(player.value) || 0).toLocaleString('de-DE', { maximumFractionDigits: 1 })} Mio €`,
           category: 'Spieler',
           tab: 'squad',
           action: { type: 'showPlayer', playerId: player.id }
@@ -256,7 +297,7 @@ function getSearchResults(query, data) {
           id: match.id,
           icon: 'football',
           title: `AEK ${match.goalsa || 0} - ${match.goalsb || 0} Real`,
-          description: `${matchDate} • ${match.sds ? `⭐ SdS: ${match.sds}` : 'Kein SdS'}`,
+          description: `${saison(match)}${matchDate} • ${match.sds ? `⭐ SdS: ${match.sds}` : 'Kein SdS'}`,
           category: 'Spiel',
           tab: 'matches',
           action: { type: 'showMatch', matchId: match.id }
@@ -282,7 +323,7 @@ function getSearchResults(query, data) {
           id: ban.id,
           icon: 'ban',
           title: playerName,
-          description: `${ban.type} • ${remaining > 0 ? `${remaining} Spiele verbleibend` : 'Abgelaufen'}`,
+          description: `${ban.type} • ${remaining > 0 ? `${remaining} ${remaining === 1 ? 'Spiel' : 'Spiele'} verbleibend` : 'Abgelaufen'}`,
           category: 'Sperre',
           tab: 'bans',
           action: { type: 'showBan', banId: ban.id }

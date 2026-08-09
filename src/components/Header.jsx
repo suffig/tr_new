@@ -39,6 +39,16 @@ export default function Header({ onNavigate }) {
                   der nichts gemessen hat — er war fest verdrahtet. Die Saison
                 ist an dieser Stelle die nuetzlichere Information. */}
             <SaisonWechsler />
+            {/* Suche — bis hierher war die globale Suche nur per Strg+K im
+                Admin-Bereich erreichbar, auf dem Handy also ueberhaupt nicht. */}
+            <button
+              onClick={() => window.dispatchEvent(new Event('global-search-toggle'))}
+              className="w-9 h-9 bg-bg-tertiary hover:bg-bg-hover text-text-secondary rounded-full flex items-center justify-center transition-all press-scale hover:shadow-ios-sm"
+              aria-label="Suche über alle Saisons öffnen"
+              title="Suchen (Strg+K)"
+            >
+              <Icon name="search" size={18} strokeWidth={2} />
+            </button>
             {/* Quick theme toggle */}
             <button
               onClick={toggleTheme}

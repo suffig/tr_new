@@ -4,6 +4,7 @@ import MatchesTab from './MatchesTab';
 import KaderTab from './KaderTab';
 import BansTab from './BansTab';
 import Saisonwechsel from './kader/Saisonwechsel';
+import MarktwertVerlauf from './kader/MarktwertVerlauf';
 
 // Sammel-Tab "Spiele": alles zum laufenden Spielbetrieb an einer Stelle —
 // die Spiele selbst, wer im Kader steht und wer gesperrt ist. Vorher waren das
@@ -13,6 +14,9 @@ const VIEWS = [
   { id: 'spiele', label: 'Spiele', iconName: 'football', hinweis: 'Alle Begegnungen und ihre Ergebnisse' },
   { id: 'kader', label: 'Kader', iconName: 'users', hinweis: 'Wer bei welchem Team steht' },
   { id: 'sperren', label: 'Sperren', iconName: 'ban', hinweis: 'Wer aussetzen muss und wie lange' },
+  // Werte ueber alle Saisons — gehoert zum Kader, nicht in die Statistik:
+  // die Frage ist "was war unser Kader wert", nicht "wie lief die Saison".
+  { id: 'werte', label: 'Marktwerte', iconName: 'euro', hinweis: 'Kaderwert und Spielerwerte über alle Saisons' },
   // Der Saisonwechsel erzeugt den Kader der naechsten Saison — gehoert
   // deshalb hierher und nicht in den Admin-Bereich.
   { id: 'draft', label: 'Saisonwechsel', iconName: 'dice', hinweis: 'Alte Saison abschließen, neue anlegen, Kader draften' },
@@ -45,6 +49,7 @@ export default function SpielbetriebTab({ viewRequest, ...props }) {
       {view === 'spiele' && <MatchesTab {...props} />}
       {view === 'kader' && <KaderTab {...props} />}
       {view === 'sperren' && <BansTab {...props} />}
+      {view === 'werte' && <div className="p-4 pb-24 mobile-safe-bottom"><MarktwertVerlauf /></div>}
       {view === 'draft' && <div className="p-4 pb-24 mobile-safe-bottom"><Saisonwechsel /></div>}
     </div>
   );
