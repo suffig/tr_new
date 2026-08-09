@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from '../../utils/d3';
+import { flaechenfarbe, schriftfarbe, achsenfarbe } from './diagrammFarben';
 
 /**
  * Interactive Donut Chart for win distribution
@@ -76,7 +77,11 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
     arcs.append('path')
       .attr('d', arc)
       .attr('fill', d => colorScale(d.data.label))
-      .attr('stroke', 'white')
+      // Der Trennstrich zwischen den Segmenten ist die Kartenfarbe, nicht
+      // Weiss: im Dunkelmodus lagen sonst helle Striche quer durch den Kreis.
+      // (Die Prozentzahlen darunter bleiben weiss — sie stehen auf den
+      // gesaettigten Segmentfarben und sind dort in beiden Modi lesbar.)
+      .attr('stroke', flaechenfarbe())
       .attr('stroke-width', 2)
       .style('cursor', 'pointer')
       .style('opacity', 0)
@@ -148,7 +153,7 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
       .attr('dy', '-0.2em')
       .style('font-size', '28px')
       .style('font-weight', 'bold')
-      .style('fill', '#374151')
+      .style('fill', schriftfarbe())
       .style('opacity', 0)
       .text(total)
       .transition()
@@ -160,7 +165,7 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
       .attr('text-anchor', 'middle')
       .attr('dy', '1.2em')
       .style('font-size', '14px')
-      .style('fill', '#9ca3af')
+      .style('fill', achsenfarbe())
       .style('opacity', 0)
       .text('Gesamt')
       .transition()
@@ -197,7 +202,7 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
         .attr('y', 13)
         .text(`${d.label}: ${d.value}`)
         .style('font-size', '12px')
-        .style('fill', '#374151')
+        .style('fill', schriftfarbe())
         .style('opacity', 0)
         .transition()
         .duration(500)

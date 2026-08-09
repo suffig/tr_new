@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from '../../utils/d3';
+import { flaechenfarbe, achsenfarbe } from './diagrammFarben';
 
 /**
  * Interactive Line Chart for showing performance trends over time
@@ -77,14 +78,14 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
       .attr('dy', '.15em')
       .attr('transform', 'rotate(-45)')
       .style('font-size', '11px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
     // Add Y axis
     svg.append('g')
       .call(d3.axisLeft(yScale).ticks(5))
       .selectAll('text')
       .style('font-size', '11px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
     // Create tooltip
     const tooltip = d3.select(tooltipRef.current)
@@ -145,7 +146,7 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
         .attr('cy', d => yScale(d[team] || 0))
         .attr('r', 0)
         .attr('fill', color)
-        .attr('stroke', 'white')
+        .attr('stroke', flaechenfarbe())
         .attr('stroke-width', 2)
         .style('cursor', 'pointer')
         .on('mouseover', function(event, d) {
@@ -201,7 +202,7 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
       .attr('y', 4)
       .text('AEK')
       .style('font-size', '12px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
     legend.append('line')
       .attr('x1', 0)
@@ -216,7 +217,7 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
       .attr('y', 24)
       .text('Real')
       .style('font-size', '12px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
   }, [data, height]);
 

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from '../../utils/d3';
+import { schriftfarbe, achsenfarbe } from './diagrammFarben';
 
 /**
  * Interactive Bar Chart for player performance comparison
@@ -66,14 +67,14 @@ export default function PlayerBarChart({ data, height = 400, title = "Top Spiele
       .attr('dy', '.15em')
       .attr('transform', 'rotate(-45)')
       .style('font-size', '11px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
     // Add Y axis
     svg.append('g')
       .call(d3.axisLeft(yScale).ticks(5))
       .selectAll('text')
       .style('font-size', '11px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
     // Create tooltip
     const tooltip = d3.select(tooltipRef.current)
@@ -146,7 +147,7 @@ export default function PlayerBarChart({ data, height = 400, title = "Top Spiele
       .attr('text-anchor', 'middle')
       .style('font-size', '12px')
       .style('font-weight', 'bold')
-      .style('fill', '#374151')
+      .style('fill', schriftfarbe())
       .style('opacity', 0)
       .text(d => d.value)
       .transition()

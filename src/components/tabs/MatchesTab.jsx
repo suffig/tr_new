@@ -141,8 +141,11 @@ export default function MatchesTab({ onNavigate, user }) {
   const views = [
     { id: 'overview', label: 'Übersicht', iconName: 'football' },
     { id: 'recent', label: 'Letzte', iconName: 'calendar' },
-    { id: 'aek-wins', label: `${getTeamDisplay('AEK')} Siege`, logoComponent: <TeamLogo team="aek" size="sm" /> },
-    { id: 'real-wins', label: `${getTeamDisplay('Real')} Siege`, logoComponent: <TeamLogo team="real" size="sm" /> },
+    // Kuerzel statt vollem Namen: neben dem Wappen ist der lange Name
+    // ohnehin doppelt, und "Dynamo Dresden Siege" wurde in der Leiste zu
+    // "Dynamo Dresden Sie…" abgeschnitten.
+    { id: 'aek-wins', label: `${getTeamShort('AEK')} Siege`, logoComponent: <TeamLogo team="aek" size="sm" /> },
+    { id: 'real-wins', label: `${getTeamShort('Real')} Siege`, logoComponent: <TeamLogo team="real" size="sm" /> },
   ];
 
   // Sync horizontal navigation with dropdown filters

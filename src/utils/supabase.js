@@ -111,8 +111,10 @@ const fallbackData = {
     // Die Tabelle haelt inzwischen ueber tausend Auszeichnungen aus neun
     // Saisons, war hier aber leer — Auswertungen darueber liessen sich im
     // Demo-Modus deshalb gar nicht pruefen.
-    { id: 1, name: 'Jan Becker', team: 'Real', count: 4, fifa_version: 'FC25' },
-    { id: 2, name: 'Max Müller', team: 'AEK', count: 3, fifa_version: 'FC25' },
+    // Zusammen hoechstens so viele wie es Spiele gibt (FC25 hat drei) —
+    // sonst zeigt die Quote "Spieler des Spiels je Spiel" ueber 100 %.
+    { id: 1, name: 'Jan Becker', team: 'Real', count: 2, fifa_version: 'FC25' },
+    { id: 2, name: 'Max Müller', team: 'AEK', count: 1, fifa_version: 'FC25' },
     { id: 3, name: 'Max Müller', team: 'Real', count: 6, fifa_version: 'FC24' },
     { id: 4, name: 'Kai Vogel', team: 'Ehemalige', count: 2, fifa_version: 'FC24' }
   ],

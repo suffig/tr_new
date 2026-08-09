@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from '../../utils/d3';
+import { flaechenfarbe, achsenfarbe } from './diagrammFarben';
 
 /**
  * Interactive Area Chart for goal trends over time
@@ -127,14 +128,14 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
       .attr('dy', '.15em')
       .attr('transform', 'rotate(-45)')
       .style('font-size', '11px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
     // Add Y axis
     svg.append('g')
       .call(d3.axisLeft(yScale).ticks(5))
       .selectAll('text')
       .style('font-size', '11px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
     // Create tooltip
     const tooltip = d3.select(tooltipRef.current)
@@ -213,7 +214,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
           .attr('cy', yScale(d.aek || 0))
           .attr('r', 5)
           .attr('fill', '#3b82f6')
-          .attr('stroke', 'white')
+          .attr('stroke', flaechenfarbe())
           .attr('stroke-width', 2);
 
         svg.append('circle')
@@ -222,7 +223,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
           .attr('cy', yScale(d.real || 0))
           .attr('r', 5)
           .attr('fill', '#ef4444')
-          .attr('stroke', 'white')
+          .attr('stroke', flaechenfarbe())
           .attr('stroke-width', 2);
         
         tooltip
@@ -260,7 +261,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
       .attr('y', 10)
       .text('AEK')
       .style('font-size', '12px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
     legend.append('rect')
       .attr('y', 20)
@@ -273,7 +274,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
       .attr('y', 30)
       .text('Real')
       .style('font-size', '12px')
-      .style('fill', '#9ca3af');
+      .style('fill', achsenfarbe());
 
   }, [data, height]);
 

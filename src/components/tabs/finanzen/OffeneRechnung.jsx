@@ -81,7 +81,10 @@ export default function OffeneRechnung({ aekFinances, realFinances, onChange }) 
           <Icon name="swap" size={20} strokeWidth={2.2} />
         </span>
         <div className="min-w-0 flex-1">
-          <div className="font-semibold text-text-primary truncate">
+          {/* Kein truncate: mit echten Vereinsnamen passt "X schuldet Y" auf
+              375px nie in eine Zeile, und abgeschnitten wird ausgerechnet der
+              Glaeubiger — also die Haelfte der Aussage. */}
+          <div className="font-semibold text-text-primary">
             <span className={schuldnerBlau ? 'text-system-blue' : 'text-system-red'}>
               {getTeamDisplay(r.schuldner)}
             </span>

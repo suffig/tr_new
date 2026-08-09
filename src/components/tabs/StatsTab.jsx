@@ -16,6 +16,10 @@ import {
   GoalTrendAreaChart
 } from '../charts';
 
+/** Dezimalzahl deutsch: 2,33 statt 2.33. */
+const dez = (n, stellen = 2) =>
+  Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
+
 /**
  * Alte Ansichts-Namen auf die fuenf verbliebenen abbilden.
  * Noetig, weil die zuletzt gewaehlte Ansicht gespeichert wird — ohne die
@@ -950,7 +954,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="mobile-metric-value">{advancedStats.totalGoals}</div>
             <div className="mobile-metric-label">Tore insgesamt</div>
             <div className="mobile-metric-sublabel">
-              ⌀ {totalMatches > 0 ? (advancedStats.totalGoals / totalMatches).toFixed(1) : '0.0'}/Spiel
+              ⌀ {dez(totalMatches > 0 ? advancedStats.totalGoals / totalMatches : 0)}/Spiel
             </div>
           </div>
           <div className="mobile-metric-card animate-mobile-slide-in">
@@ -965,8 +969,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             </div>
             <div className="mobile-metric-sublabel">
               {topScorer && topScorer.matchesPlayed > 0 ? 
-                `⌀ ${(topScorer.goals / topScorer.matchesPlayed).toFixed(2)}/Spiel` : 
-                '⌀ 0.00/Spiel'
+                `⌀ ${dez(topScorer.goals / topScorer.matchesPlayed)}/Spiel` : 
+                '⌀ 0,00/Spiel'
               }
             </div>
           </div>
@@ -981,10 +985,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               Top SdS ({topSdSPlayer ? topSdSPlayer.sdsCount : 0}x)
             </div>
             <div className="mobile-metric-sublabel">
-              {topSdSPlayer && topSdSPlayer.matchesPlayed > 0 ? 
-                `${((topSdSPlayer.sdsCount / topSdSPlayer.matchesPlayed) * 100).toFixed(1)}% Quote` : 
-                '0.0% Quote'
-              }
+              {/* sdsPercentage statt eigener Rechnung: Spieler des Spiels gibt
+                  es einmal je SPIEL, nicht einmal je Einsatz. Mit matchesPlayed
+                  als Nenner stand hier "133,3 %". */}
+              {topSdSPlayer ? `${dez(topSdSPlayer.sdsPercentage, 1)} % der Spiele` : '—'}
             </div>
           </div>
         </div>
@@ -1112,7 +1116,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 : winningStreaks.real.streak > winningStreaks.aek.streak
                 ? `${getTeamDisplay('Real')} – ${winningStreaks.real.streak}`
                 : `Gleichstand – ${winningStreaks.aek.streak}`}
-              {' Siege'}
+              {(winningStreaks.aek.streak > winningStreaks.real.streak
+                ? winningStreaks.aek.streak
+                : winningStreaks.real.streak) === 1 ? ' Sieg' : ' Siege'}
             </span>
           </div>
         </div>
@@ -1284,7 +1290,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               <div className="text-right">
                 <div className="font-bold">{player.sdsCount}x SdS</div>
                 <div className="text-sm text-text-muted">
-                  {player.matchesPlayed > 0 ? ((player.sdsCount / player.matchesPlayed) * 100).toFixed(1) : '0.0'}% Quote
+                  {dez(player.sdsPercentage, 1)} % der Spiele
                 </div>
               </div>
             </div>
