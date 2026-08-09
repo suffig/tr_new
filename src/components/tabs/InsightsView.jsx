@@ -1,4 +1,8 @@
 import { useMemo } from 'react';
+
+/** Dezimalzahl deutsch — dieselbe Schreibweise wie in Statistik und Duell. */
+const dez = (n, stellen = 1) =>
+  Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
 import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay } from '../../constants/teams';
@@ -264,7 +268,7 @@ export default function InsightsView({ matches, players, bans }) {
                   )}
                 </div>
                 <span className="w-16 text-right text-caption2 text-text-tertiary num-tabular flex-shrink-0">
-                  {d.games > 0 ? `${d.games}× · ${avg.toFixed(1)}` : '–'}
+                  {d.games > 0 ? `${d.games}× · ${dez(avg)}` : '–'}
                 </span>
               </div>
             );
@@ -290,7 +294,7 @@ export default function InsightsView({ matches, players, bans }) {
                 <div className="text-caption2 text-text-muted">Torreichster Tag</div>
                 <div className="text-footnote font-bold text-text-primary mt-0.5">{r.richestDay.long}</div>
                 <div className="text-caption2 text-text-tertiary num-tabular">
-                  {(r.richestDay.goals / r.richestDay.games).toFixed(1)} Tore/Spiel
+                  {dez(r.richestDay.goals / r.richestDay.games)} Tore/Spiel
                 </div>
               </div>
             )}
@@ -393,7 +397,7 @@ export default function InsightsView({ matches, players, bans }) {
                     <span className="stat-display text-[20px] text-text-primary">{c.red}</span>
                   </span>
                 </div>
-                <div className="text-caption2 text-text-tertiary num-tabular mt-1">{per.toFixed(2)} Karten/Spiel</div>
+                <div className="text-caption2 text-text-tertiary num-tabular mt-1">{dez(per, 2)} Karten/Spiel</div>
               </div>
             );
           })}
@@ -412,12 +416,12 @@ export default function InsightsView({ matches, players, bans }) {
                 <TeamLogo team={v.team === 'AEK' ? 'aek' : 'real'} size="xs" />
                 <span className="text-caption1 font-semibold text-text-secondary truncate">{getTeamDisplay(v.team)}</span>
               </div>
-              <div className="stat-display text-[20px] text-text-primary">{v.squadValue.toFixed(1)}M €</div>
+              <div className="stat-display text-[20px] text-text-primary">{dez(v.squadValue)} Mio €</div>
               <div className="text-caption2 text-text-tertiary num-tabular mt-1">
                 {v.wins} {v.wins === 1 ? 'Sieg' : 'Siege'} · {v.winRate.toFixed(0)}%
               </div>
               <div className="text-caption2 text-text-tertiary num-tabular">
-                {v.costPerWin != null ? `${v.costPerWin.toFixed(1)}M € pro Sieg` : 'noch kein Sieg'}
+                {v.costPerWin != null ? `${dez(v.costPerWin)} Mio € pro Sieg` : 'noch kein Sieg'}
               </div>
             </div>
           ))}

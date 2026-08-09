@@ -16,6 +16,26 @@ import {
   GoalTrendAreaChart
 } from '../charts';
 
+/**
+ * Kennzahl-Kachel im Stil der uebrigen App.
+ *
+ * Vorher standen hier vier "mobile-metric-card" mit Farbverlauf-Icons — ein
+ * Muster, das es NUR in dieser Datei gab, waehrend der Rest der App
+ * durchgehend modern-card + stat-display benutzt. Zwei Designsprachen in
+ * einer App faellt beim Blaettern sofort auf.
+ */
+function Kennzahl({ wert, label, zusatz, gross = false }) {
+  return (
+    <div className="panel-gray rounded-xl p-3 text-center">
+      <div className={`stat-display num-tabular text-text-primary truncate ${gross ? 'text-[22px]' : 'text-[17px]'}`}>
+        {wert}
+      </div>
+      <div className="text-caption2 text-text-tertiary mt-0.5">{label}</div>
+      {zusatz && <div className="text-caption2 text-text-quaternary mt-0.5 num-tabular">{zusatz}</div>}
+    </div>
+  );
+}
+
 /** Dezimalzahl deutsch: 2,33 statt 2.33. */
 const dez = (n, stellen = 2) =>
   Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: stellen, maximumFractionDigits: stellen });
@@ -131,7 +151,16 @@ class StatsCalculator {
         disciplinaryScore: this.calculateDisciplinaryScore(playerBans),
         // Add efficiency metrics - SdS percentage based on total matches
         goalsPerMatchWhenPlaying: actualMatchesPlayed > 0 ? (actualGoals / actualMatchesPlayed) : 0,
-        sdsPercentage: totalMatches > 0 ? ((sdsCount / totalMatches) * 100).toFixed(1) : '0.0'
+        // Anteil NUR, wenn er ueberhaupt berechenbar ist. Im Umfang "Alle
+        // Saisons" zaehlen Auszeichnungen aus Saisons mit, die gar keine
+        // einzelnen Spiele beitragen (die Altsaisons haben Auszeichnungen,
+        // aber keine Spielzeilen) — dann steht mehr im Zaehler als im Nenner
+        // und es kam "200,0 % der Spiele" heraus. Lieber keine Quote als eine
+        // unmoegliche: null heisst "nicht berechenbar", die Anzeige laesst sie
+        // dann weg und zeigt die reine Anzahl.
+        sdsPercentage: totalMatches > 0 && sdsCount <= totalMatches
+          ? ((sdsCount / totalMatches) * 100).toFixed(1)
+          : null
       };
     }).sort((a, b) => (b.goals || 0) - (a.goals || 0));
   }
@@ -431,20 +460,17 @@ class StatsCalculator {
       aekAwayWins: this.matches.filter(m => m.teamb === 'AEK' && (m.goalsb || 0) > (m.goalsa || 0)).length
     };
     
-    // Most productive player analysis
-    const playerGoalCounts = {};
-    this.matches.forEach(match => {
-      if (match.goalscorers && typeof match.goalscorers === 'string') {
-        const scorers = match.goalscorers.split(',').map(s => s.trim()).filter(s => s);
-        scorers.forEach(scorer => {
-          playerGoalCounts[scorer] = (playerGoalCounts[scorer] || 0) + 1;
-        });
-      }
-    });
-    
-    const topScorer = Object.entries(playerGoalCounts).reduce((top, [player, goals]) => 
-      goals > (top.goals || 0) ? { player, goals } : top, { player: 'N/A', goals: 0 });
-    
+    // Torreichstes Spiel — wurde in der Anzeige zweimal abgefragt, aber nie
+    // berechnet und stand deshalb als leere Stelle da.
+    const highestScoringMatch = this.matches.reduce(
+      (max, m) => Math.max(max, (m.goalsa || 0) + (m.goalsb || 0)), 0);
+
+    // Der frühere "topScorer" las match.goalscorers — ein Feld, das es in
+    // dieser Datenbank nicht gibt (Torschützen liegen als JSON in goalslista
+    // und goalslistb). Er lieferte deshalb immer "N/A (0)", direkt neben der
+    // funktionierenden Torschützenliste. Ersatzlos raus: getPlayerStats()
+    // beantwortet dieselbe Frage korrekt.
+
     return {
       // Basic stats
       avgGoalsPerMatch: totalMatches > 0 ? (totalGoals / totalMatches).toFixed(2) : '0.00',
@@ -470,9 +496,8 @@ class StatsCalculator {
       // Home/Away performance
       homeAwayStats,
       
-      // Top scorer
-      topScorer,
-      
+      highestScoringMatch,
+
       // Goal efficiency
       goalEfficiency: {
         aekAvg: totalMatches > 0 ? (aekTotalGoals / totalMatches).toFixed(2) : '0.00',
@@ -655,25 +680,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const aekWins = teamRecords.aek.wins;
   const realWins = teamRecords.real.wins;
 
-  const formatForm = (form) => {
-    return form.map((result, index) => (
-      <span
-        key={index}
-        className={`inline-block w-6 h-6 text-xs font-bold rounded-full text-center leading-6 mx-0.5 ${
-          result === 'W' ? 'bg-system-green text-white'
-            : result === 'D' ? 'bg-border-strong text-white'
-            : 'bg-system-red text-white'
-        }`}
-      >
-        {result === 'W' ? 'S' : result === 'D' ? 'U' : 'N'}
-      </span>
-    ));
-  };
-
   const formatPlayerValue = (value) => {
     // Helper function for consistent player value formatting
     // Values are stored as millions in database  
-    return `${(value || 0).toFixed(1)}M €`;
+    return `${dez(value, 1)} Mio €`;
   };
 
   // Fuenf Ansichten statt neun. Die alten "Dashboard", "Erweitert",
@@ -876,7 +886,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           {current.count >= 2 && current.team && (
             <div className="mt-4 flex items-center justify-center gap-2 rounded-xl bg-system-orange/10 text-system-orange py-2 text-footnote font-semibold">
               <Icon name="zap" size={15} strokeWidth={2.4} />
-              <span>{getTeamDisplay(current.team)} – {current.count} Siege in Folge</span>
+              <span className="text-text-secondary">{getTeamDisplay(current.team)} – {current.count} Siege in Folge</span>
             </div>
           )}
 
@@ -896,7 +906,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           {(winningStreaks.aek.streak > 0 || winningStreaks.real.streak > 0) && (
             <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-text-tertiary">
               <Icon name="trophy" size={13} strokeWidth={2} className="text-system-orange" />
-              <span>Rekordserie: {getTeamDisplay('AEK')} {winningStreaks.aek.streak} · {getTeamDisplay('Real')} {winningStreaks.real.streak}</span>
+              <span className="text-text-secondary">Rekordserie: {getTeamDisplay('AEK')} {winningStreaks.aek.streak} · {getTeamDisplay('Real')} {winningStreaks.real.streak}</span>
             </div>
           )}
         </div>
@@ -938,59 +948,28 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
     return (
       <div className="space-y-6 mobile-card-list">
-        {/* Enhanced Quick Stats Grid with iOS 26 Design */}
-        <div className="mobile-grid mobile-grid-2 md:grid-cols-4">
-          <div className="mobile-metric-card animate-mobile-slide-in">
-            <div className="mobile-metric-icon bg-gradient-success">
-              <Icon name="football" size={18} strokeWidth={2.2} className="text-white" />
-            </div>
-            <div className="mobile-metric-value">{totalMatches}</div>
-            <div className="mobile-metric-label">Spiele gespielt</div>
-          </div>
-          <div className="mobile-metric-card animate-mobile-slide-in">
-            <div className="mobile-metric-icon bg-gradient-warning">
-              <Icon name="target" size={18} strokeWidth={2.2} className="text-white" />
-            </div>
-            <div className="mobile-metric-value">{advancedStats.totalGoals}</div>
-            <div className="mobile-metric-label">Tore insgesamt</div>
-            <div className="mobile-metric-sublabel">
-              ⌀ {dez(totalMatches > 0 ? advancedStats.totalGoals / totalMatches : 0)}/Spiel
-            </div>
-          </div>
-          <div className="mobile-metric-card animate-mobile-slide-in">
-            <div className="mobile-metric-icon bg-gradient-info">
-              <Icon name="award" size={18} strokeWidth={2.2} className="text-white" />
-            </div>
-            <div className="mobile-metric-value text-subhead font-semibold">
-              {topScorer ? topScorer.name.split(' ').slice(-1)[0] : '–'}
-            </div>
-            <div className="mobile-metric-label">
-              Topscorer ({topScorer ? topScorer.goals : 0} Tore)
-            </div>
-            <div className="mobile-metric-sublabel">
-              {topScorer && topScorer.matchesPlayed > 0 ? 
-                `⌀ ${dez(topScorer.goals / topScorer.matchesPlayed)}/Spiel` : 
-                '⌀ 0,00/Spiel'
-              }
-            </div>
-          </div>
-          <div className="mobile-metric-card animate-mobile-slide-in">
-            <div className="mobile-metric-icon bg-gradient-warning">
-              <span className="text-white">⭐</span>
-            </div>
-            <div className="mobile-metric-value text-subhead font-semibold">
-              {topSdSPlayer ? topSdSPlayer.name.split(' ').slice(-1)[0] : '–'}
-            </div>
-            <div className="mobile-metric-label">
-              Top SdS ({topSdSPlayer ? topSdSPlayer.sdsCount : 0}x)
-            </div>
-            <div className="mobile-metric-sublabel">
-              {/* sdsPercentage statt eigener Rechnung: Spieler des Spiels gibt
-                  es einmal je SPIEL, nicht einmal je Einsatz. Mit matchesPlayed
-                  als Nenner stand hier "133,3 %". */}
-              {topSdSPlayer ? `${dez(topSdSPlayer.sdsPercentage, 1)} % der Spiele` : '—'}
-            </div>
-          </div>
+        {/* Vier Kennzahlen in einem Raster — dieselbe Kachel wie in
+            Bierboerse und Marktwerten. */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <Kennzahl gross wert={totalMatches} label="Spiele gespielt" />
+          <Kennzahl
+            gross
+            wert={advancedStats.totalGoals}
+            label="Tore insgesamt"
+            zusatz={`⌀ ${dez(totalMatches > 0 ? advancedStats.totalGoals / totalMatches : 0)} je Spiel`}
+          />
+          <Kennzahl
+            wert={topScorer ? topScorer.name.split(' ').slice(-1)[0] : '–'}
+            label={`Topscorer · ${topScorer ? topScorer.goals : 0} Tore`}
+            zusatz={topScorer && topScorer.matchesPlayed > 0
+              ? `⌀ ${dez(topScorer.goals / topScorer.matchesPlayed)} je Spiel` : null}
+          />
+          <Kennzahl
+            wert={topSdSPlayer ? topSdSPlayer.name.split(' ').slice(-1)[0] : '–'}
+            label={`Spieler des Spiels · ${topSdSPlayer ? topSdSPlayer.sdsCount : 0}×`}
+            zusatz={topSdSPlayer && topSdSPlayer.sdsPercentage != null
+              ? `${dez(topSdSPlayer.sdsPercentage, 1)} % der Spiele` : null}
+          />
         </div>
 
         {/* Enhanced Team Victory Cards with iOS 26 Design */}
@@ -1154,7 +1133,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     </div>
                     <div className="text-title3 font-bold text-text-primary truncate">{bestPlayer}</div>
                     <div className="text-caption2 text-text-tertiary num-tabular mt-0.5">
-                      {bestRatio > 0 ? `${bestRatio.toFixed(2)} Tore/Spiel` : 'Keine Daten'}
+                      {bestRatio > 0 ? `${dez(bestRatio)} Tore/Spiel` : 'Keine Daten'}
                     </div>
                   </div>
 
@@ -1174,134 +1153,11 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
         </div>
 
-      {/* Team Performance */}
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="card-ios">
-          <div className="flex items-center gap-3 mb-4">
-            <TeamLogo team="aek" size="md" />
-            <h3 className="text-title3 font-bold text-fifa-blue truncate">{getTeamDisplay('AEK')}</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-body text-text-secondary">Siege:</span>
-              <span className="text-body font-semibold text-system-green">{aekWins}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-body text-text-secondary">Niederlagen:</span>
-              <span className="text-body font-semibold text-system-red">{teamRecords.aek.losses}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-body text-text-secondary">Zu Null:</span>
-              <span className="text-body font-semibold text-text-primary">{advancedStats.cleanSheets.aek}</span>
-            </div>
-            <div className="mt-4">
-              <div className="text-caption1 text-text-secondary mb-2">Form (letzte 5):</div>
-              <div className="flex">{formatForm(recentForm.aek)}</div>
-            </div>
-          </div>
-        </div>
-
-        <div className="card-ios">
-          <div className="flex items-center gap-3 mb-4">
-            <TeamLogo team="real" size="md" />
-            <h3 className="text-title3 font-bold text-fifa-red truncate">{getTeamDisplay('Real')}</h3>
-          </div>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-body text-text-secondary">Siege:</span>
-              <span className="text-body font-semibold text-system-green">{realWins}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-body text-text-secondary">Niederlagen:</span>
-              <span className="text-body font-semibold text-system-red">{teamRecords.real.losses}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-body text-text-secondary">Zu Null:</span>
-              <span className="text-body font-semibold text-text-primary">{advancedStats.cleanSheets.real}</span>
-            </div>
-            <div className="mt-4">
-              <div className="text-caption1 text-text-secondary mb-2">Form (letzte 5):</div>
-              <div className="flex">{formatForm(recentForm.real)}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Top Performers */}
-      <div className="card-ios">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-system-yellow/10 rounded-full flex items-center justify-center">
-            <Icon name="trophy" size={17} strokeWidth={2.2} />
-          </div>
-          <h3 className="text-title3 font-bold text-text-primary">Top-Torschützen</h3>
-        </div>
-        <div className="space-y-3">
-          {playerStats.slice(0, 5).map((player, index) => (
-            <div key={player.id} className="list-item-ios">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-caption2 font-bold ${
-                    index === 0 ? 'bg-system-yellow text-white' :
-                    index === 1 ? 'bg-text-quaternary text-white' :
-                    index === 2 ? 'bg-system-orange text-white' :
-                    'bg-bg-tertiary text-text-secondary'
-                  }`}>
-                    {index + 1}
-                  </div>
-                  <div>
-                    <div className="text-callout font-medium text-text-primary">{player.name}</div>
-                    <div className="text-caption1 text-text-secondary">{getTeamDisplay(player.team)}</div>
-                  </div>
-                </div>
-                <div className="text-right">
-                  <div className="text-callout font-bold text-text-primary">{player.goals} Tore</div>
-                  <div className="text-caption1 text-text-secondary">{player.goalsPerGame} ⌀</div>
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Top Spieler des Spiels */}
-      <div className="modern-card">
-        <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="star" size={18} strokeWidth={2.2} />Top-Spieler des Spiels</h3>
-        <div className="space-y-2">
-          {playerStats
-            .filter(player => player.sdsCount > 0)
-            .sort((a, b) => b.sdsCount - a.sdsCount)
-            .slice(0, 5)
-            .map((player, index) => (
-            <div key={player.id} className="flex items-center justify-between py-2 border-b border-border-light last:border-b-0">
-              <div className="flex items-center space-x-3">
-                <span className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold ${
-                  index === 0 ? 'bg-system-orange text-white' :
-                  index === 1 ? 'bg-text-tertiary text-white' :
-                  index === 2 ? 'bg-system-orange text-white' :
-                  'bg-bg-tertiary text-text-secondary'
-                }`}>
-                  {index + 1}
-                </span>
-                <div>
-                  <div className="font-medium">{player.name}</div>
-                  <div className="text-sm text-text-muted">{getTeamDisplay(player.team)}</div>
-                </div>
-              </div>
-              <div className="text-right">
-                <div className="font-bold">{player.sdsCount}x SdS</div>
-                <div className="text-sm text-text-muted">
-                  {dez(player.sdsPercentage, 1)} % der Spiele
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-        {playerStats.filter(player => player.sdsCount > 0).length === 0 && (
-          <div className="text-center text-text-muted py-4">
-            Noch keine Spieler des Spiels Auszeichnungen vergeben
-          </div>
-        )}
-      </div>
+      {/* Team-Bilanz, Torschuetzenliste und SdS-Liste standen hier ein
+          zweites Mal: Siege/Niederlagen/Zu Null wiederholen den
+          Team-Vergleich, die Form steht schon im Banner ganz oben, und die
+          beiden Ranglisten sind der Inhalt der Ansicht "Spieler". Eine
+          Uebersicht, die alles noch einmal zeigt, ist keine Uebersicht. */}
     </div>
   );
 };
@@ -1376,7 +1232,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="grid grid-cols-4 gap-1 text-center">
               {[
                 ['Tore', player.goals],
-                ['⌀/Spiel', player.goalsPerGame],
+                ['⌀/Spiel', dez(player.goalsPerGame)],
                 ['Spiele', player.matchesPlayed],
                 ['Wert', formatPlayerValue(player.value)],
               ].map(([label, wert]) => (
@@ -1391,7 +1247,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border-light">
                 {player.sdsCount > 0 && (
                   <span className="chip chip-sm chip-yellow">
-                    {player.sdsCount}× SdS · {player.sdsPercentage}%
+                    {player.sdsCount}× SdS{player.sdsPercentage != null ? ` · ${dez(player.sdsPercentage, 1)} %` : ''}
                   </span>
                 )}
                 {player.totalBans > 0 && (
@@ -1418,7 +1274,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               <div>
                 <div className="font-medium text-system-green">{mostEfficient.name}</div>
                 <div className="text-sm text-system-green">
-                  {mostEfficient.goalsPerGame} Tore/Spiel ({mostEfficient.goals} Tore in {mostEfficient.matchesPlayed} Spielen)
+                  {dez(mostEfficient.goalsPerGame)} Tore/Spiel ({mostEfficient.goals} Tore in {mostEfficient.matchesPlayed} Spielen)
                 </div>
               </div>
             ) : (
@@ -1430,15 +1286,19 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         <div className="p-4 bg-system-yellow/10 rounded-lg border border-system-yellow/20">
           <h4 className="font-semibold text-system-orange mb-2 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} />SdS-König</h4>
           {(() => {
+            // Nach ANZAHL sortieren, nicht nach Quote: die Quote ist nicht in
+            // jedem Umfang berechenbar, und parseFloat(null) haette die
+            // Sortierung still auf NaN laufen lassen.
             const mostSds = playerStats
               .filter(p => p.sdsCount > 0)
-              .sort((a, b) => parseFloat(b.sdsPercentage) - parseFloat(a.sdsPercentage))[0];
+              .sort((a, b) => b.sdsCount - a.sdsCount)[0];
             
             return mostSds ? (
               <div>
                 <div className="font-medium text-system-orange">{mostSds.name}</div>
                 <div className="text-sm text-system-orange">
-                  {mostSds.sdsPercentage}% Quote ({mostSds.sdsCount}x SdS)
+                  {mostSds.sdsCount}× Spieler des Spiels
+                  {mostSds.sdsPercentage != null ? ` · ${dez(mostSds.sdsPercentage, 1)} % der Spiele` : ''}
                 </div>
               </div>
             ) : (
@@ -1480,20 +1340,20 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <h4 className="font-semibold text-system-blue">{getTeamDisplay('AEK')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Aktive Spieler:</span>
-                <span className="font-medium">{aekPlayers.length}</span>
+                <span className="text-text-secondary">Aktive Spieler:</span>
+                <span className="font-medium text-text-primary">{aekPlayers.length}</span>
               </div>
               <div className="flex justify-between">
-                <span>Siege:</span>
-                <span className="font-medium">{aekWins}</span>
+                <span className="text-text-secondary">Siege:</span>
+                <span className="font-medium text-text-primary">{aekWins}</span>
               </div>
               <div className="flex justify-between">
-                <span>Niederlagen:</span>
-                <span className="font-medium">{teamRecords.aek.losses}</span>
+                <span className="text-text-secondary">Niederlagen:</span>
+                <span className="font-medium text-text-primary">{teamRecords.aek.losses}</span>
               </div>
               <div className="flex justify-between">
-                <span>Zu Null Spiele:</span>
-                <span className="font-medium">{advancedStats.cleanSheets.aek}</span>
+                <span className="text-text-secondary">Zu Null Spiele:</span>
+                <span className="font-medium text-text-primary">{advancedStats.cleanSheets.aek}</span>
               </div>
             </div>
           </div>
@@ -1501,20 +1361,20 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <h4 className="font-semibold text-system-red">{getTeamDisplay('Real')}</h4>
             <div className="space-y-2">
               <div className="flex justify-between">
-                <span>Aktive Spieler:</span>
-                <span className="font-medium">{realPlayers.length}</span>
+                <span className="text-text-secondary">Aktive Spieler:</span>
+                <span className="font-medium text-text-primary">{realPlayers.length}</span>
               </div>
               <div className="flex justify-between">
-                <span>Siege:</span>
-                <span className="font-medium">{realWins}</span>
+                <span className="text-text-secondary">Siege:</span>
+                <span className="font-medium text-text-primary">{realWins}</span>
               </div>
               <div className="flex justify-between">
-                <span>Niederlagen:</span>
-                <span className="font-medium">{teamRecords.real.losses}</span>
+                <span className="text-text-secondary">Niederlagen:</span>
+                <span className="font-medium text-text-primary">{teamRecords.real.losses}</span>
               </div>
               <div className="flex justify-between">
-                <span>Zu Null Spiele:</span>
-                <span className="font-medium">{advancedStats.cleanSheets.real}</span>
+                <span className="text-text-secondary">Zu Null Spiele:</span>
+                <span className="font-medium text-text-primary">{advancedStats.cleanSheets.real}</span>
               </div>
             </div>
           </div>
@@ -1540,7 +1400,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           <div className="text-center p-4 bg-bg-secondary rounded-lg">
             <div className="text-2xl font-bold text-accent-blue">
-              {advancedStats.avgGoalsPerMatch}
+              {dez(advancedStats.avgGoalsPerMatch)}
             </div>
             <div className="text-sm text-text-muted">⌀ Tore pro Spiel</div>
             <div className="text-xs text-text-muted mt-1">Durchschnittswert</div>
@@ -1560,52 +1420,26 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
         {/* New Enhanced Statistics Section */}
         <div className="mt-6 grid md:grid-cols-3 gap-6">
-          <div className="space-y-3">
-            <h4 className="font-semibold text-system-blue"><Icon name="swap" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Heim und Auswärts</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span>{getTeamDisplay('AEK')} Heimspiele:</span>
-                <span className="font-medium">{advancedStats.homeAwayStats.aekHome}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{getTeamDisplay('AEK')} Heimsiege:</span>
-                <span className="font-medium">{advancedStats.homeAwayStats.aekHomeWins}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>{getTeamDisplay('AEK')} Auswärtssiege:</span>
-                <span className="font-medium">{advancedStats.homeAwayStats.aekAwayWins}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Heimstärke AEK:</span>
-                <span className="font-medium">
-                  {advancedStats.homeAwayStats.aekHome > 0 ? 
-                    `${((advancedStats.homeAwayStats.aekHomeWins / advancedStats.homeAwayStats.aekHome) * 100).toFixed(0)}%` : 
-                    '0%'}
-                </span>
-              </div>
-            </div>
-          </div>
+          {/* "Heim und Auswaerts" entfernt: in dieser App steht AEK immer
+              als teama, also waren "Heimspiele" schlicht ALLE Spiele und
+              "Heimstaerke" nur die Siegquote unter falschem Namen. Eine
+              Zahl, die etwas anderes behauptet als sie misst, ist schlechter
+              als keine. */}
 
           <div className="space-y-3">
             <h4 className="font-semibold text-system-green inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Torstatistiken</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Beide Teams treffen:</span>
-                <span className="font-medium">{advancedStats.scoringPatterns.bothTeamsScore}</span>
+                <span className="text-text-secondary">Beide Teams treffen:</span>
+                <span className="font-medium text-text-primary">{advancedStats.scoringPatterns.bothTeamsScore}</span>
               </div>
               <div className="flex justify-between">
-                <span>1:0 Siege:</span>
-                <span className="font-medium">{advancedStats.scoringPatterns.oneNilWins}</span>
+                <span className="text-text-secondary">1:0 Siege:</span>
+                <span className="font-medium text-text-primary">{advancedStats.scoringPatterns.oneNilWins}</span>
               </div>
               <div className="flex justify-between">
-                <span>4+ Tore Siege:</span>
-                <span className="font-medium">{advancedStats.scoringPatterns.highScoringWins}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Top-Torschütze:</span>
-                <span className="font-medium">
-                  {advancedStats.topScorer.player} ({advancedStats.topScorer.goals})
-                </span>
+                <span className="text-text-secondary">4+ Tore Siege:</span>
+                <span className="font-medium text-text-primary">{advancedStats.scoringPatterns.highScoringWins}</span>
               </div>
             </div>
           </div>
@@ -1614,20 +1448,20 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <h4 className="font-semibold text-system-purple inline-flex items-center gap-2"><Icon name="target" size={16} strokeWidth={2.2} />Spielqualität</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Enge Spiele (≤1 Tor):</span>
-                <span className="font-medium">{advancedStats.competitiveness.closeGames}</span>
+                <span className="text-text-secondary">Enge Spiele (≤1 Tor):</span>
+                <span className="font-medium text-text-primary">{advancedStats.competitiveness.closeGames}</span>
               </div>
               <div className="flex justify-between">
-                <span>Deutliche Siege (≥3 Tore):</span>
-                <span className="font-medium">{advancedStats.competitiveness.blowouts}</span>
+                <span className="text-text-secondary">Deutliche Siege (≥3 Tore):</span>
+                <span className="font-medium text-text-primary">{advancedStats.competitiveness.blowouts}</span>
               </div>
               <div className="flex justify-between">
-                <span>{getTeamDisplay('AEK')} Tor-Schnitt:</span>
-                <span className="font-medium">{advancedStats.goalEfficiency.aekAvg}</span>
+                <span className="text-text-secondary">{getTeamDisplay('AEK')} Tor-Schnitt:</span>
+                <span className="font-medium text-text-primary">{dez(advancedStats.goalEfficiency.aekAvg)}</span>
               </div>
               <div className="flex justify-between">
-                <span>{getTeamDisplay('Real')} Tor-Schnitt:</span>
-                <span className="font-medium">{advancedStats.goalEfficiency.realAvg}</span>
+                <span className="text-text-secondary">{getTeamDisplay('Real')} Tor-Schnitt:</span>
+                <span className="font-medium text-text-primary">{dez(advancedStats.goalEfficiency.realAvg)}</span>
               </div>
             </div>
           </div>
@@ -1639,19 +1473,15 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <h4 className="font-semibold text-text-primary inline-flex items-center gap-2"><Icon name="target" size={16} strokeWidth={2.2} />Offensive Highlights</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Torreichstes Team:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Torreichstes Team:</span>
+                <span className="font-medium text-text-primary">
                   {advancedStats.aekTotalGoals >= advancedStats.realTotalGoals ? getTeamDisplay('AEK') : getTeamDisplay('Real')}
-                  ({Math.max(advancedStats.aekTotalGoals, advancedStats.realTotalGoals)} Tore)
+                  {' '}({Math.max(advancedStats.aekTotalGoals, advancedStats.realTotalGoals)} Tore)
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Höchste Einzelspiel-Toranzahl:</span>
-                <span className="font-medium">{advancedStats.highestScoringMatch} Tore</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Aktivster Torschütze:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Aktivster Torschütze:</span>
+                <span className="font-medium text-text-primary">
                   {playerStats.length > 0 ? `${playerStats[0].name} (${playerStats[0].goals} Tore)` : 'Keine Daten'}
                 </span>
               </div>
@@ -1662,20 +1492,20 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <h4 className="font-semibold text-text-primary"><Icon name="scale" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Team-Balance</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Kader-Unterschied:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Kader-Unterschied:</span>
+                <span className="font-medium text-text-primary">
                   {Math.abs(aekPlayers.length - realPlayers.length)} Spieler
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Marktwert-Verhältnis:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Marktwert-Verhältnis:</span>
+                <span className="font-medium text-text-primary">
                   {aekPlayers.reduce((sum, p) => sum + (p.value || 0), 0) > realPlayers.reduce((sum, p) => sum + (p.value || 0), 0) ? 'AEK führt' : 'Real führt'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Dominanteres Team:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Dominanteres Team:</span>
+                <span className="font-medium text-text-primary">
                   {aekWins > realWins ? getTeamDisplay('AEK') : realWins > aekWins ? getTeamDisplay('Real') : 'Ausgeglichen'}
                 </span>
               </div>
@@ -1695,21 +1525,21 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="text-2xl font-bold text-system-blue">{headToHead.aekWins}</div>
             <div className="text-sm text-system-blue">{getTeamDisplay('AEK')} Siege</div>
             <div className="text-xs text-text-muted mt-1">
-              {headToHead.totalMatches > 0 ? `${((headToHead.aekWins / headToHead.totalMatches) * 100).toFixed(1)}%` : '0%'}
+              {headToHead.totalMatches > 0 ? `${dez((headToHead.aekWins / headToHead.totalMatches) * 100, 1)} %` : '0%'}
             </div>
           </div>
           <div className="text-center p-4 bg-system-red/10 rounded-lg">
             <div className="text-2xl font-bold text-system-red">{headToHead.realWins}</div>
             <div className="text-sm text-system-red">{getTeamDisplay('Real')} Siege</div>
             <div className="text-xs text-text-muted mt-1">
-              {headToHead.totalMatches > 0 ? `${((headToHead.realWins / headToHead.totalMatches) * 100).toFixed(1)}%` : '0%'}
+              {headToHead.totalMatches > 0 ? `${dez((headToHead.realWins / headToHead.totalMatches) * 100, 1)} %` : '0%'}
             </div>
           </div>
           <div className="text-center p-4 bg-system-green/10 rounded-lg">
             <div className="text-2xl font-bold text-system-green">{headToHead.aekGoals + headToHead.realGoals}</div>
             <div className="text-sm text-system-green">Tore gesamt</div>
             <div className="text-xs text-text-muted mt-1">
-              {headToHead.totalMatches > 0 ? `⌀ ${((headToHead.aekGoals + headToHead.realGoals) / headToHead.totalMatches).toFixed(1)} pro Spiel` : '⌀ 0 pro Spiel'}
+              {headToHead.totalMatches > 0 ? `⌀ ${dez((headToHead.aekGoals + headToHead.realGoals) / headToHead.totalMatches, 1)} pro Spiel` : '⌀ 0 pro Spiel'}
             </div>
           </div>
         </div>
@@ -1762,18 +1592,18 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <h4 className="font-semibold text-system-red"><Icon name="dice" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Spielstatistiken</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Spiele gespielt:</span>
-                <span className="font-medium">{totalMatches}</span>
+                <span className="text-text-secondary">Spiele gespielt:</span>
+                <span className="font-medium text-text-primary">{totalMatches}</span>
               </div>
               <div className="flex justify-between">
-                <span>Längste Serie:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Längste Serie:</span>
+                <span className="font-medium text-text-primary">
                   {aekWins >= realWins ? 'AEK' : 'Real'} ({Math.max(aekWins, realWins)} Siege)
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Torreichstes Spiel:</span>
-                <span className="font-medium">{advancedStats.highestScoringMatch} Tore</span>
+                <span className="text-text-secondary">Torreichstes Spiel:</span>
+                <span className="font-medium text-text-primary">{advancedStats.highestScoringMatch} Tore</span>
               </div>
             </div>
           </div>
@@ -1782,24 +1612,24 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <h4 className="font-semibold text-system-purple"><Icon name="trophy" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Leistungswerte</h4>
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
-                <span>Aktive Spieler:</span>
-                <span className="font-medium">{aekPlayers.length + realPlayers.length}</span>
+                <span className="text-text-secondary">Aktive Spieler:</span>
+                <span className="font-medium text-text-primary">{aekPlayers.length + realPlayers.length}</span>
               </div>
               <div className="flex justify-between">
-                <span>Torschützen:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Torschützen:</span>
+                <span className="font-medium text-text-primary">
                   {playerStats.filter(p => p.goals > 0).length} Spieler
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Erfolgsquote AEK:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Erfolgsquote AEK:</span>
+                <span className="font-medium text-text-primary">
                   {totalMatches > 0 ? `${((aekWins / totalMatches) * 100).toFixed(0)}%` : '0%'}
                 </span>
               </div>
               <div className="flex justify-between">
-                <span>Erfolgsquote Real:</span>
-                <span className="font-medium">
+                <span className="text-text-secondary">Erfolgsquote Real:</span>
+                <span className="font-medium text-text-primary">
                   {totalMatches > 0 ? `${((realWins / totalMatches) * 100).toFixed(0)}%` : '0%'}
                 </span>
               </div>
@@ -1905,7 +1735,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             const totalGoals = trend.aekGoals + trend.realGoals;
             const aekWinRate = trend.matchCount > 0 ? (trend.aekWins / trend.matchCount * 100).toFixed(0) : 0;
             const realWinRate = trend.matchCount > 0 ? (trend.realWins / trend.matchCount * 100).toFixed(0) : 0;
-            const avgGoalsPerMatch = trend.matchCount > 0 ? (totalGoals / trend.matchCount).toFixed(1) : '0.0';
+            const avgGoalsPerMatch = trend.matchCount > 0 ? totalGoals / trend.matchCount : 0;
             
             return (
               <div key={trend.key} className="modern-card p-6">
@@ -1920,7 +1750,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-lg font-bold text-text-primary">⌀ {avgGoalsPerMatch}</div>
+                    <div className="text-lg font-bold text-text-primary">⌀ {dez(avgGoalsPerMatch)}</div>
                     <div className="text-xs text-text-muted">Tore/Spiel</div>
                   </div>
                 </div>
@@ -1934,17 +1764,17 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span>Siege:</span>
-                        <span className="font-medium">{trend.aekWins}</span>
+                        <span className="text-text-secondary">Siege:</span>
+                        <span className="font-medium text-text-primary">{trend.aekWins}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Tore:</span>
-                        <span className="font-medium">{trend.aekGoals}</span>
+                        <span className="text-text-secondary">Tore:</span>
+                        <span className="font-medium text-text-primary">{trend.aekGoals}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>⌀ Tore/Spiel:</span>
-                        <span className="font-medium">
-                          {trend.matchCount > 0 ? (trend.aekGoals / trend.matchCount).toFixed(1) : '0.0'}
+                        <span className="text-text-secondary">⌀ Tore/Spiel:</span>
+                        <span className="font-medium text-text-primary">
+                          {dez(trend.matchCount > 0 ? trend.aekGoals / trend.matchCount : 0, 1)}
                         </span>
                       </div>
                     </div>
@@ -1957,17 +1787,17 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     </div>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
-                        <span>Siege:</span>
-                        <span className="font-medium">{trend.realWins}</span>
+                        <span className="text-text-secondary">Siege:</span>
+                        <span className="font-medium text-text-primary">{trend.realWins}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Tore:</span>
-                        <span className="font-medium">{trend.realGoals}</span>
+                        <span className="text-text-secondary">Tore:</span>
+                        <span className="font-medium text-text-primary">{trend.realGoals}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>⌀ Tore/Spiel:</span>
-                        <span className="font-medium">
-                          {trend.matchCount > 0 ? (trend.realGoals / trend.matchCount).toFixed(1) : '0.0'}
+                        <span className="text-text-secondary">⌀ Tore/Spiel:</span>
+                        <span className="font-medium text-text-primary">
+                          {dez(trend.matchCount > 0 ? trend.realGoals / trend.matchCount : 0, 1)}
                         </span>
                       </div>
                     </div>
@@ -1977,8 +1807,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 {/* Visual Progress Bar */}
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs text-text-muted">
-                    <span>{getTeamDisplay('AEK')} Dominanz</span>
-                    <span>{getTeamDisplay('Real')} Dominanz</span>
+                    <span className="text-text-secondary">{getTeamDisplay('AEK')} Dominanz</span>
+                    <span className="text-text-secondary">{getTeamDisplay('Real')} Dominanz</span>
                   </div>
                   <div className="w-full bg-bg-tertiary rounded-full h-3 overflow-hidden">
                     <div className="h-full flex">
@@ -1998,9 +1828,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 {trend.matchCount > 0 && (
                   <div className="mt-4 pt-4 border-t border-border-light">
                     <div className="flex items-center gap-4 text-xs text-text-muted">
-                      <span>{totalGoals} Tore insgesamt</span>
-                      <span>Bestes Team: {trend.aekWins > trend.realWins ? 'AEK' : trend.realWins > trend.aekWins ? 'Real' : 'Ausgeglichen'}</span>
-                      <span>Intensität: {avgGoalsPerMatch >= 3 ? 'Hoch' : avgGoalsPerMatch >= 2 ? 'Mittel' : 'Niedrig'}</span>
+                      <span className="text-text-secondary">{totalGoals} Tore insgesamt</span>
+                      <span className="text-text-secondary">Bestes Team: {trend.aekWins > trend.realWins ? 'AEK' : trend.realWins > trend.aekWins ? 'Real' : 'Ausgeglichen'}</span>
+                      <span className="text-text-secondary">Intensität: {avgGoalsPerMatch >= 3 ? 'Hoch' : avgGoalsPerMatch >= 2 ? 'Mittel' : 'Niedrig'}</span>
                     </div>
                   </div>
                 )}
@@ -2023,7 +1853,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 {enhancedTrends.length >= 2 && (
                   <>
                     <div className="flex justify-between">
-                      <span>Letzter Monat AEK:</span>
+                      <span className="text-text-secondary">Letzter Monat AEK:</span>
                       <span className={`font-medium ${
                         enhancedTrends[0].aekWins >= enhancedTrends[1].aekWins ? 'text-system-green' : 'text-system-red'
                       }`}>
@@ -2031,7 +1861,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span>Letzter Monat Real:</span>
+                      <span className="text-text-secondary">Letzter Monat Real:</span>
                       <span className={`font-medium ${
                         enhancedTrends[0].realWins >= enhancedTrends[1].realWins ? 'text-system-green' : 'text-system-red'
                       }`}>
@@ -2056,12 +1886,12 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                   return (
                     <>
                       <div className="flex justify-between">
-                        <span>Torreichster Monat:</span>
+                        <span className="text-text-secondary">Torreichster Monat:</span>
                         <span className="font-medium text-system-green">{bestMonth?.month}</span>
                       </div>
                       <div className="flex justify-between">
-                        <span>Tore in diesem Monat:</span>
-                        <span className="font-medium">{bestMonth ? bestMonth.aekGoals + bestMonth.realGoals : 0}</span>
+                        <span className="text-text-secondary">Tore in diesem Monat:</span>
+                        <span className="font-medium text-text-primary">{bestMonth ? bestMonth.aekGoals + bestMonth.realGoals : 0}</span>
                       </div>
                     </>
                   );
@@ -2100,9 +1930,11 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         team: player.team,
         goals: player.goals || 0,
         matches: player.matchesPlayed || 0,
-        efficiency: player.matchesPlayed > 0 ? (player.goals / player.matchesPlayed * 100).toFixed(1) : 0,
+        // Tore je Spiel — NICHT mal 100: das ist keine Quote, und als
+        // Prozentwert stand hier "400,0 %" fuer vier Tore pro Spiel.
+        efficiency: player.matchesPlayed > 0 ? player.goals / player.matchesPlayed : 0,
         value: player.value || 0,
-        valuePerGoal: player.goals > 0 ? ((player.value || 0) / player.goals).toFixed(2) : 'N/A'
+        valuePerGoal: player.goals > 0 ? (player.value || 0) / player.goals : null
       }));
 
       // Recent form analysis (last 10 matches)
@@ -2215,8 +2047,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-text-primary">{player.efficiency}%</div>
-                  <div className="text-xs text-text-muted">{player.goals}G / {player.matches}S</div>
+                  <div className="font-bold text-text-primary num-tabular">{dez(player.efficiency)}</div>
+                  <div className="text-xs text-text-muted">Tore je Spiel · {player.goals} in {player.matches}</div>
                 </div>
               </div>
             ))}
@@ -2245,26 +2077,26 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           
           <div className="space-y-2 text-sm">
             <div className="flex justify-between">
-              <span>Siegesquote AEK:</span>
-              <span className="font-medium">
+              <span className="text-text-secondary">Siegesquote AEK:</span>
+              <span className="font-medium text-text-primary">
                 {metrics.recentForm.totalMatches > 0 ? 
                   `${((metrics.recentForm.aekWins / metrics.recentForm.totalMatches) * 100).toFixed(0)}%` : 
                   '0%'}
               </span>
             </div>
             <div className="flex justify-between">
-              <span>Siegesquote Real:</span>
-              <span className="font-medium">
+              <span className="text-text-secondary">Siegesquote Real:</span>
+              <span className="font-medium text-text-primary">
                 {metrics.recentForm.totalMatches > 0 ? 
                   `${((metrics.recentForm.realWins / metrics.recentForm.totalMatches) * 100).toFixed(0)}%` : 
                   '0%'}
               </span>
             </div>
             <div className="flex justify-between">
-              <span>Durchschnitt Tore/Spiel:</span>
-              <span className="font-medium">
+              <span className="text-text-secondary">Durchschnitt Tore/Spiel:</span>
+              <span className="font-medium text-text-primary">
                 {metrics.recentForm.totalMatches > 0 ? 
-                  ((metrics.recentForm.aekGoals + metrics.recentForm.realGoals) / metrics.recentForm.totalMatches).toFixed(1) : 
+                  dez((metrics.recentForm.aekGoals + metrics.recentForm.realGoals) / metrics.recentForm.totalMatches, 1) : 
                   '0.0'}
               </span>
             </div>
@@ -2281,7 +2113,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           <div className="space-y-3">
             {metrics.playerEfficiency
               .filter(p => p.value > 0 && p.goals > 0)
-              .sort((a, b) => parseFloat(a.valuePerGoal) - parseFloat(b.valuePerGoal))
+              .filter(p => p.valuePerGoal != null)
+              .sort((a, b) => a.valuePerGoal - b.valuePerGoal)
               .slice(0, 5)
               .map((player, index) => (
                 <div key={player.name} className="flex items-center justify-between p-3 bg-bg-secondary rounded-lg">
@@ -2295,7 +2128,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-bold text-system-green">{player.valuePerGoal}M €</div>
+                    <div className="font-bold text-system-green num-tabular">{dez(player.valuePerGoal)} Mio €</div>
                     <div className="text-xs text-text-muted">pro Tor</div>
                   </div>
                 </div>
@@ -2418,7 +2251,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         {/* Performance Info */}
         <div className="modern-card p-6">
           <h4 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
-            <span>ℹ️</span>
+            <span className="text-text-secondary">ℹ️</span>
             Über die Visualisierungen
           </h4>
           <div className="space-y-2 text-sm text-text-secondary">

@@ -33,7 +33,8 @@ export default function MatchDayOverview({ matches }) {
       sum + (match.goalsa || 0) + (match.goalsb || 0), 0);
     
     const totalMatches = dateMatches.length;
-    const avgGoalsPerMatch = totalMatches > 0 ? (totalGoals / totalMatches).toFixed(1) : '0.0';
+    const avgGoalsPerMatch = (totalMatches > 0 ? totalGoals / totalMatches : 0)
+      .toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
     
     // Find highest scoring match
     const highestScoringMatch = dateMatches.reduce((highest, match) => {
@@ -106,7 +107,7 @@ export default function MatchDayOverview({ matches }) {
       Math.abs((match.goalsa || 0) - (match.goalsb || 0))
     );
     const avgMargin = margins.length > 0 
-      ? (margins.reduce((sum, margin) => sum + margin, 0) / margins.length).toFixed(1)
+      ? (margins.reduce((sum, margin) => sum + margin, 0) / margins.length).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 })
       : '0.0';
 
     const closeGames = margins.filter(margin => margin <= 1).length;
@@ -248,16 +249,16 @@ export default function MatchDayOverview({ matches }) {
                   </div>
                   <div className="space-y-1 text-xs">
                     <div className="flex justify-between">
-                      <span>Tore:</span>
-                      <span className="font-medium">{dayStats.totalGoals}</span>
+                      <span className="text-text-secondary">Tore:</span>
+                      <span className="font-medium text-text-primary">{dayStats.totalGoals}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span>⌀ pro Spiel:</span>
-                      <span className="font-medium">{dayStats.avgGoalsPerMatch}</span>
+                      <span className="text-text-secondary">⌀ pro Spiel:</span>
+                      <span className="font-medium text-text-primary">{dayStats.avgGoalsPerMatch}</span>
                     </div>
                     {dayStats.topScorer.player && (
                       <div className="flex justify-between">
-                        <span>Top:</span>
+                        <span className="text-text-secondary">Top:</span>
                         <span className="font-medium text-primary-green">
                           {dayStats.topScorer.player.split(' ').slice(-1)[0]} ({dayStats.topScorer.goals})
                         </span>
@@ -360,13 +361,13 @@ export default function MatchDayOverview({ matches }) {
                     <div className="flex items-center gap-4">
                       <div className="flex items-center gap-2">
                         <span className="w-6 h-6 bg-system-blue text-white rounded text-xs flex items-center justify-center font-bold">A</span>
-                        <span className="font-medium">AEK</span>
+                        <span className="font-medium text-text-primary">AEK</span>
                       </div>
                       <div className="text-xl font-bold">
                         {match.goalsa || 0} : {match.goalsb || 0}
                       </div>
                       <div className="flex items-center gap-2">
-                        <span className="font-medium">Real</span>
+                        <span className="font-medium text-text-primary">Real</span>
                         <span className="w-6 h-6 bg-system-red text-white rounded text-xs flex items-center justify-center font-bold">R</span>
                       </div>
                     </div>
@@ -462,7 +463,7 @@ export default function MatchDayOverview({ matches }) {
                   {match.manofthematch && (
                     <div className="mt-2 text-sm">
                       <span className="text-system-yellow font-medium">⭐ Spieler des Spiels: </span>
-                      <span>{match.manofthematch}</span>
+                      <span className="text-text-secondary">{match.manofthematch}</span>
                     </div>
                   )}
                 </div>
@@ -477,19 +478,19 @@ export default function MatchDayOverview({ matches }) {
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-text-secondary">Durchschnittliche Tordifferenz:</span>
-                  <span className="font-medium">{selectedDateStats.avgMargin}</span>
+                  <span className="font-medium text-text-primary">{selectedDateStats.avgMargin}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-text-secondary">Enge Spiele (≤1 Tor):</span>
-                  <span className="font-medium">{selectedDateStats.closeGames}</span>
+                  <span className="font-medium text-text-primary">{selectedDateStats.closeGames}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-text-secondary">Deutliche Siege (≥3 Tore):</span>
-                  <span className="font-medium">{selectedDateStats.blowouts}</span>
+                  <span className="font-medium text-text-primary">{selectedDateStats.blowouts}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-text-secondary">Höchste Toranzahl:</span>
-                  <span className="font-medium">
+                  <span className="font-medium text-text-primary">
                     {(selectedDateStats.highestScoringMatch.goalsa || 0) + (selectedDateStats.highestScoringMatch.goalsb || 0)} Tore
                   </span>
                 </div>
@@ -513,7 +514,7 @@ export default function MatchDayOverview({ matches }) {
                         }`}>
                           {index + 1}
                         </span>
-                        <span className="font-medium">{player}</span>
+                        <span className="font-medium text-text-primary">{player}</span>
                       </div>
                       <span className="font-bold text-primary-green">{goals} Tor{goals !== 1 ? 'e' : ''}</span>
                     </div>
