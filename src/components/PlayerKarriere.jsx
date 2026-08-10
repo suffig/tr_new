@@ -45,8 +45,8 @@ export default function PlayerKarriere({ player }) {
   const schreibweisen = [...new Set(saisons.map((s) => s.name))];
 
   return (
-    <div className="bg-white/5 rounded-xl p-4 border border-white/10 mb-6">
-      <h4 className="text-white font-semibold mb-3 flex items-center gap-2">
+    <div className="panel-gray rounded-xl p-4">
+      <h4 className="text-footnote font-semibold text-text-muted mb-3 flex items-center gap-2">
         <Icon name="calendar" size={16} strokeWidth={2.2} />
         Laufbahn · {saisons.length} Saisons
       </h4>
@@ -54,36 +54,36 @@ export default function PlayerKarriere({ player }) {
       <div className="space-y-1.5">
         {saisons.map((s) => (
           <div key={s.version} className="flex items-center gap-2.5">
-            <span className="w-14 text-xs font-semibold text-white/70 num-tabular flex-shrink-0">
+            <span className="w-14 text-caption2 font-semibold text-text-secondary num-tabular flex-shrink-0">
               {s.version}
             </span>
             <SpielerWappen team={s.team} version={s.version} size="xs" />
-            <span className="text-xs text-white/60 truncate min-w-0 flex-1">
+            <span className="text-caption2 text-text-tertiary truncate min-w-0 flex-1">
               {s.team ? getTeamDisplay(s.team, s.version) : '—'}
             </span>
-            <div className="hidden min-[340px]:block flex-1 h-1.5 rounded-full bg-white/10 overflow-hidden max-w-[5rem]">
+            <div className="hidden min-[340px]:block flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden max-w-[5rem]">
               <div className="h-full bg-system-yellow"
                 style={{ width: beste > 0 ? `${(s.goals / beste) * 100}%` : '0%' }} />
             </div>
-            <span className="num-tabular text-sm font-bold text-white w-8 text-right flex-shrink-0">
+            <span className="num-tabular text-sm font-bold text-text-primary w-8 text-right flex-shrink-0">
               {s.goals}
             </span>
           </div>
         ))}
       </div>
 
-      <div className="mt-3 pt-3 border-t border-white/10 flex items-baseline justify-between">
-        <span className="text-xs text-white/60">Tore insgesamt</span>
+      <div className="mt-3 pt-3 border-t border-border-light flex items-baseline justify-between">
+        <span className="text-caption2 text-text-tertiary">Tore insgesamt</span>
         <span className="stat-display text-xl text-system-yellow num-tabular">{gesamt}</span>
       </div>
 
       {teams.length > 1 && (
-        <p className="text-[11px] text-white/50 mt-2">
+        <p className="text-caption2 text-text-tertiary mt-2">
           Teamwechsel: {teams.map((t) => getTeamDisplay(t)).join(' → ')}
         </p>
       )}
       {schreibweisen.length > 1 && (
-        <p className="text-[11px] text-white/50 mt-1">
+        <p className="text-caption2 text-text-tertiary mt-1">
           {/* Ohne diesen Hinweis wirkt es wie ein Fehler, wenn oben ein leicht
               anderer Name steht als in einer alten Saison. */}
           Auch erfasst als: {schreibweisen.slice(1).join(', ')}

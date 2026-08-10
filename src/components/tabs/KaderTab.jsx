@@ -23,6 +23,10 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showPlayerDetail, setShowPlayerDetail] = useState(false);
+  // Sortierung des Kaders. Aufstellung ist die Voreinstellung — so liest man
+  // einen Kader normalerweise (Tor nach vorn), und nur dafuer gibt es die
+  // POSITION_ORDER-Tabelle ueberhaupt.
+  const [sortierung, setSortierung] = useState('aufstellung');
   
   const { data: players, loading, error, refetch } = useSupabaseQuery('players', '*');
   const { update } = useSupabaseMutation('players');
@@ -42,10 +46,24 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
     return "chip chip-gray";
   };
 
+  const SORTIERUNGEN = [
+    { id: 'aufstellung', label: 'Aufstellung' },
+    { id: 'wert', label: 'Marktwert' },
+    { id: 'tore', label: 'Tore' },
+    { id: 'name', label: 'Name' },
+  ];
+
   const getTeamPlayers = (teamName) => {
-    return (players || [])
-      .filter(p => p.team === teamName)
-      .sort((a, b) => (POSITION_ORDER[a.position] || 99) - (POSITION_ORDER[b.position] || 99));
+    const eigene = (players || []).filter(p => p.team === teamName);
+    const vergleich = {
+      aufstellung: (a, b) => (POSITION_ORDER[a.position] ?? 99) - (POSITION_ORDER[b.position] ?? 99),
+      wert: (a, b) => (Number(b.value) || 0) - (Number(a.value) || 0),
+      tore: (a, b) => (b.goals || 0) - (a.goals || 0),
+      name: (a, b) => String(a.name).localeCompare(String(b.name), 'de'),
+    }[sortierung] || (() => 0);
+    // Kopie sortieren: .sort() arbeitet in place und wuerde sonst die Liste
+    // aus dem Datenhaken selbst umstellen.
+    return [...eigene].sort(vergleich);
   };
 
   const getTeamSquadValue = (teamName) => {
@@ -166,6 +184,21 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
 
+      {/* Sortierung gilt fuer alle drei Kader gleichzeitig — sie getrennt je
+          Team einstellen zu koennen waere mehr Bedienung als Nutzen. */}
+      <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl mb-4">
+        {SORTIERUNGEN.map((o) => (
+          <button
+            key={o.id}
+            onClick={() => setSortierung(o.id)}
+            className={`flex-1 py-1.5 rounded-lg text-caption1 font-semibold transition-colors ${
+              sortierung === o.id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+
       {/* Team Accordions */}
       <div className="space-y-4">
             {teams.map((team) => (
@@ -204,57 +237,65 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                     {team.players.length > 0 ? (
                       <div className="grid gap-3">
                         {team.players.map((player) => (
-                          <div key={player.id} className="panel-gray rounded-xl p-3 hover:bg-bg-hover transition-colors cursor-pointer group"
-                               onClick={() => handleShowPlayerDetail(player)}>
-                            <div className="flex items-center justify-between gap-2">
+                          /* Die ganze Zeile oeffnet die Spielerkarte. Vorher
+                             sass daneben zusaetzlich ein Statistik-Knopf, der
+                             exakt dasselbe tat — zwei Wege zum selben Ziel,
+                             einer davon 44px breit, die dem Namen fehlten. */
+                          <button
+                            key={player.id}
+                            type="button"
+                            onClick={() => handleShowPlayerDetail(player)}
+                            className="w-full panel-gray rounded-xl p-3 text-left hover:bg-bg-hover transition-colors group"
+                          >
+                            <div className="flex items-center gap-2">
                               <div className="min-w-0 flex-1">
-                                <h4 className="font-medium text-text-primary truncate group-hover:text-system-blue transition-colors">
+                                <div className="font-medium text-text-primary truncate group-hover:text-system-blue transition-colors">
                                   {player.name}
-                                </h4>
+                                </div>
                                 <div className="flex items-center flex-wrap gap-2 mt-1">
                                   <span className={getPositionBadgeClass(player.position)}>
                                     {player.position}
                                   </span>
+                                  {/* Tore standen bisher nur im Dialog, obwohl
+                                      sie die interessanteste Zahl einer
+                                      Kaderliste sind. */}
+                                  {player.goals > 0 && (
+                                    <span className="text-caption2 text-system-yellow font-medium num-tabular">
+                                      {player.goals} {player.goals === 1 ? 'Tor' : 'Tore'}
+                                    </span>
+                                  )}
                                   {player.staerke && (
                                     <span className="text-caption2 text-text-tertiary num-tabular">
                                       Stärke {player.staerke}
                                     </span>
                                   )}
-                                  {(player.value !== null && player.value !== undefined) && (
-                                    <span className="text-caption2 text-system-green font-medium num-tabular">
-                                      {formatCurrencyInMillions(player.value)}
-                                    </span>
-                                  )}
                                 </div>
                               </div>
-                              <div className="flex items-center gap-1 flex-shrink-0">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleShowPlayerDetail(player);
-                                  }}
-                                  className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-system-blue transition-colors rounded-lg"
-                                  title="Spielerstatistiken"
-                                  aria-label={`Statistiken von ${player.name}`}
-                                >
-                                  <Icon name="chart" size={16} strokeWidth={2} />
-                                </button>
-                                {isAdmin && (
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleEditPlayer(player);
-                                    }}
-                                    className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-system-green transition-colors rounded-lg"
-                                    title="Bearbeiten"
-                                    aria-label={`${player.name} bearbeiten`}
-                                  >
-                                    <Icon name="edit" size={16} strokeWidth={2} />
-                                  </button>
-                                )}
+                              <div className="text-right flex-shrink-0">
+                                <div className="text-callout font-semibold text-text-primary num-tabular">
+                                  {(player.value !== null && player.value !== undefined)
+                                    ? formatCurrencyInMillions(player.value) : '—'}
+                                </div>
                               </div>
+                              {isAdmin && (
+                                <span
+                                  role="button"
+                                  tabIndex={0}
+                                  onClick={(e) => { e.stopPropagation(); handleEditPlayer(player); }}
+                                  onKeyDown={(e) => {
+                                    if (e.key === 'Enter' || e.key === ' ') {
+                                      e.preventDefault(); e.stopPropagation(); handleEditPlayer(player);
+                                    }
+                                  }}
+                                  className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-system-green transition-colors rounded-lg flex-shrink-0 cursor-pointer"
+                                  title="Bearbeiten"
+                                  aria-label={`${player.name} bearbeiten`}
+                                >
+                                  <Icon name="edit" size={16} strokeWidth={2} />
+                                </span>
+                              )}
                             </div>
-                          </div>
+                          </button>
                         ))}
                       </div>
                     ) : (
