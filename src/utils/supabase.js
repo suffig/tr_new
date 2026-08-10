@@ -132,10 +132,16 @@ const fallbackData = {
     { id: 1, name: 'Bierbörse Dortmund', ort: 'Dortmund', datum: '2026-06-14' },
     { id: 2, name: 'Sommerabend Balkon', ort: 'Zuhause', datum: '2026-07-26' }
   ],
+  // Drei Zeilen mit Kategorien (db/21), zwei bewusst ohne — so laesst sich
+  // beides pruefen: die neue Aufschluesselung und die alten Eintraege, die nur
+  // eine Gesamtnote haben und weiter mitzaehlen muessen.
   bier_verkostungen: [
-    { id: 1, boerse_id: 1, bier_id: 1, preis: 4.5, groesse_ml: 500, anzahl_aek: 2, anzahl_real: 1, note_aek: 8, note_real: 9, bezahlt_von: 'AEK' },
-    { id: 2, boerse_id: 1, bier_id: 2, preis: 3.8, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 2, note_aek: 7, note_real: 4, bezahlt_von: 'geteilt' },
-    { id: 3, boerse_id: 1, bier_id: 4, preis: 5.2, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 1, note_aek: 6, note_real: 7, bezahlt_von: null },
+    { id: 1, boerse_id: 1, bier_id: 1, preis: 4.5, groesse_ml: 500, anzahl_aek: 2, anzahl_real: 1, note_aek: 8, note_real: 9, bezahlt_von: 'AEK',
+      geschmack_aek: 8, aussehen_aek: 8, pl_aek: 8, geschmack_real: 10, aussehen_real: 9, pl_real: 8, notiz: 'Perfekt gezapft.' },
+    { id: 2, boerse_id: 1, bier_id: 2, preis: 3.8, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 2, note_aek: 7, note_real: 4, bezahlt_von: 'geteilt',
+      geschmack_aek: 8, aussehen_aek: 7, pl_aek: 6, geschmack_real: 3, aussehen_real: 6, pl_real: 3 },
+    { id: 3, boerse_id: 1, bier_id: 4, preis: 5.2, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 1, note_aek: 6, note_real: 7, bezahlt_von: null,
+      geschmack_aek: 5, aussehen_aek: 8, pl_aek: 5, geschmack_real: 7, aussehen_real: 8, pl_real: 6 },
     { id: 4, boerse_id: 2, bier_id: 1, preis: 2.4, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 2, note_aek: 9, note_real: 8, bezahlt_von: 'Real' },
     { id: 5, boerse_id: 2, bier_id: 3, preis: 3.1, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 0, note_aek: 5, note_real: null, bezahlt_von: 'Real' }
   ]

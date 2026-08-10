@@ -354,3 +354,173 @@ export function sortenVerteilung(verkostungen, katalog) {
     .map((e) => ({ ...e, schnitt: e.noten.length ? e.noten.reduce((s, n) => s + n, 0) / e.noten.length : null }))
     .sort((a, b) => b.glaeser - a.glaeser);
 }
+
+/* ===========================================================================
+   Bewertung in Kategorien (db/21_bierboerse_kategorien.sql)
+   =========================================================================== */
+
+/**
+ * Die drei Kategorien.
+ *
+ * Die Gesamtnote note_aek / note_real bleibt die Zahl, mit der ALLE
+ * Auswertungen rechnen — sie wird beim Speichern aus den ausgefuellten
+ * Kategorien gemittelt. Dadurch bleiben Eintraege aus der Zeit vor den
+ * Kategorien vergleichbar, ohne dass eine einzige Auswertung angefasst
+ * werden musste.
+ */
+export const KATEGORIEN = [
+  { id: 'geschmack', label: 'Geschmack', kurz: 'Geschmack', icon: 'beer' },
+  { id: 'aussehen', label: 'Aussehen', kurz: 'Aussehen', icon: 'eye' },
+  { id: 'pl', label: 'Preis-Leistung', kurz: 'Preis-Leistung', icon: 'euro' },
+];
+
+/** Spaltenname einer Kategorie fuer eine Person: 'geschmack' + 'aek'. */
+export const katSpalte = (katId, personKey) => `${katId}_${personKey}`;
+
+/**
+ * Gesamtnote aus den Kategorien einer Person — Mittel der ausgefuellten.
+ *
+ * `null`, wenn keine einzige Kategorie vergeben wurde. Der Aufrufer behaelt
+ * dann die bisherige Gesamtnote, statt sie zu loeschen: sonst wuerde ein alter
+ * Eintrag seine Bewertung verlieren, nur weil jemand den Preis korrigiert.
+ */
+export function noteAusKategorien(werte) {
+  const gesetzt = KATEGORIEN.map((k) => werte?.[k.id]).filter((n) => n != null && n !== '');
+  if (!gesetzt.length) return null;
+  const mittel = gesetzt.reduce((s, n) => s + Number(n), 0) / gesetzt.length;
+  return Math.round(mittel * 10) / 10;
+}
+
+/** Die drei Kategoriewerte einer Person aus einer Verkostungszeile lesen. */
+export function kategorienVon(verkostung, personKey) {
+  const raus = {};
+  for (const k of KATEGORIEN) raus[k.id] = verkostung?.[katSpalte(k.id, personKey)] ?? null;
+  return raus;
+}
+
+/* ===========================================================================
+   Geschmacks-Duell
+   =========================================================================== */
+
+const mittel = (zahlen) => zahlen.length ? zahlen.reduce((s, n) => s + n, 0) / zahlen.length : null;
+
+/**
+ * Wie weit Alexander und Philip auseinanderliegen.
+ *
+ * Zaehlt NUR Verkostungen, die beide bewertet haben — bei einer einseitigen
+ * Note gibt es keine Abweichung zu messen, und sie wuerde den Schnitt in die
+ * Richtung dessen ziehen, der fleissiger bewertet.
+ */
+export function geschmacksDuell(verkostungen, katalog) {
+  const nachId = new Map((katalog || []).map((b) => [b.id, b]));
+  const beide = (verkostungen || []).filter((v) => v.note_aek != null && v.note_real != null);
+
+  const paare = beide.map((v) => ({
+    verkostung: v,
+    bier: nachId.get(v.bier_id) || null,
+    aek: Number(v.note_aek),
+    real: Number(v.note_real),
+    abstand: Math.abs(Number(v.note_aek) - Number(v.note_real)),
+  }));
+
+  // "Einig" heisst hoechstens einen ganzen Punkt auseinander. Auf exakte
+  // Gleichheit zu pruefen sagt nichts: mit Kategorien sind die Gesamtnoten
+  // gemittelt und krumm (7,7 gegen 7,3). Und die Grenze muss den Abstand 1
+  // einschliessen — bei ganzzahligen Noten ist "8 gegen 9" der haeufigste
+  // Fall ueberhaupt. Mit `< 1` kamen im Test 0 % Einigkeit heraus, obwohl
+  // drei von vier Bieren nur einen Punkt auseinanderlagen.
+  const einig = paare.filter((p) => p.abstand <= 1);
+  const sortiert = [...paare].sort((a, b) => b.abstand - a.abstand);
+
+  const proKategorie = KATEGORIEN.map((k) => {
+    const zeilen = (verkostungen || []).filter(
+      (v) => v[katSpalte(k.id, 'aek')] != null && v[katSpalte(k.id, 'real')] != null);
+    return {
+      ...k,
+      anzahl: zeilen.length,
+      aek: mittel(zeilen.map((v) => Number(v[katSpalte(k.id, 'aek')]))),
+      real: mittel(zeilen.map((v) => Number(v[katSpalte(k.id, 'real')]))),
+      abstand: mittel(zeilen.map(
+        (v) => Math.abs(Number(v[katSpalte(k.id, 'aek')]) - Number(v[katSpalte(k.id, 'real')])))),
+    };
+  }).filter((k) => k.anzahl > 0);
+
+  const schnittAek = mittel(paare.map((p) => p.aek));
+  const schnittReal = mittel(paare.map((p) => p.real));
+
+  return {
+    anzahl: paare.length,
+    einig: einig.length,
+    einigkeit: paare.length ? (einig.length / paare.length) * 100 : null,
+    abstandSchnitt: mittel(paare.map((p) => p.abstand)),
+    streit: sortiert[0]?.abstand > 0 ? sortiert[0] : null,
+    einigkeitsbier: einig.length ? [...einig].sort((a, b) => (b.aek + b.real) - (a.aek + a.real))[0] : null,
+    schnittAek,
+    schnittReal,
+    // Wer im Mittel niedriger benotet, ist der strengere. Bei Gleichstand
+    // niemand — eine Differenz von 0,0 zum "Strengeren" zu erklaeren waere
+    // eine Aussage ueber Rundung, nicht ueber Geschmack.
+    strenger: schnittAek == null || schnittReal == null || Math.abs(schnittAek - schnittReal) < 0.05
+      ? null : (schnittAek < schnittReal ? 'AEK' : 'Real'),
+    proKategorie,
+  };
+}
+
+/* ===========================================================================
+   Bilanz über alle Börsen
+   =========================================================================== */
+
+/**
+ * Alles zusammengezaehlt.
+ *
+ * Bis hierher endete jede Auswertung an der Boersengrenze: die Karte zeigte
+ * einen Abend, das Bier-Detail ein Bier. Wie viel ihr insgesamt getrunken,
+ * ausgegeben und wie sich das ueber die Abende entwickelt hat, stand nirgends.
+ */
+export function gesamtBilanz(boersen, verkostungen, katalog) {
+  const alle = verkostungen || [];
+  const gesamt = boersenStatistik(alle, katalog);
+  const nachId = new Map((katalog || []).map((b) => [b.id, b]));
+
+  // Je Boerse eine Zeile, aelteste zuerst — so liest sich der Verlauf von
+  // links nach rechts wie eine Zeitachse.
+  const proBoerse = (boersen || []).map((b) => {
+    const eigene = alle.filter((v) => v.boerse_id === b.id);
+    const s = boersenStatistik(eigene, katalog);
+    const noten = eigene.map(schnittNote).filter((n) => n != null);
+    return {
+      boerse: b,
+      biere: s.biere,
+      glaeser: s.glaeser,
+      liter: s.liter,
+      ausgaben: s.ausgaben,
+      schnitt: mittel(noten),
+      proGlas: s.glaeser ? s.ausgaben / s.glaeser : null,
+    };
+  }).sort((a, b) => String(a.boerse.datum || '').localeCompare(String(b.boerse.datum || '')));
+
+  const mitGlaesern = proBoerse.filter((e) => e.glaeser > 0);
+  const bestesVon = (liste, feld) => liste.filter((e) => e[feld] != null)
+    .sort((a, b) => b[feld] - a[feld])[0] || null;
+
+  // Literpreis je Verkostung — die ehrlichste Preisangabe, weil sie 0,3 l
+  // und 0,5 l vergleichbar macht.
+  const literpreise = alle
+    .filter((v) => v.preis != null && v.groesse_ml > 0)
+    .map((v) => ({ v, bier: nachId.get(v.bier_id) || null, preis: (Number(v.preis) / v.groesse_ml) * 1000 }));
+
+  return {
+    boersen: (boersen || []).length,
+    verschiedeneBiere: new Set(alle.map((v) => v.bier_id)).size,
+    ...gesamt,
+    proBoerse,
+    rechnung: rechnung(alle),
+    rekorde: {
+      teuersterAbend: bestesVon(mitGlaesern, 'ausgaben'),
+      groessterAbend: bestesVon(mitGlaesern, 'glaeser'),
+      besterAbend: bestesVon(mitGlaesern, 'schnitt'),
+      teuerstesGlas: literpreise.length ? [...literpreise].sort((a, b) => b.preis - a.preis)[0] : null,
+      guenstigstesGlas: literpreise.length ? [...literpreise].sort((a, b) => a.preis - b.preis)[0] : null,
+    },
+  };
+}

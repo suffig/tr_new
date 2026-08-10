@@ -11,6 +11,8 @@ import {
   PERSONEN, BIERARTEN, ladeBoersen, ladeKatalog, ladeVerkostungen,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
+  KATEGORIEN, katSpalte, noteAusKategorien, kategorienVon,
+  geschmacksDuell, gesamtBilanz,
 } from '../../../utils/bierboerse';
 
 const euro = (n) => `${(Number(n) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
@@ -18,6 +20,12 @@ const euro = (n) => `${(Number(n) || 0).toLocaleString('de-DE', { minimumFractio
 // "5.2 %" mitten im deutschen Text stehen.
 const prozent = (n) => `${Number(n).toLocaleString('de-DE', { maximumFractionDigits: 1 })} %`;
 const datum = (s) => s ? new Date(s).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '';
+// Noten immer mit einer Nachkommastelle. "7" neben "7,5" sieht aus, als waere
+// die eine Zahl genauer gemessen als die andere — dabei sind beide dasselbe
+// Mittel aus denselben Kategorien.
+const note = (n) => n == null
+  ? '—'
+  : Number(n).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
 
 /**
  * Note 0–10 als Krüge statt als Zahl.
@@ -49,7 +57,7 @@ function Kruege({ note, groesse = 14 }) {
 }
 
 /** Note setzen: elf Knöpfe, direkt antippbar. */
-function NotenWahl({ wert, onChange, farbe }) {
+function NotenWahl({ wert, onChange, farbe, beschriftung = 'Note' }) {
   return (
     <div className="flex flex-wrap gap-1">
       {[...Array(11).keys()].map((n) => (
@@ -60,10 +68,52 @@ function NotenWahl({ wert, onChange, farbe }) {
           className={`w-8 h-8 rounded-lg text-caption1 font-bold transition-colors num-tabular ${
             wert === n ? `${farbe} bg-bg-elevated ring-2 ring-current` : 'bg-bg-tertiary text-text-secondary'
           }`}
-          aria-label={`Note ${n}`}
+          aria-label={`${beschriftung} ${n}`}
         >
           {n}
         </button>
+      ))}
+    </div>
+  );
+}
+
+/**
+ * Bewertung einer Person: drei Kategorien, Gesamtnote wird gerechnet.
+ *
+ * Die Gesamtnote ist bewusst KEIN eigenes Eingabefeld. Zwei Zahlen, die
+ * dasselbe meinen, laufen sonst auseinander — man vergibt 9, 8 und 4 und
+ * traegt oben trotzdem eine 9 ein. Sie steht deshalb nur als Ergebnis da.
+ *
+ * Wer schnell durch will, vergibt nur "Geschmack" — dann ist die Gesamtnote
+ * genau diese Zahl, und der Eintrag ist nach zwei Taps fertig.
+ */
+function BewertungsBlock({ werte, onChange, farbe, altNote }) {
+  const gerechnet = noteAusKategorien(werte);
+  const anzeige = gerechnet ?? altNote ?? null;
+  const nurAlt = gerechnet == null && altNote != null;
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center gap-2">
+        <Kruege note={anzeige} groesse={16} />
+        <span className="text-caption2 text-text-tertiary">
+          {anzeige == null
+            ? 'noch nicht bewertet'
+            : `${note(anzeige)} von 10`}
+          {nurAlt ? ' (bisherige Gesamtnote)' : ''}
+        </span>
+      </div>
+      {KATEGORIEN.map((k) => (
+        <div key={k.id}>
+          <div className="flex items-baseline gap-2 mb-1">
+            <span className="text-caption2 text-text-secondary">{k.label}</span>
+            <span className="ml-auto text-caption2 num-tabular text-text-tertiary">
+              {werte[k.id] == null ? '—' : werte[k.id]}
+            </span>
+          </div>
+          <NotenWahl wert={werte[k.id]} beschriftung={k.label} farbe={farbe}
+                     onChange={(n) => onChange({ ...werte, [k.id]: n })} />
+        </div>
       ))}
     </div>
   );
@@ -123,7 +173,7 @@ export default function BierboerseTab() {
   return (
     <div className="p-4 pb-24 mobile-safe-bottom space-y-4">
       <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl">
-        {[['boersen', 'Börsen'], ['katalog', 'Alle Biere']].map(([id, label]) => (
+        {[['boersen', 'Börsen'], ['katalog', 'Alle Biere'], ['bilanz', 'Bilanz']].map(([id, label]) => (
           <button key={id} onClick={() => setAnsicht(id)}
             className={`flex-1 py-1.5 rounded-lg text-footnote font-semibold transition-colors ${
               ansicht === id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
@@ -132,7 +182,9 @@ export default function BierboerseTab() {
         ))}
       </div>
 
-      {ansicht === 'katalog' ? (
+      {ansicht === 'bilanz' ? (
+        <BilanzAnsicht boersen={boersen} verkostungen={verkostungen} katalog={katalog} />
+      ) : ansicht === 'katalog' ? (
         <KatalogAnsicht katalog={katalog} verkostungen={verkostungen} boersen={boersen}
                         onBier={(b) => setBierOffen(b)} />
       ) : (
@@ -159,6 +211,7 @@ export default function BierboerseTab() {
               offen={offen === b.id}
               onToggle={() => setOffen(offen === b.id ? null : b.id)}
               onNeuesBier={() => setFormular({ art: 'bier', boerse: b })}
+              onBoerseBearbeiten={() => setFormular({ art: 'boerse', boerse: b })}
               onBearbeiten={(v) => setFormular({ art: 'bier', boerse: b, verkostung: v })}
               onBier={(bier) => setBierOffen(bier)}
               onAendern={laden4}
@@ -183,6 +236,7 @@ export default function BierboerseTab() {
           boerse={formular.boerse}
           verkostung={formular.verkostung}
           katalog={katalog}
+          verkostungen={verkostungen}
           onSchliessen={() => setFormular(null)}
           onFertig={() => { setFormular(null); laden4(); }}
         />
@@ -192,7 +246,7 @@ export default function BierboerseTab() {
 }
 
 /** Eine Börse: Kopfzahlen, aufklappbar zur Bestenliste. */
-function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesBier, onBearbeiten, onBier, onAendern }) {
+function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesBier, onBearbeiten, onBoerseBearbeiten, onBier, onAendern }) {
   const stat = useMemo(() => boersenStatistik(verkostungen, katalog), [verkostungen, katalog]);
   const beste = useMemo(() => bestenListe(verkostungen, katalog), [verkostungen, katalog]);
   const kasse = useMemo(() => rechnung(verkostungen), [verkostungen]);
@@ -256,6 +310,10 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
 
       {offen && (
         <div className="px-4 pb-4 space-y-3 border-t border-border-light pt-3">
+          {boerse.notiz && (
+            <p className="text-caption1 text-text-secondary italic">{boerse.notiz}</p>
+          )}
+
           {/* Pro Person: getrunken, ausgegeben, wie streng bewertet */}
           <div className="grid grid-cols-2 gap-2">
             {PERSONEN.map((p) => {
@@ -284,7 +342,7 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
                     <div className="flex justify-between">
                       <span className="text-text-secondary">Ø Note</span>
                       <span className="num-tabular text-text-primary">
-                        {s.schnitt == null ? '—' : s.schnitt.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                        {note(s.schnitt)}
                       </span>
                     </div>
                   </div>
@@ -362,7 +420,7 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
                       <div className="flex items-baseline gap-2">
                         <span className="text-sm text-text-primary truncate">{v.bier?.name}</span>
                         <span className="ml-auto num-tabular text-sm font-bold text-text-primary flex-shrink-0">
-                          {v.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                          {note(v.note)}
                         </span>
                       </div>
                       <div className="text-caption2 text-text-tertiary">
@@ -432,9 +490,14 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
               <Icon name="plus" size={16} strokeWidth={2.6} className="mr-1.5" />
               Bier eintragen
             </button>
-            {/* Die ganze Börse löschen liegt bewusst hier unten im aufgeklappten
+            {/* Ändern und Löschen liegen bewusst hier unten im aufgeklappten
                 Bereich — nicht neben dem Kopf, wo man beim Auf- und Zuklappen
                 danebentippen kann. */}
+            <button onClick={onBoerseBearbeiten}
+                    className="w-11 rounded-xl bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
+                    aria-label="Bierbörse ändern" title="Bierbörse ändern">
+              <Icon name="edit" size={16} strokeWidth={2.2} />
+            </button>
             <button onClick={boerseLoeschen}
                     className="w-11 rounded-xl bg-system-red/10 text-system-red flex items-center justify-center flex-shrink-0"
                     aria-label="Bierbörse löschen" title="Bierbörse löschen">
@@ -507,7 +570,7 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm text-text-primary truncate">{e.bier.name}</span>
                   <span className="ml-auto num-tabular text-sm font-bold text-text-primary flex-shrink-0">
-                    {e.note == null ? '—' : e.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                    {note(e.note)}
                   </span>
                 </div>
                 <div className="text-caption2 text-text-tertiary">
@@ -541,7 +604,7 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
                           {s.glaeser} {s.glaeser === 1 ? 'Glas' : 'Gläser'}
                         </span>
                         <span className="num-tabular text-text-tertiary w-8 text-right flex-shrink-0">
-                          {s.schnitt == null ? '—' : s.schnitt.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                          {note(s.schnitt)}
                         </span>
                       </div>
                       <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
@@ -580,28 +643,321 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
   );
 }
 
+/**
+ * Bilanz über alle Börsen.
+ *
+ * Bis hierher endete jede Auswertung an der Börsengrenze: die Karte zeigte
+ * einen Abend, das Bier-Detail ein Bier. Wie viel ihr insgesamt getrunken und
+ * ausgegeben habt, wie sich das über die Abende entwickelt und wie weit euer
+ * Geschmack auseinanderliegt, stand nirgends.
+ */
+function BilanzAnsicht({ boersen, verkostungen, katalog }) {
+  const b = useMemo(() => gesamtBilanz(boersen, verkostungen, katalog), [boersen, verkostungen, katalog]);
+  const duell = useMemo(() => geschmacksDuell(verkostungen, katalog), [verkostungen, katalog]);
+
+  const kommaEins = (n, stellen = 1) =>
+    n == null ? '—' : Number(n).toLocaleString('de-DE', { maximumFractionDigits: stellen });
+
+  if (!boersen.length) {
+    return (
+      <div className="modern-card p-8 text-center">
+        <Icon name="chart" size={30} strokeWidth={1.8} className="text-text-tertiary mx-auto mb-2" />
+        <p className="text-text-muted">Noch keine Börse zum Auswerten.</p>
+      </div>
+    );
+  }
+
+  const maxGlaeser = Math.max(1, ...b.proBoerse.map((e) => e.glaeser));
+
+  const rekorde = [
+    b.rekorde.groessterAbend && {
+      id: 'gross', icon: 'beer', farbe: 'text-system-yellow', titel: 'Längster Abend',
+      text: b.rekorde.groessterAbend.boerse.name + ' — ' + b.rekorde.groessterAbend.glaeser + ' Gläser.',
+    },
+    b.rekorde.teuersterAbend && {
+      id: 'teuer', icon: 'euro', farbe: 'text-system-orange', titel: 'Teuerster Abend',
+      text: b.rekorde.teuersterAbend.boerse.name + ' — ' + euro(b.rekorde.teuersterAbend.ausgaben) + '.',
+    },
+    b.rekorde.besterAbend && {
+      id: 'best', icon: 'star', farbe: 'text-system-green', titel: 'Bester Abend',
+      text: b.rekorde.besterAbend.boerse.name + ' — Schnitt ' + note(b.rekorde.besterAbend.schnitt) + '.',
+    },
+    b.rekorde.teuerstesGlas && {
+      id: 'literTeuer', icon: 'trendingUp', farbe: 'text-system-red', titel: 'Teuerster Liter',
+      text: (b.rekorde.teuerstesGlas.bier?.name || 'Unbekannt') + ' — ' + euro(b.rekorde.teuerstesGlas.preis) + ' je Liter.',
+    },
+    b.rekorde.guenstigstesGlas && {
+      id: 'literGuenstig', icon: 'wallet', farbe: 'text-system-blue', titel: 'Günstigster Liter',
+      text: (b.rekorde.guenstigstesGlas.bier?.name || 'Unbekannt') + ' — ' + euro(b.rekorde.guenstigstesGlas.preis) + ' je Liter.',
+    },
+  ].filter(Boolean);
+
+  return (
+    <div className="space-y-3">
+      {/* Alles zusammen */}
+      <div className="modern-card p-4">
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            ['Börsen', b.boersen],
+            ['Biere', b.verschiedeneBiere],
+            ['Gläser', b.glaeser],
+            ['Liter', kommaEins(b.liter)],
+            ['Ausgaben', euro(b.ausgaben)],
+            ['Ø je Glas', b.glaeser ? euro(b.ausgaben / b.glaeser) : '—'],
+          ].map(([label, wert]) => (
+            <div key={label} className="text-center">
+              <div className="stat-display text-[15px] num-tabular text-text-primary truncate">{wert}</div>
+              <div className="text-caption2 text-text-tertiary">{label}</div>
+            </div>
+          ))}
+        </div>
+        {b.standardglaeser > 0 && (
+          <p className="text-caption2 text-text-tertiary mt-3 pt-3 border-t border-border-light">
+            Zusammen rund {kommaEins(b.standardglaeser)} Standardgläser reiner Alkohol
+            über {b.boersen} {b.boersen === 1 ? 'Abend' : 'Abende'}.
+          </p>
+        )}
+      </div>
+
+      {/* Je Person über alles */}
+      <div className="grid grid-cols-2 gap-2">
+        {PERSONEN.map((p) => {
+          const s = b.proPerson[p.team];
+          return (
+            <div key={p.key} className="modern-card p-3">
+              <div className="flex items-center gap-1.5 mb-2">
+                <TeamLogo team={p.key} size="xs" />
+                <span className={`text-footnote font-semibold truncate ${p.farbe}`}>{p.name}</span>
+              </div>
+              <div className="space-y-0.5 text-caption1">
+                {[
+                  ['Gläser', s.glaeser],
+                  ['Liter', kommaEins(s.ml / 1000, 2)],
+                  ['Ausgaben', euro(s.ausgaben)],
+                  ['Ø Note', note(s.schnitt)],
+                ].map(([k, v]) => (
+                  <div key={k} className="flex justify-between gap-2">
+                    <span className="text-text-secondary">{k}</span>
+                    <span className="num-tabular text-text-primary">{v}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Geschmacks-Duell */}
+      {duell.anzahl > 0 && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-2.5">Geschmacks-Duell</div>
+
+          <div className="grid grid-cols-3 gap-2 mb-3">
+            <div className="text-center">
+              <div className="stat-display text-[15px] num-tabular text-text-primary">
+                {kommaEins(duell.einigkeit, 0)} %
+              </div>
+              <div className="text-caption2 text-text-tertiary">einig</div>
+            </div>
+            <div className="text-center">
+              <div className="stat-display text-[15px] num-tabular text-text-primary">
+                {note(duell.abstandSchnitt)}
+              </div>
+              <div className="text-caption2 text-text-tertiary">Ø Abstand</div>
+            </div>
+            <div className="text-center">
+              <div className="stat-display text-[15px] num-tabular text-text-primary">{duell.anzahl}</div>
+              <div className="text-caption2 text-text-tertiary">verglichen</div>
+            </div>
+          </div>
+
+          {/* Je Kategorie: wer vergibt hier mehr Punkte */}
+          {duell.proKategorie.length > 0 && (
+            <div className="space-y-2 mb-3">
+              {duell.proKategorie.map((k) => {
+                const gesamt = (k.aek || 0) + (k.real || 0);
+                const anteilAek = gesamt ? (k.aek / gesamt) * 100 : 50;
+                return (
+                  <div key={k.id}>
+                    <div className="flex items-baseline gap-2 text-caption2 mb-1">
+                      <span className="text-text-secondary">{k.label}</span>
+                      <span className="ml-auto num-tabular text-system-blue font-semibold">{note(k.aek)}</span>
+                      <span className="text-text-tertiary">:</span>
+                      <span className="num-tabular text-system-red font-semibold">{note(k.real)}</span>
+                    </div>
+                    <div className="flex h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
+                      <div className="bg-system-blue" style={{ width: `${anteilAek}%` }} />
+                      <div className="bg-system-red" style={{ width: `${100 - anteilAek}%` }} />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="space-y-1.5 text-caption1">
+            {/* Beide Namen mit IHRER Zahl. Vorher stand da "Philip bewertet
+                strenger — 7,5 gegen 7,0", wobei die 7,5 Alexanders Schnitt
+                war: der Satz nannte den einen und begann mit dem Wert des
+                anderen. */}
+            {duell.strenger && (
+              <p className="text-text-secondary">
+                <span className="text-system-blue font-semibold">Alexander</span>
+                {' '}
+                <span className="num-tabular text-text-primary">{note(duell.schnittAek)}</span>
+                {' · '}
+                <span className="text-system-red font-semibold">Philip</span>
+                {' '}
+                <span className="num-tabular text-text-primary">{note(duell.schnittReal)}</span>
+                {' — '}
+                {duell.strenger === 'AEK' ? 'Alexander' : 'Philip'} bewertet strenger.
+              </p>
+            )}
+            {duell.streit && (
+              <p className="text-text-secondary">
+                {'Größter Streit: '}
+                <span className="text-text-primary font-semibold">{duell.streit.bier?.name || 'Unbekannt'}</span>
+                {' — '}
+                <span className="num-tabular text-system-blue">{note(duell.streit.aek)}</span>
+                {' gegen '}
+                <span className="num-tabular text-system-red">{note(duell.streit.real)}</span>.
+              </p>
+            )}
+            {duell.einigkeitsbier && (
+              <p className="text-text-secondary">
+                {'Da wart ihr euch einig: '}
+                <span className="text-text-primary font-semibold">{duell.einigkeitsbier.bier?.name || 'Unbekannt'}</span>
+                {' mit '}
+                <span className="num-tabular">
+                  {note((duell.einigkeitsbier.aek + duell.einigkeitsbier.real) / 2)}
+                </span>.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Verlauf über die Abende */}
+      {b.proBoerse.length > 1 && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-2.5">Abend für Abend</div>
+          <div className="space-y-2">
+            {b.proBoerse.map((e) => (
+              <div key={e.boerse.id}>
+                <div className="flex items-baseline gap-2 text-caption2 mb-0.5">
+                  <span className="text-text-primary truncate">{e.boerse.name}</span>
+                  <span className="ml-auto num-tabular text-text-secondary flex-shrink-0">
+                    {e.glaeser} {e.glaeser === 1 ? 'Glas' : 'Gläser'}
+                  </span>
+                  <span className="num-tabular text-text-tertiary w-8 text-right flex-shrink-0">
+                    {note(e.schnitt)}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                  <div className="h-full rounded-full bg-system-yellow"
+                       style={{ width: `${(e.glaeser / maxGlaeser) * 100}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-caption2 text-text-tertiary mt-2">
+            Balken zeigen die Gläser, die Zahl rechts die Durchschnittsnote des Abends.
+          </p>
+        </div>
+      )}
+
+      {/* Rekorde */}
+      {rekorde.length > 0 && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-2.5">Rekorde</div>
+          <div className="space-y-2.5">
+            {rekorde.map((r) => (
+              <div key={r.id} className="flex items-start gap-2.5">
+                <Icon name={r.icon} size={16} strokeWidth={2.2} className={`${r.farbe} flex-shrink-0 mt-0.5`} />
+                <div className="min-w-0">
+                  <div className="text-caption1 font-semibold text-text-primary">{r.titel}</div>
+                  <div className="text-caption1 text-text-secondary">{r.text}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Rechnung über alle Börsen — bewusst getrennt von den FIFA-Finanzen:
+          Bier ist Privatvergnügen und hat mit dem Echtgeld-Ausgleich der
+          Saison nichts zu tun. */}
+      {b.rechnung.zugeordnet > 0 && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-2">Rechnung über alles</div>
+          <div className="grid grid-cols-[1fr_auto_auto] gap-x-3 gap-y-1 text-caption1">
+            <span />
+            <span className="text-caption2 text-text-tertiary text-right">gezahlt</span>
+            <span className="text-caption2 text-text-tertiary text-right">vertrunken</span>
+            {PERSONEN.map((p) => (
+              <Fragment key={p.key}>
+                <span className={`font-semibold truncate ${p.farbe}`}>{p.name}</span>
+                <span className="num-tabular text-text-secondary text-right">{euro(b.rechnung[p.team].bezahlt)}</span>
+                <span className="num-tabular text-text-primary text-right">{euro(b.rechnung[p.team].getrunken)}</span>
+              </Fragment>
+            ))}
+          </div>
+          <div className="mt-2 pt-2 border-t border-border-light text-caption1">
+            {Math.abs(b.rechnung.ausgleich) < 0.01 ? (
+              <span className="text-system-green font-semibold">Ausgeglichen — über alle Abende hinweg quitt.</span>
+            ) : (
+              <span className="text-text-primary">
+                <span className={b.rechnung.ausgleich > 0 ? 'text-system-red font-semibold' : 'text-system-blue font-semibold'}>
+                  {b.rechnung.ausgleich > 0 ? 'Philip' : 'Alexander'}
+                </span>
+                {' schuldet '}
+                {b.rechnung.ausgleich > 0 ? 'Alexander' : 'Philip'}
+                {' insgesamt '}
+                <span className="num-tabular font-bold">{euro(Math.abs(b.rechnung.ausgleich))}</span>.
+              </span>
+            )}
+          </div>
+          {b.rechnung.offeneRunden > 0 && (
+            <p className="text-caption2 text-text-tertiary mt-1.5">
+              {b.rechnung.offeneRunden === 1 ? 'Bei einem Bier' : `Bei ${b.rechnung.offeneRunden} Bieren`} steht kein
+              Zahler ({euro(b.rechnung.offen)}) — nicht mitgerechnet.
+            </p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /** Börse anlegen. */
-function BoersenFormular({ onSchliessen, onFertig }) {
-  const [name, setName] = useState('');
-  const [ort, setOrt] = useState('');
-  const [tag, setTag] = useState(() => new Date().toISOString().slice(0, 10));
+function BoersenFormular({ boerse, onSchliessen, onFertig }) {
+  // Bisher konnte man eine Boerse nur anlegen und loeschen. Ein Tippfehler im
+  // Namen oder ein falsches Datum liessen sich nur beheben, indem man den
+  // ganzen Abend samt Bieren weggeworfen und neu eingetragen hat.
+  const [name, setName] = useState(boerse?.name || '');
+  const [ort, setOrt] = useState(boerse?.ort || '');
+  const [tag, setTag] = useState(() => boerse?.datum || new Date().toISOString().slice(0, 10));
+  const [notiz, setNotiz] = useState(boerse?.notiz || '');
   const [speichert, setSpeichert] = useState(false);
 
   const speichern = async (e) => {
     e.preventDefault();
     if (!name.trim()) { toast.error('Die Börse braucht einen Namen.'); return; }
     setSpeichert(true);
-    const { error } = await supabaseDb.insert('bierboersen', {
-      name: name.trim(), ort: ort.trim() || null, datum: tag,
-    });
+    const daten = {
+      name: name.trim(), ort: ort.trim() || null, datum: tag, notiz: notiz.trim() || null,
+    };
+    const { error } = boerse
+      ? await supabaseDb.update('bierboersen', daten, boerse.id)
+      : await supabaseDb.insert('bierboersen', daten);
     setSpeichert(false);
     if (error) { toast.error('Konnte nicht gespeichert werden.'); return; }
-    toast.success('Bierbörse angelegt.');
+    toast.success(boerse ? 'Geändert.' : 'Bierbörse angelegt.');
     onFertig();
   };
 
   return (
-    <Modal titel="Neue Bierbörse" onSchliessen={onSchliessen}>
+    <Modal titel={boerse ? 'Bierbörse ändern' : 'Neue Bierbörse'} onSchliessen={onSchliessen}>
       <form onSubmit={speichern} className="space-y-3">
         <label className="block">
           <span className="text-footnote text-text-secondary">Name *</span>
@@ -616,8 +972,14 @@ function BoersenFormular({ onSchliessen, onFertig }) {
           <span className="text-footnote text-text-secondary">Datum</span>
           <input type="date" value={tag} onChange={(e) => setTag(e.target.value)} className="form-input w-full mt-1" />
         </label>
+        <label className="block">
+          <span className="text-footnote text-text-secondary">Notiz</span>
+          <textarea value={notiz} onChange={(e) => setNotiz(e.target.value)} rows={2}
+                    className="form-input w-full mt-1 resize-none"
+                    placeholder="Wer war dabei, wie war der Abend …" />
+        </label>
         <button type="submit" disabled={speichert} className="btn-primary w-full">
-          {speichert ? 'Speichert…' : 'Anlegen'}
+          {speichert ? 'Speichert…' : boerse ? 'Änderungen sichern' : 'Anlegen'}
         </button>
       </form>
     </Modal>
@@ -625,7 +987,7 @@ function BoersenFormular({ onSchliessen, onFertig }) {
 }
 
 /** Bier zu einer Börse eintragen oder ändern. */
-function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
+function BierFormular({ boerse, verkostung, katalog, verkostungen, onSchliessen, onFertig }) {
   const vorhandenes = verkostung ? katalog.find((b) => b.id === verkostung.bier_id) : null;
   const [name, setName] = useState(vorhandenes?.name || '');
   const [brauerei, setBrauerei] = useState(vorhandenes?.brauerei || '');
@@ -635,10 +997,17 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
   const [ml, setMl] = useState(alsText(verkostung?.groesse_ml));
   const [anzahlAek, setAnzahlAek] = useState(verkostung?.anzahl_aek ?? 0);
   const [anzahlReal, setAnzahlReal] = useState(verkostung?.anzahl_real ?? 0);
-  const [noteAek, setNoteAek] = useState(verkostung?.note_aek ?? null);
-  const [noteReal, setNoteReal] = useState(verkostung?.note_real ?? null);
+  const [katAek, setKatAek] = useState(() => kategorienVon(verkostung, 'aek'));
+  const [katReal, setKatReal] = useState(() => kategorienVon(verkostung, 'real'));
+  const [notiz, setNotiz] = useState(verkostung?.notiz || '');
   const [zahler, setZahler] = useState(verkostung?.bezahlt_von ?? null);
   const [speichert, setSpeichert] = useState(false);
+
+  // Gesamtnoten aus der Zeit vor den Kategorien. Sie bleiben stehen, solange
+  // niemand eine Kategorie vergibt — sonst verlöre ein alter Eintrag seine
+  // Bewertung, nur weil jemand den Preis korrigiert.
+  const altNoteAek = verkostung?.note_aek ?? null;
+  const altNoteReal = verkostung?.note_real ?? null;
 
   const summe = (zahl(preis) || 0) * ((Number(anzahlAek) || 0) + (Number(anzahlReal) || 0));
 
@@ -652,7 +1021,21 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
   const uebernehmen = (b) => {
     setName(b.name); setBrauerei(b.brauerei || ''); setArt(b.art || '');
     setAlkohol(alsText(b.alkohol));
+    // Preis und Größe von der letzten Verkostung desselben Biers. Meist ist es
+    // dieselbe Kneipe und dieselbe Flasche — und wenn nicht, steht die Zahl
+    // wenigstens schon im Feld und muss nur geändert werden.
+    const letzte = (verkostungen || [])
+      .filter((v) => v.bier_id === b.id && (v.preis != null || v.groesse_ml != null))
+      .sort((x, y) => (y.id || 0) - (x.id || 0))[0];
+    if (letzte) {
+      if (!zahl(preis) && letzte.preis != null) setPreis(alsText(letzte.preis));
+      if (!zahl(ml) && letzte.groesse_ml != null) setMl(alsText(letzte.groesse_ml));
+    }
   };
+
+  // Gängige Glasgrößen. Auf dem Handy, spät am Abend, ist ein Tap auf "0,5"
+  // etwas anderes als drei Ziffern über die Zahlentastatur.
+  const GROESSEN = [200, 300, 330, 400, 500];
 
   const speichern = async (e) => {
     e.preventDefault();
@@ -676,10 +1059,18 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
         groesse_ml: g,
         anzahl_aek: Number(anzahlAek) || 0,
         anzahl_real: Number(anzahlReal) || 0,
-        note_aek: noteAek,
-        note_real: noteReal,
+        // Die Gesamtnote wird gerechnet, nicht getippt — sie ist die Zahl, mit
+        // der alle Auswertungen arbeiten. Ohne vergebene Kategorie bleibt die
+        // bisherige stehen (Eintraege von vor der Umstellung).
+        note_aek: noteAusKategorien(katAek) ?? altNoteAek,
+        note_real: noteAusKategorien(katReal) ?? altNoteReal,
+        notiz: notiz.trim() || null,
         bezahlt_von: zahler,
       };
+      for (const k of KATEGORIEN) {
+        daten[katSpalte(k.id, 'aek')] = katAek[k.id] ?? null;
+        daten[katSpalte(k.id, 'real')] = katReal[k.id] ?? null;
+      }
       const { error } = verkostung
         ? await supabaseDb.update('bier_verkostungen', daten, verkostung.id)
         : await supabaseDb.insert('bier_verkostungen', daten);
@@ -738,19 +1129,37 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
             <ZahlFeld wert={ml} onChange={setMl} ganzzahl
                       className="form-input w-full mt-1" placeholder="500" />
           </label>
+          <div className="col-span-2 flex flex-wrap gap-1.5 -mt-1">
+            {GROESSEN.map((g) => (
+              <button key={g} type="button"
+                      onClick={() => setMl(String(ml) === String(g) ? '' : String(g))}
+                      className={`px-2.5 py-1 rounded-lg text-caption2 font-semibold transition-colors num-tabular ${
+                        String(ml) === String(g)
+                          ? 'bg-bg-elevated ring-2 ring-current text-system-yellow'
+                          : 'bg-bg-tertiary text-text-secondary'}`}>
+                {(g / 1000).toLocaleString('de-DE', { minimumFractionDigits: 1 })} l
+              </button>
+            ))}
+          </div>
           <label className="block col-span-2">
             <span className="text-footnote text-text-secondary">Preis je Glas €</span>
             <ZahlFeld wert={preis} onChange={setPreis}
                       className="form-input w-full mt-1" placeholder="4,50" />
           </label>
+          {zahl(preis) > 0 && zahl(ml) > 0 && (
+            <p className="col-span-2 -mt-1 text-caption2 text-text-tertiary num-tabular">
+              Literpreis: {euro((zahl(preis) / zahl(ml)) * 1000)}
+            </p>
+          )}
         </div>
 
-        {/* Anzahl und Note getrennt je Person */}
+        {/* Anzahl und Bewertung getrennt je Person */}
         {PERSONEN.map((p) => {
           const anzahl = p.key === 'aek' ? anzahlAek : anzahlReal;
           const setAnzahl = p.key === 'aek' ? setAnzahlAek : setAnzahlReal;
-          const note = p.key === 'aek' ? noteAek : noteReal;
-          const setNote = p.key === 'aek' ? setNoteAek : setNoteReal;
+          const kat = p.key === 'aek' ? katAek : katReal;
+          const setKat = p.key === 'aek' ? setKatAek : setKatReal;
+          const altNote = p.key === 'aek' ? altNoteAek : altNoteReal;
           return (
             <div key={p.key} className="panel-gray rounded-xl p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -769,16 +1178,17 @@ function BierFormular({ boerse, verkostung, katalog, onSchliessen, onFertig }) {
                           aria-label="Mehr">+</button>
                 </div>
               </div>
-              <div className="flex items-center gap-2 mb-1.5">
-                <Kruege note={note} groesse={16} />
-                <span className="text-caption2 text-text-tertiary">
-                  {note == null ? 'noch nicht bewertet' : `${note} von 10`}
-                </span>
-              </div>
-              <NotenWahl wert={note} onChange={setNote} farbe={p.farbe} />
+              <BewertungsBlock werte={kat} onChange={setKat} farbe={p.farbe} altNote={altNote} />
             </div>
           );
         })}
+
+        <label className="block">
+          <span className="text-footnote text-text-secondary">Notiz</span>
+          <textarea value={notiz} onChange={(e) => setNotiz(e.target.value)} rows={2}
+                    className="form-input w-full mt-1 resize-none"
+                    placeholder="z. B. „viel zu warm ausgeschenkt“" />
+        </label>
 
         {/* Wer die Runde bezahlt hat. Bleibt bewusst freiwillig — ein Abend
             ohne Zahler ist immer noch ein erfasster Abend, nur eben einer
@@ -830,6 +1240,23 @@ function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
   const literSchnitt = v.literpreise.length
     ? v.literpreise.reduce((s, p) => s + p, 0) / v.literpreise.length : null;
 
+  // Je Kategorie der Schnitt beider ueber alle Verkostungen dieses Biers.
+  // Die Gesamtnote sagt "7,3" — hier sieht man, ob das ein rundes Bier war
+  // oder eines, das nur wegen des Preises so weit oben steht.
+  const proKategorie = useMemo(() => {
+    const eigene = (verkostungen || []).filter((x) => x.bier_id === bier.id);
+    return KATEGORIEN.map((k) => {
+      const werte = [];
+      for (const x of eigene) {
+        for (const key of ['aek', 'real']) {
+          const n = x[katSpalte(k.id, key)];
+          if (n != null) werte.push(Number(n));
+        }
+      }
+      return { ...k, schnitt: werte.length ? werte.reduce((a, b) => a + b, 0) / werte.length : null };
+    }).filter((k) => k.schnitt != null);
+  }, [bier.id, verkostungen]);
+
   return (
     <Modal titel={bier.name} onSchliessen={onSchliessen}>
       <div className="space-y-3">
@@ -839,7 +1266,7 @@ function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
               bier.land].filter(Boolean).join(' · ') || 'Keine weiteren Angaben'}
           </div>
           <div className="stat-display text-[34px] num-tabular text-text-primary mt-2 leading-none">
-            {v.schnitt == null ? '—' : v.schnitt.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+            {note(v.schnitt)}
           </div>
           <div className="mt-1.5"><Kruege note={v.schnitt} groesse={20} /></div>
           <div className="text-caption2 text-text-tertiary mt-1">
@@ -872,7 +1299,7 @@ function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
                 </div>
                 <div className="flex items-baseline gap-1.5">
                   <span className="stat-display text-[17px] num-tabular text-text-primary">
-                    {s.schnitt == null ? '—' : s.schnitt.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                    {note(s.schnitt)}
                   </span>
                   <span className="text-caption2 text-text-tertiary">
                     {s.glaeser} {s.glaeser === 1 ? 'Glas' : 'Gläser'}
@@ -883,13 +1310,33 @@ function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
           })}
         </div>
 
+        {proKategorie.length > 0 && (
+          <div className="panel-gray rounded-xl p-3">
+            <div className="text-caption2 text-text-tertiary mb-2">Aufgeschlüsselt</div>
+            <div className="space-y-2">
+              {proKategorie.map((k) => (
+                <div key={k.id}>
+                  <div className="flex items-baseline gap-2 text-caption2 mb-0.5">
+                    <span className="text-text-secondary">{k.label}</span>
+                    <span className="ml-auto num-tabular text-text-primary font-semibold">{note(k.schnitt)}</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                    <div className="h-full rounded-full bg-system-yellow"
+                         style={{ width: `${(k.schnitt / 10) * 100}%` }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         {v.einig != null && (
           <p className="text-caption1 text-text-secondary">
             {v.einig < 0.5
               ? 'Da sind sich beide einig.'
               : v.einig >= 3
-                ? `Streitfall — ${v.einig.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Punkte auseinander.`
-                : `${v.einig.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Punkte auseinander.`}
+                ? `Streitfall — ${note(v.einig)} Punkte auseinander.`
+                : `${note(v.einig)} Punkte auseinander.`}
           </p>
         )}
 
@@ -939,7 +1386,7 @@ function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
                   </div>
                   <Kruege note={e.note} />
                   <span className="num-tabular text-sm font-bold text-text-primary w-8 text-right flex-shrink-0">
-                    {e.note == null ? '—' : e.note.toLocaleString('de-DE', { maximumFractionDigits: 1 })}
+                    {note(e.note)}
                   </span>
                 </div>
               );
