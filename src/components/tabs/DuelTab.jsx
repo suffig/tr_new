@@ -161,6 +161,58 @@ function tordifferenzen(matches) {
     .map(([diff, e]) => ({ diff, ...e, gesamt: e.aek + e.real }));
 }
 
+/**
+ * Ein Kräfteverhältnis: eine Zeile, zwei Seiten, eine Trennlinie.
+ *
+ * Die Kennzahlen dieser App sind fast alle paarweise — 242 gegen 622 Siege,
+ * 2075 gegen 3319 Tore. Als zwei Zahlen in einer Kachel muss man sie im Kopf
+ * ins Verhältnis setzen. Als geteilte Fläche steht das Verhältnis selbst da:
+ * wo die Trennlinie sitzt, ist die Aussage.
+ *
+ * Die Zahlen bleiben trotzdem lesbar an den Enden — ein Balken allein sagt
+ * "ungefähr zwei Drittel", nicht "622".
+ */
+function Kraefteverhaeltnis({ label, zusatz, aek, real, anzeige, aekName, realName }) {
+  const a = Math.max(0, Number(aek) || 0);
+  const r = Math.max(0, Number(real) || 0);
+  const summe = a + r;
+  // Ohne Daten eine ruhige, mittige Linie statt eines zufälligen Ausschlags.
+  const anteilA = summe > 0 ? (a / summe) * 100 : 50;
+  const zeig = anzeige || ((n) => n.toLocaleString('de-DE'));
+  const vorn = summe === 0 ? null : a > r ? 'aek' : r > a ? 'real' : null;
+
+  return (
+    <div className="py-2.5">
+      <div className="flex items-baseline gap-2 mb-1.5">
+        <span className={`text-callout font-bold num-tabular ${
+          vorn === 'aek' ? 'text-system-blue' : 'text-text-secondary'}`}>
+          {zeig(a)}
+        </span>
+        <span className="flex-1 text-center text-caption2 text-text-tertiary truncate">
+          {label}
+          {zusatz ? <span className="block text-[10px] opacity-80">{zusatz}</span> : null}
+        </span>
+        <span className={`text-callout font-bold num-tabular ${
+          vorn === 'real' ? 'text-system-red' : 'text-text-secondary'}`}>
+          {zeig(r)}
+        </span>
+      </div>
+      <div className="relative h-2 rounded-full overflow-hidden bg-bg-tertiary flex">
+        <div className="bg-system-blue h-full transition-all duration-500"
+             style={{ width: `${anteilA}%` }} />
+        <div className="bg-system-red h-full transition-all duration-500"
+             style={{ width: `${100 - anteilA}%` }} />
+        {/* Die Mitte als Bezug: ohne sie sieht man zwar, wo die Trennlinie
+            liegt, aber nicht, wie weit sie vom Gleichstand entfernt ist. */}
+        <div className="absolute inset-y-0 left-1/2 w-px bg-bg-secondary/70" />
+      </div>
+      <div className="sr-only">
+        {aekName} {zeig(a)}, {realName} {zeig(r)}
+      </div>
+    </div>
+  );
+}
+
 /** Zu-Null-Siege und laengste Siegesserie je Person. */
 function serienUndZuNull(matches) {
   // chronoAsc ist ein Vergleicher, keine Sortierfunktion.
@@ -666,7 +718,6 @@ export default function DuelTab() {
   // Fortschrittsbalken.
   const besondereMomente = achievements.filter((a) => a.unlocked && a.context);
 
-  const prizeDiff = d.prizeA - d.prizeR;
   // Schnitt aus den Saisons, deren Tore ueberliefert sind — nicht aus allen
   // Spielen: sonst teilte man 6707 Tore durch 902 Spiele, obwohl aus FC15/FC16
   // keine Tore bekannt sind.
@@ -781,21 +832,46 @@ export default function DuelTab() {
         </div>
       </Karte>
 
-      {/* Stat grid */}
-      <div className="grid grid-cols-2 gap-3">
-        {/* Tore ueber alle Saisons, die welche ueberliefert haben — FC15 und
-            FC16 zaehlten nur Siege, deshalb steht die Zahl der Saisons dabei. */}
-        <StatCard iconName="football" iconClass="text-system-green" label="Torverhältnis">
-          <span className="text-title3 font-bold">
-            <span className="text-system-blue">{gesamt.aekG}</span>
-            <span className="text-text-tertiary"> : </span>
-            <span className="text-system-red">{gesamt.realG}</span>
-          </span>
-          <div className="text-[11px] text-text-tertiary mt-0.5">
-            Ø {toreProSpiel} Tore/Spiel · {gesamt.toreAus} Saisons
-          </div>
-        </StatCard>
+      {/* Kräfteverhältnis statt Kacheln.
+          Torverhältnis, Siegquote und Preisgeld standen als drei Kacheln
+          nebeneinander, jede mit zwei Zahlen und einem Doppelpunkt. Die
+          Siegquote war dabei die Prozentfassung derselben Zahlen, die die
+          Kopfkarte schon als Balken zeigt. Jetzt eine Fläche, die sich
+          teilt — und die Quote braucht es nicht mehr, sie IST der Balken. */}
+      <div className="modern-card p-4">
+        <div className="text-footnote font-semibold text-text-muted mb-1">Kräfteverhältnis</div>
+        <div className="divide-y divide-border-light">
+          <Kraefteverhaeltnis
+            label="Siege" zusatz={`${gesamt.total} Spiele${gesamt.draws ? ` · ${gesamt.draws} Remis` : ''}`}
+            aek={gesamt.aekW} real={gesamt.realW}
+            aekName={aekName} realName={realName} />
+          <Kraefteverhaeltnis
+            label="Tore" zusatz={`Ø ${toreProSpiel} je Spiel · ${gesamt.toreAus} Saisons`}
+            aek={gesamt.aekG} real={gesamt.realG}
+            aekName={aekName} realName={realName} />
+          <Kraefteverhaeltnis
+            label="Preisgeld" zusatz="erfasst"
+            aek={d.prizeA} real={d.prizeR}
+            anzeige={(n) => fmtEuro(n)}
+            aekName={aekName} realName={realName} />
+          {(serien.zuNull.AEK + serien.zuNull.Real) > 0 && (
+            <Kraefteverhaeltnis
+              label="Zu-Null-Siege" zusatz="erfasst"
+              aek={serien.zuNull.AEK} real={serien.zuNull.Real}
+              aekName={aekName} realName={realName} />
+          )}
+          {(serien.laengste.AEK + serien.laengste.Real) > 0 && (
+            <Kraefteverhaeltnis
+              label="Längste Serie" zusatz="Siege in Folge · erfasst"
+              aek={serien.laengste.AEK} real={serien.laengste.Real}
+              aekName={aekName} realName={realName} />
+          )}
+        </div>
+      </div>
 
+      {/* Was nur einer Seite gehört, bleibt eine Kachel — ein Balken für
+          "aktuelle Serie" hätte nichts zu teilen. */}
+      <div className="grid grid-cols-2 gap-3">
         <StatCard iconName="zap" iconClass="text-system-orange" label="Aktuelle Serie" zusatz="erfasst">
           {d.streak ? (
             <>
@@ -822,40 +898,6 @@ export default function DuelTab() {
               </div>
             </>
           ) : <span className="text-footnote text-text-tertiary">—</span>}
-        </StatCard>
-
-        <StatCard iconName="euro" iconClass="text-system-green" label="Preisgeld-Saldo" zusatz="erfasst">
-          {prizeDiff === 0 ? (
-            <span className="text-title3 font-bold text-text-tertiary">±0</span>
-          ) : (
-            <>
-              <span className={`text-title3 font-bold ${prizeDiff > 0 ? 'text-system-blue' : 'text-system-red'}`}>
-                {prizeDiff > 0 ? '+' : ''}{fmtEuro(prizeDiff)}
-              </span>
-              <div className="text-[11px] text-text-tertiary mt-0.5">
-                Vorsprung {prizeDiff > 0 ? aekName : realName}
-              </div>
-            </>
-          )}
-        </StatCard>
-
-        {/* Karte "Torschuetzenkoenig" entfernt: das war Platz 1 der
-            Top-Torschuetzen-Liste ein Stueck weiter unten, mit denselben
-            Zahlen und derselben Saison-Aufschluesselung. */}
-
-        {/* Hier stand nochmal die Bilanz — dieselbe Zahl wie ganz oben, nur
-            ohne die Altsaisons. Die Quote sagt etwas Neues. */}
-        <StatCard iconName="chart" iconClass="text-system-teal" label="Siegquote">
-          <span className="text-title3 font-bold">
-            <span className="text-system-blue">{Math.round((gesamt.aekW / gesamt.total) * 100)} %</span>
-            <span className="text-text-tertiary"> : </span>
-            <span className="text-system-red">{Math.round((gesamt.realW / gesamt.total) * 100)} %</span>
-          </span>
-          <div className="text-[11px] text-text-tertiary mt-0.5">
-            {gesamt.draws > 0
-              ? `${Math.round((gesamt.draws / gesamt.total) * 100)} % unentschieden`
-              : 'keine Unentschieden'}
-          </div>
         </StatCard>
       </div>
 
