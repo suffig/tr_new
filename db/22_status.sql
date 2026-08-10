@@ -88,9 +88,14 @@ tore as (
               then (eintrag ->> 'count')::int else 1 end as anzahl
     from eintraege
 ),
+-- Ohne Team gruppiert: ein Spieler, der inzwischen bei "Ehemalige" steht,
+-- hat seine Tore unter AEK oder Real erzielt. Ein Join auf das Team liesse
+-- ihn leer ausgehen und meldete seine gesamten Tore als "ohne Zuordnung" —
+-- im letzten Bericht traf das Benzema und Ronaldo in FC26, ausgerechnet in
+-- der Saison mit 100 % Deckung.
 aus_spielen as (
-  select team, fifa_version, name, sum(anzahl)::int as tore
-    from tore where name is not null group by 1, 2, 3
+  select fifa_version, name, sum(anzahl)::int as tore
+    from tore where name is not null group by 1, 2
 ),
 abweichung as (
   select p.name, p.team, coalesce(p.fifa_version, '(ohne)') as version,
@@ -99,7 +104,7 @@ abweichung as (
          coalesce(p.goals, 0) - coalesce(s.tore, 0) as differenz
     from public.players p
     left join aus_spielen s
-      on s.name = p.name and s.team = p.team
+      on s.name = p.name
      and coalesce(s.fifa_version, '') = coalesce(p.fifa_version, '')
    where coalesce(p.goals, 0) <> coalesce(s.tore, 0)
 ),

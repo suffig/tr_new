@@ -206,42 +206,19 @@ class StatsCalculator {
     }).sort((a, b) => (b.goals || 0) - (a.goals || 0));
   }
 
+  /**
+   * Wie viele Tore des Spielers stehen in den Torschuetzenlisten?
+   *
+   * Hier stand die Parserlogik ein zweites Mal, und mit demselben Fehler wie
+   * in torschuetzen(): gezaehlt wurde nur bei playerTeam === 'AEK' oder
+   * 'Real'. Wer inzwischen bei "Ehemalige" gefuehrt wird, kam damit auf 0 —
+   * obwohl seine Tore sauber in den Listen stehen.
+   */
   countPlayerGoalsFromMatches(playerName, playerTeam) {
-    let totalGoals = 0;
-    
-    this.matches.forEach(match => {
-      if (playerTeam === 'AEK' && match.goalslista) {
-        try {
-          const goals = Array.isArray(match.goalslista) ? match.goalslista : 
-                       (typeof match.goalslista === 'string' ? JSON.parse(match.goalslista) : []);
-          
-          goals.forEach(goal => {
-            const goalPlayer = typeof goal === 'string' ? goal : goal.player;
-            const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
-            if (goalPlayer === playerName) totalGoals += goalCount;
-          });
-        } catch (e) {
-          console.warn('Error parsing AEK goals list:', e);
-        }
-      }
-      
-      if (playerTeam === 'Real' && match.goalslistb) {
-        try {
-          const goals = Array.isArray(match.goalslistb) ? match.goalslistb : 
-                       (typeof match.goalslistb === 'string' ? JSON.parse(match.goalslistb) : []);
-          
-          goals.forEach(goal => {
-            const goalPlayer = typeof goal === 'string' ? goal : goal.player;
-            const goalCount = typeof goal === 'string' ? 1 : (goal.count || 1);
-            if (goalPlayer === playerName) totalGoals += goalCount;
-          });
-        } catch (e) {
-          console.warn('Error parsing Real goals list:', e);
-        }
-      }
-    });
-    
-    return totalGoals;
+    return this.matches.reduce((summe, match) =>
+      summe + this.torschuetzenFuerSpieler(match, playerTeam)
+        .filter((t) => t.player === playerName)
+        .reduce((s, t) => s + t.count, 0), 0);
   }
 
   /**
@@ -264,6 +241,24 @@ class StatsCalculator {
   }
 
   /**
+   * Die Torschuetzenliste, in der ein bestimmter SPIELER stehen kann.
+   *
+   * Ein Spiel fuehrt zwei Listen, eine je Team. Wer bei "Ehemalige" steht,
+   * hat seine Tore aber unter AEK oder Real erzielt — sein Spielereintrag
+   * wurde nur spaeter umgehaengt. Fuer den muss man in beiden Listen suchen.
+   *
+   * Ohne diese Unterscheidung galt `team === 'AEK' ? liste_a : liste_b`, und
+   * jeder Ehemalige landete in Reals Liste: "Trifft in 0 Spielen", dazu die
+   * vollen Tore als "ohne Spiel". Im Statusbericht fielen dadurch Benzema und
+   * Ronaldo in FC26 mit 60 Toren "ohne Zuordnung" auf — in einer Saison, in
+   * der ausnahmslos jedes Spiel seine Schuetzen hat.
+   */
+  torschuetzenFuerSpieler(match, team) {
+    if (team === 'AEK' || team === 'Real') return this.torschuetzen(match, team);
+    return [...this.torschuetzen(match, 'AEK'), ...this.torschuetzen(match, 'Real')];
+  }
+
+  /**
    * In wie vielen Spielen hat der Spieler getroffen?
    *
    * Hier stand `countPlayerMatches`, das die EINSAETZE zaehlen sollte. Die
@@ -283,7 +278,7 @@ class StatsCalculator {
   countMatchesWithGoal(playerName, playerTeam) {
     if (!playerName || !playerTeam) return 0;
     return this.matches.filter((match) =>
-      this.torschuetzen(match, playerTeam).some((t) => t.player === playerName)
+      this.torschuetzenFuerSpieler(match, playerTeam).some((t) => t.player === playerName)
     ).length;
   }
 
@@ -314,7 +309,7 @@ class StatsCalculator {
     if (!playerName || !playerTeam) return 0;
     let best = 0;
     for (const match of this.matches) {
-      const tore = this.torschuetzen(match, playerTeam)
+      const tore = this.torschuetzenFuerSpieler(match, playerTeam)
         .filter((t) => t.player === playerName)
         .reduce((s, t) => s + t.count, 0);
       if (tore > best) best = tore;
