@@ -157,6 +157,8 @@ export default function AddMatchTab() {
   // Speichern läuft dann über submitMatch(editId) → alte Buchung wird komplett
   // zurückgerollt und ersetzt (matchService), fifa_version bleibt erhalten.
   const [editingMatchId, setEditingMatchId] = useState(null);
+  // Wurde dieses Spiel bereits ohne vollständige Torschützen gespeichert?
+  const [lueckeBeimLaden, setLueckeBeimLaden] = useState(false);
 
   // Übergabe aus MatchesTab („Bearbeiten“ am Spiel): Match liegt in sessionStorage.
   useEffect(() => {
@@ -168,8 +170,23 @@ export default function AddMatchTab() {
       const A = splitScorers(m.goalslista), B = splitScorers(m.goalslistb);
       // Liste A enthält Eigentore des Gegners (Real) → zählen als ownGoalsB, umgekehrt für B
       const ownGoalsB = A.own, ownGoalsA = B.own;
-      const goalsa = A.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsB;
-      const goalsb = B.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsA;
+      const ausListeA = A.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsB;
+      const ausListeB = B.scorers.reduce((s, g) => s + g.count, 0) + ownGoalsA;
+      // Das gespeicherte Ergebnis gilt, nicht die Summe der Schützenliste.
+      //
+      // Vorher wurde der Spielstand ausschließlich aus der Liste gerechnet.
+      // Bei den Spielen ohne Torschützen — laut Statusbericht 135 Stück aus
+      // FC25 — lud ein gespeichertes 3:2 damit als 0:0: das echte Ergebnis
+      // war beim Öffnen weg. Speichern ging auch nicht ("mindestens ein Tor"),
+      // und wer einen einzigen Schützen nachtrug, hätte aus dem 3:2 ein 1:0
+      // gemacht.
+      const goalsa = Math.max(ausListeA, Number(m.goalsa) || 0);
+      const goalsb = Math.max(ausListeB, Number(m.goalsb) || 0);
+      // Merken, dass dieses Spiel schon mit Lücke gespeichert war. Nur dann
+      // ist die fehlende Schützenliste ein Hinweis statt einer Sperre — sonst
+      // käme man an die Altlasten nicht mehr heran, um etwa das Datum zu
+      // korrigieren. Bei NEUEN Spielen bleibt es bei der Sperre.
+      setLueckeBeimLaden(goalsa > ausListeA || goalsb > ausListeB);
       const { prizeaek, prizereal } = MatchBusinessLogic.calculatePrizeMoney(
         goalsa, goalsb, m.yellowa || 0, m.reda || 0, m.yellowb || 0, m.redb || 0
       );
@@ -376,20 +393,26 @@ export default function AddMatchTab() {
     // SdS (Spieler des Spiels) must be selected
     if (!formData.manofthematch || formData.manofthematch.trim() === '') return false;
     
-    // If goals are scored, there must be goal scorers (except for own goals only)
-    if (formData.goalsa > 0) {
-      const playerGoalsA = formData.goalslista.reduce((sum, scorer) => sum + scorer.count, 0);
-      const ownGoalsFromB = formData.ownGoalsB || 0;
-      if (playerGoalsA + ownGoalsFromB < formData.goalsa) return false;
+    // Zu jedem Tor gehört ein Schütze. Ausnahme: ein Spiel, das schon mit
+    // dieser Lücke in der Datenbank steht — dort ist es ein Hinweis, sonst
+    // liessen sich die Altlasten aus FC25 nicht einmal mehr im Datum
+    // korrigieren, ohne die Schützen von damals zu rekonstruieren.
+    if (!lueckeBeimLaden) {
+      if (fehlendeSchuetzen('AEK') > 0) return false;
+      if (fehlendeSchuetzen('Real') > 0) return false;
     }
-    
-    if (formData.goalsb > 0) {
-      const playerGoalsB = formData.goalslistb.reduce((sum, scorer) => sum + scorer.count, 0);
-      const ownGoalsFromA = formData.ownGoalsA || 0;
-      if (playerGoalsB + ownGoalsFromA < formData.goalsb) return false;
-    }
-    
+
     return true;
+  };
+
+  /** Wie viele Tore eines Teams haben (noch) keinen Schützen? */
+  const fehlendeSchuetzen = (team) => {
+    const tore = team === 'AEK' ? formData.goalsa : formData.goalsb;
+    if (!(tore > 0)) return 0;
+    const liste = team === 'AEK' ? formData.goalslista : formData.goalslistb;
+    const eigentore = (team === 'AEK' ? formData.ownGoalsB : formData.ownGoalsA) || 0;
+    const belegt = liste.reduce((sum, s) => sum + s.count, 0) + eigentore;
+    return Math.max(0, tore - belegt);
   };
 
   // Get validation status for UI feedback
@@ -401,20 +424,15 @@ export default function AddMatchTab() {
     if (formData.goalsa === formData.goalsb && (formData.goalsa > 0 || formData.goalsb > 0)) issues.push('Unentschieden nicht erlaubt');
     if (!formData.manofthematch || formData.manofthematch.trim() === '') issues.push('Spieler des Spiels fehlt');
     
-    // Check goal scorer validation
-    if (formData.goalsa > 0) {
-      const playerGoalsA = formData.goalslista.reduce((sum, scorer) => sum + scorer.count, 0);
-      const ownGoalsFromB = formData.ownGoalsB || 0;
-      if (playerGoalsA + ownGoalsFromB < formData.goalsa) {
-        issues.push(`${getTeamDisplay('AEK')} Torschützen fehlen (${playerGoalsA + ownGoalsFromB}/${formData.goalsa})`);
-      }
-    }
-    
-    if (formData.goalsb > 0) {
-      const playerGoalsB = formData.goalslistb.reduce((sum, scorer) => sum + scorer.count, 0);
-      const ownGoalsFromA = formData.ownGoalsA || 0;
-      if (playerGoalsB + ownGoalsFromA < formData.goalsb) {
-        issues.push(`${getTeamDisplay('Real')} Torschützen fehlen (${playerGoalsB + ownGoalsFromA}/${formData.goalsb})`);
+    // Fehlende Schützen sind bei Altlasten kein Hinderungsgrund mehr, sollen
+    // aber trotzdem in der Liste stehen — nur eben als Hinweis.
+    if (!lueckeBeimLaden) {
+      for (const team of ['AEK', 'Real']) {
+        const fehlt = fehlendeSchuetzen(team);
+        if (fehlt > 0) {
+          const tore = team === 'AEK' ? formData.goalsa : formData.goalsb;
+          issues.push(`${getTeamDisplay(team)} Torschützen fehlen (${tore - fehlt}/${tore})`);
+        }
       }
     }
     
@@ -1013,6 +1031,38 @@ export default function AddMatchTab() {
                       </div>
                       <div className="text-xs text-system-blue italic">
                         Kontostand: {getTeamDisplay('AEK')} {echtgeldPreview.aekBalance.toLocaleString()}€ / {getTeamDisplay('Real')} {echtgeldPreview.realBalance.toLocaleString()}€
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Hinweis auf fehlende Torschützen.
+                    Bei einem NEUEN Spiel sperrt die Prüfung ohnehin — dann
+                    steht der Grund unten in der Liste. Dieser Kasten ist für
+                    die Altlasten aus FC25: dort ist Speichern erlaubt, damit
+                    man etwa das Datum korrigieren kann, aber es soll nicht
+                    unbemerkt bleiben. */}
+                {lueckeBeimLaden && (fehlendeSchuetzen('AEK') > 0 || fehlendeSchuetzen('Real') > 0) && (
+                  <div className="flex items-start gap-2.5 p-3 rounded-xl bg-system-orange/10">
+                    <Icon name="warning" size={16} strokeWidth={2.2}
+                          className="text-system-orange flex-shrink-0 mt-0.5" />
+                    <div className="text-caption1 text-text-secondary">
+                      <div className="font-semibold text-text-primary mb-0.5">
+                        Torschützen fehlen
+                      </div>
+                      {['AEK', 'Real'].map((team) => {
+                        const fehlt = fehlendeSchuetzen(team);
+                        if (fehlt === 0) return null;
+                        const tore = team === 'AEK' ? formData.goalsa : formData.goalsb;
+                        return (
+                          <div key={team} className="num-tabular">
+                            {getTeamDisplay(team)}: {tore - fehlt} von {tore} Toren zugeordnet
+                          </div>
+                        );
+                      })}
+                      <div className="mt-1">
+                        Dieses Spiel wurde ohne vollständige Schützen gespeichert. Es lässt sich so
+                        auch wieder sichern — die Spieler-Statistik zählt diese Tore aber niemandem zu.
                       </div>
                     </div>
                   </div>
