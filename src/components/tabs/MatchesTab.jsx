@@ -335,8 +335,13 @@ export default function MatchesTab({ onNavigate, user }) {
             {/* Bottom: Formkurve pro Team (letzte 10, alt -> neu) */}
             <div className="border-t border-border-light px-3 py-2 space-y-1.5">
               <div className="flex items-center justify-between">
-                <span className="text-[10px] text-text-muted font-medium uppercase tracking-wide">Formkurve (letzte 10)</span>
-                <span className="text-[9px] text-text-tertiary">alt → neu</span>
+                {/* Keine Versalien mehr (wie im Rest der App), und die Zahl
+                    nennt die TATSAECHLICH gezeigten Spiele: "letzte 10" bei
+                    drei Kaestchen sah aus, als fehlten sieben. */}
+                <span className="text-caption2 text-text-muted font-medium">
+                  {formAek.length === 1 ? 'Letztes Spiel' : `Letzte ${formAek.length} Spiele`}
+                </span>
+                <span className="text-caption2 text-text-tertiary">alt → neu</span>
               </div>
               {[{ name: aekName, form: formAek }, { name: realName, form: formReal }].map((row, ri) => (
                 <div key={ri} className="flex items-center gap-2">
