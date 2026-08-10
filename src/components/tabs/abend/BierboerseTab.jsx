@@ -1255,8 +1255,15 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
                 // Der bessere Wert wird hervorgehoben. Bei "Ø je Glas" ist
                 // weniger besser — deshalb die Umkehrung, sonst stuende der
                 // teurere Abend als Sieger da.
+                //
+                // Fehlt einer der beiden Werte, wird NICHTS hervorgehoben.
+                // Mit `Number(null) || 0` waere ein Abend ohne Glaeser bei
+                // "Ø je Glas" mit 0,00 € der guenstigste gewesen — und bei
+                // "Ø Note" haette ein unbewerteter Abend eine 0 bekommen,
+                // statt gar keine Aussage zu machen.
+                const fehlt = a == null || bWert == null;
                 const zahlA = Number(a) || 0, zahlB = Number(bWert) || 0;
-                const gleich = Math.abs(zahlA - zahlB) < 0.005;
+                const gleich = fehlt || Math.abs(zahlA - zahlB) < 0.005;
                 const aVorn = wenigerIstBesser ? zahlA < zahlB : zahlA > zahlB;
                 const zeig = form || ((n) => (n == null ? '—' : String(n)));
                 return (
@@ -1278,6 +1285,14 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
                 <span className="text-text-tertiary text-center px-1">Sieger</span>
                 <span className="text-text-primary truncate">{kennzahlenB.sieger?.bier?.name || '—'}</span>
               </div>
+              {/* Ohne diesen Satz bedeutet dieselbe Farbe zweimal etwas
+                  anderes: bei "Gläser" den groesseren Wert, bei "Ø je Glas"
+                  den kleineren. Farbig hervorgehoben ohne Erklaerung liest
+                  sich das wie eine Auszeichnung fuer den teureren Abend. */}
+              <p className="text-caption2 text-text-tertiary pt-1">
+                Farbig steht der höhere Wert — bei „Ø je Glas“ der günstigere.
+                Fehlt eine Angabe, bleibt die Zeile grau.
+              </p>
             </div>
           )}
         </div>

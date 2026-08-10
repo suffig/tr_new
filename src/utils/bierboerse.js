@@ -638,7 +638,11 @@ function profilVon(bierId, verkostungen) {
     if (v.bier_id !== bierId) continue;
     for (const key of ['aek', 'real']) {
       for (const [id, n] of Object.entries(notenVon(v, key))) {
-        if (n == null) continue;
+        // Schluessel, die der Katalog nicht (mehr) kennt, ueberspringen. Sonst
+        // stuende im Vergleich "am deutlichsten bei undefined" — die Noten
+        // liegen im JSONB und ueberleben das Entfernen einer Kategorie aus
+        // dem Katalog.
+        if (n == null || !kategorie(id)) continue;
         (werte[id] = werte[id] || []).push(Number(n));
       }
     }
