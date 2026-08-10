@@ -941,13 +941,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             </div>
           </div>
 
-          {/* Record streaks */}
-          {(winningStreaks.aek.streak > 0 || winningStreaks.real.streak > 0) && (
-            <div className="mt-3 flex items-center justify-center gap-1.5 text-[11px] text-text-tertiary">
-              <Icon name="trophy" size={13} strokeWidth={2} className="text-system-orange" />
-              <span className="text-text-secondary">Rekordserie: {getTeamDisplay('AEK')} {winningStreaks.aek.streak} · {getTeamDisplay('Real')} {winningStreaks.real.streak}</span>
-            </div>
-          )}
         </div>
       </div>
     );
@@ -1092,21 +1085,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             ))}
           </div>
 
-          {/* Overall best streak indicator */}
-          <div className="mt-3 rounded-xl bg-system-orange/10 px-4 py-3 flex items-center justify-center gap-2.5 text-system-orange">
-            <Icon name="trophy" size={17} strokeWidth={2.2} className="flex-shrink-0" />
-            <span className="text-footnote font-semibold text-center">
-              Beste Serie:{' '}
-              {winningStreaks.aek.streak > winningStreaks.real.streak
-                ? `${getTeamDisplay('AEK')} – ${winningStreaks.aek.streak}`
-                : winningStreaks.real.streak > winningStreaks.aek.streak
-                ? `${getTeamDisplay('Real')} – ${winningStreaks.real.streak}`
-                : `Gleichstand – ${winningStreaks.aek.streak}`}
-              {(winningStreaks.aek.streak > winningStreaks.real.streak
-                ? winningStreaks.aek.streak
-                : winningStreaks.real.streak) === 1 ? ' Sieg' : ' Siege'}
-            </span>
-          </div>
         </div>
 
         {/* Other Interesting Statistics */}
@@ -1280,32 +1258,11 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       </div>
 
       {/* Player Insights */}
-      <div className="mt-6 grid md:grid-cols-3 gap-4">
-        <div className="p-4 bg-system-green/10 rounded-lg border border-system-green/20">
-          {/* Hier stand "Effizienz-Spitze": Tore geteilt durch Einsaetze.
-              Der Nenner war fuer jeden Spieler dieselbe Zahl, die Rangfolge
-              also identisch zur Torjaegerliste — nur mit kleineren Zahlen und
-              dem Anschein, etwas anderes zu messen. Das beste Einzelspiel
-              steht dagegen exakt in den Daten. */}
-          <h4 className="font-semibold text-system-green mb-2 inline-flex items-center gap-2"><Icon name="trophy" size={16} strokeWidth={2.2} />Bestes Einzelspiel</h4>
-          {(() => {
-            const bester = [...playerStats]
-              .filter((p) => p.bestesSpiel > 1)
-              .sort((a, b) => b.bestesSpiel - a.bestesSpiel)[0];
-
-            return bester ? (
-              <div>
-                <div className="font-medium text-system-green">{bester.name}</div>
-                <div className="text-sm text-system-green">
-                  {bester.bestesSpiel} Tore in einem Spiel
-                </div>
-              </div>
-            ) : (
-              <div className="text-text-tertiary">Noch kein Doppelpack</div>
-            );
-          })()}
-        </div>
-
+      {/* Zwei Karten, nicht drei: hier stand zusaetzlich "Bestes
+          Einzelspiel" — dieselbe Zahl, die die Uebersicht schon als "Beste
+          Einzelleistung" zeigt. (Davor stand dort "Effizienz-Spitze", die
+          durch einen erfundenen Nenner geteilt hat.) */}
+      <div className="mt-6 grid md:grid-cols-2 gap-4">
         <div className="p-4 bg-system-yellow/10 rounded-lg border border-system-yellow/20">
           <h4 className="font-semibold text-system-orange mb-2 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} />SdS-König</h4>
           {(() => {
@@ -1495,72 +1452,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             Team" wiederholt den Siegestand. */}
       </div>
 
-      {/* Head-to-Head Statistics */}
-      <div className="modern-card">
-        <h3 className="font-bold text-lg mb-4"><Icon name="zap" size={17} strokeWidth={2.2} className="inline mr-2 -mt-0.5" />Direkter Vergleich</h3>
-        <div className="mb-4 text-sm text-text-muted">
-          Direkter Vergleich zwischen {getTeamDisplay('AEK')} und {getTeamDisplay('Real')} über alle Spiele.
-        </div>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-system-blue/10 rounded-lg">
-            <div className="text-2xl font-bold text-system-blue">{headToHead.aekWins}</div>
-            <div className="text-sm text-system-blue">{getTeamDisplay('AEK')} Siege</div>
-            <div className="text-xs text-text-muted mt-1">
-              {headToHead.totalMatches > 0 ? `${dez((headToHead.aekWins / headToHead.totalMatches) * 100, 1)} %` : '0%'}
-            </div>
-          </div>
-          <div className="text-center p-4 bg-system-red/10 rounded-lg">
-            <div className="text-2xl font-bold text-system-red">{headToHead.realWins}</div>
-            <div className="text-sm text-system-red">{getTeamDisplay('Real')} Siege</div>
-            <div className="text-xs text-text-muted mt-1">
-              {headToHead.totalMatches > 0 ? `${dez((headToHead.realWins / headToHead.totalMatches) * 100, 1)} %` : '0%'}
-            </div>
-          </div>
-          <div className="text-center p-4 bg-system-green/10 rounded-lg">
-            <div className="text-2xl font-bold text-system-green">{headToHead.aekGoals + headToHead.realGoals}</div>
-            <div className="text-sm text-system-green">Tore gesamt</div>
-            <div className="text-xs text-text-muted mt-1">
-              {headToHead.totalMatches > 0 ? `⌀ ${dez((headToHead.aekGoals + headToHead.realGoals) / headToHead.totalMatches, 1)} pro Spiel` : '⌀ 0 pro Spiel'}
-            </div>
-          </div>
-        </div>
-
-        {/* Biggest Wins Details */}
-        <div className="mt-6 grid md:grid-cols-2 gap-4">
-          <div className="p-4 bg-system-blue/10 rounded-lg">
-            <h4 className="font-semibold text-system-blue mb-2">Größter Sieg {getTeamDisplay('AEK')}</h4>
-            {headToHead.biggestAekWin.diff > 0 ? (
-              <div>
-                <div className="text-2xl font-bold text-system-blue mb-1">{headToHead.biggestAekWin.score}</div>
-                <div className="text-sm text-system-blue">
-                  Unterschied: {headToHead.biggestAekWin.diff} Tore
-                </div>
-                <div className="text-xs text-text-muted">
-                  {new Date(headToHead.biggestAekWin.date).toLocaleDateString('de-DE')}
-                </div>
-              </div>
-            ) : (
-              <div className="text-text-tertiary">Noch kein Sieg verzeichnet</div>
-            )}
-          </div>
-          <div className="p-4 bg-system-red/10 rounded-lg">
-            <h4 className="font-semibold text-system-red mb-2">Größter Sieg {getTeamDisplay('Real')}</h4>
-            {headToHead.biggestRealWin.diff > 0 ? (
-              <div>
-                <div className="text-2xl font-bold text-system-red mb-1">{headToHead.biggestRealWin.score}</div>
-                <div className="text-sm text-system-red">
-                  Unterschied: {headToHead.biggestRealWin.diff} Tore
-                </div>
-                <div className="text-xs text-text-muted">
-                  {new Date(headToHead.biggestRealWin.date).toLocaleDateString('de-DE')}
-                </div>
-              </div>
-            ) : (
-              <div className="text-text-tertiary">Noch kein Sieg verzeichnet</div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Hier stand ein zweiter "Direkter Vergleich": Siege, Quoten und
+          Tore je Spiel — dieselben vier Zahlen, die die Uebersicht schon
+          ganz oben zeigt, nur anders angeordnet. Wer die Teams-Ansicht
+          oeffnet, kommt an der Uebersicht ohnehin vorbei. */}
       
       {/* New Advanced Analytics */}
       <div className="modern-card">
@@ -1809,9 +1704,13 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 {trend.matchCount > 0 && (
                   <div className="mt-4 pt-4 border-t border-border-light">
                     <div className="flex items-center gap-4 text-xs text-text-muted">
+                      {/* "Bestes Team" und "Intensitaet: Hoch/Mittel/Niedrig"
+                          standen hier. Das erste wiederholte die Siegzahlen
+                          zwei Zeilen darueber, das zweite war der
+                          Tordurchschnitt mit fest verdrahteten Schwellen als
+                          Etikett — bei drei Spielen im Monat sagt beides
+                          nichts. */}
                       <span className="text-text-secondary">{totalGoals} Tore insgesamt</span>
-                      <span className="text-text-secondary">Bestes Team: {trend.aekWins > trend.realWins ? 'AEK' : trend.realWins > trend.aekWins ? 'Real' : 'Ausgeglichen'}</span>
-                      <span className="text-text-secondary">Intensität: {avgGoalsPerMatch >= 3 ? 'Hoch' : avgGoalsPerMatch >= 2 ? 'Mittel' : 'Niedrig'}</span>
                     </div>
                   </div>
                 )}
@@ -1820,67 +1719,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           })}
         </div>
 
-        {/* Trend Analysis Summary */}
-        <div className="modern-card p-6">
-          <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
-            <Icon name="target" size={18} strokeWidth={2.2} />
-            Trend-Analyse
-          </h4>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div>
-              <h5 className="font-medium text-text-primary mb-3"><Icon name="trendingUp" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Aufwärtstrends</h5>
-              <div className="space-y-2 text-sm">
-                {enhancedTrends.length >= 2 && (
-                  <>
-                    <div className="flex justify-between">
-                      <span className="text-text-secondary">Letzter Monat AEK:</span>
-                      <span className={`font-medium ${
-                        enhancedTrends[0].aekWins >= enhancedTrends[1].aekWins ? 'text-system-green' : 'text-system-red'
-                      }`}>
-                        {enhancedTrends[0].aekWins >= enhancedTrends[1].aekWins ? '↗️ Besser' : '↘️ Schlechter'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-text-secondary">Letzter Monat Real:</span>
-                      <span className={`font-medium ${
-                        enhancedTrends[0].realWins >= enhancedTrends[1].realWins ? 'text-system-green' : 'text-system-red'
-                      }`}>
-                        {enhancedTrends[0].realWins >= enhancedTrends[1].realWins ? '↗️ Besser' : '↘️ Schlechter'}
-                      </span>
-                    </div>
-                  </>
-                )}
-              </div>
-            </div>
-            
-            <div>
-              <h5 className="font-medium text-text-primary mb-3"><Icon name="trophy" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Beste Leistung</h5>
-              <div className="space-y-2 text-sm">
-                {(() => {
-                  const bestMonth = enhancedTrends.reduce((best, current) => {
-                    const currentTotal = current.aekGoals + current.realGoals;
-                    const bestTotal = best.aekGoals + best.realGoals;
-                    return currentTotal > bestTotal ? current : best;
-                  }, enhancedTrends[0]);
-                  
-                  return (
-                    <>
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">Torreichster Monat:</span>
-                        <span className="font-medium text-system-green">{bestMonth?.month}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">Tore in diesem Monat:</span>
-                        <span className="font-medium text-text-primary">{bestMonth ? bestMonth.aekGoals + bestMonth.realGoals : 0}</span>
-                      </div>
-                    </>
-                  );
-                })()}
-              </div>
-            </div>
-          </div>
-        </div>
       </div>
     );
   };
@@ -2195,7 +2033,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
           <div className="mt-4 p-4 bg-system-blue/10 rounded-lg">
             <p className="text-sm text-text-secondary">
-              <strong>Tipp:</strong> Bewege die Maus über die Charts für detaillierte Informationen. 
               Alle Visualisierungen sind animiert und interaktiv.
             </p>
           </div>
