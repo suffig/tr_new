@@ -97,9 +97,17 @@ button {
   /* `backwards` (not `both`) + no `will-change: transform` so the element does
      NOT keep a transform after the entrance animation. A lingering transform
      would make it the containing block for `position: fixed`, mis-positioning
-     every in-tab modal once the page is scrolled. */
+     every in-tab modal once the page is scrolled.
+
+     Kein `will-change: opacity`: das erzeugt einen dauerhaften Stapelkontext,
+     aus dem kein z-index herausfuehrt. Die Dialoge in den Tabs liegen auf
+     z-60, die Bottom-Navigation auf z-50 — trotzdem lag die Navigation ueber
+     dem offenen Dialog, weil sie ausserhalb dieses Kontexts steht. Auf dem
+     Handy sitzt sie genau dort, wo die Knoepfe des Dialogs sind: ein Tipp auf
+     "Speichern" konnte den Tab wechseln. Gemessen mit elementFromPoint —
+     mit der Zeile trifft ein Tipp bei y=790 die Navigation, ohne sie den
+     Dialog. Fuer eine 0,35s-Einblendung ist der Hinweis ohnehin unnoetig. */
   animation: pageEnter 0.35s cubic-bezier(0.23, 1, 0.32, 1) backwards;
-  will-change: opacity;
 }
 
 /* Staggered entrance for lists/grids: apply to a container */

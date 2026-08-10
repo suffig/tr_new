@@ -189,12 +189,17 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                   <button
                     key={t.id}
                     onClick={() => setAktivesTeam(t.name)}
-                    className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 py-2 rounded-lg text-footnote font-semibold transition-colors ${
+                    /* Logo ueber dem Namen statt daneben. Nebeneinander blieben
+                       dem Namen bei drei gleich breiten Knoepfen 87px, und
+                       "Dynamo Dresden" (106px) war abgeschnitten. Gestapelt
+                       steht die volle Knopfbreite zur Verfuegung — dasselbe
+                       Muster wie in der Hauptnavigation. */
+                    className={`flex-1 min-w-0 flex flex-col items-center justify-center gap-1 py-1.5 rounded-lg text-caption2 font-semibold transition-colors ${
                       aktiv ? `bg-bg-secondary shadow-sm ${farbe}` : 'text-text-secondary'}`}
                     aria-pressed={aktiv}
                   >
                     {t.logoComponent}
-                    <span className="truncate">{t.displayName}</span>
+                    <span className="truncate max-w-full">{t.displayName}</span>
                   </button>
                 );
               })}
