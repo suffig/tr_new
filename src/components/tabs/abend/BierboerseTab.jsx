@@ -14,7 +14,7 @@ import {
   KATEGORIE_KATALOG, KATEGORIE_GRUPPEN, STANDARD_KATEGORIEN, kategorie,
   ladeEinstellungen, sichereEinstellungen, noteAusKategorien, notenVon,
   geschmacksDuell, gesamtBilanz, kategorienProfil, sortenVorliebe, preisLeistung,
-  abendText,
+  abendText, bierZwilling, antiRekorde, abendKennzahlen,
 } from '../../../utils/bierboerse';
 
 const euro = (n) => `${(Number(n) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
@@ -364,7 +364,7 @@ export default function BierboerseTab() {
       )}
       {bierOffen && (
         <BierDetail bier={bierOffen} verkostungen={verkostungen} boersen={boersen}
-                    onSchliessen={() => setBierOffen(null)} />
+                    katalog={katalog} onSchliessen={() => setBierOffen(null)} />
       )}
       {formular?.art === 'einstellungen' && (
         <EinstellungenFormular
@@ -830,6 +830,21 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
   const profil = useMemo(() => kategorienProfil(verkostungen), [verkostungen]);
   const sorten = useMemo(() => sortenVorliebe(verkostungen, katalog), [verkostungen, katalog]);
   const pl = useMemo(() => preisLeistung(verkostungen, katalog), [verkostungen, katalog]);
+  const anti = useMemo(() => antiRekorde(verkostungen, boersen, katalog), [verkostungen, boersen, katalog]);
+  // Vorbelegt mit den beiden juengsten Abenden — die will man am ehesten
+  // vergleichen, und so steht die Karte sofort mit Inhalt da.
+  const [vergleichA, setVergleichA] = useState(null);
+  const [vergleichB, setVergleichB] = useState(null);
+  const sortierteBoersen = useMemo(
+    () => [...(boersen || [])].sort((a, b) => String(b.datum || '').localeCompare(String(a.datum || ''))),
+    [boersen]);
+  const linkeBoerse = sortierteBoersen.find((b) => b.id === vergleichA) || sortierteBoersen[0] || null;
+  const rechteBoerse = sortierteBoersen.find((b) => b.id === vergleichB)
+    || sortierteBoersen.find((b) => b.id !== linkeBoerse?.id) || null;
+  const kennzahlenA = useMemo(
+    () => abendKennzahlen(linkeBoerse, verkostungen, katalog), [linkeBoerse, verkostungen, katalog]);
+  const kennzahlenB = useMemo(
+    () => abendKennzahlen(rechteBoerse, verkostungen, katalog), [rechteBoerse, verkostungen, katalog]);
 
   const kommaEins = (n, stellen = 1) =>
     n == null ? '—' : Number(n).toLocaleString('de-DE', { maximumFractionDigits: stellen });
@@ -865,6 +880,18 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
     b.rekorde.guenstigstesGlas && {
       id: 'literGuenstig', icon: 'wallet', farbe: 'text-system-blue', titel: 'Günstigster Liter',
       text: (b.rekorde.guenstigstesGlas.bier?.name || 'Unbekannt') + ' — ' + euro(b.rekorde.guenstigstesGlas.preis) + ' je Liter.',
+    },
+    // Anti-Rekorde: wo die Erinnerung getruegt hat. Nur wenn dasselbe Bier
+    // wirklich zweimal bewertet wurde.
+    anti.absturz && {
+      id: 'absturz', icon: 'trendingUp', farbe: 'text-system-red', titel: 'Enttäuschung beim Wiedersehen',
+      text: anti.absturz.bier.name + ': ' + note(anti.absturz.erste.note) + ' auf '
+        + anti.absturz.letzte.boerse.name + ' nur noch ' + note(anti.absturz.letzte.note) + '.',
+    },
+    anti.aufsteiger && {
+      id: 'aufsteiger', icon: 'sparkles', farbe: 'text-system-green', titel: 'Beim zweiten Mal besser',
+      text: anti.aufsteiger.bier.name + ': ' + note(anti.aufsteiger.erste.note) + ' auf '
+        + anti.aufsteiger.letzte.boerse.name + ' schon ' + note(anti.aufsteiger.letzte.note) + '.',
     },
   ].filter(Boolean);
 
@@ -1189,6 +1216,70 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Zwei Abende nebeneinander */}
+      {sortierteBoersen.length > 1 && kennzahlenA && kennzahlenB && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-2.5">Zwei Abende vergleichen</div>
+
+          <div className="grid grid-cols-2 gap-2 mb-3">
+            {[
+              { wert: linkeBoerse.id, setzen: setVergleichA, farbe: 'text-system-blue' },
+              { wert: rechteBoerse.id, setzen: setVergleichB, farbe: 'text-system-red' },
+            ].map((seite, i) => (
+              <select key={i} value={seite.wert}
+                      onChange={(e) => seite.setzen(Number(e.target.value))}
+                      className={`form-input w-full text-sm font-semibold ${seite.farbe}`}
+                      aria-label={i === 0 ? 'Linker Abend' : 'Rechter Abend'}>
+                {sortierteBoersen.map((bo) => (
+                  <option key={bo.id} value={bo.id}>{bo.name}</option>
+                ))}
+              </select>
+            ))}
+          </div>
+
+          {linkeBoerse.id === rechteBoerse.id ? (
+            <p className="text-caption1 text-text-tertiary">Zweimal derselbe Abend — such rechts einen anderen aus.</p>
+          ) : (
+            <div className="space-y-1.5">
+              {[
+                ['Biere', kennzahlenA.biere, kennzahlenB.biere, false],
+                ['Gläser', kennzahlenA.glaeser, kennzahlenB.glaeser, false],
+                ['Liter', kennzahlenA.liter, kennzahlenB.liter, false, (n) => kommaEins(n)],
+                ['Ausgaben', kennzahlenA.ausgaben, kennzahlenB.ausgaben, false, euro],
+                ['Ø je Glas', kennzahlenA.jeGlas, kennzahlenB.jeGlas, true, euro],
+                ['Ø Note', kennzahlenA.schnitt, kennzahlenB.schnitt, false, note],
+              ].map(([label, a, bWert, wenigerIstBesser, form]) => {
+                // Der bessere Wert wird hervorgehoben. Bei "Ø je Glas" ist
+                // weniger besser — deshalb die Umkehrung, sonst stuende der
+                // teurere Abend als Sieger da.
+                const zahlA = Number(a) || 0, zahlB = Number(bWert) || 0;
+                const gleich = Math.abs(zahlA - zahlB) < 0.005;
+                const aVorn = wenigerIstBesser ? zahlA < zahlB : zahlA > zahlB;
+                const zeig = form || ((n) => (n == null ? '—' : String(n)));
+                return (
+                  <div key={label} className="grid grid-cols-[1fr_auto_1fr] items-baseline gap-2 text-caption1">
+                    <span className={`num-tabular text-right font-semibold ${
+                      gleich ? 'text-text-secondary' : aVorn ? 'text-system-blue' : 'text-text-tertiary'}`}>
+                      {zeig(a)}
+                    </span>
+                    <span className="text-caption2 text-text-tertiary text-center px-1">{label}</span>
+                    <span className={`num-tabular font-semibold ${
+                      gleich ? 'text-text-secondary' : aVorn ? 'text-text-tertiary' : 'text-system-red'}`}>
+                      {zeig(bWert)}
+                    </span>
+                  </div>
+                );
+              })}
+              <div className="grid grid-cols-[1fr_auto_1fr] items-baseline gap-2 text-caption2 pt-1.5 border-t border-border-light">
+                <span className="text-right text-text-primary truncate">{kennzahlenA.sieger?.bier?.name || '—'}</span>
+                <span className="text-text-tertiary text-center px-1">Sieger</span>
+                <span className="text-text-primary truncate">{kennzahlenB.sieger?.bier?.name || '—'}</span>
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -1641,7 +1732,7 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
  * zweiten Mal besser ankam oder nur billiger war, lässt sich vorher nirgends
  * beantworten.
  */
-function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
+function BierDetail({ bier, verkostungen, boersen, katalog, onSchliessen }) {
   const v = useMemo(() => bierVerlauf(bier.id, verkostungen, boersen), [bier.id, verkostungen, boersen]);
   const literSchnitt = v.literpreise.length
     ? v.literpreise.reduce((s, p) => s + p, 0) / v.literpreise.length : null;
@@ -1662,6 +1753,10 @@ function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
       return { ...k, schnitt: werte.length ? werte.reduce((a, b) => a + b, 0) / werte.length : null };
     }).filter((k) => k.schnitt != null);
   }, [bier.id, verkostungen]);
+
+  const zwilling = useMemo(
+    () => bierZwilling(bier.id, verkostungen, katalog),
+    [bier.id, verkostungen, katalog]);
 
   return (
     <Modal titel={bier.name} onSchliessen={onSchliessen}>
@@ -1732,6 +1827,30 @@ function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
                   </div>
                 </div>
               ))}
+            </div>
+          </div>
+        )}
+
+        {/* Das Bier mit dem ähnlichsten Kategorie-Profil. Erst mit den
+            Kategorien wird so ein Vergleich moeglich — zwei Gesamtnoten von
+            7,0 sagen nichts darueber, ob es dieselbe Art von 7,0 war. */}
+        {zwilling && (
+          <div className="panel-gray rounded-xl p-3">
+            <div className="text-caption2 text-text-tertiary mb-1">Ähnlich fandet ihr</div>
+            <div className="font-semibold text-text-primary truncate">{zwilling.bier.name}</div>
+            <div className="text-caption2 text-text-secondary">
+              {zwilling.abstand < 0.5 ? 'Fast dasselbe Profil' : `Im Schnitt ${note(zwilling.abstand)} Punkte Abstand`}
+              {` über ${zwilling.gemeinsam} ${zwilling.gemeinsam === 1 ? 'Kategorie' : 'Kategorien'}`}
+              {/* "am deutlichsten", nicht "nur": es ist der groesste der
+                  Unterschiede, nicht der einzige. */}
+              {zwilling.groessterUnterschied && Math.abs(zwilling.groessterUnterschied.differenz) >= 1 && (
+                <>
+                  {`, am deutlichsten bei ${zwilling.groessterUnterschied.label} `}
+                  {`(${note(Math.abs(zwilling.groessterUnterschied.differenz))} `}
+                  {zwilling.groessterUnterschied.differenz > 0 ? 'besser)' : 'schlechter)'}
+                </>
+              )}
+              .
             </div>
           </div>
         )}

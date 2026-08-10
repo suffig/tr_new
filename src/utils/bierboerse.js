@@ -624,6 +624,137 @@ export function sortenVorliebe(verkostungen, katalog, mindestens = 2) {
   };
 }
 
+/* ===========================================================================
+   Bier-Zwilling, Anti-Rekorde, Abend-Vergleich
+   =========================================================================== */
+
+/**
+ * Das Kategorie-Profil eines Biers: je Kategorie der Schnitt über beide
+ * Personen und alle Verkostungen.
+ */
+function profilVon(bierId, verkostungen) {
+  const werte = {};
+  for (const v of verkostungen || []) {
+    if (v.bier_id !== bierId) continue;
+    for (const key of ['aek', 'real']) {
+      for (const [id, n] of Object.entries(notenVon(v, key))) {
+        if (n == null) continue;
+        (werte[id] = werte[id] || []).push(Number(n));
+      }
+    }
+  }
+  const raus = {};
+  for (const [id, liste] of Object.entries(werte)) raus[id] = mittel(liste);
+  return raus;
+}
+
+/**
+ * Das Bier mit dem ähnlichsten Kategorie-Profil.
+ *
+ * "Ähnlich" heisst: über die Kategorien, die BEIDE Biere haben, ist der
+ * mittlere Abstand am kleinsten. Nur die gemeinsamen zu vergleichen ist
+ * wichtig — sonst gilt ein Bier, das nur nach Geschmack bewertet wurde,
+ * automatisch als aehnlich zu allem.
+ *
+ * Mindestens zwei gemeinsame Kategorien, sonst ist es keine Aussage, sondern
+ * Zufall: bei einer einzigen gemeinsamen Kategorie waeren zwei Biere mit je
+ * einer 7 "identisch".
+ */
+export function bierZwilling(bierId, verkostungen, katalog, mindestGemeinsam = 2) {
+  const eigenes = profilVon(bierId, verkostungen);
+  const eigeneIds = Object.keys(eigenes);
+  if (eigeneIds.length < mindestGemeinsam) return null;
+
+  const andere = [...new Set((verkostungen || []).map((v) => v.bier_id))].filter((id) => id !== bierId);
+  const nachId = new Map((katalog || []).map((b) => [b.id, b]));
+
+  const kandidaten = andere.map((id) => {
+    const p = profilVon(id, verkostungen);
+    const gemeinsam = eigeneIds.filter((k) => p[k] != null);
+    if (gemeinsam.length < mindestGemeinsam) return null;
+    return {
+      bier: nachId.get(id) || null,
+      gemeinsam: gemeinsam.length,
+      abstand: mittel(gemeinsam.map((k) => Math.abs(eigenes[k] - p[k]))),
+      // Wo sie sich am staerksten unterscheiden — das ist der interessante Teil.
+      groessterUnterschied: gemeinsam
+        .map((k) => ({ ...kategorie(k), differenz: eigenes[k] - p[k] }))
+        .sort((a, b) => Math.abs(b.differenz) - Math.abs(a.differenz))[0] || null,
+    };
+  }).filter((k) => k && k.bier);
+
+  if (!kandidaten.length) return null;
+  return kandidaten.sort((a, b) => a.abstand - b.abstand)[0];
+}
+
+/**
+ * Wo die Erinnerung trügt: das Bier, das beim zweiten Mal am stärksten
+ * abgefallen ist — und das, das am meisten dazugewonnen hat.
+ *
+ * Verglichen werden die erste und die letzte Verkostung nach Datum der Börse.
+ * Nicht der Schnitt gegen die einzelne Bewertung: der Schnitt enthaelt die
+ * Bewertung selbst und daempft den Unterschied genau dann, wenn er
+ * interessant wird.
+ */
+export function antiRekorde(verkostungen, boersen, katalog) {
+  const nachBoerse = new Map((boersen || []).map((b) => [b.id, b]));
+  const nachId = new Map((katalog || []).map((b) => [b.id, b]));
+  const proBier = new Map();
+
+  for (const v of verkostungen || []) {
+    const note = schnittNote(v);
+    if (note == null) continue;
+    const boerse = nachBoerse.get(v.boerse_id);
+    if (!boerse) continue;
+    if (!proBier.has(v.bier_id)) proBier.set(v.bier_id, []);
+    proBier.get(v.bier_id).push({ note: Number(note), boerse, datum: String(boerse.datum || '') });
+  }
+
+  const veraenderungen = [...proBier.entries()]
+    .map(([bierId, liste]) => {
+      if (liste.length < 2) return null;
+      const sortiert = [...liste].sort((a, b) => a.datum.localeCompare(b.datum));
+      const erste = sortiert[0];
+      const letzte = sortiert[sortiert.length - 1];
+      return {
+        bier: nachId.get(bierId) || null,
+        erste, letzte,
+        anzahl: sortiert.length,
+        differenz: letzte.note - erste.note,
+      };
+    })
+    .filter((e) => e && e.bier && Math.abs(e.differenz) >= 0.5);
+
+  const absturz = [...veraenderungen].sort((a, b) => a.differenz - b.differenz)[0] || null;
+  const aufsteiger = [...veraenderungen].sort((a, b) => b.differenz - a.differenz)[0] || null;
+
+  return {
+    absturz: absturz && absturz.differenz < 0 ? absturz : null,
+    aufsteiger: aufsteiger && aufsteiger.differenz > 0 ? aufsteiger : null,
+    alle: veraenderungen.sort((a, b) => a.differenz - b.differenz),
+  };
+}
+
+/** Kennzahlen einer Börse für den Vergleich zweier Abende. */
+export function abendKennzahlen(boerse, verkostungen, katalog) {
+  if (!boerse) return null;
+  const eigene = (verkostungen || []).filter((v) => v.boerse_id === boerse.id);
+  const stat = boersenStatistik(eigene, katalog);
+  const beste = bestenListe(eigene, katalog);
+  const noten = eigene.map(schnittNote).filter((n) => n != null);
+  return {
+    boerse,
+    biere: stat.biere,
+    glaeser: stat.glaeser,
+    liter: stat.liter,
+    ausgaben: stat.ausgaben,
+    jeGlas: stat.glaeser ? stat.ausgaben / stat.glaeser : null,
+    schnitt: mittel(noten),
+    sieger: beste[0] || null,
+    standardglaeser: stat.standardglaeser,
+  };
+}
+
 /**
  * Ein Abend als Text zum Verschicken.
  *
