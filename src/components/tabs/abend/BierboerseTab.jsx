@@ -169,7 +169,7 @@ function EinstellungenFormular({ einstellungen, onSchliessen, onFertig }) {
       toast.success('Gespeichert.');
       onFertig();
     } catch {
-      toast.error('Konnte nicht gespeichert werden. Migration db/21 schon gelaufen?');
+      toast.error('Konnte nicht gespeichert werden.');
     } finally {
       setSpeichert(false);
     }

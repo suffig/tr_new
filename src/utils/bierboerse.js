@@ -426,14 +426,21 @@ export async function ladeEinstellungen() {
   }
 }
 
-/** Einstellungen sichern. */
+/**
+ * Einstellungen sichern.
+ *
+ * Die Migration legt die Zeile mit id = 1 an. Falls sie trotzdem fehlt —
+ * versehentlich geloescht, oder die Datenbank wurde neu aufgesetzt —, wuerde
+ * ein reines UPDATE keine Zeile treffen und mit einem Fehler enden, dessen
+ * Ursache man dem Text nicht ansieht. Deshalb im zweiten Anlauf ein INSERT.
+ */
 export async function sichereEinstellungen({ modus, kategorien }) {
-  const { error } = await supabaseDb.update('bierboerse_einstellungen', {
-    modus,
-    kategorien,
-    geaendert: new Date().toISOString(),
-  }, 1);
-  if (error) throw error;
+  const daten = { modus, kategorien, geaendert: new Date().toISOString() };
+  const { error } = await supabaseDb.update('bierboerse_einstellungen', daten, 1);
+  if (!error) return;
+
+  const { error: fehler2 } = await supabaseDb.insert('bierboerse_einstellungen', { id: 1, ...daten });
+  if (fehler2) throw fehler2;
 }
 
 /**
