@@ -12,8 +12,22 @@ import { useState, useEffect, useCallback } from 'react';
 import ZahlFeld from '../ZahlFeld';
 import { zahl, dez, dezKurz } from '../../utils/zahlen';
 
+import TeamLogo from '../TeamLogo';
+
 /** Betrag deutsch: "7,50 €" statt "7.50€". */
 const euro = (n) => `${dez(n, 2)} €`;
+
+/**
+ * Die beiden Trinker.
+ *
+ * Die Schluessel sind historisch uneinheitlich: die Verbrauchszaehler laufen
+ * unter `alexander`/`philip`, die Stammdaten unter `aek`/`real`. Statt das an
+ * jeder Stelle einzeln aufzuloesen, steht die Zuordnung hier einmal.
+ */
+const TRINKER = [
+  { key: 'alexander', team: 'aek', farbe: 'text-system-blue', knopf: 'bg-system-blue/15 text-system-blue' },
+  { key: 'philip', team: 'real', farbe: 'text-system-red', knopf: 'bg-system-red/15 text-system-red' },
+];
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
 
@@ -352,7 +366,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   };
 
   // Simple BAC visualization component
-  const BACChart = ({ bac, name }) => {
+  const BACChart = ({ bac }) => {
     const bacValue = parseFloat(bac);
     const maxDisplay = 2.0; // Maximum BAC to display on chart
     const percentage = Math.min((bacValue / maxDisplay) * 100, 100);
@@ -366,23 +380,22 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
     return (
       <div className="mt-3">
-        <div className="flex justify-between text-xs text-text-secondary mb-1">
-          <span className="text-text-secondary">0‰</span>
-          <span className="text-text-secondary">{name} BAC</span>
-          <span className="text-text-secondary">2‰</span>
+        <div className="flex justify-between text-caption2 text-text-tertiary mb-1">
+          <span>0 ‰</span>
+          <span>2 ‰</span>
         </div>
-        <div className="w-full bg-bg-tertiary rounded-full h-4 relative">
-          <div 
-            className={`h-4 rounded-full transition-all duration-500 ${getColorClass(bacValue)}`}
+        {/* Kein Wert im Balken: er steht darueber schon gross, und bei
+            niedrigem Pegel stand weisse Schrift auf dem leeren, hellen
+            Balken — gemessener Kontrastabstand 49. */}
+        <div className="w-full bg-bg-tertiary rounded-full h-2.5 overflow-hidden">
+          <div
+            className={`h-full rounded-full transition-all duration-500 ${getColorClass(bacValue)}`}
             style={{ width: `${percentage}%` }}
           />
-          <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
-            {bac}‰
-          </div>
         </div>
-        <div className="flex justify-between text-xs text-text-tertiary mt-1">
-          <span className="text-text-secondary">Nüchtern</span>
-          <span className="text-text-secondary">Betrunken</span>
+        <div className="flex justify-between text-caption2 text-text-tertiary mt-1">
+          <span>nüchtern</span>
+          <span>betrunken</span>
         </div>
       </div>
     );
@@ -611,15 +624,15 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                    philipTotal > alexanderTotal ? managers.real.name : 'Unentschieden';
     const difference = Math.abs(alexanderTotal - philipTotal);
 
-    let summaryMessage = `🃏 BJ-Session Beendet!\n\n`;
-    summaryMessage += `📊 Finale Abrechnung:\n`;
-    summaryMessage += `🔵 ${managers.aek.name}: +${euro(alexanderTotal)}\n`;
-    summaryMessage += `🔴 ${managers.real.name}: +${euro(philipTotal)}\n\n`;
-    summaryMessage += `🏆 Gewinner: ${winner}\n`;
+    let summaryMessage = `Blackjack-Session Beendet!\n\n`;
+    summaryMessage += `Finale Abrechnung:\n`;
+    summaryMessage += `${managers.aek.name}: +${euro(alexanderTotal)}\n`;
+    summaryMessage += `${managers.real.name}: +${euro(philipTotal)}\n\n`;
+    summaryMessage += `Gewinner: ${winner}\n`;
     if (difference > 0) {
-      summaryMessage += `💰 Differenz: ${euro(difference)}\n\n`;
+      summaryMessage += `Differenz: ${euro(difference)}\n\n`;
     }
-    summaryMessage += `🎮 Gespielt: ${totalGames} Spiele in ${totalRounds} Runden\n\n`;
+    summaryMessage += `Gespielt: ${totalGames} Spiele in ${totalRounds} Runden\n\n`;
     summaryMessage += `Möchten Sie die Session zurücksetzen?`;
 
     if (window.confirm(summaryMessage)) {
@@ -669,14 +682,14 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           />
           {isComplete && (
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-white text-xs font-bold">✓ Abgeschlossen</span>
+              <span className="text-white text-xs font-bold">Abgeschlossen</span>
             </div>
           )}
         </div>
         {isComplete && (
           <div className="text-center mt-2">
             <span className="text-xs text-system-green font-medium">
-              🎉 10 Spiele erreicht! Zeit für eine neue Runde?
+              10 Spiele erreicht — Zeit für eine neue Runde?
             </span>
           </div>
         )}
@@ -776,6 +789,19 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   };
   // ─────────────────────────────────────────────────────────────────────────
 
+  // Kennzahlen des Abends. Standen vorher als vier fest verdrahtete Ausdruecke
+  // im JSX, jeder mit derselben Summe aus vier Feldern.
+  const gesamtBiere = beerConsumption.alexander + beerConsumption.philip;
+  const gesamtShots =
+    shotConsumption.alexander.shots20 + shotConsumption.alexander.shots40 +
+    shotConsumption.philip.shots20 + shotConsumption.philip.shots40;
+  const hoechsterBak = TRINKER
+    .map((t) => parseFloat(calculateBloodAlcohol(
+      beerConsumption[t.key], shotConsumption[t.key],
+      { weight: managers[t.team].weight, gender: 'male' }, drinkingStartTime)))
+    .reduce((a, b) => Math.max(a, b), 0)
+    .toFixed(2);
+
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
 
@@ -845,480 +871,153 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       {/* Alcohol Section */}
       {activeSection === 'alcohol' && (
         <>
-          {drinkingStartTime && (
-            <div className="mb-4 text-sm text-text-muted">
-              📅 Trinken gestartet vor: {getTimeSinceDrinking()}
+          {/* Kopfzeile: Trinkzeit und die zwei Aktionen, die den ganzen Abend
+              betreffen. Vorher war das eine eigene Karte "Schnell-Aktionen"
+              mit zwei grossen Knoepfen — viel Flaeche fuer wenig Inhalt. */}
+          <div className="modern-card mb-4 flex items-center gap-2">
+            <span className="w-10 h-10 rounded-xl bg-system-orange/12 text-system-orange flex items-center justify-center flex-shrink-0">
+              <Icon name="clock" size={20} strokeWidth={2} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-footnote font-semibold text-text-primary">
+                {drinkingStartTime ? 'Seit ' + getTimeSinceDrinking() : 'Noch nichts getrunken'}
+              </div>
+              <div className="text-caption2 text-text-tertiary">
+                {gesamtBiere + gesamtShots > 0
+                  ? gesamtBiere + (gesamtBiere === 1 ? ' Bier' : ' Biere') + ' · ' + gesamtShots + ' Shots'
+                  : 'Der erste Eintrag startet die Uhr'}
+              </div>
+            </div>
+            <button onClick={addBeerToBoth} className="btn-secondary px-3 flex-shrink-0"
+                    title="Beiden ein Bier">
+              <Icon name="beer" size={16} strokeWidth={2.2} className="mr-1" />+2
+            </button>
+            <button
+              onClick={() => { if (window.confirm('Alle Getränke (Bier & Shots) und die Trinkzeit zurücksetzen?')) resetConsumption(); }}
+              className="w-10 h-10 rounded-xl bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
+              aria-label="Zurücksetzen" title="Zurücksetzen">
+              <Icon name="undo" size={16} strokeWidth={2.2} />
+            </button>
+          </div>
+
+          {/* Je Person eine Karte. Vorher standen dieselben Zahlen dreimal auf
+              der Seite: in der Personenkarte, noch einmal unter
+              "Spieler-Vergleich" und die Nuechternzeit ein drittes Mal unter
+              "Nuechternzeit-Prognose". Im Vergleich war Philip ausserdem
+              gruen statt rot eingefaerbt. */}
+          <div className="space-y-3">
+            {TRINKER.map((t) => {
+              const bak = calculateBloodAlcohol(
+                beerConsumption[t.key], shotConsumption[t.key],
+                { weight: managers[t.team].weight, gender: 'male' }, drinkingStartTime
+              );
+              const nuechtern = drinkingStartTime
+                ? calculateSoberTime(beerConsumption[t.key], shotConsumption[t.key],
+                    { weight: managers[t.team].weight, gender: 'male' }, drinkingStartTime)
+                : null;
+              return (
+                <div key={t.key} className="modern-card">
+                  <div className="flex items-center gap-2 mb-3">
+                    <TeamLogo team={t.team} size="sm" />
+                    <span className={`font-semibold truncate ${t.farbe}`}>{managers[t.team].name}</span>
+                    <span className="ml-auto text-caption2 text-text-tertiary num-tabular flex-shrink-0">
+                      {managers[t.team].weight} kg
+                    </span>
+                  </div>
+
+                  {/* Eintragen */}
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { label: 'Bier', unter: '0,5 l', tun: () => addBeer(t.key) },
+                      { label: 'Shot', unter: '20 %', tun: () => addShot(t.key, 20) },
+                      { label: 'Shot', unter: '40 %', tun: () => addShot(t.key, 40) },
+                    ].map((k, i) => (
+                      <button key={i} onClick={k.tun}
+                              className={`py-2.5 rounded-xl font-semibold text-sm transition-transform active:scale-95 ${t.knopf}`}>
+                        <span className="block leading-tight">+ {k.label}</span>
+                        <span className="block text-caption2 font-normal opacity-80">{k.unter}</span>
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* Stand */}
+                  <div className="grid grid-cols-3 gap-2 mt-2">
+                    {[
+                      ['Biere', beerConsumption[t.key]],
+                      ['Shots 20 %', shotConsumption[t.key].shots20],
+                      ['Shots 40 %', shotConsumption[t.key].shots40],
+                    ].map(([label, wert]) => (
+                      <div key={label} className="panel-gray rounded-xl py-2 text-center">
+                        <div className="stat-display text-[17px] num-tabular text-text-primary leading-none">{wert}</div>
+                        <div className="text-caption2 text-text-tertiary mt-0.5">{label}</div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Promille. Vorher lag der Wert auf `bg-system-blue` — der
+                      vollen Farbe statt einer Tint-Stufe — und der Text
+                      darauf war ebenfalls text-system-blue: blau auf blau,
+                      also unlesbar. */}
+                  <div className="mt-3 pt-3 border-t border-border-light">
+                    <div className="flex items-baseline gap-2">
+                      {/* dez(): toFixed liefert "0.00" mit Punkt — die einzige
+                          Stelle der App, an der eine Zahl englisch stand. */}
+                      <span className="stat-display text-2xl num-tabular text-text-primary">{dez(parseFloat(bak), 2)} ‰</span>
+                      <span className="text-caption2 text-text-tertiary">Blutalkohol (Widmark)</span>
+                    </div>
+                    <BACChart bac={bak} />
+                    {nuechtern && nuechtern > new Date() && (
+                      <div className="mt-2 text-caption1 text-text-secondary">
+                        Wieder nüchtern gegen{' '}
+                        <span className="num-tabular text-text-primary font-semibold">
+                          {nuechtern.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {' '}({Math.ceil((nuechtern - new Date()) / 3600000)} h)
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Zusammen — die vier Zahlen, die nur fuer den Abend als Ganzes
+              gelten. Alles Personenbezogene steht oben. */}
+          <div className="modern-card mt-3 p-4">
+            <div className="text-footnote font-semibold text-text-muted mb-2.5">Zusammen</div>
+            <div className="grid grid-cols-4 gap-2">
+              {[
+                ['Biere', gesamtBiere],
+                ['Liter', dez(gesamtBiere * 0.5, 1)],
+                ['Shots', gesamtShots],
+                ['Höchster', dez(parseFloat(hoechsterBak), 2) + ' ‰'],
+              ].map(([label, wert]) => (
+                <div key={label} className="text-center">
+                  <div className="stat-display text-[15px] num-tabular text-text-primary truncate">{wert}</div>
+                  <div className="text-caption2 text-text-tertiary">{label}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <AlcoholProgressionGraph
+            managers={managers}
+            beerConsumption={beerConsumption}
+            shotConsumption={shotConsumption}
+            drinkingStartTime={drinkingStartTime}
+          />
+
+          {showHints && (
+            <div className="modern-card mt-3 p-4">
+              <div className="text-footnote font-semibold text-text-muted mb-2">Wie gerechnet wird</div>
+              <ul className="text-caption1 text-text-secondary space-y-1">
+                <li>BAK nach der Widmark-Formel, Abbau 0,15 ‰ je Stunde</li>
+                <li>Bier: 0,5 l mit 5 %, Shot: 2 cl mit 20 % oder 40 %</li>
+                <li>Balkenfarbe: grün bis 0,3 ‰, gelb bis 0,5 ‰, orange bis 1,0 ‰, darüber rot</li>
+                <li>Gewichte unter Admin → Teams</li>
+              </ul>
             </div>
           )}
-
-      {/* Quick Actions */}
-      <div className="modern-card mb-6">
-        <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-text-primary">
-          <Icon name="zap" size={18} strokeWidth={2.2} className="text-system-green" />
-          <span className="text-text-secondary">Schnell-Aktionen</span>
-        </h3>
-        <div className="grid grid-cols-1 gap-3">
-          <button
-            onClick={addBeerToBoth}
-            className="btn-brand px-6 py-4 rounded-xl text-lg flex items-center justify-center gap-2"
-          >
-            <span className="text-2xl">🍻</span>
-            <span className="text-text-secondary">Beiden ein Bier hinzufügen</span>
-          </button>
-          <button
-            onClick={() => { if (window.confirm('Alle Getränke (Bier & Shots) und die Trinkzeit zurücksetzen?')) resetConsumption(); }}
-            className="btn-soft btn-soft-gray px-4 py-3 rounded-xl flex items-center justify-center gap-2"
-          >
-            <span className="text-xl">🔄</span>
-            <span className="text-text-secondary">Zurücksetzen</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Individual Beer Tracking */}
-      <div className="space-y-6">
-        {/* Alexander Section */}
-        <div className="modern-card panel-blue">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg text-system-blue flex items-center gap-2">
-              <span className="text-2xl">🔵</span>
-              <span className="text-text-secondary">{managers.aek.name}</span>
-            </h3>
-            <div className="text-sm text-system-blue bg-system-blue/25 px-3 py-1 rounded-full font-medium">
-              {managers.aek.weight}kg
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <button
-              onClick={() => addBeer('alexander')}
-              className="bg-system-blue hover:bg-system-blue text-white px-3 py-3 rounded-xl transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105"
-            >
-              🍺 + Bier
-            </button>
-            <button
-              onClick={() => addShot('alexander', 20)}
-              className="bg-system-blue hover:bg-system-blue text-white px-3 py-3 rounded-xl transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105"
-            >
-              🥃 Shot 20%
-            </button>
-            <button
-              onClick={() => addShot('alexander', 40)}
-              className="bg-system-blue hover:bg-system-blue text-white px-3 py-3 rounded-xl transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105"
-            >
-              🥃 Shot 40%
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="flex items-center justify-center bg-bg-elevated rounded-lg border border-system-blue/25 px-2 py-3">
-              <span className="text-lg font-bold text-system-blue">
-                {beerConsumption.alexander}
-              </span>
-              <span className="text-xs text-system-blue ml-1">🍺</span>
-            </div>
-            <div className="flex items-center justify-center bg-bg-elevated rounded-lg border border-system-blue/25 px-2 py-3">
-              <span className="text-lg font-bold text-system-blue">
-                {shotConsumption.alexander.shots20}
-              </span>
-              <span className="text-xs text-system-blue ml-1">🥃20%</span>
-            </div>
-            <div className="flex items-center justify-center bg-bg-elevated rounded-lg border border-system-blue/25 px-2 py-3">
-              <span className="text-lg font-bold text-system-blue">
-                {shotConsumption.alexander.shots40}
-              </span>
-              <span className="text-xs text-system-blue ml-1">🥃40%</span>
-            </div>
-          </div>
-
-          {/* Alexander's BAC */}
-          <div className="p-4 bg-system-blue border border-system-blue/45 rounded-lg">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-system-blue mb-2">
-                {calculateBloodAlcohol(
-                  beerConsumption.alexander,
-                  shotConsumption.alexander,
-                  { weight: managers.aek.weight, gender: 'male' },
-                  drinkingStartTime
-                )}‰
-              </div>
-              <div className="text-sm text-system-blue font-medium">
-                Blutalkoholkonzentration (BAK)
-              </div>
-              {(beerConsumption.alexander > 0 || shotConsumption.alexander.shots20 > 0 || shotConsumption.alexander.shots40 > 0) && (
-                <div className="text-xs text-system-blue mt-1">
-                  {beerConsumption.alexander > 0 && `${beerConsumption.alexander} × 0,5L Bier`}
-                  {(beerConsumption.alexander > 0) && (shotConsumption.alexander.shots20 > 0 || shotConsumption.alexander.shots40 > 0) && ' + '}
-                  {shotConsumption.alexander.shots20 > 0 && `${shotConsumption.alexander.shots20} × 2cl (20%)`}
-                  {shotConsumption.alexander.shots20 > 0 && shotConsumption.alexander.shots40 > 0 && ' + '}
-                  {shotConsumption.alexander.shots40 > 0 && `${shotConsumption.alexander.shots40} × 2cl (40%)`}
-                </div>
-              )}
-            </div>
-            
-            {/* BAC Chart */}
-            <BACChart 
-              bac={calculateBloodAlcohol(
-                beerConsumption.alexander,
-                shotConsumption.alexander,
-                { weight: managers.aek.weight, gender: 'male' },
-                drinkingStartTime
-              )}
-              name="Alexander"
-            />
-            
-            {/* Sober Time */}
-            {drinkingStartTime && (beerConsumption.alexander > 0 || shotConsumption.alexander.shots20 > 0 || shotConsumption.alexander.shots40 > 0) && (
-              <div className="mt-3 text-center text-sm text-system-blue">
-                {(() => {
-                  const soberTime = calculateSoberTime(
-                    beerConsumption.alexander,
-                    shotConsumption.alexander,
-                    { weight: managers.aek.weight, gender: 'male' },
-                    drinkingStartTime
-                  );
-                  if (soberTime && soberTime > new Date()) {
-                    return `🕐 Wieder nüchtern: ${soberTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
-                  } else if (parseFloat(calculateBloodAlcohol(
-                    beerConsumption.alexander,
-                    shotConsumption.alexander,
-                    { weight: managers.aek.weight, gender: 'male' },
-                    drinkingStartTime
-                  )) === 0) {
-                    return '✅ Bereits nüchtern';
-                  }
-                  return null;
-                })()}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Philip Section */}
-        <div className="modern-card panel-red">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="font-bold text-lg text-system-red flex items-center gap-2">
-              <span className="text-2xl">🔴</span>
-              <span className="text-text-secondary">{managers.real.name}</span>
-            </h3>
-            <div className="text-sm text-system-red bg-system-red/25 px-3 py-1 rounded-full font-medium">
-              {managers.real.weight}kg
-            </div>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-3 mb-4">
-            <button
-              onClick={() => addBeer('philip')}
-              className="bg-system-red hover:bg-system-red text-white px-3 py-3 rounded-xl transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105"
-            >
-              🍺 + Bier
-            </button>
-            <button
-              onClick={() => addShot('philip', 20)}
-              className="bg-system-red hover:bg-system-red text-white px-3 py-3 rounded-xl transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105"
-            >
-              🥃 Shot 20%
-            </button>
-            <button
-              onClick={() => addShot('philip', 40)}
-              className="bg-system-red hover:bg-system-red text-white px-3 py-3 rounded-xl transition-all duration-200 font-medium text-sm shadow-md hover:shadow-lg transform hover:scale-105"
-            >
-              🥃 Shot 40%
-            </button>
-          </div>
-          
-          <div className="grid grid-cols-3 gap-2 mb-4">
-            <div className="flex items-center justify-center bg-bg-elevated rounded-lg border border-system-red/25 px-2 py-3">
-              <span className="text-lg font-bold text-system-red">
-                {beerConsumption.philip}
-              </span>
-              <span className="text-xs text-system-red ml-1">🍺</span>
-            </div>
-            <div className="flex items-center justify-center bg-bg-elevated rounded-lg border border-system-red/25 px-2 py-3">
-              <span className="text-lg font-bold text-system-red">
-                {shotConsumption.philip.shots20}
-              </span>
-              <span className="text-xs text-system-red ml-1">🥃20%</span>
-            </div>
-            <div className="flex items-center justify-center bg-bg-elevated rounded-lg border border-system-red/25 px-2 py-3">
-              <span className="text-lg font-bold text-system-red">
-                {shotConsumption.philip.shots40}
-              </span>
-              <span className="text-xs text-system-red ml-1">🥃40%</span>
-            </div>
-          </div>
-
-          {/* Philip's BAC */}
-          <div className="p-4 bg-system-red border border-system-red/45 rounded-lg">
-            <div className="text-center">
-              <div className="text-3xl font-bold text-system-red mb-2">
-                {calculateBloodAlcohol(
-                  beerConsumption.philip,
-                  shotConsumption.philip,
-                  { weight: managers.real.weight, gender: 'male' },
-                  drinkingStartTime
-                )}‰
-              </div>
-              <div className="text-sm text-system-red font-medium">
-                Blutalkoholkonzentration (BAK)
-              </div>
-              {(beerConsumption.philip > 0 || shotConsumption.philip.shots20 > 0 || shotConsumption.philip.shots40 > 0) && (
-                <div className="text-xs text-system-red mt-1">
-                  {beerConsumption.philip > 0 && `${beerConsumption.philip} × 0,5L Bier`}
-                  {(beerConsumption.philip > 0) && (shotConsumption.philip.shots20 > 0 || shotConsumption.philip.shots40 > 0) && ' + '}
-                  {shotConsumption.philip.shots20 > 0 && `${shotConsumption.philip.shots20} × 2cl (20%)`}
-                  {shotConsumption.philip.shots20 > 0 && shotConsumption.philip.shots40 > 0 && ' + '}
-                  {shotConsumption.philip.shots40 > 0 && `${shotConsumption.philip.shots40} × 2cl (40%)`}
-                </div>
-              )}
-            </div>
-            
-            {/* BAC Chart */}
-            <BACChart 
-              bac={calculateBloodAlcohol(
-                beerConsumption.philip,
-                shotConsumption.philip,
-                { weight: managers.real.weight, gender: 'male' },
-                drinkingStartTime
-              )}
-              name="Philip"
-            />
-            
-            {/* Sober Time */}
-            {drinkingStartTime && (beerConsumption.philip > 0 || shotConsumption.philip.shots20 > 0 || shotConsumption.philip.shots40 > 0) && (
-              <div className="mt-3 text-center text-sm text-system-red">
-                {(() => {
-                  const soberTime = calculateSoberTime(
-                    beerConsumption.philip,
-                    shotConsumption.philip,
-                    { weight: managers.real.weight, gender: 'male' },
-                    drinkingStartTime
-                  );
-                  if (soberTime && soberTime > new Date()) {
-                    return `🕐 Wieder nüchtern: ${soberTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}`;
-                  } else if (parseFloat(calculateBloodAlcohol(
-                    beerConsumption.philip,
-                    shotConsumption.philip,
-                    { weight: managers.real.weight, gender: 'male' },
-                    drinkingStartTime
-                  )) === 0) {
-                    return '✅ Bereits nüchtern';
-                  }
-                  return null;
-                })()}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-
-      {/* Enhanced Summary */}
-      <div className="modern-card mt-6">
-        <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="chart" size={18} strokeWidth={2.2} />Erweiterte Statistiken</h3>
-        
-        {/* Current Session Stats */}
-        <div className="mb-6">
-          <h4 className="font-semibold text-md mb-3 text-text-primary inline-flex items-center gap-2"><Icon name="beer" size={16} strokeWidth={2.2} className="text-system-orange" />Aktuelle Session</h4>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
-            <div className="p-3 bg-bg-tertiary rounded-lg">
-              <div className="text-xl font-bold text-text-primary">
-                {beerConsumption.alexander + beerConsumption.philip}
-              </div>
-              <div className="text-sm text-text-muted">Biere gesamt</div>
-            </div>
-            <div className="p-3 bg-bg-tertiary rounded-lg">
-              <div className="text-xl font-bold text-text-primary">
-                {dez((beerConsumption.alexander + beerConsumption.philip) * 0.5, 1)} l
-              </div>
-              <div className="text-sm text-text-muted">Biervolumen</div>
-            </div>
-            <div className="p-3 bg-bg-tertiary rounded-lg">
-              <div className="text-xl font-bold text-text-primary">
-                {shotConsumption.alexander.shots20 + shotConsumption.alexander.shots40 + 
-                 shotConsumption.philip.shots20 + shotConsumption.philip.shots40}
-              </div>
-              <div className="text-sm text-text-muted">Shots gesamt</div>
-            </div>
-            <div className="p-3 bg-bg-tertiary rounded-lg">
-              <div className="text-xl font-bold text-text-primary">
-                {((shotConsumption.alexander.shots20 + shotConsumption.alexander.shots40 + 
-                   shotConsumption.philip.shots20 + shotConsumption.philip.shots40) * 2)}cl
-              </div>
-              <div className="text-sm text-text-muted">Shot-Volumen</div>
-            </div>
-          </div>
-        </div>
-
-        {/* Individual Player Stats */}
-        <div className="mb-6">
-          <h4 className="font-semibold text-md mb-3 text-text-primary inline-flex items-center gap-2"><Icon name="users" size={16} strokeWidth={2.2} />Spieler-Vergleich</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Alexander Stats */}
-            <div className="p-4 bg-system-blue/10 rounded-lg border border-system-blue/25">
-              <h5 className="font-semibold text-system-blue mb-3 flex items-center gap-2">
-                <span className="text-xl">🔵</span>
-                {managers.aek.name}
-              </h5>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Biere:</span>
-                  <span className="font-semibold">{beerConsumption.alexander}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Shots (20%):</span>
-                  <span className="font-semibold">{shotConsumption.alexander.shots20}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Shots (40%):</span>
-                  <span className="font-semibold">{shotConsumption.alexander.shots40}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span className="text-text-secondary">Aktueller BAK:</span>
-                  <span className="font-bold text-system-blue">
-                    {calculateBloodAlcohol(beerConsumption.alexander, shotConsumption.alexander, managers.aek, drinkingStartTime)}‰
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Alkohol-Volumen:</span>
-                  <span className="font-semibold">
-                    {(beerConsumption.alexander * 0.5 * 0.05 + 
-                      shotConsumption.alexander.shots20 * 0.02 * 0.20 +
-                      shotConsumption.alexander.shots40 * 0.02 * 0.40).toFixed(2)}L
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Philip Stats */}
-            <div className="p-4 bg-system-green/10 rounded-lg border border-system-green/25">
-              <h5 className="font-semibold text-system-green mb-3 flex items-center gap-2">
-                <span className="text-xl">🔴</span>
-                {managers.real.name}
-              </h5>
-              <div className="space-y-2 text-sm">
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Biere:</span>
-                  <span className="font-semibold">{beerConsumption.philip}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Shots (20%):</span>
-                  <span className="font-semibold">{shotConsumption.philip.shots20}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Shots (40%):</span>
-                  <span className="font-semibold">{shotConsumption.philip.shots40}</span>
-                </div>
-                <div className="flex justify-between border-t pt-2">
-                  <span className="text-text-secondary">Aktueller BAK:</span>
-                  <span className="font-bold text-system-green">
-                    {calculateBloodAlcohol(beerConsumption.philip, shotConsumption.philip, managers.real, drinkingStartTime)}‰
-                  </span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-text-secondary">Alkohol-Volumen:</span>
-                  <span className="font-semibold">
-                    {(beerConsumption.philip * 0.5 * 0.05 + 
-                      shotConsumption.philip.shots20 * 0.02 * 0.20 +
-                      shotConsumption.philip.shots40 * 0.02 * 0.40).toFixed(2)}L
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Session Information */}
-        {drinkingStartTime && (
-          <div className="mb-4">
-            <h4 className="font-semibold text-md mb-3 text-text-primary inline-flex items-center gap-2"><Icon name="clock" size={16} strokeWidth={2.2} className="text-system-blue" />Session-Info</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-              <div className="p-3 bg-system-indigo/10 rounded-lg border border-system-indigo/25">
-                <div className="text-lg font-bold text-system-indigo">
-                  {getTimeSinceDrinking()}
-                </div>
-                <div className="text-sm text-system-indigo">Trinkdauer</div>
-              </div>
-              <div className="p-3 bg-system-purple/10 rounded-lg border border-system-purple/25">
-                <div className="text-lg font-bold text-system-purple">
-                  {Math.max(
-                    parseFloat(calculateBloodAlcohol(beerConsumption.alexander, shotConsumption.alexander, managers.aek, drinkingStartTime)),
-                    parseFloat(calculateBloodAlcohol(beerConsumption.philip, shotConsumption.philip, managers.real, drinkingStartTime))
-                  ).toFixed(2)}‰
-                </div>
-                <div className="text-sm text-system-purple">Höchster BAK</div>
-              </div>
-              <div className="p-3 bg-system-orange/10 rounded-lg border border-system-orange/25">
-                <div className="text-lg font-bold text-system-orange">
-                  {((beerConsumption.alexander + beerConsumption.philip) / 
-                    Math.max(1, parseFloat(getTimeSinceDrinking()?.split(' ')[0] || '1'))).toFixed(1)}
-                </div>
-                <div className="text-sm text-system-orange">Biere/Stunde</div>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Sober Time Predictions */}
-        {drinkingStartTime && (beerConsumption.alexander > 0 || beerConsumption.philip > 0 || 
-          shotConsumption.alexander.shots20 > 0 || shotConsumption.alexander.shots40 > 0 ||
-          shotConsumption.philip.shots20 > 0 || shotConsumption.philip.shots40 > 0) && (
-          <div className="mt-4">
-            <h4 className="font-semibold text-md mb-3 text-text-primary inline-flex items-center gap-2"><Icon name="clock" size={16} strokeWidth={2.2} className="text-system-teal" />Nüchternzeit-Prognose</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {(() => {
-                const alexSoberTime = calculateSoberTime(beerConsumption.alexander, shotConsumption.alexander, managers.aek, drinkingStartTime);
-                const philipSoberTime = calculateSoberTime(beerConsumption.philip, shotConsumption.philip, managers.real, drinkingStartTime);
-                
-                return (
-                  <>
-                    <div className="p-3 bg-system-blue/10 rounded-lg border border-system-blue/25 text-center">
-                      <div className="text-sm font-medium text-system-blue mb-1">{managers.aek.name}</div>
-                      <div className="text-lg font-bold text-system-blue">
-                        {alexSoberTime ? alexSoberTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : 'Bereits nüchtern'}
-                      </div>
-                      <div className="text-xs text-system-blue">
-                        {alexSoberTime ? `${Math.ceil((alexSoberTime - new Date()) / (1000 * 60 * 60))}h verbleibend` : '✅'}
-                      </div>
-                    </div>
-                    <div className="p-3 bg-system-red/10 rounded-lg border border-system-red/25 text-center">
-                      <div className="text-sm font-medium text-system-red mb-1">{managers.real.name}</div>
-                      <div className="text-lg font-bold text-system-red">
-                        {philipSoberTime ? philipSoberTime.toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' }) : 'Bereits nüchtern'}
-                      </div>
-                      <div className="text-xs text-system-red">
-                        {philipSoberTime ? `${Math.ceil((philipSoberTime - new Date()) / (1000 * 60 * 60))}h verbleibend` : '✅'}
-                      </div>
-                    </div>
-                  </>
-                );
-              })()}
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Alcohol Progression Graph */}
-      <AlcoholProgressionGraph 
-        managers={managers}
-        beerConsumption={beerConsumption}
-        shotConsumption={shotConsumption}
-        drinkingStartTime={drinkingStartTime}
-      />
-
-      {/* Info - Only show on admin page */}
-      {showHints && (
-        <div className="mt-6 p-4 panel-yellow rounded-lg">
-          <h4 className="font-medium text-system-yellow mb-2 inline-flex items-center gap-2"><Icon name="bulb" size={15} strokeWidth={2.2} />Hinweise</h4>
-          <ul className="text-sm text-system-yellow space-y-1">
-            <li>• BAK-Berechnung basiert auf der Widmark-Formel</li>
-            <li>• Annahme: 0,5L Bier mit 5% Alkoholgehalt</li>
-            <li>• Shots: 2cl mit 20% oder 40% Alkoholgehalt</li>
-            <li>• Abbau: 0,15‰ pro Stunde</li>
-            <li>• Farbkodierung: Grün (0-0,3‰), Gelb (0,3-0,5‰), Orange (0,5-1,0‰), Rot (&gt;1,0‰)</li>
-            <li>• Manager-Daten können unter Admin → Team-Verwaltung angepasst werden</li>
-          </ul>
-        </div>
-      )}
         </>
       )}
 
@@ -1334,9 +1033,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             return (
               <>
                 {/* Hero card */}
-                <div className={`modern-card mb-6 border-2 ${isDone ? 'border-system-green/45 bg-system-green/10' : 'border-system-orange/45 bg-system-orange'}`}>
+                {/* bg-system-orange OHNE Tint-Stufe war die volle Farbe, und
+                    saemtlicher Text darauf ist text-system-orange: orange auf
+                    orange, gemessener Kontrastabstand 0 — "18", "Shots noch
+                    uebrig" und "0 getrunken" waren schlicht unsichtbar. Der
+                    gruene Zweig daneben stand immer richtig auf /10. */}
+                <div className={`modern-card mb-6 border-2 ${isDone ? 'border-system-green/45 bg-system-green/10' : 'border-system-orange/45 bg-system-orange/10'}`}>
                   <div className="text-center mb-6">
-                    <div className="text-6xl mb-2">{isDone ? '🎉' : '🥃'}</div>
                     {isDone ? (
                       <>
                         <div className="text-3xl font-bold text-system-green mb-1">Fertig!</div>
@@ -1368,7 +1071,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                               autoFocus
                             />
                             <button onClick={applySchnapsTarget} className="text-xs bg-system-orange text-white px-2 py-0.5 rounded-md font-medium">✓</button>
-                            <button onClick={() => setEditingSchnapsTarget(false)} className="text-xs text-text-tertiary">✕</button>
+                            <button onClick={() => setEditingSchnapsTarget(false)} className="text-xs text-text-tertiary" aria-label="Abbrechen"><Icon name="x" size={12} strokeWidth={2.4} /></button>
                           </>
                         ) : (
                           <button
@@ -1377,7 +1080,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                             title="Ziel anpassen"
                           >
                             <span className="text-text-secondary">Ziel: <span className="text-system-orange font-bold">{schnapsShotsData.target}</span></span>
-                            <span className="text-xs">✏️</span>
+                            <Icon name="edit" size={12} strokeWidth={2.2} />
                           </button>
                         )}
                       </div>
@@ -1395,7 +1098,10 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                           style={{ left: `${((i + 1) / schnapsShotsData.target) * 100}%` }}
                         />
                       ))}
-                      <div className="absolute inset-0 flex items-center justify-center text-white text-sm font-bold drop-shadow">
+                      {/* Bei 0 Shots ist der Balken leer und weisser Text
+                          stand auf hellgrauem Grund. */}
+                      <div className={`absolute inset-0 flex items-center justify-center text-sm font-bold num-tabular ${
+                        pct > 25 ? 'text-white drop-shadow' : 'text-text-primary'}`}>
                         {total}/{schnapsShotsData.target}
                       </div>
                     </div>
@@ -1416,7 +1122,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                             }`}
                             title={isAlex ? managers.aek.name : isPhilip ? managers.real.name : ''}
                           >
-                            {isAlex || isPhilip ? '🥃' : i + 1}
+                            {isAlex || isPhilip ? <Icon name="glass" size={12} strokeWidth={2.4} /> : i + 1}
                           </div>
                         );
                       })}
@@ -1430,13 +1136,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   {/* Per-person counts */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
                     <div className="bg-system-blue/15 border-2 border-system-blue/45 rounded-xl p-4 text-center">
-                      <div className="text-2xl mb-1">🔵</div>
+                      <TeamLogo team="aek" size="sm" />
                       <div className="font-bold text-system-blue text-lg">{managers.aek.name}</div>
                       <div className="text-4xl font-black text-system-blue">{schnapsShotsData.alex}</div>
                       <div className="text-sm text-system-blue">Shots</div>
                     </div>
                     <div className="bg-system-red/15 border-2 border-system-red/45 rounded-xl p-4 text-center">
-                      <div className="text-2xl mb-1">🔴</div>
+                      <TeamLogo team="real" size="sm" />
                       <div className="font-bold text-system-red text-lg">{managers.real.name}</div>
                       <div className="text-4xl font-black text-system-red">{schnapsShotsData.philip}</div>
                       <div className="text-sm text-system-red">Shots</div>
@@ -1451,14 +1157,14 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                           onClick={() => addSchnapShot('alex')}
                           className="bg-system-blue hover:opacity-90 active:scale-95 text-white py-5 rounded-2xl transition-all duration-150 font-bold text-lg shadow-lg border-b-4 border-system-blue"
                         >
-                          🥃 +1<br />
+                          +1 Shot<br />
                           <span className="text-sm font-normal">{managers.aek.name}</span>
                         </button>
                         <button
                           onClick={() => addSchnapShot('philip')}
                           className="bg-system-green hover:opacity-90 active:scale-95 text-white py-5 rounded-2xl transition-all duration-150 font-bold text-lg shadow-lg border-b-4 border-system-green"
                         >
-                          🥃 +1<br />
+                          +1 Shot<br />
                           <span className="text-sm font-normal">{managers.real.name}</span>
                         </button>
                       </div>
@@ -1467,11 +1173,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         disabled={schnapsShotsData.alex + schnapsShotsData.philip >= schnapsShotsData.target}
                         className="w-full mb-4 bg-system-orange hover:opacity-90 active:scale-95 text-white py-4 rounded-2xl transition-all duration-150 font-bold text-base shadow-lg border-b-4 border-system-orange disabled:opacity-40 disabled:cursor-not-allowed"
                       >
-                        🥃🥃 Beide +1 (je ein Shot)
+                        Beide +1 (je ein Shot)
                       </button>
                     </>
                   ) : (
-                    <div className="text-center text-4xl mb-4 animate-bounce">🎉🥂🎉</div>
+                    <div className="flex justify-center mb-4 text-system-green"><Icon name="trophy" size={34} strokeWidth={1.8} /></div>
                   )}
 
                   {/* Secondary actions */}
@@ -1481,7 +1187,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       disabled={schnapsShotsData.history.length === 0}
                       className="flex-1 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary font-medium transition-all text-sm border border-border-medium"
                     >
-                      ↩ Letzten rückgängig
+                      Letzten rückgängig
                     </button>
                     <button
                       onClick={() => {
@@ -1489,7 +1195,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       }}
                       className="flex-1 py-3 rounded-xl bg-system-red/10 hover:bg-system-red/15 text-system-red font-medium transition-all text-sm border border-system-red/25"
                     >
-                      🔄 Reset
+                      Reset
                     </button>
                   </div>
                 </div>
@@ -1498,7 +1204,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 {schnapsShotsData.history.length > 0 && (
                   <div className="modern-card">
                     <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
-                      <span className="text-text-secondary">📜</span> Verlauf
+                      Verlauf
                     </h4>
                     <div className="space-y-1 max-h-64 overflow-y-auto">
                       {[...schnapsShotsData.history].reverse().map((entry, i) => {
@@ -1506,11 +1212,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         return (
                           <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg ${isAlex ? 'panel-blue' : 'panel-red'}`}>
                             <div className="flex items-center gap-2">
-                              <span className="text-text-secondary">{isAlex ? '🔵' : '🔴'}</span>
+                              <TeamLogo team={isAlex ? 'aek' : 'real'} size="xs" />
                               <span className={`font-medium text-sm ${isAlex ? 'text-system-blue' : 'text-system-red'}`}>
                                 {isAlex ? managers.aek.name : managers.real.name}
                               </span>
-                              <span className="text-sm">🥃</span>
+                              <Icon name="glass" size={14} strokeWidth={2.2} className="text-text-tertiary" />
                             </div>
                             <span className="text-xs text-text-tertiary">
                               {new Date(entry.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
@@ -1541,7 +1247,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             {/* Balance card */}
             <div className={`modern-card mb-6 border-2 ${leader ? `border-system-yellow/45 bg-system-yellow` : 'border-border-light bg-bg-tertiary'}`}>
               <div className="text-center mb-5">
-                <div className="text-5xl mb-2">⭐</div>
+                <div className="flex justify-center mb-2 text-system-yellow"><Icon name="starFilled" size={38} strokeWidth={0} /></div>
                 {leader ? (
                   <>
                     <div className={`text-2xl font-black ${leaderColor === 'green' ? 'text-system-green' : 'text-system-blue'} mb-1`}>
@@ -1565,7 +1271,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               {/* Per-person totals */}
               <div className="grid grid-cols-2 gap-3 mb-6">
                 <div className="bg-system-blue/10 border-2 border-system-blue/25 rounded-xl p-3 text-center">
-                  <div className="text-system-blue font-bold text-sm mb-1">🔵 {managers.aek.name}</div>
+                  <div className="text-system-blue font-bold text-sm mb-1">{managers.aek.name}</div>
                   <div className="flex justify-center gap-0.5 text-xl mb-1">{renderStars(sterneData.alex, 5)}</div>
                   <div className="text-2xl font-black text-system-blue">
                     {dezKurz(sterneData.alex)}
@@ -1573,7 +1279,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <div className="text-xs text-system-blue">Sterne gesamt</div>
                 </div>
                 <div className="bg-system-red/10 border-2 border-system-red/25 rounded-xl p-3 text-center">
-                  <div className="text-system-red font-bold text-sm mb-1">🔴 {managers.real.name}</div>
+                  <div className="text-system-red font-bold text-sm mb-1">{managers.real.name}</div>
                   <div className="flex justify-center gap-0.5 text-xl mb-1">{renderStars(sterneData.philip, 5)}</div>
                   <div className="text-2xl font-black text-system-red">
                     {dezKurz(sterneData.philip)}
@@ -1592,13 +1298,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => setSterneInput(p => ({ ...p, person: 'alex' }))}
                     className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 ${sterneInput.person === 'alex' ? 'bg-system-blue text-white shadow-md' : 'bg-system-blue/10 text-system-blue border border-system-blue/25'}`}
                   >
-                    🔵 {managers.aek.name}
+                    {managers.aek.name}
                   </button>
                   <button
                     onClick={() => setSterneInput(p => ({ ...p, person: 'philip' }))}
                     className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 ${sterneInput.person === 'philip' ? 'bg-system-red text-white shadow-md' : 'bg-system-red/10 text-system-red border border-system-red/25'}`}
                   >
-                    🔴 {managers.real.name}
+                    {managers.real.name}
                   </button>
                 </div>
 
@@ -1623,7 +1329,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   <div className="text-xs text-text-tertiary">
                     Team-Stärke: <strong className="text-text-secondary">{sterneInput.stars}</strong>
                     {' → '}
-                    Gutschrift: <strong className="text-system-yellow">+{dezKurz(gutschriftFuer(sterneInput.stars))} ⭐</strong>
+                    Gutschrift: <strong className="text-system-yellow">+{dezKurz(gutschriftFuer(sterneInput.stars))} ★</strong>
                     {' '}(6 − {sterneInput.stars})
                   </div>
                 </div>
@@ -1637,7 +1343,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       : 'bg-system-green border-system-green'
                   }`}
                 >
-                  ⭐ +{dezKurz(6 - sterneInput.stars)} für {sterneInput.person === 'alex' ? managers.aek.name : managers.real.name}
+                  +{dezKurz(6 - sterneInput.stars)} für {sterneInput.person === 'alex' ? managers.aek.name : managers.real.name}
                 </button>
               </div>
 
@@ -1648,13 +1354,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   disabled={sterneData.history.length === 0}
                   className="flex-1 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary font-medium transition-all text-sm border border-border-medium"
                 >
-                  ↩ Letzten rückgängig
+                  Letzten rückgängig
                 </button>
                 <button
                   onClick={() => { if (window.confirm('Sterne-Counter zurücksetzen?')) resetSterneData(); }}
                   className="flex-1 py-3 rounded-xl bg-system-red/10 hover:bg-system-red/15 text-system-red font-medium transition-all text-sm border border-system-red/25"
                 >
-                  🔄 Reset
+                  Reset
                 </button>
               </div>
             </div>
@@ -1669,7 +1375,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             {sterneData.history.length > 0 && (
               <div className="modern-card">
                 <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
-                  <span className="text-text-secondary">📜</span> Verlauf
+                  Verlauf
                 </h4>
                 <div className="space-y-1.5 max-h-64 overflow-y-auto">
                   {[...sterneData.history].reverse().map((entry, i) => {
@@ -1683,13 +1389,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg ${isAlex ? 'panel-blue' : 'panel-red'}`}
                       >
                         <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <span className="text-text-secondary">{isAlex ? '🔵' : '🔴'}</span>
+                          <TeamLogo team={isAlex ? 'aek' : 'real'} size="xs" />
                           <span className={`font-semibold text-sm ${isAlex ? 'text-system-blue' : 'text-system-red'}`}>
                             {wer}
                           </span>
                           <span className="text-xs text-text-tertiary">{entry.stars}★ Team</span>
                           <span className={`text-xs font-bold ${isAlex ? 'text-system-blue' : 'text-system-green'}`}>
-                            {(() => { const g = entry.gained ?? gutschriftFuer(entry.stars); return `+${g % 1 === 0 ? g : g.toFixed(1)}⭐`; })()}
+                            {(() => { const g = entry.gained ?? gutschriftFuer(entry.stars); return `+${g % 1 === 0 ? g : g.toFixed(1)}★`; })()}
                           </span>
                           {entry.info && (
                             <span className="text-[11px] text-text-tertiary truncate max-w-full">{entry.info}</span>
@@ -1702,7 +1408,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                           <button
                             onClick={() => {
                               const g = entry.gained ?? gutschriftFuer(entry.stars);
-                              if (window.confirm(`Eintrag löschen? ${wer} verliert ${g % 1 === 0 ? g : g.toFixed(1)} ⭐.`)) {
+                              if (window.confirm(`Eintrag löschen? ${wer} verliert ${g % 1 === 0 ? g : g.toFixed(1)} ★.`)) {
                                 deleteSterneEintrag(echterIndex);
                               }
                             }}
@@ -1759,7 +1465,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               {/* Alexander Balance */}
               <div className="p-4 bg-system-blue/10 rounded-lg border-2 border-system-blue/45 text-center">
                 <h5 className="font-bold text-system-blue mb-2 flex items-center justify-center gap-2">
-                  🔵 {managers.aek.name}
+                  {managers.aek.name}
                 </h5>
                 <div className="text-2xl font-bold text-system-green mb-1">
                   +{euro(bjTracking.alexander.balance)}
@@ -1770,7 +1476,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               {/* Philip Balance */}
               <div className="p-4 bg-system-green/10 rounded-lg border-2 border-system-green/45 text-center">
                 <h5 className="font-bold text-system-green mb-2 flex items-center justify-center gap-2">
-                  🔴 {managers.real.name}
+                  {managers.real.name}
                 </h5>
                 <div className="text-2xl font-bold text-system-green mb-1">
                   +{euro(bjTracking.philip.balance)}
@@ -1797,25 +1503,25 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => addToPlayerAccount('alexander', 5.00)}
                     className="btn-soft btn-soft-green px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🏆 Win<br/>+5,00 €
+                    Win<br/>+5,00 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 7.50)}
                     className="btn-soft btn-soft-purple px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🃏 BJ<br/>+7,50 €
+                    Blackjack<br/>+7,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 2.50)}
                     className="btn-soft btn-soft-orange px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🤝 BJ-Push<br/>+2,50 €
+                    BJ-Push<br/>+2,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 10.00)}
                     className="btn-soft btn-soft-red px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🎲 Double<br/>+10,00 €
+                    Double<br/>+10,00 €
                   </button>
                 </div>
 
@@ -1875,25 +1581,25 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => addToPlayerAccount('philip', 5.00)}
                     className="btn-soft btn-soft-green px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🏆 Win<br/>+5,00 €
+                    Win<br/>+5,00 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 7.50)}
                     className="btn-soft btn-soft-purple px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🃏 BJ<br/>+7,50 €
+                    Blackjack<br/>+7,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 2.50)}
                     className="btn-soft btn-soft-orange px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🤝 BJ-Push<br/>+2,50 €
+                    BJ-Push<br/>+2,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 10.00)}
                     className="btn-soft btn-soft-red px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🎲 Double<br/>+10,00 €
+                    Double<br/>+10,00 €
                   </button>
                 </div>
 
@@ -1950,7 +1656,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 onClick={addTieGame}
                 className="bg-system-green hover:opacity-90 text-white px-8 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
               >
-                🤝 Unentschieden (0 €)
+                Unentschieden (0 €)
               </button>
             </div>
           </div>
@@ -1979,7 +1685,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   onClick={finishCurrentRound}
                   className="btn-brand px-6 py-4 rounded-xl font-bold min-h-[56px]"
                 >
-                  ✅ Runde abschließen
+                  Runde abschließen
                 </button>
               )}
               
@@ -1987,14 +1693,14 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 onClick={endBjSession}
                 className="btn-soft btn-soft-purple px-6 py-4 rounded-xl font-bold min-h-[56px]"
               >
-                🏁 BJ-Beenden
+                Runde beenden
               </button>
               
               <button
                 onClick={() => { if (window.confirm('Gesamtes Blackjack-Tracking (Einsätze, Ergebnisse, Verlauf) zurücksetzen?')) resetBjTracking(); }}
                 className="btn-soft btn-soft-gray px-6 py-4 rounded-xl font-bold min-h-[56px]"
               >
-                🔄 Alles zurücksetzen
+                Alles zurücksetzen
               </button>
             </div>
 
@@ -2002,7 +1708,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               <div className="mt-4 p-4 bg-bg-elevated rounded-lg border border-system-indigo/25">
                 <div className="text-center">
                   <div className="text-sm font-medium text-system-indigo mb-2">
-                    📍 Aktuelle Runde {bjTracking.currentRound.roundNumber}
+                    Aktuelle Runde {bjTracking.currentRound.roundNumber}
                   </div>
                   <div className="text-xs text-system-indigo mb-3">
                     {bjTracking.currentRound.games.length} Spiele in dieser Runde
@@ -2011,7 +1717,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   {bjTracking.currentRound.games.length >= 10 && (
                     <div className="panel-green rounded-lg p-2">
                       <span className="text-system-green text-xs font-medium">
-                        🎉 10 Spiele erreicht! Klicke &quot;Runde abschließen&quot; für die nächste Runde.
+                        10 Spiele erreicht — mit „Runde abschließen“ geht es weiter.
                       </span>
                     </div>
                   )}
@@ -2024,7 +1730,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           {bjTracking.rounds.length > 0 && (
             <div className="modern-card mb-6">
               <h4 className="font-bold text-lg mb-4 text-text-secondary flex items-center gap-2">
-                📊 Runden-Übersicht (&quot;Bankauszug&quot;)
+                Rundenübersicht
               </h4>
               
               <div className="space-y-4">
@@ -2033,7 +1739,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-2">
                         <h5 className="font-bold text-text-secondary">
-                          📋 Runde {round.roundNumber}
+                          Runde {round.roundNumber}
                         </h5>
                         <span className="text-xs bg-bg-tertiary px-2 py-1 rounded-full text-text-secondary">
                           {round.gamesCount} Spiele
@@ -2047,7 +1753,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     <div className="grid grid-cols-2 gap-4 mb-3">
                       <div className="p-3 bg-system-blue/10 rounded-lg border border-system-blue/25">
                         <div className="text-center">
-                          <div className="font-bold text-system-blue">🔵 {managers.aek.name}</div>
+                          <div className="font-bold text-system-blue">{managers.aek.name}</div>
                           <div className="text-xl font-bold text-system-green">
                             +{euro(round.alexanderTotal)}
                           </div>
@@ -2055,7 +1761,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       </div>
                       <div className="p-3 bg-system-red/10 rounded-lg border border-system-red/25">
                         <div className="text-center">
-                          <div className="font-bold text-system-red">🔴 {managers.real.name}</div>
+                          <div className="font-bold text-system-red">{managers.real.name}</div>
                           <div className="text-xl font-bold text-system-red">
                             +{euro(round.philipTotal)}
                           </div>
@@ -2112,7 +1818,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             {/* Alexander Stats */}
             <div className="modern-card panel-blue">
               <h5 className="font-bold text-system-blue mb-3 flex items-center gap-2">
-                🔵 {managers.aek.name} - Statistiken
+                {managers.aek.name} - Statistiken
               </h5>
               <div className="space-y-2">
                 <div className="flex justify-between">
@@ -2129,7 +1835,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             {/* Philip Stats */}
             <div className="modern-card panel-green">
               <h5 className="font-bold text-system-green mb-3 flex items-center gap-2">
-                🔴 {managers.real.name} - Statistiken
+                {managers.real.name} - Statistiken
               </h5>
               <div className="space-y-2">
                 <div className="flex justify-between">

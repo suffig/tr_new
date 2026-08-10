@@ -37,7 +37,7 @@ export default function HorizontalNavigation({ views, selectedView, onViewChange
     <div className={`mb-4 sm:mb-6 animate-mobile-slide-in ${className}`}>
       <div
         className={`flex gap-1 p-1 bg-bg-tertiary rounded-2xl ${
-          umbrechen ? 'flex-wrap sm:flex-nowrap' : 'overflow-x-auto scrollbar-hide snap-x'
+          umbrechen ? 'flex-wrap sm:flex-nowrap' : ''
         }`}
       >
         {views.map((view) => {
@@ -47,10 +47,22 @@ export default function HorizontalNavigation({ views, selectedView, onViewChange
               key={view.id}
               ref={isActive ? activeRef : null}
               onClick={() => onViewChange(view.id)}
-              className={`snap-start flex flex-col items-center justify-center gap-1 px-2 py-2 rounded-xl transition-all duration-200 min-h-[48px] ${
+              /* Bis vier Eintraege fuellen sie die volle Breite. Vorher waren
+                 sie `shrink-0 min-w-[64px]` in einem Scrollstreifen: unter sm
+                 griff das `sm:flex-1` nicht, also standen vier schmale
+                 Knoepfe linksbuendig und rechts blieb ein leerer Streifen
+                 Hintergrund — im Duell-Tab besonders auffaellig.
+
+                 `flex-auto` statt `flex-1`, weil gleich breite Knoepfe hier
+                 falsch sind: in Finanzen stehen "AEK" und "Transaktionen"
+                 nebeneinander, und bei gleicher Breite blieben dem langen
+                 Wort 69px von 76 — abgeschnitten, waehrend neben "AEK" Platz
+                 verschenkt wurde. flex-auto verteilt den freien Platz auf die
+                 Inhaltsbreiten, statt sie einzuebnen. */
+              className={`snap-start flex flex-col items-center justify-center gap-1 px-1.5 py-2 rounded-xl transition-all duration-200 min-h-[48px] ${
                 umbrechen
                   ? 'basis-[calc(33.333%-0.25rem)] sm:basis-auto sm:flex-1 min-w-0'
-                  : 'shrink-0 sm:flex-1 min-w-[64px]'
+                  : 'flex-auto min-w-0'
               } ${
                 isActive
                   ? 'bg-bg-secondary text-text-primary shadow-sm'

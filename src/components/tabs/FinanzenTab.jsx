@@ -190,7 +190,6 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
     { id: 'aek', label: 'AEK', logoComponent: <TeamLogo team="aek" size="sm" /> },
     { id: 'real', label: 'Real', logoComponent: <TeamLogo team="real" size="sm" /> },
     { id: 'transactions', label: 'Transaktionen', iconName: 'swap' },
-    { id: 'analysis', label: 'Analyse', iconName: 'chart' },
   ];
 
   if (loading) {
@@ -483,123 +482,8 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         <>
           {renderTeamFinanceView('Real')}
         </>
-      ) : currentView === 'analysis' ? (
-        <>
-          {/* Echtgeld-Schulden Overview */}
-          <div className="modern-card mb-6">
-            <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2">
-              <Icon name="swap" size={18} strokeWidth={2.2} className="text-system-green" />Echtgeld-Schulden Übersicht
-            </h3>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-              <div className={`p-4 rounded-xl border ${(aekFinances.debt || 0) > 0 ? "border-system-red/30 bg-system-red/10" : "border-system-green/30 bg-system-green/10"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <TeamLogo team="aek" size="sm" />
-                    <span className="font-semibold text-text-primary">{getTeamDisplay('AEK')}</span>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${(aekFinances.debt || 0) > 0 ? 'bg-system-red/10 text-system-red' : 'bg-system-green/10 text-system-green'}`}>
-                    {(aekFinances.debt || 0) > 0 ? '⚠️ Schulden' : '✅ Schuldenfrei'}
-                  </span>
-                </div>
-                <div className={`text-2xl font-bold ${(aekFinances.debt || 0) > 0 ? 'text-system-red' : 'text-system-green'}`}>
-                  {(aekFinances.debt || 0) > 0 ? `-${aekFinances.debt}€` : '0€'}
-                </div>
-                <div className="text-xs text-text-muted mt-1">Offene Echtgeld-Schulden</div>
-              </div>
-              <div className={`p-4 rounded-xl border ${(realFinances.debt || 0) > 0 ? "border-system-red/30 bg-system-red/10" : "border-system-green/30 bg-system-green/10"}`}>
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center gap-2">
-                    <TeamLogo team="real" size="sm" />
-                    <span className="font-semibold text-text-primary">{getTeamDisplay('Real')}</span>
-                  </div>
-                  <span className={`text-xs px-2 py-1 rounded-full font-medium ${(realFinances.debt || 0) > 0 ? 'bg-system-red/10 text-system-red' : 'bg-system-green/10 text-system-green'}`}>
-                    {(realFinances.debt || 0) > 0 ? '⚠️ Schulden' : '✅ Schuldenfrei'}
-                  </span>
-                </div>
-                <div className={`text-2xl font-bold ${(realFinances.debt || 0) > 0 ? 'text-system-red' : 'text-system-green'}`}>
-                  {(realFinances.debt || 0) > 0 ? `-${realFinances.debt}€` : '0€'}
-                </div>
-                <div className="text-xs text-text-muted mt-1">Offene Echtgeld-Schulden</div>
-              </div>
-            </div>
-            {((aekFinances.debt || 0) === 0 && (realFinances.debt || 0) === 0) && (
-              <div className="text-center py-3 bg-system-green/10 rounded-lg border border-system-green/30">
-                <span className="text-system-green font-medium">🎉 Beide Teams sind schuldenfrei!</span>
-              </div>
-            )}
-          </div>
-
-          {/* Echtgeld Formula Explanation */}
-          <div className="modern-card mb-6">
-            <h3 className="font-bold text-lg mb-3 inline-flex items-center gap-2">
-              <Icon name="bulb" size={18} strokeWidth={2.2} className="text-system-green" />Echtgeld-Berechnung Formel
-            </h3>
-            <div className="bg-bg-secondary rounded-lg p-4 text-sm space-y-2">
-              <p className="text-text-primary font-medium">Für den Verlierer eines Spiels gilt:</p>
-              <div className="bg-bg-tertiary rounded-lg p-3 font-mono text-xs text-text-primary">
-                konto = Verlierer-Konto nach Preisgeld (min. 0€) + (100.000€ falls SdS-Spieler)<br />
-                Betrag = 5 + max(0, runde((|Preisgeld| − konto) / 100.000€))
-              </div>
-              <ul className="text-text-secondary space-y-1 mt-2">
-                <li>• <strong>Basisgebühr:</strong> 5€ (immer)</li>
-                <li>• <strong>Aufschlag:</strong> +1€ je 100.000€, das das Preisgeld nicht durch das Verlierer-Konto gedeckt wird</li>
-                <li>• <strong>Verlierer-Konto:</strong> Bilanz nach Abzug des Preisgeldes, mindestens 0€ (das Preisgeld zehrt das Guthaben zuerst auf)</li>
-                <li>• <strong>SdS-Bonus:</strong> 100.000€ wird dem Konto angerechnet, falls der Spieler des Spiels beim Verlierer spielt</li>
-              </ul>
-              <p className="text-text-muted text-xs mt-2 italic">
-                Beispiel: Verlierer-Konto 300.000€, Preisgeld −700.000€ → Konto nach Preisgeld = 0€ → Aufschlag: max(0, runde((700.000 − 0) / 100.000)) = 7 → Gesamt: 5 + 7 = 12€
-              </p>
-            </div>
-          </div>
-
-          {/* Financial Metrics */}
-          <div className="modern-card mb-6">
-            <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2">
-              <Icon name="chart" size={18} strokeWidth={2.2} className="text-system-green" />Finanz-Kennzahlen
-            </h3>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-              <div className="text-center p-3 bg-bg-secondary rounded-lg">
-                <div className="text-xl font-bold text-system-blue">{formatCurrency(aekFinances.balance)}</div>
-                <div className="text-xs text-text-muted">{getTeamDisplay('AEK')} Bargeld</div>
-              </div>
-              <div className="text-center p-3 bg-bg-secondary rounded-lg">
-                <div className="text-xl font-bold text-system-red">{formatCurrency(realFinances.balance)}</div>
-                <div className="text-xs text-text-muted">{getTeamDisplay('Real')} Bargeld</div>
-              </div>
-              <div className="text-center p-3 bg-bg-secondary rounded-lg">
-                <div className="text-xl font-bold text-text-primary">
-                  {formatCurrency(aekFinances.balance + realFinances.balance)}
-                </div>
-                <div className="text-xs text-text-muted">Gesamt-Bargeld</div>
-              </div>
-              <div className="text-center p-3 bg-bg-secondary rounded-lg">
-                <div className="text-xl font-bold text-text-primary">{formatCurrency(totalCapital)}</div>
-                <div className="text-xs text-text-muted">Gesamtkapital</div>
-              </div>
-            </div>
-          </div>
-        </>
       ) : (
         <>
-          {/* Real-money debt alert — only shows when a team owes real money */}
-          {((aekFinances.debt || 0) > 0 || (realFinances.debt || 0) > 0) && (
-            <button
-              onClick={() => setCurrentView('analysis')}
-              className="w-full mb-4 flex items-center gap-3 p-3 rounded-2xl bg-system-red/10 text-left"
-            >
-              <span className="w-9 h-9 rounded-xl bg-system-red/15 text-system-red flex items-center justify-center flex-shrink-0">
-                <Icon name="swap" size={18} strokeWidth={2.1} />
-              </span>
-              <span className="flex-1 min-w-0 text-sm text-text-primary">
-                <span className="font-semibold">Echtgeld-Schulden offen:</span>{' '}
-                {(aekFinances.debt || 0) > 0 && `${getTeamDisplay('AEK')} ${formatCurrency(aekFinances.debt)}`}
-                {(aekFinances.debt || 0) > 0 && (realFinances.debt || 0) > 0 && ' · '}
-                {(realFinances.debt || 0) > 0 && `${getTeamDisplay('Real')} ${formatCurrency(realFinances.debt)}`}
-              </span>
-              <Icon name="chevronRight" size={18} strokeWidth={2.2} className="text-system-red flex-shrink-0" />
-            </button>
-          )}
-
           {/* Compact team comparison */}
       <div className="modern-card mb-4 p-0 overflow-hidden">
         <div className="grid grid-cols-2 divide-x divide-border-light">
