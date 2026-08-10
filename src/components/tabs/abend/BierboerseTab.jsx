@@ -13,7 +13,8 @@ import {
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
   KATEGORIE_KATALOG, KATEGORIE_GRUPPEN, STANDARD_KATEGORIEN, kategorie,
   ladeEinstellungen, sichereEinstellungen, noteAusKategorien, notenVon,
-  geschmacksDuell, gesamtBilanz, kategorienProfil, sortenVorliebe,
+  geschmacksDuell, gesamtBilanz, kategorienProfil, sortenVorliebe, preisLeistung,
+  abendText,
 } from '../../../utils/bierboerse';
 
 const euro = (n) => `${(Number(n) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
@@ -411,6 +412,31 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
     else { toast.success('Bierbörse gelöscht.'); onAendern(); }
   };
 
+  // Abend verschicken. `navigator.share` oeffnet das Teilen-Menue des
+  // Telefons — wohin es geht, entscheidet ihr dort, die App verschickt
+  // nichts von sich aus. Auf dem Rechner gibt es das meist nicht, dort
+  // landet der Text in der Zwischenablage.
+  const teilen = async () => {
+    const text = abendText(boerse, verkostungen, katalog);
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: boerse.name, text });
+      } else {
+        await navigator.clipboard.writeText(text);
+        toast.success('In die Zwischenablage kopiert.');
+      }
+    } catch (e) {
+      // Abbrechen im Teilen-Menue ist kein Fehler und braucht keine Meldung.
+      if (e?.name === 'AbortError') return;
+      try {
+        await navigator.clipboard.writeText(text);
+        toast.success('In die Zwischenablage kopiert.');
+      } catch {
+        toast.error('Konnte nicht geteilt werden.');
+      }
+    }
+  };
+
   const loeschen = async (v) => {
     if (!window.confirm(`„${katalog.find((b) => b.id === v.bier_id)?.name || 'Dieses Bier'}" von dieser Börse entfernen?`)) return;
     const { error } = await supabaseDb.delete('bier_verkostungen', v.id);
@@ -635,6 +661,11 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
             {/* Ändern und Löschen liegen bewusst hier unten im aufgeklappten
                 Bereich — nicht neben dem Kopf, wo man beim Auf- und Zuklappen
                 danebentippen kann. */}
+            <button onClick={teilen}
+                    className="w-11 rounded-xl bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
+                    aria-label="Abend teilen" title="Abend teilen">
+              <Icon name="share" size={16} strokeWidth={2.2} />
+            </button>
             <button onClick={onBoerseBearbeiten}
                     className="w-11 rounded-xl bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
                     aria-label="Bierbörse ändern" title="Bierbörse ändern">
@@ -798,6 +829,7 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
   const duell = useMemo(() => geschmacksDuell(verkostungen, katalog), [verkostungen, katalog]);
   const profil = useMemo(() => kategorienProfil(verkostungen), [verkostungen]);
   const sorten = useMemo(() => sortenVorliebe(verkostungen, katalog), [verkostungen, katalog]);
+  const pl = useMemo(() => preisLeistung(verkostungen, katalog), [verkostungen, katalog]);
 
   const kommaEins = (n, stellen = 1) =>
     n == null ? '—' : Number(n).toLocaleString('de-DE', { maximumFractionDigits: stellen });
@@ -978,6 +1010,92 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
               </p>
             )}
           </div>
+        </div>
+      )}
+
+      {/* Preis-Leistung */}
+      {pl.sieger && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-2.5">Preis-Leistung</div>
+
+          <div className="flex items-start gap-3 mb-3">
+            <span className="w-10 h-10 rounded-xl bg-system-green/15 text-system-green flex items-center justify-center flex-shrink-0">
+              <Icon name="award" size={20} strokeWidth={2.1} />
+            </span>
+            <div className="min-w-0 flex-1">
+              <div className="text-caption2 text-text-tertiary">Sieger nach Punkten je Euro</div>
+              <div className="font-semibold text-text-primary truncate">{pl.sieger.bier.name}</div>
+              <div className="text-caption2 text-text-secondary num-tabular">
+                {note(pl.sieger.note)} von 10 für {euro(pl.sieger.literpreis)} je Liter
+              </div>
+            </div>
+            <div className="text-center flex-shrink-0">
+              <div className="stat-display text-xl text-system-green num-tabular leading-none">
+                {note(pl.sieger.punkteJeEuro)}
+              </div>
+              <div className="text-caption2 text-text-tertiary mt-0.5">P/€</div>
+            </div>
+          </div>
+
+          {/* Die Rangliste, damit die Zahl nachvollziehbar bleibt */}
+          <div className="space-y-1.5">
+            {pl.gerechnet.slice(0, 5).map((e, i) => {
+              const anteil = pl.sieger.punkteJeEuro
+                ? (e.punkteJeEuro / pl.sieger.punkteJeEuro) * 100 : 0;
+              return (
+                <div key={e.bier.id}>
+                  <div className="flex items-baseline gap-2 text-caption2 mb-0.5">
+                    <span className={`w-4 text-center font-bold flex-shrink-0 ${
+                      i === 0 ? 'text-system-green' : 'text-text-tertiary'}`}>{i + 1}</span>
+                    <span className="text-text-primary truncate">{e.bier.name}</span>
+                    <span className="ml-auto num-tabular text-text-tertiary flex-shrink-0">
+                      {euro(e.literpreis)}/l
+                    </span>
+                    <span className="num-tabular text-text-secondary w-8 text-right flex-shrink-0">
+                      {note(e.punkteJeEuro)}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden ml-6">
+                    <div className="h-full rounded-full bg-system-green" style={{ width: `${anteil}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="mt-2.5 space-y-1 text-caption1 text-text-secondary">
+            {/* Gerechnet gegen gefuehlt — wenn beide auseinanderlaufen, ist
+                das die eigentliche Aussage. */}
+            {pl.gefuehlterSieger && (
+              pl.einig ? (
+                <p>
+                  Eure eigene Preis-Leistungs-Note sieht es genauso:{' '}
+                  <span className="text-text-primary font-semibold">{pl.gefuehlterSieger.bier.name}</span>
+                  {' mit '}<span className="num-tabular">{note(pl.gefuehlterSieger.note)}</span>.
+                </p>
+              ) : (
+                <p>
+                  Gefühlt liegt allerdings{' '}
+                  <span className="text-text-primary font-semibold">{pl.gefuehlterSieger.bier.name}</span>
+                  {' vorn ('}<span className="num-tabular">{note(pl.gefuehlterSieger.note)}</span>
+                  {' in der Kategorie Preis-Leistung) — die Rechnung kennt eben nicht, dass manches sein Geld wert ist.'}
+                </p>
+              )
+            )}
+            {pl.teuerUndMau && (
+              <p>
+                Am wenigsten fürs Geld gab es bei{' '}
+                <span className="text-text-primary font-semibold">{pl.teuerUndMau.bier.name}</span>
+                {': '}<span className="num-tabular">{euro(pl.teuerUndMau.literpreis)}</span>
+                {' je Liter für '}<span className="num-tabular">{note(pl.teuerUndMau.note)}</span>
+                {' Punkte.'}
+              </p>
+            )}
+          </div>
+          <p className="text-caption2 text-text-tertiary mt-2">
+            Punkte je Euro = Durchschnittsnote geteilt durch den Literpreis. Der Literpreis,
+            weil 0,3 l und 0,5 l sonst nicht vergleichbar sind.
+          </p>
         </div>
       )}
 

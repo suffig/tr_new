@@ -624,6 +624,174 @@ export function sortenVorliebe(verkostungen, katalog, mindestens = 2) {
   };
 }
 
+/**
+ * Ein Abend als Text zum Verschicken.
+ *
+ * Bewusst reiner Text und kein Bild: er landet in WhatsApp, wo Text zitierbar
+ * und durchsuchbar ist, und er funktioniert auch, wenn jemand die App gar
+ * nicht hat.
+ *
+ * Deutsche Zahlen, keine Emoji — dieselbe Sprache wie in der App. Leere
+ * Abschnitte fallen weg, statt als "Sieger: —" dazustehen.
+ */
+export function abendText(boerse, verkostungen, katalog) {
+  const eigene = (verkostungen || []).filter((v) => v.boerse_id === boerse.id);
+  const stat = boersenStatistik(eigene, katalog);
+  const beste = bestenListe(eigene, katalog);
+  const kasse = rechnung(eigene);
+  const duell = geschmacksDuell(eigene, katalog);
+  const pl = preisLeistung(eigene, katalog);
+
+  const zahl1 = (n) => n == null ? '—' : Number(n).toLocaleString('de-DE', { maximumFractionDigits: 1 });
+  // Noten immer mit einer Nachkommastelle, wie in der App. Sonst stand im
+  // Text "Alexander 3, Philip 9" neben "Bestes Bier: Salvator (6,5)".
+  const note1 = (n) => n == null ? '—'
+    : Number(n).toLocaleString('de-DE', { minimumFractionDigits: 1, maximumFractionDigits: 1 });
+  const geld = (n) => `${Number(n || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
+  const datumText = boerse.datum
+    ? new Date(boerse.datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' })
+    : '';
+
+  const zeilen = [];
+  zeilen.push(boerse.name);
+  zeilen.push([datumText, boerse.ort].filter(Boolean).join(' · '));
+  zeilen.push('');
+  zeilen.push([
+    `${stat.biere} ${stat.biere === 1 ? 'Bier' : 'Biere'}`,
+    `${stat.glaeser} ${stat.glaeser === 1 ? 'Glas' : 'Gläser'}`,
+    `${zahl1(stat.liter)} l`,
+    geld(stat.ausgaben),
+  ].join(' · '));
+
+  if (beste.length) {
+    zeilen.push('');
+    zeilen.push(`Bestes Bier: ${beste[0].bier?.name || 'Unbekannt'} (${note1(beste[0].note)})`);
+    if (beste.length > 1) {
+      const letztes = beste[beste.length - 1];
+      zeilen.push(`Schlusslicht: ${letztes.bier?.name || 'Unbekannt'} (${note1(letztes.note)})`);
+    }
+  }
+  if (pl.sieger) {
+    zeilen.push(`Preis-Leistung: ${pl.sieger.bier.name} (${note1(pl.sieger.punkteJeEuro)} Punkte je Euro)`);
+  }
+  if (duell.streit && duell.streit.abstand >= 2) {
+    zeilen.push(`Größter Streit: ${duell.streit.bier?.name || 'Unbekannt'} — `
+      + `Alexander ${note1(duell.streit.aek)}, Philip ${note1(duell.streit.real)}`);
+  }
+
+  zeilen.push('');
+  for (const person of PERSONEN) {
+    const s = stat.proPerson[person.team];
+    if (!s.glaeser && s.schnitt == null) continue;
+    zeilen.push(`${person.name}: ${s.glaeser} ${s.glaeser === 1 ? 'Glas' : 'Gläser'}`
+      + `, ${geld(s.ausgaben)}`
+      + (s.schnitt == null ? '' : `, Ø ${note1(s.schnitt)}`));
+  }
+
+  if (kasse.zugeordnet > 0) {
+    zeilen.push('');
+    zeilen.push(Math.abs(kasse.ausgleich) < 0.01
+      ? 'Rechnung: ausgeglichen.'
+      : kasse.ausgleich > 0
+        ? `Philip schuldet Alexander ${geld(kasse.ausgleich)}.`
+        : `Alexander schuldet Philip ${geld(-kasse.ausgleich)}.`);
+  }
+
+  if (boerse.notiz) {
+    zeilen.push('');
+    zeilen.push(boerse.notiz);
+  }
+
+  return zeilen.join('\n').replace(/\n{3,}/g, '\n\n').trim();
+}
+
+/**
+ * Preis-Leistung über alle Börsen.
+ *
+ * Zwei Sieger, weil "Preis-Leistung" zwei verschiedene Dinge heissen kann:
+ *
+ *   gerechnet   Notenpunkte je Euro Literpreis. Rein objektiv, aus Note,
+ *               Preis und Glasgroesse. Bevorzugt naturgemaess das Billige —
+ *               genau das ist die Frage "was war am meisten fuers Geld".
+ *   gefuehlt    Eure eigene Kategorie "Preis-Leistung", falls vergeben.
+ *               Da steckt drin, was die Rechnung nicht weiss: dass fuer ein
+ *               Salvator eben 5 € in Ordnung gehen.
+ *
+ * Die beiden auseinanderzuhalten ist wichtiger, als sie zu einer Zahl zu
+ * verruehren — wenn sie auseinanderlaufen, ist das die interessante Aussage.
+ *
+ * Der Literpreis statt des Glaspreises, weil 0,3 l fuer 3,80 € und 0,5 l fuer
+ * 4,50 € sonst nicht vergleichbar waeren.
+ */
+export function preisLeistung(verkostungen, katalog) {
+  const nachId = new Map((katalog || []).map((b) => [b.id, b]));
+
+  // Je Bier zusammenfassen: dasselbe Bier auf zwei Abenden ist ein Bier.
+  const proBier = new Map();
+  for (const v of verkostungen || []) {
+    const note = schnittNote(v);
+    if (note == null || v.preis == null || !(v.groesse_ml > 0)) continue;
+    const e = proBier.get(v.bier_id) || { bier_id: v.bier_id, noten: [], literpreise: [], glaeser: 0 };
+    e.noten.push(Number(note));
+    e.literpreise.push((Number(v.preis) / v.groesse_ml) * 1000);
+    e.glaeser += (v.anzahl_aek || 0) + (v.anzahl_real || 0);
+    proBier.set(v.bier_id, e);
+  }
+
+  const gerechnet = [...proBier.values()]
+    .map((e) => {
+      const note = mittel(e.noten);
+      const literpreis = mittel(e.literpreise);
+      return {
+        bier: nachId.get(e.bier_id) || null,
+        note,
+        literpreis,
+        glaeser: e.glaeser,
+        // Punkte je Euro Literpreis. Ein Bier, das 8 Punkte holt und 4 € je
+        // Liter kostet, bringt 2,0 Punkte pro Euro.
+        punkteJeEuro: literpreis > 0 ? note / literpreis : null,
+      };
+    })
+    .filter((e) => e.bier && e.punkteJeEuro != null)
+    .sort((a, b) => b.punkteJeEuro - a.punkteJeEuro);
+
+  // Gefuehlt: Schnitt der Kategorie "preisleistung" ueber beide Personen.
+  const gefuehltMap = new Map();
+  for (const v of verkostungen || []) {
+    for (const key of ['aek', 'real']) {
+      const n = notenVon(v, key).preisleistung;
+      if (n == null) continue;
+      const e = gefuehltMap.get(v.bier_id) || { bier_id: v.bier_id, werte: [] };
+      e.werte.push(Number(n));
+      gefuehltMap.set(v.bier_id, e);
+    }
+  }
+  const gefuehlt = [...gefuehltMap.values()]
+    .map((e) => ({ bier: nachId.get(e.bier_id) || null, note: mittel(e.werte), anzahl: e.werte.length }))
+    .filter((e) => e.bier)
+    .sort((a, b) => b.note - a.note);
+
+  // "Geldverbrennung": teuer und trotzdem unter dem Schnitt. Nur melden, wenn
+  // es wirklich einen Ausreisser gibt — sonst wird das teuerste Bier auch dann
+  // angeprangert, wenn es gut war.
+  const schnittAlle = mittel(gerechnet.map((e) => e.note));
+  const teuerUndMau = [...gerechnet]
+    .filter((e) => schnittAlle != null && e.note < schnittAlle)
+    .sort((a, b) => b.literpreis - a.literpreis)[0] || null;
+
+  return {
+    gerechnet,
+    gefuehlt,
+    sieger: gerechnet[0] || null,
+    schlusslicht: gerechnet.length > 1 ? gerechnet[gerechnet.length - 1] : null,
+    gefuehlterSieger: gefuehlt[0] || null,
+    teuerUndMau,
+    // Laufen objektiver und gefuehlter Sieger auseinander? Das ist die
+    // eigentliche Aussage der Karte.
+    einig: !!(gerechnet[0] && gefuehlt[0] && gerechnet[0].bier?.id === gefuehlt[0].bier?.id),
+  };
+}
+
 /* ===========================================================================
    Bilanz über alle Börsen
    =========================================================================== */
