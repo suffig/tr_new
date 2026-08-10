@@ -29,7 +29,8 @@ with
 erwartet (datei, objekt, spalte) as (
   values
     ('fifa_versions',   'fifa_versions',            null),
-    ('06_team_season',  'teams',                    null),
+    ('06_team_season',  'team_pull_events',         'fifa_version'),
+    ('06_team_season',  'team_collection',          'fifa_version'),
     ('09_abende',       'abende',                   null),
     ('09_abende',       'abend_ereignisse',         null),
     ('18_draft',        'draft_sessions',           null),
@@ -172,23 +173,52 @@ select * from (
          'OK', count(*) || ' Spiele'
     from public.matches group by fifa_version
 
-  -- C: Tore ohne Spielzuordnung --------------------------------------------
+  -- C: Tore ohne Spielzuordnung, je Saison zusammengefasst -----------------
+  --    Die Einzelliste hatte über 250 Zeilen und war nicht lesbar. Was zählt,
+  --    ist die Deckung je Saison: bei den importierten Altsaisons ist eine
+  --    Differenz erwartet (dort wurden nur Gesamtzahlen überliefert), bei den
+  --    laufenden Saisons ist sie ein Hinweis auf fehlende Torschützen.
   union all
-  select 50, 'C Daten',
-         'Tore ohne Spiel: ' || name || ' (' || team || ', ' || version || ')',
-         'PRUEFEN',
-         gespeichert || ' in players.goals, ' || belegt || ' aus Torschützenlisten → '
-         || differenz || ' Differenz'
-    from abweichung
+  select 50, 'C Daten', 'Tore ohne Spiel in ' || version, 'PRUEFEN',
+         count(*) || ' Spieler betroffen, ' || sum(differenz) || ' Tore ohne Zuordnung '
+         || '(von ' || sum(gespeichert) || ' gespeicherten)'
+    from abweichung group by version
 
   union all
-  select 51, 'C Daten', 'Tore ohne Spielzuordnung', 'OK',
+  select 51, 'C Daten',
+         'Grösster Einzelfall: ' || name || ' (' || team || ', ' || version || ')',
+         'PRUEFEN',
+         gespeichert || ' in players.goals, nur ' || belegt || ' in Torschützenlisten'
+    from (select * from abweichung order by differenz desc limit 10) gross
+
+  union all
+  select 52, 'C Daten', 'Tore ohne Spielzuordnung', 'OK',
          'players.goals deckt sich überall mit den Torschützenlisten'
    where not exists (select 1 from abweichung)
 
+  -- C: Deckung der Torschützenlisten je Saison ------------------------------
+  --    Die Kernzahl. Sind hier viele Spiele ohne Schützen, sind alle
+  --    spielerbezogenen Auswertungen entsprechend unvollständig — die App
+  --    kann nur zählen, was eingetragen wurde.
+  union all
+  select 56, 'C Daten', 'Torschützen erfasst in ' || coalesce(fifa_version, '(ohne)'),
+         case when count(*) filter (where mit_schuetzen) = count(*) then 'OK' else 'PRUEFEN' end,
+         count(*) filter (where mit_schuetzen) || ' von ' || count(*) || ' Spielen mit Toren ('
+         || round(100.0 * count(*) filter (where mit_schuetzen) / nullif(count(*), 0)) || ' %)'
+    from (
+      select m.fifa_version,
+             jsonb_array_length(case when m.goalslista::text ~ '^\s*\['
+                                     then m.goalslista::text::jsonb else '[]'::jsonb end)
+           + jsonb_array_length(case when m.goalslistb::text ~ '^\s*\['
+                                     then m.goalslistb::text::jsonb else '[]'::jsonb end) > 0 as mit_schuetzen
+        from public.matches m
+       where coalesce(m.goalsa, 0) + coalesce(m.goalsb, 0) > 0
+    ) deckung
+   group by fifa_version
+
   -- C: Spiele mit Toren, aber ohne Torschützen -----------------------------
   union all
-  select 52, 'C Daten', 'Spiele mit Toren, aber ohne Torschützen',
+  select 57, 'C Daten', 'Spiele mit Toren, aber ohne Torschützen',
          case when count(*) = 0 then 'OK' else 'PRUEFEN' end,
          count(*) || ' Spiele'
          || case when count(*) = 0 then '' else ' — dort fehlen die Schützen' end

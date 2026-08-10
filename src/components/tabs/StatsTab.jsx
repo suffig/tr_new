@@ -287,6 +287,28 @@ class StatsCalculator {
     ).length;
   }
 
+  /**
+   * Wie viele Spiele mit Toren haben ueberhaupt eine Torschuetzenliste?
+   *
+   * Der Statusbericht (db/22) hat gezeigt, dass das laengst nicht alle sind:
+   * bei 289 erfassten Spielen fehlten in 135 die Schuetzen. Alles, was aus
+   * den Listen kommt — "Trifft in", "Bestes Spiel", "Tore je Trefferspiel" —
+   * zaehlt also nur den erfassten Teil. Das gehoert danebengeschrieben,
+   * sonst wirken die Zahlen wie ein Fehler.
+   */
+  torschuetzenDeckung() {
+    const mitToren = this.matches.filter(
+      (m) => (m.goalsa || 0) + (m.goalsb || 0) > 0);
+    const mitListe = mitToren.filter((m) =>
+      this.torschuetzen(m, m.teama).length > 0 || this.torschuetzen(m, m.teamb).length > 0);
+    return {
+      mitToren: mitToren.length,
+      mitListe: mitListe.length,
+      ohneListe: mitToren.length - mitListe.length,
+      anteil: mitToren.length ? mitListe.length / mitToren.length : 1,
+    };
+  }
+
   /** Die meisten Tore in einem einzelnen Spiel. */
   bestesEinzelspiel(playerName, playerTeam) {
     if (!playerName || !playerTeam) return 0;
@@ -1150,6 +1172,29 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const renderPlayers = () => (
     <div className="modern-card">
       <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="chart" size={18} strokeWidth={2.2} />Spielerstatistiken</h3>
+
+      {/* Wie viel von dem, was hier steht, ist ueberhaupt belegt?
+          "Trifft in" und "Bestes Spiel" kommen aus den Torschuetzenlisten der
+          Spiele. Fehlen die in vielen Spielen, sind die Zahlen zu niedrig —
+          und ohne diesen Hinweis sieht das nach einem Fehler aus statt nach
+          einer Luecke in der Erfassung. */}
+      {(() => {
+        const d = stats.torschuetzenDeckung();
+        if (d.mitToren === 0 || d.ohneListe === 0) return null;
+        return (
+          <div className="mb-4 flex items-start gap-2.5 p-3 rounded-xl bg-system-orange/10">
+            <Icon name="warning" size={16} strokeWidth={2.2}
+                  className="text-system-orange flex-shrink-0 mt-0.5" />
+            <p className="text-caption1 text-text-secondary">
+              In <span className="num-tabular font-semibold text-text-primary">{d.ohneListe}</span> von{' '}
+              <span className="num-tabular">{d.mitToren}</span> Spielen mit Toren sind keine Torschützen
+              eingetragen. {'„Trifft in“'}, {'„Bestes Spiel“'} und die Chips
+              {' '}{'„ohne Spiel“'} beziehen sich nur auf die übrigen{' '}
+              {dez(d.anteil * 100, 0)} %.
+            </p>
+          </div>
+        );
+      })()}
       
       {/* Statistics Summary */}
       <div className="mb-6 grid grid-cols-2 md:grid-cols-4 gap-3">

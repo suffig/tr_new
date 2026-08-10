@@ -74,6 +74,29 @@ const fallbackData = {
       prizeaek: 2500,
       prizereal: 2500,
       fifa_version: 'FC25'
+    },
+    // Ein Spiel MIT Toren, aber OHNE Torschuetzenliste. Genau dieser Fall
+    // steckt laut Statusbericht in fast der Haelfte der echten Spiele — ohne
+    // ihn in den Testdaten faellt beim Entwickeln nie auf, dass alle
+    // spielerbezogenen Zahlen dort ins Leere zaehlen.
+    {
+      id: 4,
+      date: '2024-01-20',
+      teama: 'AEK',
+      teamb: 'Real',
+      goalsa: 3,
+      goalsb: 2,
+      goalslista: [],
+      goalslistb: [],
+      yellowa: 0,
+      reda: 0,
+      yellowb: 1,
+      redb: 0,
+      manofthematch: null,
+      manofthematch_player_id: null,
+      prizeaek: 6000,
+      prizereal: 1000,
+      fifa_version: 'FC25'
     }
   ],
   players: [
