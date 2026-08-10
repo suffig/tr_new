@@ -7,7 +7,7 @@ import TeamLogo from '../TeamLogo';
 import { getTeamDisplay, getTeamShort } from '../../constants/teams';
 import { ADMIN_EMAIL } from '../../constants/navigation';
 import { checkMilestones } from '../../utils/milestoneAlerts';
-import { chronoDesc } from '../../utils/matchChronology';
+import SaisonZeitstrahl from './matches/SaisonZeitstrahl';
 import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
@@ -188,6 +188,20 @@ export default function MatchesTab({ onNavigate, user }) {
     };
   };
 
+  /**
+   * Aus dem Saisonverlauf in die Liste springen: Spiel aufklappen und
+   * hinscrollen. Das Aufklappen passiert sofort, das Scrollen erst im
+   * naechsten Frame — vorher steht die Karte noch nicht an ihrem Platz.
+   */
+  const springeZuSpiel = (match) => {
+    if (!match?.id) return;
+    setExpandedMatches((prev) => new Set(prev).add(match.id));
+    requestAnimationFrame(() => {
+      document.getElementById(`spiel-${match.id}`)
+        ?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  };
+
   const toggleMatchDetails = (matchId) => {
     setExpandedMatches(prev => {
       const next = new Set(prev);
@@ -272,98 +286,18 @@ export default function MatchesTab({ onNavigate, user }) {
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
-      {/* Head-to-Head Quick Stats Banner */}
-      {allMatches && allMatches.length > 0 && (() => {
-        const aekWins = allMatches.filter(m => (m.goalsa || 0) > (m.goalsb || 0)).length;
-        const realWins = allMatches.filter(m => (m.goalsb || 0) > (m.goalsa || 0)).length;
-        const draws = allMatches.length - aekWins - realWins;
-        const totalGoalsA = allMatches.reduce((s, m) => s + (m.goalsa || 0), 0);
-        const totalGoalsB = allMatches.reduce((s, m) => s + (m.goalsb || 0), 0);
-        const last10 = [...allMatches].sort(chronoDesc).slice(0, 10).reverse();
-        const resultFor = (m, side) => {
-          const a = m.goalsa || 0, b = m.goalsb || 0;
-          if (a === b) return 'D';
-          return side === 'AEK' ? (a > b ? 'W' : 'L') : (b > a ? 'W' : 'L');
-        };
-        const formAek = last10.map(m => resultFor(m, 'AEK'));
-        const formReal = last10.map(m => resultFor(m, 'Real'));
-        // Current win streak (consecutive wins by the same team, newest first; a draw ends it)
-        const streak = (() => {
-          const ordered = [...allMatches].sort(chronoDesc);
-          let who = null, len = 0;
-          for (const m of ordered) {
-            const a = m.goalsa || 0, b = m.goalsb || 0;
-            if (a === b) break;
-            const w = a > b ? 'AEK' : 'Real';
-            if (who === null) { who = w; len = 1; }
-            else if (w === who) len += 1;
-            else break;
-          }
-          return who ? { who, len } : null;
-        })();
-        const aekName = getTeamDisplay('AEK');
-        const realName = getTeamDisplay('Real');
-        return (
-          <div className="mb-4 bg-bg-secondary border border-border-light rounded-2xl overflow-hidden">
-            {/* Top: win counts with team logos */}
-            <div className="flex items-center p-3 gap-2">
-              <div className="flex-1 flex flex-col items-center gap-1">
-                <TeamLogo team="AEK" size="lg" />
-                <div className="text-3xl font-black text-system-blue">{aekWins}</div>
-                <div className="text-[11px] font-semibold text-system-blue leading-tight text-center">{aekName}</div>
-              </div>
-              <div className="flex flex-col items-center gap-0.5 px-1">
-                <div className="text-[11px] text-text-muted font-medium">{allMatches.length} Spiele</div>
-                <div className="text-xl font-black text-text-secondary tracking-tight">{totalGoalsA}:{totalGoalsB}</div>
-                {draws > 0 && <div className="text-[10px] text-text-muted">{draws}× Unentschieden</div>}
-              </div>
-              <div className="flex-1 flex flex-col items-center gap-1">
-                <TeamLogo team="Real" size="lg" />
-                <div className="text-3xl font-black text-system-red">{realWins}</div>
-                <div className="text-[11px] font-semibold text-system-red leading-tight text-center">{realName}</div>
-              </div>
-            </div>
-            {/* Current win streak highlight */}
-            {streak && streak.len >= 2 && (
-              <div className="px-3 pb-2 -mt-1 flex justify-center">
-                <span className="inline-flex items-center gap-1.5 text-[11px] font-semibold text-system-orange bg-system-orange/10 rounded-full px-2.5 py-1">
-                  <Icon name="zap" size={12} strokeWidth={2.4} />
-                  {(streak.who === 'AEK' ? aekName : realName)} · {streak.len} Siege in Folge
-                </span>
-              </div>
-            )}
-            {/* Bottom: Formkurve pro Team (letzte 10, alt -> neu) */}
-            <div className="border-t border-border-light px-3 py-2 space-y-1.5">
-              <div className="flex items-center justify-between">
-                {/* Keine Versalien mehr (wie im Rest der App), und die Zahl
-                    nennt die TATSAECHLICH gezeigten Spiele: "letzte 10" bei
-                    drei Kaestchen sah aus, als fehlten sieben. */}
-                <span className="text-caption2 text-text-muted font-medium">
-                  {formAek.length === 1 ? 'Letztes Spiel' : `Letzte ${formAek.length} Spiele`}
-                </span>
-                <span className="text-caption2 text-text-tertiary">alt → neu</span>
-              </div>
-              {[{ name: aekName, form: formAek }, { name: realName, form: formReal }].map((row, ri) => (
-                <div key={ri} className="flex items-center gap-2">
-                  <span className="text-[10px] text-text-secondary font-medium w-20 truncate shrink-0">{row.name}</span>
-                  <div className="flex gap-1 flex-wrap">
-                    {row.form.length === 0 && <span className="text-[10px] text-text-tertiary">—</span>}
-                    {row.form.map((r, i) => (
-                      <span
-                        key={i}
-                        title={r === 'W' ? 'Sieg' : r === 'D' ? 'Unentschieden' : 'Niederlage'}
-                        className={`w-4 h-4 rounded-full text-white text-[8px] font-bold flex items-center justify-center ${r === 'W' ? 'bg-system-green' : r === 'D' ? 'bg-border-strong' : 'bg-system-red'}`}
-                      >
-                        {r === 'W' ? 'S' : r === 'D' ? 'U' : 'N'}
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        );
-      })()}
+      {/* Die Saison als Linie statt als Kopfzahlen.
+          Hier stand eine Kopfkarte mit Siegzahlen, Torsumme, Serie und
+          Formkurve — alles davon beantwortet inzwischen die Startseite und,
+          ausfuehrlicher, das Duell. An dieser Stelle war es die dritte Kopie.
+          Der Verlauf dagegen fehlte ueberall: eine Liste zeigt immer nur den
+          Ausschnitt, durch den man gerade scrollt. */}
+      <SaisonZeitstrahl
+        matches={allMatches}
+        aekName={getTeamDisplay('AEK')}
+        realName={getTeamDisplay('Real')}
+        onMatchWaehlen={springeZuSpiel}
+      />
 
       {/* Horizontal Navigation */}
       <HorizontalNavigation
@@ -560,7 +494,7 @@ export default function MatchesTab({ onNavigate, user }) {
                     };
 
                     return (
-                      <div key={match.id} className="modern-card p-0 overflow-hidden">
+                      <div key={match.id} id={`spiel-${match.id}`} className="modern-card p-0 overflow-hidden">
                         {/* Match summary row */}
                         <button
                           onClick={() => toggleMatchDetails(match.id)}
