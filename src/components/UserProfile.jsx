@@ -4,7 +4,7 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getAvailableSeasons, switchToSeason, SEASONS } from '../utils/seasonManager.js';
 import { isPushSupported, getPushEnabled, enablePush, disablePush } from '../utils/notifications.js';
 import Icon from './icons/Icon';
-import { getVisibleTabs } from '../constants/navigation';
+import { getVisibleTabs, istAdmin } from '../constants/navigation';
 
 export default function UserProfile({ onClose, onNavigate }) {
   const { user } = useAuth();
@@ -36,7 +36,7 @@ export default function UserProfile({ onClose, onNavigate }) {
   const memberSince = user?.created_at ? new Date(user.created_at).toLocaleDateString('de-DE') : '—';
   const email = user?.email || '—';
   // Nur Tabs anbieten, die dieser Nutzer auch sehen darf
-  const startTabOptions = getVisibleTabs(user).map((t) => ({ id: t.id, label: t.label }));
+  const startTabOptions = getVisibleTabs().map((t) => ({ id: t.id, label: t.label }));
 
   const go = (tab) => { onNavigate(tab); onClose(); };
 
@@ -149,7 +149,10 @@ export default function UserProfile({ onClose, onNavigate }) {
             <div className="section-label">Schnellzugriff</div>
             {/* Die sechs Unteransichten der beiden Sammel-Bereiche. Statistik,
                 Duell und Finanzen stehen hier bewusst nicht mehr — die sind
-                seit der Neuordnung mit einem Tipp in der unteren Leiste. */}
+                seit der Neuordnung mit einem Tipp in der unteren Leiste.
+                Die Verwaltung kam dazu, als die Startansicht ihren Platz in
+                der Leiste bekam: sie ist eine Einstellung, und Einstellungen
+                liegen in dieser App im Profil. */}
             <div className="grid grid-cols-3 gap-2">
               <QuickAction icon="football" label="Spiele" onClick={() => go('matches')} />
               <QuickAction icon="users" label="Kader" onClick={() => go('squad')} />
@@ -157,6 +160,9 @@ export default function UserProfile({ onClose, onNavigate }) {
               <QuickAction icon="trophy" label="Teams" onClick={() => go('teams')} />
               <QuickAction icon="beer" label="Alkohol" onClick={() => go('alcohol')} />
               <QuickAction icon="mic" label="Saufen" onClick={() => go('spielersaufen')} />
+              {istAdmin(user) && (
+                <QuickAction icon="settings" label="Verwaltung" onClick={() => go('admin')} />
+              )}
             </div>
           </div>
 

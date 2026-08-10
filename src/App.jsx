@@ -21,6 +21,7 @@ import AddToHomeHint from './components/AddToHomeHint';
 import LegacyHinweis from './components/LegacyHinweis';
 
 // Lazy load tab components for better performance
+const StartTab = lazy(() => import('./components/tabs/StartTab'));
 const SpielbetriebTab = lazy(() => import('./components/tabs/SpielbetriebTab'));
 const AbendTab = lazy(() => import('./components/tabs/AbendTab'));
 const DuelTab = lazy(() => import('./components/tabs/DuelTab'));
@@ -38,8 +39,8 @@ function startZiel() {
   try {
     const preferred = localStorage.getItem('fusta_start_tab');
     if (preferred && preferred !== 'last') return resolveTab(preferred);
-    return resolveTab(localStorage.getItem('fusta_active_tab') || 'spielbetrieb');
-  } catch { return { tab: 'spielbetrieb', view: null }; }
+    return resolveTab(localStorage.getItem('fusta_active_tab') || 'start');
+  } catch { return { tab: 'start', view: null }; }
 }
 
 function App() {
@@ -181,7 +182,7 @@ function App() {
       // Deliberate horizontal swipe: long enough, fast enough, not diagonal
       if (Math.abs(dx) < 80 || dy > 60 || dt > 600) return;
 
-      const tabs = getVisibleTabs(user).map((t) => t.id);
+      const tabs = getVisibleTabs().map((t) => t.id);
       const idx = tabs.indexOf(activeTab);
       if (idx === -1) return;
       const next = dx < 0 ? idx + 1 : idx - 1;
@@ -243,11 +244,13 @@ function App() {
     // Security check: redirect unauthorized users away from admin tab
     if (activeTab === 'admin' && (!user || user.email !== ADMIN_EMAIL)) {
       // Redirect to matches tab
-      setTimeout(() => setActiveTab('spielbetrieb'), 0);
-      return <SpielbetriebTab {...props} />;
+      setTimeout(() => setActiveTab('start'), 0);
+      return <StartTab onNavigate={handleTabChange} {...props} />;
     }
     
     switch (activeTab) {
+      case 'start':
+        return <StartTab onNavigate={handleTabChange} {...props} />;
       case 'spielbetrieb':
         return <SpielbetriebTab viewRequest={viewRequest} {...props} />;
       case 'duell':
@@ -373,8 +376,11 @@ function App() {
         {/* One-time iOS "Add to Home Screen" hint (Safari, not-yet-installed) */}
         <AddToHomeHint />
 
-        {/* Quick-Add FAB: springt zu "Match hinzufügen" (nur Admin, nur auf der Spiele-Seite) */}
-        {user?.email === ADMIN_EMAIL && activeTab === 'matches' && (
+        {/* Quick-Add FAB: springt zu "Match hinzufügen" (nur Admin, nur auf der
+            Spiele-Seite). Die Bedingung stand auf 'matches' — diesen Tab-Namen
+            gibt es seit der thematischen Neuordnung nicht mehr, resolveTab
+            macht daraus 'spielbetrieb'. Der Knopf ist also nie erschienen. */}
+        {user?.email === ADMIN_EMAIL && activeTab === 'spielbetrieb' && (
           <button
             onClick={() => handleTabChange('admin')}
             aria-label="Neues Spiel hinzufügen"

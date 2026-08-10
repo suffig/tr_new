@@ -13,13 +13,27 @@ export const ADMIN_EMAIL = 'philip-melchert@live.de';
  * Untermenue.
  */
 export const BASE_TABS = [
+  { id: 'start', icon: 'sparkles', label: 'Start', ariaLabel: 'Zur Übersicht "Gerade jetzt" wechseln' },
   { id: 'spielbetrieb', icon: 'football', label: 'Spiele', ariaLabel: 'Zu Spiele-Übersicht wechseln' },
   { id: 'duell', icon: 'zap', label: 'Duell', ariaLabel: 'Zum Duell-Dashboard wechseln' },
   { id: 'stats', icon: 'chart', label: 'Statistik', ariaLabel: 'Zu Statistik-Übersicht wechseln' },
   { id: 'finanzen', icon: 'euro', label: 'Finanzen', ariaLabel: 'Zu Finanzen-Übersicht wechseln' },
   { id: 'abend', icon: 'beer', label: 'Abend', ariaLabel: 'Zu Teams, Alkohol und Saufen wechseln' },
-  { id: 'admin', icon: 'settings', label: 'Admin', ariaLabel: 'Zu Verwaltung wechseln' },
 ];
+
+/**
+ * Verwaltung — bewusst NICHT in der Leiste.
+ *
+ * Mit der Startansicht waeren es sonst sieben Eintraege, und bei sieben bleiben
+ * auf einem 375er Handy noch 49 px je Spalte: "Statistik" wuerde abgeschnitten.
+ * Admin ist ausserdem kein Bereich, in den man mehrmals am Abend springt,
+ * sondern eine Einstellung — und Einstellungen liegen in dieser App im Profil.
+ * Von dort ist der Bereich mit zwei Tipps erreichbar, der Tab selbst
+ * funktioniert unveraendert weiter.
+ */
+export const ADMIN_TAB = {
+  id: 'admin', icon: 'settings', label: 'Verwaltung', ariaLabel: 'Zu Verwaltung wechseln',
+};
 
 /**
  * Alte Tab-Namen auf den neuen Bereich abbilden — samt Unteransicht.
@@ -47,14 +61,14 @@ export function resolveTab(id) {
 }
 
 /**
- * Tabs that are actually visible for the given user
- * (admin tab is restricted).
+ * Die Bereiche der unteren Leiste — fuer alle dieselben sechs.
+ * Verwaltung ist kein Leisten-Eintrag mehr, siehe ADMIN_TAB.
  */
-export function getVisibleTabs(user) {
-  const isAdminUser = user?.email === ADMIN_EMAIL;
+export function getVisibleTabs() {
+  return BASE_TABS;
+}
 
-  return BASE_TABS.filter((tab) => {
-    if (tab.id === 'admin' && !isAdminUser) return false;
-    return true;
-  });
+/** Darf dieser Nutzer in den Verwaltungsbereich? */
+export function istAdmin(user) {
+  return user?.email === ADMIN_EMAIL;
 }
