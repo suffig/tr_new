@@ -11,6 +11,9 @@ import {
 import { useState, useEffect, useCallback } from 'react';
 import ZahlFeld from '../ZahlFeld';
 import { zahl, dez, dezKurz } from '../../utils/zahlen';
+
+/** Betrag deutsch: "7,50 €" statt "7.50€". */
+const euro = (n) => `${dez(n, 2)} €`;
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
 
@@ -435,7 +438,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       player: player,
       amount: amount,
       timestamp: new Date().toISOString(),
-      description: `${player === 'alexander' ? managers.aek.name : managers.real.name}: +${amount.toFixed(2)}€`
+      description: `${player === 'alexander' ? managers.aek.name : managers.real.name}: +${euro(amount)}`
     };
 
     newData.currentRound.games = [...bjTracking.currentRound.games, game];
@@ -493,7 +496,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       player: null,
       amount: 0,
       timestamp: new Date().toISOString(),
-      description: 'Unentschieden (0€)'
+      description: 'Unentschieden (0 €)'
     };
 
     newData.currentRound.games = [...bjTracking.currentRound.games, game];
@@ -610,11 +613,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
     let summaryMessage = `🃏 BJ-Session Beendet!\n\n`;
     summaryMessage += `📊 Finale Abrechnung:\n`;
-    summaryMessage += `🔵 ${managers.aek.name}: +${alexanderTotal.toFixed(2)}€\n`;
-    summaryMessage += `🔴 ${managers.real.name}: +${philipTotal.toFixed(2)}€\n\n`;
+    summaryMessage += `🔵 ${managers.aek.name}: +${euro(alexanderTotal)}\n`;
+    summaryMessage += `🔴 ${managers.real.name}: +${euro(philipTotal)}\n\n`;
     summaryMessage += `🏆 Gewinner: ${winner}\n`;
     if (difference > 0) {
-      summaryMessage += `💰 Differenz: ${difference.toFixed(2)}€\n\n`;
+      summaryMessage += `💰 Differenz: ${euro(difference)}\n\n`;
     }
     summaryMessage += `🎮 Gespielt: ${totalGames} Spiele in ${totalRounds} Runden\n\n`;
     summaryMessage += `Möchten Sie die Session zurücksetzen?`;
@@ -1722,19 +1725,16 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
       {/* New BJ-Tracking Section */}
       {activeSection === 'blackjack' && (
         <>
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-text-primary mb-2">
-              🃏 BJ-Tracking System
-            </h3>
-            <p className="text-text-muted text-sm">
-              Neues Design: Separate Buttons für Alexander und Philip • Nur positive Beträge • Allgemeiner Spielcounter
-            </p>
-          </div>
+          {/* Ueberschrift und Erklaertext entfernt: "BJ-Tracking System" sagt
+              nichts, was die Reiterbeschriftung nicht schon sagt, und darunter
+              stand ein Changelog ("Neues Design: Separate Buttons …") — eine
+              Notiz darueber, was sich in einer frueheren Fassung geaendert
+              hat, bei jedem Aufruf sichtbar. */}
 
           {/* Game Counter and Account Balances */}
           <div className="modern-card mb-6 bg-system-purple border-2 border-system-purple/45">
-            <h4 className="font-bold text-lg mb-4 text-system-purple flex items-center gap-2">
-              🎯 Übersicht
+            <h4 className="font-bold text-lg mb-4 text-system-purple inline-flex items-center gap-2">
+              <Icon name="chart" size={17} strokeWidth={2.2} />Übersicht
             </h4>
             
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -1762,7 +1762,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   🔵 {managers.aek.name}
                 </h5>
                 <div className="text-2xl font-bold text-system-green mb-1">
-                  +{bjTracking.alexander.balance.toFixed(2)}€
+                  +{euro(bjTracking.alexander.balance)}
                 </div>
                 <div className="text-xs text-system-blue">Kontostand</div>
               </div>
@@ -1773,7 +1773,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                   🔴 {managers.real.name}
                 </h5>
                 <div className="text-2xl font-bold text-system-green mb-1">
-                  +{bjTracking.philip.balance.toFixed(2)}€
+                  +{euro(bjTracking.philip.balance)}
                 </div>
                 <div className="text-xs text-system-green">Kontostand</div>
               </div>
@@ -1783,7 +1783,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           {/* Main Action Buttons */}
           <div className="modern-card mb-6 bg-system-yellow border-2 border-system-yellow/45">
             <h4 className="font-bold text-lg mb-4 text-system-orange flex items-center gap-2">
-              🎮 Hauptbuttons
+              <Icon name="play" size={17} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Gewinn eintragen
             </h4>
             
             <div className="grid grid-cols-2 gap-6">
@@ -1797,25 +1797,25 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => addToPlayerAccount('alexander', 5.00)}
                     className="btn-soft btn-soft-green px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🏆 Win<br/>+5.00€
+                    🏆 Win<br/>+5,00 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 7.50)}
                     className="btn-soft btn-soft-purple px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🃏 BJ<br/>+7.50€
+                    🃏 BJ<br/>+7,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 2.50)}
                     className="btn-soft btn-soft-orange px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🤝 BJ-Push<br/>+2.50€
+                    🤝 BJ-Push<br/>+2,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 10.00)}
                     className="btn-soft btn-soft-red px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🎲 Double<br/>+10.00€
+                    🎲 Double<br/>+10,00 €
                   </button>
                 </div>
 
@@ -1825,7 +1825,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => toggleAdvancedButtons('alexander')}
                     className="bg-system-blue/15 hover:bg-system-blue/25 text-system-blue px-4 py-2 rounded-lg text-sm font-medium transition-all border border-system-blue/45 hover:border-system-blue/45 min-h-[44px]"
                   >
-                    {showAdvancedButtons.alexander ? '🔼 Weniger Optionen' : '🔽 Mehr Beträge'}
+                    {showAdvancedButtons.alexander ? 'Weniger Beträge' : 'Mehr Beträge'}
                   </button>
                 </div>
 
@@ -1838,7 +1838,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         onClick={() => addToPlayerAccount('alexander', amount)}
                         className="bg-system-blue/15 hover:bg-system-blue/25 text-system-blue px-3 py-3 rounded-md text-sm font-medium transition-all border border-system-blue/45 hover:border-system-blue/45 min-h-[44px]"
                       >
-                        +{amount.toFixed(2)}€
+                        +{euro(amount)}
                       </button>
                     ))}
                   </div>
@@ -1875,25 +1875,25 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => addToPlayerAccount('philip', 5.00)}
                     className="btn-soft btn-soft-green px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🏆 Win<br/>+5.00€
+                    🏆 Win<br/>+5,00 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 7.50)}
                     className="btn-soft btn-soft-purple px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🃏 BJ<br/>+7.50€
+                    🃏 BJ<br/>+7,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 2.50)}
                     className="btn-soft btn-soft-orange px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🤝 BJ-Push<br/>+2.50€
+                    🤝 BJ-Push<br/>+2,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 10.00)}
                     className="btn-soft btn-soft-red px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
                   >
-                    🎲 Double<br/>+10.00€
+                    🎲 Double<br/>+10,00 €
                   </button>
                 </div>
 
@@ -1903,7 +1903,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={() => toggleAdvancedButtons('philip')}
                     className="bg-system-green/15 hover:bg-system-green/25 text-system-green px-4 py-2 rounded-lg text-sm font-medium transition-all border border-system-green/45 hover:border-system-green/45 min-h-[44px]"
                   >
-                    {showAdvancedButtons.philip ? '🔼 Weniger Optionen' : '🔽 Mehr Beträge'}
+                    {showAdvancedButtons.philip ? 'Weniger Beträge' : 'Mehr Beträge'}
                   </button>
                 </div>
 
@@ -1916,7 +1916,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         onClick={() => addToPlayerAccount('philip', amount)}
                         className="bg-system-green/15 hover:bg-system-green/25 text-system-green px-3 py-3 rounded-md text-sm font-medium transition-all border border-system-green/45 hover:border-system-green/45 min-h-[44px]"
                       >
-                        +{amount.toFixed(2)}€
+                        +{euro(amount)}
                       </button>
                     ))}
                   </div>
@@ -1950,7 +1950,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 onClick={addTieGame}
                 className="bg-system-green hover:opacity-90 text-white px-8 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
               >
-                🤝 Unentschieden (0€)
+                🤝 Unentschieden (0 €)
               </button>
             </div>
           </div>
@@ -1968,10 +1968,10 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     onClick={startNewRound}
                     className="btn-brand px-6 py-4 rounded-xl font-bold min-h-[56px]"
                   >
-                    ▶️ Neue Runde starten
+                    Neue Runde starten
                   </button>
-                  <p className="text-xs text-system-indigo mt-2">
-                    💡 Oder klicke einfach einen Spiel-Button - die Runde startet automatisch!
+                  <p className="text-caption2 text-text-tertiary mt-2">
+                    Ein Gewinn-Knopf startet die Runde ebenfalls.
                   </p>
                 </div>
               ) : (
@@ -2049,7 +2049,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         <div className="text-center">
                           <div className="font-bold text-system-blue">🔵 {managers.aek.name}</div>
                           <div className="text-xl font-bold text-system-green">
-                            +{round.alexanderTotal.toFixed(2)}€
+                            +{euro(round.alexanderTotal)}
                           </div>
                         </div>
                       </div>
@@ -2057,7 +2057,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         <div className="text-center">
                           <div className="font-bold text-system-red">🔴 {managers.real.name}</div>
                           <div className="text-xl font-bold text-system-red">
-                            +{round.philipTotal.toFixed(2)}€
+                            +{euro(round.philipTotal)}
                           </div>
                         </div>
                       </div>
@@ -2066,7 +2066,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     {/* Games in round */}
                     <details className="mt-3">
                       <summary className="cursor-pointer text-sm font-medium text-text-secondary hover:text-text-primary">
-                        🎮 Spiele anzeigen ({round.gamesCount})
+                        Spiele anzeigen ({round.gamesCount})
                       </summary>
                       <div className="mt-2 space-y-1 max-h-40 overflow-y-auto">
                         {round.games.map((game) => (
@@ -2090,7 +2090,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           {bjTracking.currentRound.active && bjTracking.currentRound.games.length > 0 && (
             <div className="modern-card mb-6 bg-system-yellow border-2 border-system-yellow/45">
               <h4 className="font-bold text-lg mb-4 text-system-orange flex items-center gap-2">
-                🎯 Aktuelle Runde {bjTracking.currentRound.roundNumber} - Spiele
+                Aktuelle Runde {bjTracking.currentRound.roundNumber} — Spiele
               </h4>
               
               <div className="space-y-2 max-h-60 overflow-y-auto">
@@ -2117,11 +2117,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-system-blue text-sm">Aktueller Kontostand:</span>
-                  <span className="font-bold text-system-green">+{bjTracking.alexander.balance.toFixed(2)}€</span>
+                  <span className="font-bold text-system-green">+{euro(bjTracking.alexander.balance)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-system-blue text-sm">Gesamt-Verdienst:</span>
-                  <span className="font-bold text-system-green">+{bjTracking.alexander.totalEarnings.toFixed(2)}€</span>
+                  <span className="font-bold text-system-green">+{euro(bjTracking.alexander.totalEarnings)}</span>
                 </div>
               </div>
             </div>
@@ -2134,11 +2134,11 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               <div className="space-y-2">
                 <div className="flex justify-between">
                   <span className="text-system-green text-sm">Aktueller Kontostand:</span>
-                  <span className="font-bold text-system-green">+{bjTracking.philip.balance.toFixed(2)}€</span>
+                  <span className="font-bold text-system-green">+{euro(bjTracking.philip.balance)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-system-green text-sm">Gesamt-Verdienst:</span>
-                  <span className="font-bold text-system-green">+{bjTracking.philip.totalEarnings.toFixed(2)}€</span>
+                  <span className="font-bold text-system-green">+{euro(bjTracking.philip.totalEarnings)}</span>
                 </div>
               </div>
             </div>
