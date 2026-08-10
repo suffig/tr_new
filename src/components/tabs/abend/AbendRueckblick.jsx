@@ -120,7 +120,7 @@ export default function AbendRueckblick() {
                 <span className="text-text-tertiary text-sm">:</span>
                 <span className="stat-display text-lg text-system-red num-tabular">{a.bilanz.real}</span>
                 <TeamLogo team="real" size="xs" />
-                <span className="ml-auto text-caption2 text-text-tertiary num-tabular text-right">
+                <span className="ml-auto text-caption2 text-text-tertiary num-tabular text-right flex-shrink-0 whitespace-nowrap">
                   {a.bilanz.toreA}:{a.bilanz.toreB} Tore
                   {fuehrend && (
                     <span className={`block font-semibold ${fuehrend === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
@@ -132,7 +132,7 @@ export default function AbendRueckblick() {
             )}
 
             {/* Der Rest des Abends */}
-            <div className="grid grid-cols-4 gap-1.5">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <Wert icon="trophy" farbe="text-system-orange" zahl={a.ziehungen.length} label="Ziehungen" />
               <Wert icon="starFilled" farbe="text-system-yellow"
                 zahl={a.stand.sterne.gesamt > 0 ? `+${fmt(a.stand.sterne.gesamt)}` : '—'} label="Sterne" />

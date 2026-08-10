@@ -154,14 +154,19 @@ export default function SpielerListe({ players, loading }) {
                 <div className="text-caption2 text-text-tertiary truncate">
                   {/* Neben dem gewaehlten Mass die beiden anderen Zahlen —
                       sonst muesste man dreimal umschalten, um einen Spieler
-                      einzuschaetzen. */}
+                      einzuschaetzen.
+                      Die Zahl der Saisons stand hier als vierte Angabe und hat
+                      die Zeile auf 375px ueber den Rand geschoben ("… 2 Saison"
+                      abgeschnitten). Sie ist die schwaechste der vier: die
+                      Detailansicht listet die Saisons ohnehin einzeln auf, und
+                      der Filter darueber setzt den Zeitraum. */}
                   {[
                     mass !== 'tore' && p.goals > 0 ? `${p.goals} Tore` : null,
                     mass !== 'sds' && p.sds > 0 ? `${p.sds}× SdS` : null,
                     mass !== 'sperren' && p.sperren > 0
                       ? `${p.sperren} ${p.sperren === 1 ? 'Sperre' : 'Sperren'}` : null,
-                    `${p.seasons.length} ${p.seasons.length === 1 ? 'Saison' : 'Saisons'}`,
-                  ].filter(Boolean).join(' · ')}
+                  ].filter(Boolean).join(' · ')
+                    || `${p.seasons.length} ${p.seasons.length === 1 ? 'Saison' : 'Saisons'}`}
                 </div>
               </div>
               <div className="hidden min-[380px]:block w-16 h-1.5 rounded-full bg-bg-tertiary overflow-hidden flex-shrink-0">

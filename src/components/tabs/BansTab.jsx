@@ -1,62 +1,139 @@
-﻿import Icon from '../icons/Icon';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import Icon from '../icons/Icon';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
-import { BAN_TYPES, getBanTypeColor, getBanIcon } from '../../constants/banTypes';
+import { BAN_TYPES } from '../../constants/banTypes';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
 
+/**
+ * Sperren.
+ *
+ * Die Seite hatte dieselbe Karte dreimal im Code stehen (aktiv, beendet,
+ * gefiltert) — jede Aenderung musste an drei Stellen passieren. Jetzt gibt es
+ * eine Karte.
+ *
+ * Ausserdem stand die Zahl der offenen Spiele dreimal in derselben Karte: im
+ * Chip ("Aktiv · 3 Spiele verbleibend"), als grosse Zahl rechts und im
+ * Fortschrittstext. Geblieben sind die grosse Zahl und der Fortschritt.
+ *
+ * Die Kartentypen kamen als Emoji (🟨🟥). Auf dem Handy brach das Paar mitten
+ * im Chip auf zwei Zeilen um und der Typ-Text "Gelb-Rote Karte" stand
+ * dreizeilig in einem 50px-Chip. Jetzt zeichnen wir die Karten selbst.
+ *
+ * Die Farben kamen aus der festen Tailwind-Palette (bg-yellow-100 …) und
+ * blieben im Dunkelmodus hell.
+ */
+
+/** Spielkarten als kleine Rechtecke — kein Emoji, das umbrechen koennte. */
+function SperrGlyph({ typ, size = 'md' }) {
+  const h = size === 'sm' ? 'h-3.5 w-2.5' : 'h-5 w-3.5';
+  if (typ === 'Verletzung') {
+    return <Icon name="warning" size={size === 'sm' ? 14 : 20} strokeWidth={2.2} className="text-system-orange" />;
+  }
+  if (typ === 'Rote Karte') {
+    return <span className={`${h} rounded-[2px] bg-system-red inline-block`} />;
+  }
+  if (typ === 'Gelb-Rote Karte') {
+    return (
+      <span className="inline-flex">
+        <span className={`${h} rounded-[2px] bg-system-yellow inline-block`} />
+        <span className={`${h} rounded-[2px] bg-system-red inline-block -ml-1`} />
+      </span>
+    );
+  }
+  return <Icon name="ban" size={size === 'sm' ? 14 : 20} strokeWidth={2.2} className="text-text-tertiary" />;
+}
+
+const TYP_FARBE = {
+  'Gelb-Rote Karte': 'text-system-red',
+  'Rote Karte': 'text-system-red',
+  'Verletzung': 'text-system-orange',
+};
+
+function SperrKarte({ ban, spieler }) {
+  const gesamt = ban.totalgames || 0;
+  const abgesessen = ban.matchesserved || 0;
+  const offen = Math.max(gesamt - abgesessen, 0);
+  const aktiv = offen > 0;
+  const anteil = gesamt > 0 ? Math.min((abgesessen / gesamt) * 100, 100) : 100;
+
+  return (
+    <div className={`modern-card ${aktiv ? '' : 'opacity-70'}`}>
+      <div className="flex items-start gap-3">
+        <span className="w-9 h-9 rounded-xl bg-bg-tertiary flex items-center justify-center flex-shrink-0">
+          <SperrGlyph typ={ban.type} />
+        </span>
+
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-1.5 min-w-0">
+            <span className="font-semibold text-text-primary truncate">{spieler?.name || 'Unbekannt'}</span>
+            <TeamLogo team={spieler?.team || 'Unbekannt'} size="sm" className="flex-shrink-0" />
+          </div>
+          <div className={`text-caption2 ${TYP_FARBE[ban.type] || 'text-text-tertiary'}`}>{ban.type}</div>
+        </div>
+
+        {aktiv ? (
+          <div className="text-center flex-shrink-0">
+            <div className="stat-display text-2xl text-system-red num-tabular leading-none">{offen}</div>
+            <div className="text-caption2 text-text-tertiary mt-0.5">offen</div>
+          </div>
+        ) : (
+          <span className="chip chip-green flex-shrink-0">
+            <Icon name="check" size={12} strokeWidth={2.6} />Beendet
+          </span>
+        )}
+      </div>
+
+      <div className="mt-3">
+        <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+          <div className={`h-full rounded-full transition-all duration-300 ${aktiv ? 'bg-system-red' : 'bg-system-green'}`}
+               style={{ width: `${anteil}%` }} />
+        </div>
+        <div className="mt-1 text-caption2 text-text-tertiary num-tabular">
+          {abgesessen} von {gesamt} {gesamt === 1 ? 'Spiel' : 'Spielen'} abgesessen
+        </div>
+      </div>
+
+      {ban.reason && (
+        <div className="mt-2 text-footnote text-text-secondary">{ban.reason}</div>
+      )}
+    </div>
+  );
+}
+
 export default function BansTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
-  const [selectedType, setSelectedType] = useState('active'); // Changed from 'all' to 'active'
-  
+  const [status, setStatus] = useState('aktiv');
+  const [typ, setTyp] = useState('alle');
+
   const { data: bans, loading: bansLoading, error: bansError, refetch: refetchBans } = useSupabaseQuery('bans', '*');
   const { data: players, loading: playersLoading } = useSupabaseQuery('players', '*');
-  
   const loading = bansLoading || playersLoading;
 
-  const getPlayerName = (playerId) => {
-    if (!players) return 'Unbekannt';
-    const player = players.find(p => p.id === playerId);
-    return player?.name || 'Unbekannt';
-  };
+  const spielerNach = useMemo(() => {
+    const m = new Map();
+    for (const p of players || []) m.set(p.id, p);
+    return m;
+  }, [players]);
 
-  const getPlayerTeam = (playerId) => {
-    if (!players) return 'Unbekannt';
-    const player = players.find(p => p.id === playerId);
-    return player?.team || 'Unbekannt';
-  };
+  const offen = (b) => (b.totalgames || 0) - (b.matchesserved || 0) > 0;
 
-  const filteredBans = (() => {
-    // Use search results if available, otherwise use all bans
-    const bansToFilter = (bans || []);
-    
-    return bansToFilter.filter(ban => {
-      if (selectedType === 'all') return true;
-      if (selectedType === 'active') return (ban.totalgames - ban.matchesserved) > 0;
-      if (selectedType === 'completed') return (ban.totalgames - ban.matchesserved) === 0;
-      return ban.type === selectedType;
-    });
-  })();
+  const { aktive, beendete, sichtbar } = useMemo(() => {
+    const alle = bans || [];
+    const aktive = alle.filter(offen);
+    const beendete = alle.filter((b) => !offen(b));
+    const nachStatus = status === 'aktiv' ? aktive : status === 'beendet' ? beendete : alle;
+    const sichtbar = typ === 'alle' ? nachStatus : nachStatus.filter((b) => b.type === typ);
+    // Offene zuerst, darin die laengsten Sperren oben — das ist die Reihenfolge,
+    // in der man beim Aufstellen wissen will, wer fehlt.
+    return {
+      aktive, beendete,
+      sichtbar: [...sichtbar].sort((a, b) =>
+        ((b.totalgames || 0) - (b.matchesserved || 0)) - ((a.totalgames || 0) - (a.matchesserved || 0))),
+    };
+  }, [bans, status, typ]);
 
-  const activeBans = bans?.filter(ban => (ban.totalgames - ban.matchesserved) > 0) || [];
-  const completedBans = bans?.filter(ban => (ban.totalgames - ban.matchesserved) === 0) || [];
-
-  // Define views for horizontal navigation
-  const views = [
-    { id: 'all', label: 'Alle', iconName: 'clipboard', count: bans?.length || 0 },
-    { id: 'active', label: 'Aktiv', iconName: 'ban', count: activeBans.length },
-    { id: 'completed', label: 'Beendet', iconName: 'trophy', count: completedBans.length },
-    ...BAN_TYPES.map(type => ({
-      id: type.value,
-      label: type.label,
-      icon: getBanIcon(type.value) || '⚠️',
-      count: bans?.filter(ban => ban.type === type.value).length || 0
-    }))
-  ];
-
-  if (loading) {
-    return <LoadingSpinner message="Lade Sperren..." />;
-  }
+  if (loading) return <LoadingSpinner message="Lade Sperren..." />;
 
   if (bansError && !bans) {
     return (
@@ -70,282 +147,48 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
     );
   }
 
+  // Status als Segmente, Kartentyp als Auswahlfeld. Vorher war beides in einer
+  // Leiste: sieben Reiter mit Zahlen in Klammern, die auf dem Handy drei
+  // Reihen fuellten — obwohl "Rote Karte" und "beendet" verschiedene Fragen
+  // sind und sich kombinieren lassen sollten.
+  const views = [
+    { id: 'aktiv', label: `Aktiv (${aktive.length})`, iconName: 'ban' },
+    { id: 'beendet', label: `Beendet (${beendete.length})`, iconName: 'check' },
+    { id: 'alle', label: `Alle (${bans?.length || 0})`, iconName: 'clipboard' },
+  ];
+
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
+      <HorizontalNavigation views={views} selectedView={status} onViewChange={setStatus} />
 
-      {/* Horizontal Navigation */}
-      <HorizontalNavigation
-        views={views.map(view => ({
-          ...view,
-          label: `${view.label} (${view.count})`
-        }))}
-        selectedView={selectedType}
-        onViewChange={setSelectedType}
-      />
+      <div className="flex items-center gap-2 mb-4">
+        <Icon name="filter" size={15} strokeWidth={2.2} className="text-text-tertiary flex-shrink-0" />
+        <select value={typ} onChange={(e) => setTyp(e.target.value)}
+                className="form-input flex-1 text-sm" aria-label="Nach Art filtern">
+          <option value="alle">Alle Arten</option>
+          {BAN_TYPES.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
+        </select>
+      </div>
 
-
-
-      {/* Bans Display */}
-      {selectedType === 'active' || selectedType === 'all' ? (
-        <>
-          {/* Active Bans Section - moved below filters and statistics cards */}
-          {activeBans.length > 0 && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-system-red animate-pulse" />
-                Aktive Sperren ({activeBans.length})
-              </h3>
-              <div className="space-y-4">
-                {activeBans.map((ban) => {
-                  const remainingGames = (ban.totalgames || 0) - (ban.matchesserved || 0);
-                  const progress = (ban.totalgames || 0) > 0 ? ((ban.matchesserved || 0) / (ban.totalgames || 0)) * 100 : 0;
-                  
-                  return (
-                    <div key={ban.id} className="modern-card hover:bg-bg-secondary transition-colors cursor-pointer group">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4 flex-1">
-                          <div className="text-2xl group-hover:scale-110 transition-transform">
-                            {getBanIcon(ban.type)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="font-semibold text-text-primary group-hover:text-primary-green transition-colors">
-                                {getPlayerName(ban.player_id)}
-                              </h3>
-                              <TeamLogo team={getPlayerTeam(ban.player_id)} size="sm" className="group-hover:scale-110 transition-transform" />
-                            </div>
-                            
-                            <div className="flex items-center space-x-2 mb-3">
-                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium border transition-all group-hover:scale-105 ${getBanTypeColor(ban.type)}`}>
-                                {ban.type}
-                              </span>
-                              <span className="chip chip-red transition-all group-hover:scale-105">
-                                <span className="w-1.5 h-1.5 rounded-full bg-system-red animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
-                              </span>
-                            </div>
-
-                            {/* Progress Bar */}
-                            <div className="mb-3">
-                              <div className="flex justify-between text-xs text-text-muted mb-1">
-                                <span>Fortschritt: {ban.matchesserved || 0} / {ban.totalgames || 0} Spiele</span>
-                                <span>{Math.round(progress)}%</span>
-                              </div>
-                              <div className="w-full bg-bg-tertiary rounded-full h-2">
-                                <div 
-                                  className="h-2 rounded-full bg-system-red transition-all duration-300"
-                                  style={{ width: `${Math.min(progress, 100)}%` }}
-                                ></div>
-                              </div>
-                            </div>
-
-                            {ban.reason && (
-                              <p className="text-sm text-text-muted">
-                                Grund: {ban.reason}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                        
-                        {/* Large remaining games indicator */}
-                        <div className="text-center ml-4">
-                          <div className="text-2xl font-bold text-system-red">
-                            {remainingGames}
-                          </div>
-                          <div className="text-xs text-system-red uppercase font-medium">
-                            Verbleibend
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              
-            </div>
-          )}
-          
-          {/* Completed Bans Section */}
-          {(selectedType === 'all' && completedBans.length > 0) && (
-            <div className="mb-6">
-              <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center gap-2">
-                <Icon name="check" size={18} strokeWidth={2.4} className="text-system-green" />
-                Beendete Sperren ({completedBans.length})
-              </h3>
-              <div className="space-y-4">
-                {completedBans.map((ban) => {
-                  const progress = 100; // Completed bans are always 100%
-                  
-                  return (
-                    <div key={ban.id} className="modern-card hover:bg-bg-secondary transition-colors cursor-pointer group opacity-75">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-start space-x-4 flex-1">
-                          <div className="text-2xl group-hover:scale-110 transition-transform">
-                            {getBanIcon(ban.type)}
-                          </div>
-                          <div className="flex-1">
-                            <div className="flex items-center space-x-2 mb-2">
-                              <h3 className="font-semibold text-text-primary group-hover:text-primary-green transition-colors">
-                                {getPlayerName(ban.player_id)}
-                              </h3>
-                              <TeamLogo team={getPlayerTeam(ban.player_id)} size="sm" className="group-hover:scale-110 transition-transform" />
-                            </div>
-                            
-                            <div className="flex items-center space-x-2 mb-3">
-                              <span className={`inline-block px-2 py-1 rounded text-xs font-medium border transition-all group-hover:scale-105 ${getBanTypeColor(ban.type)}`}>
-                                {ban.type}
-                              </span>
-                              <span className="chip chip-green transition-all group-hover:scale-105">
-                                <Icon name="check" size={12} strokeWidth={2.6} />Beendet
-                              </span>
-                            </div>
-
-                            {/* Progress Bar */}
-                            <div className="mb-3">
-                              <div className="flex justify-between text-xs text-text-muted mb-1">
-                                <span>Fortschritt: {ban.matchesserved || 0} / {ban.totalgames || 0} Spiele</span>
-                                <span>{Math.round(progress)}%</span>
-                              </div>
-                              <div className="w-full bg-bg-tertiary rounded-full h-2">
-                                <div 
-                                  className="h-2 rounded-full bg-system-green transition-all duration-300"
-                                  style={{ width: `${Math.min(progress, 100)}%` }}
-                                ></div>
-                              </div>
-                            </div>
-
-                            {ban.reason && (
-                              <p className="text-sm text-text-muted">
-                                Grund: {ban.reason}
-                              </p>
-                            )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-        </>
-      ) : (
-        /* Filtered bans display (for specific ban types) */
-        <>
-          {filteredBans.length > 0 ? (
-            <div className="space-y-4">
-              {filteredBans.map((ban) => {
-                const remainingGames = (ban.totalgames || 0) - (ban.matchesserved || 0);
-                const progress = (ban.totalgames || 0) > 0 ? ((ban.matchesserved || 0) / (ban.totalgames || 0)) * 100 : 0;
-                const isActive = remainingGames > 0;
-                
-                return (
-                  <div key={ban.id} className="modern-card hover:bg-bg-secondary transition-colors cursor-pointer group">
-                    <div className="flex items-start justify-between">
-                      <div className="flex items-start space-x-4 flex-1">
-                        <div className="text-2xl group-hover:scale-110 transition-transform">
-                          {getBanIcon(ban.type)}
-                        </div>
-                        <div className="flex-1">
-                          <div className="flex items-center space-x-2 mb-2">
-                            <h3 className="font-semibold text-text-primary group-hover:text-primary-green transition-colors">
-                              {getPlayerName(ban.player_id)}
-                            </h3>
-                            <TeamLogo team={getPlayerTeam(ban.player_id)} size="sm" className="group-hover:scale-110 transition-transform" />
-                          </div>
-                          
-                          <div className="flex items-center space-x-2 mb-3">
-                            <span className={`inline-block px-2 py-1 rounded text-xs font-medium border transition-all group-hover:scale-105 ${getBanTypeColor(ban.type)}`}>
-                              {ban.type}
-                            </span>
-                            {isActive ? (
-                              <span className="chip chip-red transition-all group-hover:scale-105">
-                                <span className="w-1.5 h-1.5 rounded-full bg-system-red animate-pulse" />Aktiv · {remainingGames} Spiel{remainingGames !== 1 ? 'e' : ''} verbleibend
-                              </span>
-                            ) : (
-                              <span className="chip chip-green transition-all group-hover:scale-105">
-                                <Icon name="check" size={12} strokeWidth={2.6} />Beendet
-                              </span>
-                            )}
-                          </div>
-
-                          {/* Progress Bar */}
-                          <div className="mb-3">
-                            <div className="flex justify-between text-xs text-text-muted mb-1">
-                              <span>Fortschritt: {ban.matchesserved || 0} / {ban.totalgames || 0} Spiele</span>
-                              <span>{Math.round(progress)}%</span>
-                            </div>
-                            <div className="w-full bg-bg-tertiary rounded-full h-2">
-                              <div 
-                                className={`h-2 rounded-full transition-all duration-300 ${
-                                  isActive ? 'bg-system-red' : 'bg-system-green'
-                                }`}
-                                style={{ width: `${Math.min(progress, 100)}%` }}
-                              ></div>
-                            </div>
-                          </div>
-
-                          {ban.reason && (
-                            <p className="text-sm text-text-muted">
-                              Grund: {ban.reason}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      
-                      {/* Large remaining games indicator for active bans */}
-                      {isActive && (
-                        <div className="text-center ml-4">
-                          <div className="text-2xl font-bold text-system-red">
-                            {remainingGames}
-                          </div>
-                          <div className="text-xs text-system-red uppercase font-medium">
-                            Verbleibend
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
-                <Icon name="check" size={26} strokeWidth={2} />
-              </div>
-              <h3 className="text-lg font-medium text-text-primary mb-2">
-                {selectedType === 'completed' ? 'Keine beendeten Sperren' : `Keine ${selectedType} Sperren`}
-              </h3>
-              <p className="text-text-muted">
-                {selectedType === 'completed' 
-                  ? 'Es gibt noch keine beendeten Sperren.'
-                  : 'Versuche einen anderen Filter oder erstelle neue Sperren.'
-                }
-              </p>
-            </div>
-          )}
-        </>
-      )}
-
-      {/* Empty state for all tabs */}
-      {((selectedType === 'active' && activeBans.length === 0) || 
-        (selectedType === 'all' && bans?.length === 0)) && (
+      {sichtbar.length === 0 ? (
         <div className="text-center py-12">
-          <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
-            <Icon name="ban" size={32} strokeWidth={1.6} />
+          <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
+            <Icon name="check" size={26} strokeWidth={2} />
           </div>
           <h3 className="text-lg font-medium text-text-primary mb-2">
-            {selectedType === 'all' ? 'Keine Sperren gefunden' : 'Keine aktiven Sperren'}
+            {status === 'aktiv' ? 'Keine aktiven Sperren' : 'Keine Sperren gefunden'}
           </h3>
           <p className="text-text-muted">
-            {selectedType === 'all' 
-              ? 'Es wurden noch keine Sperren erstellt.'
-              : 'Aktuell sind keine Sperren aktiv.'
-            }
+            {typ === 'alle' ? 'Alle sind spielberechtigt.' : 'Mit dieser Art gibt es hier nichts.'}
           </p>
         </div>
+      ) : (
+        <div className="space-y-3">
+          {sichtbar.map((ban) => (
+            <SperrKarte key={ban.id} ban={ban} spieler={spielerNach.get(ban.player_id)} />
+          ))}
+        </div>
       )}
-
     </div>
   );
 }

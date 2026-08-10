@@ -589,14 +589,21 @@ export default function TeamTrackerTab() {
     const cnt = counts[t.name] || 0;
     return (
       <div key={t.name} className={`flex items-center justify-between gap-2 px-3 py-2 rounded-xl ${cnt > 0 ? accent.chip : 'bg-bg-tertiary'}`}>
-        <div className="min-w-0">
-          <div className="flex items-center gap-1.5 min-w-0">
-            <span className={`text-sm font-medium truncate ${cnt > 0 ? '' : 'text-text-primary'}`}>{t.name}</span>
+        {/* flex-1: ohne das bekam der Namensblock nur seine Mindestbreite und
+            "England (Frauen)" wurde auf 67px zusammengeschnitten, obwohl neben
+            dem Zaehler ueber 150px frei waren. */}
+        <div className="min-w-0 flex-1">
+          {/* Der Name bekommt die Zeile allein. Das "National"-Chip stand hier
+              daneben und war 71px breit — von den 144px blieben dem Namen 67,
+              also wurde "England (Frauen)" mitten im Wort gekappt. Unten neben
+              den Sternen ist Platz, und die Zeile bleibt ruhiger. */}
+          <div className={`text-sm font-medium truncate ${cnt > 0 ? '' : 'text-text-primary'}`}>{t.name}</div>
+          <div className="mt-0.5 flex items-center gap-1.5">
+            <StarRating rating={t.rating} />
             {t.national && (
               <span className="flex-shrink-0 text-[9px] font-bold uppercase tracking-wide px-1.5 py-0.5 rounded bg-system-blue/12 text-system-blue">National</span>
             )}
           </div>
-          <div className="mt-0.5"><StarRating rating={t.rating} /></div>
         </div>
         <div className="flex items-center gap-1.5 flex-shrink-0">
           <button onClick={() => change(t.name, -1)} disabled={cnt === 0} aria-label={`${t.name} verringern`}

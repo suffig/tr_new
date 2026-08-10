@@ -324,47 +324,6 @@ export default function AddTransactionTab() {
         </div>
       )}
 
-      {/* Transaction Types Reference */}
-      <div className="mt-6 modern-card">
-        <h4 className="font-semibold text-text-primary mb-3">Transaktionsarten</h4>
-        <div className="grid grid-cols-2 gap-2">
-          {TRANSACTION_TYPES.map((type) => (
-            <div key={type.value} className="p-3 bg-bg-secondary rounded-lg text-center">
-              <div className="text-2xl mb-2">{type.icon}</div>
-              <span className="font-medium text-text-primary">{type.label}</span>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      {/* Teams Reference */}
-      <div className="mt-6 modern-card">
-        <h4 className="font-semibold text-text-primary mb-3">Verfügbare Teams</h4>
-        <div className="grid grid-cols-2 gap-2">
-          {TEAMS.filter(team => team.value !== 'Ehemalige').map((team) => (
-            <div key={team.value} className="p-3 bg-bg-secondary rounded-lg text-center">
-              <span className={`font-medium ${team.color === 'blue' ? 'text-system-blue' : 'text-system-red'}`}>
-                {getTeamDisplay(team.value)}
-              </span>
-              <div className="text-xs text-text-muted mt-1">({team.value})</div>
-            </div>
-          ))}
-        </div>
-      </div>
-
-      <div className="mt-6 modern-card bg-system-blue/10 border-system-blue/20">
-        <div className="flex items-start">
-          <div className="text-system-blue mr-3 flex-shrink-0">
-            <Icon name="bulb" size={18} strokeWidth={2} />
-          </div>
-          <div>
-            <h4 className="font-semibold text-text-primary mb-1">Hinweis</h4>
-            <p className="text-footnote text-text-secondary">
-              Nach dem Hinzufügen können Sie die Transaktion in der Finanzen-Übersicht einsehen.
-            </p>
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

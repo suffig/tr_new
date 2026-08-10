@@ -29,35 +29,3 @@ export const BAN_TYPES = [
     maxDuration: 6 
   }
 ];
-
-/**
- * Get ban type color for UI display
- */
-export const getBanTypeColor = (type) => {
-  switch (type) {
-    case 'Gelb-Rote Karte':
-      return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-    case 'Rote Karte':
-      return 'bg-red-100 text-red-800 border-red-200';
-    case 'Verletzung':
-      return 'bg-orange-100 text-orange-800 border-orange-200';
-    default:
-      return 'bg-gray-100 text-gray-800 border-gray-200';
-  }
-};
-
-/**
- * Get ban type icon
- */
-export const getBanIcon = (type) => {
-  switch (type) {
-    case 'Gelb-Rote Karte':
-      return '🟨🟥';
-    case 'Rote Karte':
-      return '🟥';
-    case 'Verletzung':
-      return '🏥';
-    default:
-      return '⚠️';
-  }
-};

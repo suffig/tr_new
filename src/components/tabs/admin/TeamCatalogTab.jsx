@@ -108,11 +108,15 @@ export default function TeamCatalogTab() {
 
       <div className="space-y-1.5">
         {shown.map((t) => (
-          <div key={t.name} className="flex items-center justify-between gap-2 bg-bg-tertiary rounded-xl px-3 py-2">
-            <div className="min-w-0">
-              <div className="text-sm font-medium text-text-primary truncate">{t.name}</div>
-              <div className="mt-0.5 flex items-center gap-1.5"><Stars rating={t.rating} /><span className="text-[11px] text-text-tertiary tabular-nums">{fmtRating(t.rating)}</span></div>
-            </div>
+          /* Name auf eigener Zeile, Bewertung und Knoepfe darunter.
+             Nebeneinander blieben dem Namen neben den vier Knoepfen 100px —
+             45 der Teams waren abgeschnitten, von "Borussia Moenchengladbach"
+             (187px) bis "North Carolina Courage (W)". Untereinander steht die
+             volle Breite zur Verfuegung und alle Namen passen. */
+          <div key={t.name} className="bg-bg-tertiary rounded-xl px-3 py-2">
+            <div className="text-sm font-medium text-text-primary truncate">{t.name}</div>
+            <div className="mt-1 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 min-w-0"><Stars rating={t.rating} /><span className="text-[11px] text-text-tertiary tabular-nums">{fmtRating(t.rating)}</span></div>
             <div className="flex items-center gap-1.5 flex-shrink-0">
               {t.rating == null ? (
                 <button onClick={() => editRating(t.name, 3)} className="text-[11px] px-2 py-1.5 rounded-lg bg-bg-secondary border border-border-light text-text-secondary">Rating +</button>
@@ -126,6 +130,7 @@ export default function TeamCatalogTab() {
               <button onClick={() => onRemove(t.name)} aria-label="Team entfernen" className="w-7 h-7 rounded-lg btn-soft btn-soft-red flex items-center justify-center">
                 <Icon name="trash" size={14} strokeWidth={2} />
               </button>
+            </div>
             </div>
           </div>
         ))}
