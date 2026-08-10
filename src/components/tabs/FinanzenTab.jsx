@@ -1,5 +1,6 @@
 ﻿import Icon from '../icons/Icon';
 import { useState } from 'react';
+import { dez } from '../../utils/zahlen';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import ExportImportManager from '../ExportImportManager';
@@ -78,10 +79,9 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
     }).format(roundedAmount);
   };
 
-  const formatPlayerValue = (value) => {
-    // Helper function for player values which are already stored in millions
-    return `${(value || 0).toFixed(1)}M €`;
-  };
+  // Millionenbetraege wie im Rest der App: "12,0 Mio €". Hier stand "12.0M €"
+  // — Punkt statt Komma und eine Abkuerzung, die sonst nirgends vorkommt.
+  const formatPlayerValue = (value) => `${dez(value, 1)} Mio €`;
 
   // Helper function to get color class for positive/negative amounts
   const getAmountColorClass = (amount) => {

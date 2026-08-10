@@ -1,7 +1,7 @@
 ﻿import Icon from '../icons/Icon';
 import { useState } from 'react';
 import ZahlFeld from '../ZahlFeld';
-import { zahl, alsText } from '../../utils/zahlen';
+import { zahl, alsText, dez } from '../../utils/zahlen';
 import { useSupabaseQuery, useSupabaseMutation } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import ExportImportManager from '../ExportImportManager';
@@ -55,10 +55,10 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       .reduce((sum, p) => sum + (p.value || 0), 0);
   };
 
-  const formatCurrencyInMillions = (amount) => {
-    // Value is already in millions, just format it
-    return `${(amount || 0).toFixed(1)}M €`;
-  };
+  // Millionenbetraege wie im Rest der App: "12,0 Mio €". Hier stand vorher
+  // "12.0M €" — Punkt statt Komma und eine Abkuerzung, die es sonst nirgends
+  // gibt (Marktwerte, Statistik und Historie schreiben "Mio €").
+  const formatCurrencyInMillions = (amount) => `${dez(amount, 1)} Mio €`;
 
   // Teamfarben aus dem Designsystem statt fester Tailwind-Stufen. Vorher stand
   // hier blue-600/red-400 — andere Farbtoene als die app-weiten system-blue /
@@ -183,10 +183,10 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                           {team.displayName}
                         </h3>
                         <p className="text-footnote text-text-tertiary num-tabular">
-                          {team.players.length} Spieler
+                          {team.players.length} {team.players.length === 1 ? 'Spieler' : 'Spieler'}
                           {team.squadValue > 0 && (
                             <span className="ml-2">
-                              · {formatCurrencyInMillions(team.squadValue)}
+                              {'· '}{formatCurrencyInMillions(team.squadValue)}
                             </span>
                           )}
                         </p>
@@ -204,7 +204,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                     {team.players.length > 0 ? (
                       <div className="grid gap-3">
                         {team.players.map((player) => (
-                          <div key={player.id} className="bg-bg-tertiary rounded-xl p-3 hover:bg-bg-hover transition-colors cursor-pointer group"
+                          <div key={player.id} className="panel-gray rounded-xl p-3 hover:bg-bg-hover transition-colors cursor-pointer group"
                                onClick={() => handleShowPlayerDetail(player)}>
                             <div className="flex items-center justify-between gap-2">
                               <div className="min-w-0 flex-1">

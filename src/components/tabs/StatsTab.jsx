@@ -18,6 +18,30 @@ import {
 } from '../charts';
 
 /**
+ * Karte fuer eine herausragende Einzelleistung.
+ *
+ * Ersetzt drei "mobile-overview-card": die trugen VERSALIEN-Ueberschriften,
+ * hover:scale-105 und einen Buchstabenkreis ("A", "R") als Team-Kennung —
+ * drei Dinge, die es sonst nirgends in der App gibt, waehrend ueberall sonst
+ * das Wappen steht.
+ */
+function HighlightKarte({ logo, titel, akzent, wert, was, zeilen = [] }) {
+  return (
+    <div className="modern-card p-4">
+      <div className="flex items-center gap-2 mb-2">
+        {logo}
+        <span className={`text-caption1 font-semibold truncate ${akzent}`}>{titel}</span>
+      </div>
+      <div className="stat-display text-[26px] num-tabular text-text-primary leading-none">{wert}</div>
+      <div className="text-caption1 text-text-secondary mt-1">{was}</div>
+      {zeilen.filter(Boolean).map((t, i) => (
+        <div key={i} className="text-caption2 text-text-tertiary mt-0.5 truncate">{t}</div>
+      ))}
+    </div>
+  );
+}
+
+/**
  * Kennzahl-Kachel im Stil der uebrigen App.
  *
  * Vorher standen hier vier "mobile-metric-card" mit Farbverlauf-Icons — ein
@@ -977,71 +1001,39 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           />
         </div>
 
-        {/* Enhanced Team Victory Cards with iOS 26 Design */}
-        <div className="mobile-grid mobile-grid-1 md:grid-cols-3 gap-4">
-          <div className="mobile-overview-card team-aek animate-mobile-slide-in hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-blue uppercase tracking-wide">{getTeamDisplay('AEK')}</div>
-              <div className="w-8 h-8 bg-system-blue/10 rounded-full flex items-center justify-center">
-                <span className="text-system-blue text-sm font-bold">A</span>
-              </div>
-            </div>
-            <div className="text-title1 font-bold text-text-primary mb-2">
-              {headToHead.biggestAekWin.diff > 0 ? headToHead.biggestAekWin.score : '–'}
-            </div>
-            <div className="text-callout text-text-secondary mb-3">Größter Sieg</div>
-            {headToHead.biggestAekWin.diff > 0 && (
-              <div className="text-footnote text-text-tertiary space-y-1">
-                <div>vs {headToHead.biggestAekWin.opponent}</div>
-                <div className="text-caption1">
-                  {new Date(headToHead.biggestAekWin.date).toLocaleDateString('de-DE')}
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <div className="mobile-overview-card team-real animate-mobile-slide-in hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-red uppercase tracking-wide">{getTeamDisplay('Real')}</div>
-              <div className="w-8 h-8 bg-system-red/10 rounded-full flex items-center justify-center">
-                <span className="text-system-red text-sm font-bold">R</span>
-              </div>
-            </div>
-            <div className="text-title1 font-bold text-text-primary mb-2">
-              {headToHead.biggestRealWin.diff > 0 ? headToHead.biggestRealWin.score : '–'}
-            </div>
-            <div className="text-callout text-text-secondary mb-3">Größter Sieg</div>
-            {headToHead.biggestRealWin.diff > 0 && (
-              <div className="text-footnote text-text-tertiary space-y-1">
-                <div>vs {headToHead.biggestRealWin.opponent}</div>
-                <div className="text-caption1">
-                  {new Date(headToHead.biggestRealWin.date).toLocaleDateString('de-DE')}
-                </div>
-              </div>
-            )}
-          </div>
-          
-          <div className="mobile-overview-card animate-mobile-slide-in hover:scale-105 transition-all duration-300">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-caption1 font-semibold text-system-purple uppercase tracking-wide"><Icon name="football" size={13} strokeWidth={2.2} className="inline mr-1 -mt-0.5" />Top Performance</div>
-              <div className="w-8 h-8 bg-system-purple/10 rounded-full flex items-center justify-center">
-                <Icon name="trophy" size={14} strokeWidth={2.2} className="text-system-purple" />
-              </div>
-            </div>
-            <div className="text-title1 font-bold text-text-primary mb-2">
-              {mostGoalsInMatch?.player ? mostGoalsInMatch.player.split(' ').slice(-1)[0] : '–'}
-            </div>
-            <div className="text-callout text-text-secondary mb-3">
-              Meiste Tore ({mostGoalsInMatch?.count || 0} in einem Spiel)
-            </div>
-            {mostGoalsInMatch?.match && (
-              <div className="text-footnote text-text-tertiary">
-                <div className="text-caption1">
-                  {new Date(mostGoalsInMatch.match.date).toLocaleDateString('de-DE')}
-                </div>
-              </div>
-            )}
-          </div>
+        {/* Drei Einzelleistungen — dieselbe Karte, dreimal befuellt. */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <HighlightKarte
+            logo={<TeamLogo team="aek" size="xs" />}
+            titel={getTeamDisplay('AEK')}
+            akzent="text-system-blue"
+            wert={headToHead.biggestAekWin.diff > 0 ? headToHead.biggestAekWin.score : '–'}
+            was="Größter Sieg"
+            zeilen={headToHead.biggestAekWin.diff > 0 ? [
+              `gegen ${headToHead.biggestAekWin.opponent}`,
+              new Date(headToHead.biggestAekWin.date).toLocaleDateString('de-DE'),
+            ] : []}
+          />
+          <HighlightKarte
+            logo={<TeamLogo team="real" size="xs" />}
+            titel={getTeamDisplay('Real')}
+            akzent="text-system-red"
+            wert={headToHead.biggestRealWin.diff > 0 ? headToHead.biggestRealWin.score : '–'}
+            was="Größter Sieg"
+            zeilen={headToHead.biggestRealWin.diff > 0 ? [
+              `gegen ${headToHead.biggestRealWin.opponent}`,
+              new Date(headToHead.biggestRealWin.date).toLocaleDateString('de-DE'),
+            ] : []}
+          />
+          <HighlightKarte
+            logo={<Icon name="trophy" size={16} strokeWidth={2.2} className="text-system-purple" />}
+            titel="Beste Einzelleistung"
+            akzent="text-system-purple"
+            wert={mostGoalsInMatch?.player ? mostGoalsInMatch.player.split(' ').slice(-1)[0] : '–'}
+            was={`Meiste Tore in einem Spiel: ${mostGoalsInMatch?.count || 0}`}
+            zeilen={[mostGoalsInMatch?.date
+              ? new Date(mostGoalsInMatch.date).toLocaleDateString('de-DE') : null]}
+          />
         </div>
 
         {/* Enhanced Additional Statistics Section */}

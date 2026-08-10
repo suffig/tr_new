@@ -4,6 +4,9 @@ import Icon from '../../icons/Icon';
 import { supabaseDb } from '../../../utils/supabase';
 import { getTeamDisplay } from '../../../constants/teams';
 
+/** Ganze Euro deutsch: "2.000 €" statt "2000 €". */
+const euroGanz = (n) => `${Math.round(Number(n) || 0).toLocaleString('de-DE')} €`;
+
 // "Wer schuldet wem wie viel?" — die Frage nach jedem Abend.
 //
 // Die Zahl gab es schon: der Echtgeld-Ausgleich fuehrt sie je Team in
@@ -27,7 +30,7 @@ export default function OffeneRechnung({ aekFinances, realFinances, onChange }) 
 
   const begleichen = async () => {
     if (!window.confirm(
-      `${getTeamDisplay(r.schuldner)} hat ${r.betrag} € an ${getTeamDisplay(r.glaeubiger)} gezahlt?\n\n` +
+      `${getTeamDisplay(r.schuldner)} hat ${euroGanz(r.betrag)} an ${getTeamDisplay(r.glaeubiger)} gezahlt?\n\n` +
       'Beide Schuldenstände werden auf 0 gesetzt.'
     )) return;
 
@@ -46,7 +49,7 @@ export default function OffeneRechnung({ aekFinances, realFinances, onChange }) 
         team: r.schuldner,
         type: 'Echtgeld-Ausgleich (bezahlt)',
         amount: 0,
-        info: `${r.betrag} € an ${getTeamDisplay(r.glaeubiger)} gezahlt`,
+        info: `${euroGanz(r.betrag)} an ${getTeamDisplay(r.glaeubiger)} gezahlt`,
         date: new Date().toISOString().slice(0, 10),
       });
       toast.success('Rechnung als beglichen vermerkt');
@@ -96,7 +99,7 @@ export default function OffeneRechnung({ aekFinances, realFinances, onChange }) 
           <div className="text-footnote text-text-tertiary">Offene Echtgeld-Rechnung</div>
         </div>
         <div className="stat-display text-2xl text-system-orange num-tabular flex-shrink-0">
-          {r.betrag} €
+          {euroGanz(r.betrag)}
         </div>
       </div>
 
