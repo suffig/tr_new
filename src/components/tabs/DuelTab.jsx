@@ -1,4 +1,5 @@
 import { useMemo, useState, useRef, useEffect } from 'react';
+import { dez } from '../../utils/zahlen';
 import toast from 'react-hot-toast';
 import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
@@ -672,8 +673,10 @@ export default function DuelTab() {
   const spieleMitToren = gesamt.erfasst + Object.values(LEGACY_SAISONS)
     .filter((i) => i.bilanz?.AEK?.tore != null)
     .reduce((s, i) => s + (i.bilanz.spiele || 0), 0);
-  const toreProSpiel = spieleMitToren
-    ? ((gesamt.aekG + gesamt.realG) / spieleMitToren).toFixed(1) : '0.0';
+  // Deutsches Komma: zwei Karten weiter steht "Ø 4,3 pro Spiel" — dieselbe
+  // Art Zahl darf nicht einmal mit Punkt und einmal mit Komma dastehen.
+  const toreProSpiel = dez(spieleMitToren
+    ? (gesamt.aekG + gesamt.realG) / spieleMitToren : 0, 1);
   const fmtEuro = (n) => `${(n / 1).toLocaleString('de-DE')} €`;
   const fmtDate = (s) => s ? new Date(s).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
 
@@ -726,12 +729,12 @@ export default function DuelTab() {
             <TeamLogo team="aek" size="md" />
             <div className="mt-2 text-footnote font-semibold text-system-blue truncate max-w-full">{aekName}</div>
             <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-blue">{gesamt.aekW}</div>
-            <div className="text-[10px] uppercase tracking-widest text-text-tertiary">Siege</div>
+            <div className="text-caption2 text-text-tertiary">Siege</div>
           </div>
 
           <div className="flex flex-col items-center justify-center px-2">
             <div className="text-title3 font-bold text-text-tertiary">{gesamt.draws}</div>
-            <div className="text-[10px] text-text-tertiary uppercase tracking-wide">Remis</div>
+            <div className="text-caption2 text-text-tertiary">Remis</div>
             <div className="mt-2 text-[10px] text-text-muted">{gesamt.total} Spiele</div>
           </div>
 
@@ -739,7 +742,7 @@ export default function DuelTab() {
             <TeamLogo team="real" size="md" />
             <div className="mt-2 text-footnote font-semibold text-system-red truncate max-w-full">{realName}</div>
             <div className="mt-1 text-[54px] leading-none font-black tracking-tight tabular-nums text-system-red">{gesamt.realW}</div>
-            <div className="text-[10px] uppercase tracking-widest text-text-tertiary">Siege</div>
+            <div className="text-caption2 text-text-tertiary">Siege</div>
           </div>
         </div>
 
@@ -836,27 +839,17 @@ export default function DuelTab() {
           )}
         </StatCard>
 
-        {d.topScorer && (
-          <StatCard iconName="star" iconClass="text-system-orange" label="Torschützenkönig">
-            <span className="text-title3 font-bold text-text-primary truncate block">{d.topScorer.name}</span>
-            <div className="text-[11px] text-text-tertiary mt-0.5 num-tabular">
-              {d.topScorer.goals} Tore · alle Saisons
-            </div>
-            {d.topScorer.seasons?.length > 1 && (
-              <div className="text-[10px] text-text-quaternary mt-0.5 num-tabular truncate">
-                {d.topScorer.seasons.map((s) => `${s.version} ${s.goals}`).join(' + ')}
-              </div>
-            )}
-          </StatCard>
-        )}
+        {/* Karte "Torschuetzenkoenig" entfernt: das war Platz 1 der
+            Top-Torschuetzen-Liste ein Stueck weiter unten, mit denselben
+            Zahlen und derselben Saison-Aufschluesselung. */}
 
         {/* Hier stand nochmal die Bilanz — dieselbe Zahl wie ganz oben, nur
             ohne die Altsaisons. Die Quote sagt etwas Neues. */}
         <StatCard iconName="chart" iconClass="text-system-teal" label="Siegquote">
           <span className="text-title3 font-bold">
-            <span className="text-system-blue">{Math.round((gesamt.aekW / gesamt.total) * 100)}%</span>
+            <span className="text-system-blue">{Math.round((gesamt.aekW / gesamt.total) * 100)} %</span>
             <span className="text-text-tertiary"> : </span>
-            <span className="text-system-red">{Math.round((gesamt.realW / gesamt.total) * 100)}%</span>
+            <span className="text-system-red">{Math.round((gesamt.realW / gesamt.total) * 100)} %</span>
           </span>
           <div className="text-[11px] text-text-tertiary mt-0.5">
             {gesamt.draws > 0
