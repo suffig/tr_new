@@ -150,7 +150,10 @@ class StatsCalculator {
     
     return this.players.map(player => {
       // Count actual matches played for goal calculation
-      const actualMatchesPlayed = this.countPlayerMatches(player.name, player.team);
+      // Spiele MIT Tor — anders als "Einsaetze" steht das wirklich in den
+      // Daten: jedes Spiel fuehrt seine Torschuetzen.
+      const trefferSpiele = this.countMatchesWithGoal(player.name, player.team);
+      const bestesSpiel = this.bestesEinzelspiel(player.name, player.team);
       const playerBans = this.bans.filter(b => b.player_id === player.id);
       
       const sdsRecord = this.spielerDesSpiels.find(sds => 
@@ -158,24 +161,37 @@ class StatsCalculator {
       );
       const sdsCount = sdsRecord ? (sdsRecord.count || 0) : 0;
       
-      // Use database goals as primary source, but also calculate from matches for verification
+      // Zwei unabhaengige Quellen: die Spalte players.goals und die Summe aus
+      // den Torschuetzenlisten. Fuer die importierten Altsaisons gibt es nur
+      // die erste (dort wurden nur Gesamtzahlen ueberliefert, keine Spiele),
+      // fuer die laufende Saison die zweite. Deshalb das Maximum.
+      //
+      // Wenn beide auseinanderlaufen, ist das aber kein Rundungsproblem,
+      // sondern eine Luecke in den Torschuetzenlisten — und die gehoert
+      // sichtbar gemacht. Sonst steht in der Karte "7 Tore, trifft in 2
+      // Spielen, bestes Spiel 2 Tore", und das kann nicht alles stimmen.
       const matchGoals = this.countPlayerGoalsFromMatches(player.name, player.team);
       const dbGoals = player.goals || 0;
-      
-      // Use the higher value or database value if available
       const actualGoals = Math.max(dbGoals, matchGoals);
+      const ohneZuordnung = Math.max(0, actualGoals - matchGoals);
       
       return {
         ...player,
         goals: actualGoals,
-        matchesPlayed: actualMatchesPlayed, // Actual matches for goal calculations
-        totalMatches: totalMatches, // Total matches for SdS calculations
+        totalMatches, // Gesamtzahl der Spiele — fuer die SdS-Quote
         sdsCount,
-        goalsPerGame: actualMatchesPlayed > 0 ? (actualGoals / actualMatchesPlayed).toFixed(2) : '0.00',
+        // In wie vielen Spielen er getroffen hat, und wie oft dann im Schnitt.
+        // Beides ist aus den Torschuetzenlisten belegt und braucht keine
+        // Annahme darueber, wer aufgestellt war.
+        trefferSpiele,
+        // Fuer die Rate nur die Tore, die auch einem Spiel zugeordnet sind —
+        // sonst teilte man importierte Gesamtzahlen durch erfasste Spiele.
+        toreJeTrefferSpiel: trefferSpiele > 0 ? matchGoals / trefferSpiele : null,
+        bestesSpiel,
+        matchGoals,
+        ohneZuordnung,
         totalBans: playerBans.length,
         disciplinaryScore: this.calculateDisciplinaryScore(playerBans),
-        // Add efficiency metrics - SdS percentage based on total matches
-        goalsPerMatchWhenPlaying: actualMatchesPlayed > 0 ? (actualGoals / actualMatchesPlayed) : 0,
         // Anteil NUR, wenn er ueberhaupt berechenbar ist. Im Umfang "Alle
         // Saisons" zaehlen Auszeichnungen aus Saisons mit, die gar keine
         // einzelnen Spiele beitragen (die Altsaisons haben Auszeichnungen,
@@ -228,61 +244,60 @@ class StatsCalculator {
     return totalGoals;
   }
 
-  countPlayerMatches(playerName, playerTeam) {
-    if (!playerName || !playerTeam) return this.matches.length;
-    
-    let matchesWithGoals = 0;
-    let matchesAsSds = 0;
-    
-    // Count matches where player scored
-    this.matches.forEach(match => {
-      if (playerTeam === 'AEK' && match.goalslista) {
-        try {
-          const goals = Array.isArray(match.goalslista) ? match.goalslista : 
-                       (typeof match.goalslista === 'string' ? JSON.parse(match.goalslista) : []);
-          
-          const playerScored = goals.some(goal => {
-            const goalPlayer = typeof goal === 'string' ? goal : goal.player;
-            return goalPlayer === playerName;
-          });
-          
-          if (playerScored) matchesWithGoals++;
-        } catch (e) {
-          // Handle parsing errors gracefully
-        }
-      }
-      
-      if (playerTeam === 'Real' && match.goalslistb) {
-        try {
-          const goals = Array.isArray(match.goalslistb) ? match.goalslistb : 
-                       (typeof match.goalslistb === 'string' ? JSON.parse(match.goalslistb) : []);
-          
-          const playerScored = goals.some(goal => {
-            const goalPlayer = typeof goal === 'string' ? goal : goal.player;
-            return goalPlayer === playerName;
-          });
-          
-          if (playerScored) matchesWithGoals++;
-        } catch (e) {
-          // Handle parsing errors gracefully
-        }
-      }
-      
-      // Count matches where player was man of the match
-      if (match.manofthematch === playerName) {
-        matchesAsSds++;
-      }
-    });
-    
-    // Estimate matches played: assume player played in all team matches unless we have better data
-    // This is a simplified approach - in reality you'd track participation per match
-    const teamMatches = this.matches.filter(match => 
-      (playerTeam === 'AEK' && (match.teama === 'AEK' || match.teamb === 'AEK')) ||
-      (playerTeam === 'Real' && (match.teama === 'Real' || match.teamb === 'Real'))
+  /**
+   * Torschuetzenliste eines Spiels fuer ein Team, robust gelesen.
+   *
+   * Sie kommt je nach Herkunft als Array oder als JSON-Text, und die
+   * Eintraege sind mal Objekte, mal blosse Namen.
+   */
+  torschuetzen(match, team) {
+    const roh = team === 'AEK' ? match.goalslista : match.goalslistb;
+    if (!roh) return [];
+    let liste = roh;
+    if (typeof roh === 'string') {
+      try { liste = JSON.parse(roh); } catch { return []; }
+    }
+    if (!Array.isArray(liste)) return [];
+    return liste.map((t) => (typeof t === 'string'
+      ? { player: t, count: 1 }
+      : { player: t.player, count: Number(t.count) || 1 }));
+  }
+
+  /**
+   * In wie vielen Spielen hat der Spieler getroffen?
+   *
+   * Hier stand `countPlayerMatches`, das die EINSAETZE zaehlen sollte. Die
+   * werden aber nirgends erfasst — ein Spiel speichert Torschuetzen, Karten
+   * und den Spieler des Spiels, keine Aufstellung. Die Funktion fiel deshalb
+   * auf `teamMatches` zurueck, also auf alle Spiele des Teams; und weil jedes
+   * Spiel AEK gegen Real ist, war das fuer JEDEN Spieler dieselbe Zahl.
+   *
+   * Alles, was darauf aufbaute, war damit wertlos: "Tore je Spiel" teilte
+   * jeden Spieler durch dieselbe Konstante, eine Rangfolge danach war also
+   * identisch zur Rangfolge nach Toren — nur mit einer kleineren Zahl. Und
+   * die Spalte "Spiele" behauptete eine Zahl, die niemand erhoben hat.
+   *
+   * Diese Zahl hier ist belegt: sie zaehlt nur, was in den Torschuetzenlisten
+   * steht.
+   */
+  countMatchesWithGoal(playerName, playerTeam) {
+    if (!playerName || !playerTeam) return 0;
+    return this.matches.filter((match) =>
+      this.torschuetzen(match, playerTeam).some((t) => t.player === playerName)
     ).length;
-    
-    // Return the maximum of: matches with goals, matches as SdS, or estimated team matches
-    return Math.max(matchesWithGoals, matchesAsSds, teamMatches);
+  }
+
+  /** Die meisten Tore in einem einzelnen Spiel. */
+  bestesEinzelspiel(playerName, playerTeam) {
+    if (!playerName || !playerTeam) return 0;
+    let best = 0;
+    for (const match of this.matches) {
+      const tore = this.torschuetzen(match, playerTeam)
+        .filter((t) => t.player === playerName)
+        .reduce((s, t) => s + t.count, 0);
+      if (tore > best) best = tore;
+    }
+    return best;
   }
 
   calculateDisciplinaryScore(bans) {
@@ -705,11 +720,6 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const aekWins = teamRecords.aek.wins;
   const realWins = teamRecords.real.wins;
 
-  const formatPlayerValue = (value) => {
-    // Helper function for consistent player value formatting
-    // Values are stored as millions in database  
-    return `${dez(value, 1)} Mio €`;
-  };
 
   // Fuenf Ansichten statt neun. Die alten "Dashboard", "Erweitert",
   // "Visualisierungen" und "Spieltage" waren keine eigenen Themen, sondern
@@ -990,8 +1000,8 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           <Kennzahl
             wert={topScorer ? topScorer.name.split(' ').slice(-1)[0] : '–'}
             label={`Topscorer · ${topScorer ? topScorer.goals : 0} Tore`}
-            zusatz={topScorer && topScorer.matchesPlayed > 0
-              ? `⌀ ${dez(topScorer.goals / topScorer.matchesPlayed)} je Spiel` : null}
+            zusatz={topScorer && topScorer.trefferSpiele > 0
+              ? `in ${topScorer.trefferSpiele} ${topScorer.trefferSpiele === 1 ? 'Spiel' : 'Spielen'} getroffen` : null}
           />
           <Kennzahl
             wert={topSdSPlayer ? topSdSPlayer.name.split(' ').slice(-1)[0] : '–'}
@@ -1104,13 +1114,13 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           <h3 className="text-title3 mb-4 inline-flex items-center gap-2"><Icon name="bulb" size={18} strokeWidth={2.2} className="text-system-yellow" />Besondere Statistiken</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {(() => {
-              // Most productive player (goals per match played)
+              // Wer am haeufigsten getroffen hat — gezaehlt in Spielen mit
+              // Tor, nicht in Einsaetzen: die stehen nirgends.
               let bestRatio = 0;
               let bestPlayer = 'Keine Daten';
               playerStats.forEach((player) => {
-                if (player.matchesPlayed > 0) {
-                  const ratio = player.goals / player.matchesPlayed;
-                  if (ratio > bestRatio) { bestRatio = ratio; bestPlayer = player.name; }
+                if (player.trefferSpiele > bestRatio) {
+                  bestRatio = player.trefferSpiele; bestPlayer = player.name;
                 }
               });
 
@@ -1228,10 +1238,15 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
             <div className="grid grid-cols-4 gap-1 text-center">
               {[
+                // "⌀/Spiel" und "Spiele" standen hier und waren beide
+                // erfunden — siehe countMatchesWithGoal. Ersetzt durch zwei
+                // Zahlen, die in den Spielen wirklich stehen.
                 ['Tore', player.goals],
-                ['⌀/Spiel', dez(player.goalsPerGame)],
-                ['Spiele', player.matchesPlayed],
-                ['Wert', formatPlayerValue(player.value)],
+                ['Trifft in', player.trefferSpiele],
+                ['Bestes Spiel', player.bestesSpiel],
+                // Einheit ins Label: "18,3 Mio €" braucht 75px, die Kachel
+                // hat auf 375px deren 67 — der Betrag war abgeschnitten.
+                ['Wert (Mio €)', dez(player.value, 1)],
               ].map(([label, wert]) => (
                 <div key={label} className="min-w-0">
                   <div className="stat-display text-[15px] text-text-primary truncate">{wert}</div>
@@ -1240,8 +1255,14 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               ))}
             </div>
 
-            {(player.sdsCount > 0 || player.totalBans > 0) && (
+            {(player.sdsCount > 0 || player.totalBans > 0 || player.ohneZuordnung > 0) && (
               <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border-light">
+                {player.ohneZuordnung > 0 && (
+                  <span className="chip chip-sm chip-gray"
+                        title="Tore aus der Spielerspalte, die in keiner Torschützenliste stehen — meist aus importierten Altsaisons.">
+                    {player.ohneZuordnung} ohne Spiel
+                  </span>
+                )}
                 {player.sdsCount > 0 && (
                   <span className="chip chip-sm chip-yellow">
                     {player.sdsCount}× SdS{player.sdsPercentage != null ? ` · ${dez(player.sdsPercentage, 1)} %` : ''}
@@ -1261,21 +1282,26 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       {/* Player Insights */}
       <div className="mt-6 grid md:grid-cols-3 gap-4">
         <div className="p-4 bg-system-green/10 rounded-lg border border-system-green/20">
-          <h4 className="font-semibold text-system-green mb-2 inline-flex items-center gap-2"><Icon name="trophy" size={16} strokeWidth={2.2} />Effizienz-Spitze</h4>
+          {/* Hier stand "Effizienz-Spitze": Tore geteilt durch Einsaetze.
+              Der Nenner war fuer jeden Spieler dieselbe Zahl, die Rangfolge
+              also identisch zur Torjaegerliste — nur mit kleineren Zahlen und
+              dem Anschein, etwas anderes zu messen. Das beste Einzelspiel
+              steht dagegen exakt in den Daten. */}
+          <h4 className="font-semibold text-system-green mb-2 inline-flex items-center gap-2"><Icon name="trophy" size={16} strokeWidth={2.2} />Bestes Einzelspiel</h4>
           {(() => {
-            const mostEfficient = playerStats
-              .filter(p => p.matchesPlayed >= 3) // Minimum 3 games
-              .sort((a, b) => b.goalsPerMatchWhenPlaying - a.goalsPerMatchWhenPlaying)[0];
-            
-            return mostEfficient ? (
+            const bester = [...playerStats]
+              .filter((p) => p.bestesSpiel > 1)
+              .sort((a, b) => b.bestesSpiel - a.bestesSpiel)[0];
+
+            return bester ? (
               <div>
-                <div className="font-medium text-system-green">{mostEfficient.name}</div>
+                <div className="font-medium text-system-green">{bester.name}</div>
                 <div className="text-sm text-system-green">
-                  {dez(mostEfficient.goalsPerGame)} Tore/Spiel ({mostEfficient.goals} Tore in {mostEfficient.matchesPlayed} Spielen)
+                  {bester.bestesSpiel} Tore in einem Spiel
                 </div>
               </div>
             ) : (
-              <div className="text-text-tertiary">Nicht genügend Daten</div>
+              <div className="text-text-tertiary">Noch kein Doppelpack</div>
             );
           })()}
         </div>
@@ -1879,18 +1905,22 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         blowouts: 0 // 5+ goal difference
       };
 
-      // Player efficiency metrics
-      const playerEfficiency = playerStats.slice(0, 10).map(player => ({
-        name: player.name,
-        team: player.team,
-        goals: player.goals || 0,
-        matches: player.matchesPlayed || 0,
-        // Tore je Spiel — NICHT mal 100: das ist keine Quote, und als
-        // Prozentwert stand hier "400,0 %" fuer vier Tore pro Spiel.
-        efficiency: player.matchesPlayed > 0 ? player.goals / player.matchesPlayed : 0,
-        value: player.value || 0,
-        valuePerGoal: player.goals > 0 ? (player.value || 0) / player.goals : null
-      }));
+      // Wie durchschlagend ein Torschuetze ist, wenn er trifft: Tore geteilt
+      // durch die Spiele MIT Tor. Vorher stand hier "Tore je Spiel" mit den
+      // nicht erfassten Einsaetzen im Nenner.
+      const playerEfficiency = playerStats
+        .filter((p) => (p.trefferSpiele || 0) > 0)
+        .map(player => ({
+          name: player.name,
+          team: player.team,
+          goals: player.goals || 0,
+          trefferSpiele: player.trefferSpiele || 0,
+          jeTrefferSpiel: player.toreJeTrefferSpiel || 0,
+          value: player.value || 0,
+          valuePerGoal: player.goals > 0 ? (player.value || 0) / player.goals : null
+        }))
+        .sort((a, b) => b.jeTrefferSpiel - a.jeTrefferSpiel || b.goals - a.goals)
+        .slice(0, 10);
 
       // Recent form analysis (last 10 matches)
       const recentMatches = filteredMatches.slice(-10);
@@ -1977,12 +2007,15 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
         </div>
 
-        {/* Player Efficiency Rankings */}
+        {/* Wenn sie treffen, wie oft dann */}
         <div className="modern-card p-6">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
             <Icon name="zap" size={18} strokeWidth={2.2} />
-            Spieler-Effizienz Rankings
+            Wenn sie treffen, dann richtig
           </h3>
+          <p className="text-caption2 text-text-tertiary mb-4">
+            Tore geteilt durch die Spiele, in denen sie getroffen haben.
+          </p>
           
           <div className="space-y-3">
             {metrics.playerEfficiency.slice(0, 8).map((player, index) => (
@@ -2002,8 +2035,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-text-primary num-tabular">{dez(player.efficiency)}</div>
-                  <div className="text-xs text-text-muted">Tore je Spiel · {player.goals} in {player.matches}</div>
+                  <div className="font-bold text-text-primary num-tabular">{dez(player.jeTrefferSpiel)}</div>
+                  <div className="text-xs text-text-muted">
+                    Tore je Trefferspiel · {player.goals} in {player.trefferSpiele}
+                  </div>
                 </div>
               </div>
             ))}
@@ -2133,7 +2168,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         name: player.name,
         value: player.goals || 0,
         team: player.team,
-        goalsPerGame: player.goalsPerGame
+        trefferSpiele: player.trefferSpiele
       }));
 
     // Prepare data for win distribution donut chart

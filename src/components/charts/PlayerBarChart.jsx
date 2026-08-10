@@ -113,7 +113,7 @@ export default function PlayerBarChart({ data, height = 400, title = "Top Spiele
             <div style="font-weight: bold; margin-bottom: 4px;">${d.name}</div>
             <div>Team: ${d.team}</div>
             <div>Tore: ${d.value}</div>
-            ${d.goalsPerGame ? `<div>Ø/Spiel: ${d.goalsPerGame}</div>` : ''}
+            ${d.trefferSpiele ? `<div>Getroffen in ${d.trefferSpiele} Spielen</div>` : ''}
           `);
       })
       .on('mousemove', function(event) {
