@@ -264,7 +264,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             <div className="divide-y divide-border-light">
               {txns.slice(0, 12).map((t) => (
                 <div key={t.id} className="flex items-center justify-between gap-3 p-3">
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     {(() => {
                       const v = getTransactionVisual(t.type);
                       return (
@@ -273,7 +273,13 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                         </span>
                       );
                     })()}
-                    <div className="min-w-0">
+                    {/* flex-1: ohne das bekam der Textblock nur seine
+                        Mindestbreite, und "Spieler des Spiels Bonus" war bei
+                        162 von 165px abgeschnitten — drei Pixel, aber der
+                        Betrag rechts hat feste Breite und daneben war Platz.
+                        Der Zweck ist frei formulierter Text aus der
+                        Erfassung, den kann man nicht kuerzen. */}
+                    <div className="min-w-0 flex-1">
                       <div className="text-sm font-medium text-text-primary truncate">{t.info || t.type || 'Transaktion'}</div>
                       <div className="text-caption1 text-text-muted num-tabular">{t.date ? new Date(t.date).toLocaleDateString('de-DE') : t.type}</div>
                     </div>
@@ -425,7 +431,12 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                 <div className="divide-y divide-border-light">
                   {visible.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between gap-3 p-3 hover:bg-bg-tertiary/40 transition-colors">
-                      <div className="flex items-center gap-3 min-w-0">
+                      {/* flex-1: ohne das nahm der Textblock nur seine
+                          Mindestbreite (209 von 333px), und der Zweck
+                          "Spieler des Spiels Bonus" war bei 162 von 165px
+                          abgeschnitten. Der Zweck ist frei formulierter Text
+                          aus der Erfassung — kuerzen geht nicht. */}
+                      <div className="flex items-center gap-3 min-w-0 flex-1">
                         {(() => { const v = getTransactionVisual(transaction.type); return (
                           <span className={`flex-shrink-0 w-8 h-8 rounded-full bg-bg-tertiary flex items-center justify-center ${v.tone}`}>
                             <Icon name={v.icon} size={16} strokeWidth={2.2} />
