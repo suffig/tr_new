@@ -1,11 +1,11 @@
-import { useRef, useEffect } from 'react';
 import Icon from './icons/Icon';
 
 /**
  * Segmentierte Navigation.
  *
- * Bis zu vier Einträge stehen nebeneinander. Ab fünf bricht die Leiste auf
- * dem Handy in zwei Reihen um, statt seitlich zu scrollen.
+ * Bis zu vier Einträge stehen nebeneinander und fuellen die Breite. Ab fuenf
+ * bricht die Leiste auf dem Handy in zwei Reihen um, statt seitlich zu
+ * scrollen.
  *
  * Der Grund: als Scrollstreifen ragte der letzte Eintrag ueber den Rand —
  * in Finanzen war von "Analyse" nur die Haelfte zu sehen, in der Statistik
@@ -14,21 +14,12 @@ import Icon from './icons/Icon';
  * Telefon findet man ihn schlicht nicht.
  *
  * Ab sm ist wieder genug Platz fuer eine Reihe.
+ *
+ * Hier stand ein useEffect, das den aktiven Eintrag per scrollIntoView in den
+ * Blick holte. Seit keiner der beiden Zweige mehr scrollt, konnte seine
+ * Bedingung (scrollWidth > clientWidth) nie zutreffen — toter Code.
  */
 export default function HorizontalNavigation({ views, selectedView, onViewChange, className = '' }) {
-  const activeRef = useRef(null);
-
-  // Nur scrollen, wenn die Leiste tatsaechlich scrollt (breite Schirme mit
-  // vielen Eintraegen). Bei umgebrochener Leiste ist ohnehin alles sichtbar,
-  // und ein scrollIntoView wuerde die ganze Seite verschieben.
-  useEffect(() => {
-    const el = activeRef.current;
-    const streifen = el?.parentElement;
-    if (el && streifen && streifen.scrollWidth > streifen.clientWidth + 2) {
-      el.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
-    }
-  }, [selectedView]);
-
   // Drei je Reihe halten die Beschriftungen lesbar; bei genau vier Eintraegen
   // passt eine Reihe noch.
   const umbrechen = views.length > 4;
@@ -45,7 +36,6 @@ export default function HorizontalNavigation({ views, selectedView, onViewChange
           return (
             <button
               key={view.id}
-              ref={isActive ? activeRef : null}
               onClick={() => onViewChange(view.id)}
               /* Bis vier Eintraege fuellen sie die volle Breite. Vorher waren
                  sie `shrink-0 min-w-[64px]` in einem Scrollstreifen: unter sm

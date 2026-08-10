@@ -533,6 +533,98 @@ export function geschmacksDuell(verkostungen, katalog) {
 }
 
 /* ===========================================================================
+   Wo die Strenge sitzt, und wer welche Sorte mag
+   =========================================================================== */
+
+/**
+ * Welche Kategorie zieht die Note nach unten?
+ *
+ * Je Kategorie der Abstand zur Gesamtnote derselben Bewertung. "Preis-Leistung
+ * liegt 1,2 Punkte unter der Gesamtnote" heisst: ihr findet die Biere gut,
+ * aber zu teuer. Ein Schnitt allein sagt das nicht — der haengt daran, welche
+ * Biere ihr getrunken habt, nicht daran, wie ihr sie einordnet.
+ *
+ * Bewusst der Abstand und keine Korrelation: bei einer Handvoll Bieren ist ein
+ * Korrelationswert reines Rauschen, waehrend "im Schnitt 1,2 drunter" auch bei
+ * fuenf Bewertungen stimmt.
+ */
+export function kategorienProfil(verkostungen) {
+  const treffer = new Map();
+  for (const v of verkostungen || []) {
+    for (const key of ['aek', 'real']) {
+      const gesamt = key === 'aek' ? v.note_aek : v.note_real;
+      if (gesamt == null) continue;
+      const noten = notenVon(v, key);
+      for (const [id, wert] of Object.entries(noten)) {
+        if (wert == null) continue;
+        const e = treffer.get(id) || { id, werte: [], abstaende: [] };
+        e.werte.push(Number(wert));
+        e.abstaende.push(Number(wert) - Number(gesamt));
+        treffer.set(id, e);
+      }
+    }
+  }
+  return KATEGORIE_KATALOG
+    .filter((k) => treffer.has(k.id))
+    .map((k) => {
+      const e = treffer.get(k.id);
+      return {
+        ...k,
+        anzahl: e.werte.length,
+        schnitt: mittel(e.werte),
+        abstand: mittel(e.abstaende),
+      };
+    })
+    .sort((a, b) => a.abstand - b.abstand);
+}
+
+/**
+ * Wer mag welche Sorte?
+ *
+ * Je Sorte der Schnitt getrennt nach Person. Die vorhandene
+ * `sortenVerteilung` zaehlt Glaeser und mittelt ueber beide zusammen — damit
+ * laesst sich nicht sagen, ob einer von euch Weizen mag und der andere es nur
+ * mittrinkt.
+ *
+ * Sorten mit einer einzigen Bewertung fliegen raus: ein einzelnes Bier ist
+ * keine Vorliebe.
+ */
+export function sortenVorliebe(verkostungen, katalog, mindestens = 2) {
+  const nachId = new Map((katalog || []).map((b) => [b.id, b]));
+  const proSorte = new Map();
+
+  for (const v of verkostungen || []) {
+    const art = nachId.get(v.bier_id)?.art;
+    if (!art) continue;
+    const e = proSorte.get(art) || { art, aek: [], real: [], glaeser: 0 };
+    if (v.note_aek != null) e.aek.push(Number(v.note_aek));
+    if (v.note_real != null) e.real.push(Number(v.note_real));
+    e.glaeser += (v.anzahl_aek || 0) + (v.anzahl_real || 0);
+    proSorte.set(art, e);
+  }
+
+  const liste = [...proSorte.values()]
+    .map((e) => ({
+      art: e.art,
+      glaeser: e.glaeser,
+      anzahl: Math.max(e.aek.length, e.real.length),
+      aek: e.aek.length ? mittel(e.aek) : null,
+      real: e.real.length ? mittel(e.real) : null,
+    }))
+    .filter((e) => e.anzahl >= mindestens && (e.aek != null || e.real != null))
+    .sort((a, b) => Math.max(b.aek ?? 0, b.real ?? 0) - Math.max(a.aek ?? 0, a.real ?? 0));
+
+  const bestesVon = (feld) => liste.filter((e) => e[feld] != null)
+    .sort((a, b) => b[feld] - a[feld])[0] || null;
+
+  return {
+    sorten: liste,
+    lieblingAek: bestesVon('aek'),
+    lieblingReal: bestesVon('real'),
+  };
+}
+
+/* ===========================================================================
    Bilanz über alle Börsen
    =========================================================================== */
 

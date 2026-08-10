@@ -13,7 +13,7 @@ import {
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
   KATEGORIE_KATALOG, KATEGORIE_GRUPPEN, STANDARD_KATEGORIEN, kategorie,
   ladeEinstellungen, sichereEinstellungen, noteAusKategorien, notenVon,
-  geschmacksDuell, gesamtBilanz,
+  geschmacksDuell, gesamtBilanz, kategorienProfil, sortenVorliebe,
 } from '../../../utils/bierboerse';
 
 const euro = (n) => `${(Number(n) || 0).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €`;
@@ -94,7 +94,7 @@ function NotenWahl({ wert, onChange, farbe, beschriftung = 'Note' }) {
  * Auswertungen rechnen. Ein Wechsel des Modus macht alte Einträge deshalb
  * nicht wertlos.
  */
-function BewertungsBlock({ modus, kategorien, noten, onNoten, gesamt, onGesamt, farbe }) {
+function BewertungsBlock({ modus, kategorien, noten, onNoten, gesamt, auswahl, onGesamt, farbe }) {
   const gerechnet = noteAusKategorien(noten);
   const anzeige = modus === 'ausfuehrlich' ? (gerechnet ?? gesamt ?? null) : (gesamt ?? null);
 
@@ -109,7 +109,7 @@ function BewertungsBlock({ modus, kategorien, noten, onNoten, gesamt, onGesamt, 
       </div>
 
       {modus === 'einfach' ? (
-        <NotenWahl wert={gesamt} onChange={onGesamt} farbe={farbe} />
+        <NotenWahl wert={auswahl ?? gesamt} onChange={onGesamt} farbe={farbe} />
       ) : kategorien.length === 0 ? (
         <p className="text-caption2 text-text-tertiary">
           Keine Kategorie eingeschaltet — unter „Einstellungen“ auswählen.
@@ -796,6 +796,8 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
 function BilanzAnsicht({ boersen, verkostungen, katalog }) {
   const b = useMemo(() => gesamtBilanz(boersen, verkostungen, katalog), [boersen, verkostungen, katalog]);
   const duell = useMemo(() => geschmacksDuell(verkostungen, katalog), [verkostungen, katalog]);
+  const profil = useMemo(() => kategorienProfil(verkostungen), [verkostungen]);
+  const sorten = useMemo(() => sortenVorliebe(verkostungen, katalog), [verkostungen, katalog]);
 
   const kommaEins = (n, stellen = 1) =>
     n == null ? '—' : Number(n).toLocaleString('de-DE', { maximumFractionDigits: stellen });
@@ -973,6 +975,99 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
                 <span className="num-tabular">
                   {note((duell.einigkeitsbier.aek + duell.einigkeitsbier.real) / 2)}
                 </span>.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Wo die Strenge sitzt */}
+      {profil.length > 0 && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-1">Streng und milde</div>
+          <p className="text-caption2 text-text-tertiary mb-2.5">
+            Wie weit jede Kategorie über oder unter der Gesamtnote derselben Bewertung liegt.
+          </p>
+          <div className="space-y-2">
+            {profil.map((k) => {
+              // Der Balken geht von der Mitte nach links (strenger) oder
+              // rechts (milder). Zwei Punkte Abstand fuellen ihn ganz aus —
+              // mehr kommt in der Praxis kaum vor.
+              const anteil = Math.min(Math.abs(k.abstand) / 2, 1) * 50;
+              const streng = k.abstand < 0;
+              return (
+                <div key={k.id}>
+                  <div className="flex items-baseline gap-2 text-caption2 mb-1">
+                    <span className="text-text-secondary truncate">{k.label}</span>
+                    <span className={`ml-auto num-tabular font-semibold flex-shrink-0 ${
+                      streng ? 'text-system-red' : 'text-system-green'}`}>
+                      {k.abstand > 0 ? '+' : ''}{note(k.abstand)}
+                    </span>
+                  </div>
+                  <div className="relative h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                    <div className="absolute inset-y-0 left-1/2 w-px bg-border-light" />
+                    <div className={`absolute inset-y-0 rounded-full ${streng ? 'bg-system-red' : 'bg-system-green'}`}
+                         style={streng
+                           ? { right: '50%', width: `${anteil}%` }
+                           : { left: '50%', width: `${anteil}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          {profil[0] && profil[0].abstand < -0.3 && (
+            <p className="text-caption1 text-text-secondary mt-2.5">
+              Am strengsten seid ihr bei <span className="font-semibold text-text-primary">{profil[0].label}</span>
+              {' — im Schnitt '}
+              <span className="num-tabular">{note(Math.abs(profil[0].abstand))}</span>
+              {' Punkte unter der Gesamtnote.'}
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Sorten-Vorliebe */}
+      {sorten.sorten.length > 0 && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-1">Wer mag was</div>
+          <p className="text-caption2 text-text-tertiary mb-2.5">
+            Durchschnittsnote je Sorte, getrennt nach euch beiden.
+          </p>
+          <div className="space-y-2">
+            {sorten.sorten.map((e) => (
+              <div key={e.art}>
+                <div className="flex items-baseline gap-2 text-caption2 mb-1">
+                  <span className="text-text-primary truncate">{e.art}</span>
+                  <span className="ml-auto num-tabular text-system-blue font-semibold">{note(e.aek)}</span>
+                  <span className="text-text-tertiary">:</span>
+                  <span className="num-tabular text-system-red font-semibold">{note(e.real)}</span>
+                </div>
+                <div className="flex gap-0.5">
+                  <div className="flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                    <div className="h-full rounded-full bg-system-blue ml-auto"
+                         style={{ width: `${((e.aek || 0) / 10) * 100}%` }} />
+                  </div>
+                  <div className="flex-1 h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                    <div className="h-full rounded-full bg-system-red"
+                         style={{ width: `${((e.real || 0) / 10) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-2.5 space-y-0.5 text-caption1 text-text-secondary">
+            {sorten.lieblingAek && (
+              <p>
+                <span className="text-system-blue font-semibold">Alexander</span> mag{' '}
+                <span className="text-text-primary font-semibold">{sorten.lieblingAek.art}</span> am liebsten
+                {' ('}<span className="num-tabular">{note(sorten.lieblingAek.aek)}</span>{')'}.
+              </p>
+            )}
+            {sorten.lieblingReal && (
+              <p>
+                <span className="text-system-red font-semibold">Philip</span> mag{' '}
+                <span className="text-text-primary font-semibold">{sorten.lieblingReal.art}</span> am liebsten
+                {' ('}<span className="num-tabular">{note(sorten.lieblingReal.real)}</span>{')'}.
               </p>
             )}
           </div>
@@ -1211,10 +1306,19 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
         // unterscheidet sich. Im ausfuehrlichen Modus ohne eine einzige
         // vergebene Kategorie bleibt die bisherige stehen, sonst verloere ein
         // Eintrag seine Bewertung, nur weil jemand den Preis korrigiert.
+        //
+        // Im einfachen Modus werden die Kategorienoten GELEERT. Ohne das
+        // entstand eine Zeile mit zwei widersprechenden Bewertungen: die
+        // getippte Gesamtnote und die alten Kategorien. Beim naechsten
+        // Oeffnen gewann die Kategorie-Seite (der Modus richtet sich danach,
+        // ob Kategorien vorhanden sind), die getippte Note war unsichtbar —
+        // und das naechste Speichern hat sie still ueberschrieben.
+        // Nachgestellt: Augustiner im einfachen Modus auf 5 gesetzt, die
+        // Liste zeigte 5, das Formular beim Wiederoeffnen 8,0.
         note_aek: modus === 'ausfuehrlich' ? (noteAusKategorien(notenAek) ?? gesamtAek) : gesamtAek,
         note_real: modus === 'ausfuehrlich' ? (noteAusKategorien(notenReal) ?? gesamtReal) : gesamtReal,
-        noten_aek: notenAek,
-        noten_real: notenReal,
+        noten_aek: modus === 'ausfuehrlich' ? notenAek : {},
+        noten_real: modus === 'ausfuehrlich' ? notenReal : {},
         notiz: notiz.trim() || null,
         bezahlt_von: zahler,
       };
@@ -1315,6 +1419,15 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
             ))}
           </div>
         </div>
+        {/* Ehrlich ansagen, was der Wechsel kostet — er verwirft beim
+            Speichern die Kategorienoten. Ohne den Hinweis waere das eine
+            stille Loeschung. */}
+        {modus === 'einfach'
+          && (Object.keys(notenAek).length > 0 || Object.keys(notenReal).length > 0) && (
+          <p className="-mt-1 text-caption2 text-system-orange">
+            Beim Speichern werden die bisherigen Kategorie-Noten dieses Biers verworfen.
+          </p>
+        )}
 
         {/* Anzahl und Bewertung getrennt je Person */}
         {PERSONEN.map((p) => {
@@ -1324,6 +1437,11 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
           const setNoten = p.key === 'aek' ? setNotenAek : setNotenReal;
           const gesamt = p.key === 'aek' ? gesamtAek : gesamtReal;
           const setGesamt = p.key === 'aek' ? setGesamtAek : setGesamtReal;
+          // Beim Wechsel nach "einfach" soll die Auswahl auf der bisherigen
+          // Note stehen. Eine gemittelte 7,7 trifft aber keinen der elf
+          // Knoepfe — dann lieber die naechstliegende ganze Zahl markieren
+          // als gar keine.
+          const gerundet = gesamt == null ? null : Math.round(Number(gesamt));
           return (
             <div key={p.key} className="panel-gray rounded-xl p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -1346,7 +1464,7 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
                 modus={modus}
                 kategorien={einstellungen.kategorien}
                 noten={noten} onNoten={setNoten}
-                gesamt={gesamt} onGesamt={setGesamt}
+                gesamt={gesamt} auswahl={gerundet} onGesamt={setGesamt}
                 farbe={p.farbe}
               />
             </div>
