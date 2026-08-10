@@ -11,7 +11,8 @@ import {
   PERSONEN, BIERARTEN, ladeBoersen, ladeKatalog, ladeVerkostungen,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
-  KATEGORIEN, katSpalte, noteAusKategorien, kategorienVon,
+  KATEGORIE_KATALOG, KATEGORIE_GRUPPEN, STANDARD_KATEGORIEN, kategorie,
+  ladeEinstellungen, sichereEinstellungen, noteAusKategorien, notenVon,
   geschmacksDuell, gesamtBilanz,
 } from '../../../utils/bierboerse';
 
@@ -78,44 +79,166 @@ function NotenWahl({ wert, onChange, farbe, beschriftung = 'Note' }) {
 }
 
 /**
- * Bewertung einer Person: drei Kategorien, Gesamtnote wird gerechnet.
+ * Bewertung einer Person.
  *
- * Die Gesamtnote ist bewusst KEIN eigenes Eingabefeld. Zwei Zahlen, die
- * dasselbe meinen, laufen sonst auseinander — man vergibt 9, 8 und 4 und
- * traegt oben trotzdem eine 9 ein. Sie steht deshalb nur als Ergebnis da.
+ * Zwei Modi, weil die beiden Situationen verschieden sind: auf einer Börse
+ * mit zwanzig Bieren will man zwei Taps und weiter, zu Hause bei drei
+ * besonderen Flaschen darf es ausführlich sein.
  *
- * Wer schnell durch will, vergibt nur "Geschmack" — dann ist die Gesamtnote
- * genau diese Zahl, und der Eintrag ist nach zwei Taps fertig.
+ *   einfach       eine Note von 0 bis 10, direkt eingetippt.
+ *   ausführlich   je eingeschalteter Kategorie eine Note; die Gesamtnote
+ *                 wird daraus gemittelt und ist KEIN Eingabefeld — zwei
+ *                 Zahlen, die dasselbe meinen, laufen sonst auseinander.
+ *
+ * Die Gesamtnote ist in beiden Fällen dieselbe Zahl, mit der alle
+ * Auswertungen rechnen. Ein Wechsel des Modus macht alte Einträge deshalb
+ * nicht wertlos.
  */
-function BewertungsBlock({ werte, onChange, farbe, altNote }) {
-  const gerechnet = noteAusKategorien(werte);
-  const anzeige = gerechnet ?? altNote ?? null;
-  const nurAlt = gerechnet == null && altNote != null;
+function BewertungsBlock({ modus, kategorien, noten, onNoten, gesamt, onGesamt, farbe }) {
+  const gerechnet = noteAusKategorien(noten);
+  const anzeige = modus === 'ausfuehrlich' ? (gerechnet ?? gesamt ?? null) : (gesamt ?? null);
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-2">
         <Kruege note={anzeige} groesse={16} />
         <span className="text-caption2 text-text-tertiary">
-          {anzeige == null
-            ? 'noch nicht bewertet'
-            : `${note(anzeige)} von 10`}
-          {nurAlt ? ' (bisherige Gesamtnote)' : ''}
+          {anzeige == null ? 'noch nicht bewertet' : `${note(anzeige)} von 10`}
+          {modus === 'ausfuehrlich' && gerechnet == null && gesamt != null ? ' (bisher)' : ''}
         </span>
       </div>
-      {KATEGORIEN.map((k) => (
-        <div key={k.id}>
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-caption2 text-text-secondary">{k.label}</span>
-            <span className="ml-auto text-caption2 num-tabular text-text-tertiary">
-              {werte[k.id] == null ? '—' : werte[k.id]}
+
+      {modus === 'einfach' ? (
+        <NotenWahl wert={gesamt} onChange={onGesamt} farbe={farbe} />
+      ) : kategorien.length === 0 ? (
+        <p className="text-caption2 text-text-tertiary">
+          Keine Kategorie eingeschaltet — unter „Einstellungen“ auswählen.
+        </p>
+      ) : (
+        kategorien.map((id) => {
+          const k = kategorie(id);
+          if (!k) return null;
+          return (
+            <div key={id}>
+              <div className="flex items-baseline gap-2 mb-1">
+                <span className="text-caption2 text-text-secondary">{k.label}</span>
+                <span className="text-caption2 text-text-tertiary truncate hidden min-[340px]:inline">{k.hilfe}</span>
+                <span className="ml-auto text-caption2 num-tabular text-text-tertiary flex-shrink-0">
+                  {noten[id] == null ? '—' : noten[id]}
+                </span>
+              </div>
+              <NotenWahl wert={noten[id] ?? null} beschriftung={k.label} farbe={farbe}
+                         onChange={(n) => {
+                           const neu = { ...noten };
+                           if (n == null) delete neu[id]; else neu[id] = n;
+                           onNoten(neu);
+                         }} />
+            </div>
+          );
+        })
+      )}
+    </div>
+  );
+}
+
+/**
+ * Einstellungen der Bierbörse.
+ *
+ * Der Modus ist nur der Vorschlag beim Öffnen des Formulars — dort lässt er
+ * sich je Bier umschalten. Die Kategorienauswahl gilt dagegen für alle:
+ * abgewählte verschwinden aus dem Formular, ihre bereits vergebenen Noten
+ * bleiben aber erhalten und zählen in der Bilanz weiter mit. Man kann sie
+ * also gefahrlos ausprobieren.
+ */
+function EinstellungenFormular({ einstellungen, onSchliessen, onFertig }) {
+  const [modus, setModus] = useState(einstellungen.modus);
+  const [gewaehlt, setGewaehlt] = useState(einstellungen.kategorien);
+  const [speichert, setSpeichert] = useState(false);
+
+  const umschalten = (id) => setGewaehlt((alt) =>
+    alt.includes(id) ? alt.filter((x) => x !== id) : [...alt, id]);
+
+  const speichern = async () => {
+    setSpeichert(true);
+    try {
+      // In der Reihenfolge des Katalogs sichern, nicht in der des Antippens —
+      // sonst steht "Abgang" mal vor, mal hinter "Antrunk".
+      const sortiert = KATEGORIE_KATALOG.filter((k) => gewaehlt.includes(k.id)).map((k) => k.id);
+      await sichereEinstellungen({ modus, kategorien: sortiert });
+      toast.success('Gespeichert.');
+      onFertig();
+    } catch {
+      toast.error('Konnte nicht gespeichert werden. Migration db/21 schon gelaufen?');
+    } finally {
+      setSpeichert(false);
+    }
+  };
+
+  return (
+    <Modal titel="Einstellungen" onSchliessen={onSchliessen}>
+      <div className="space-y-4">
+        <div>
+          <div className="text-footnote text-text-secondary mb-1.5">Voreinstellung beim Eintragen</div>
+          <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl">
+            {[['einfach', 'Einfach'], ['ausfuehrlich', 'Ausführlich']].map(([id, label]) => (
+              <button key={id} type="button" onClick={() => setModus(id)}
+                      className={`flex-1 py-2 rounded-lg text-footnote font-semibold transition-colors ${
+                        modus === id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-caption2 text-text-tertiary mt-1.5">
+            {modus === 'einfach'
+              ? 'Eine Note von 0 bis 10 je Person. Im Formular jederzeit umschaltbar.'
+              : 'Je Kategorie eine Note, die Gesamtnote wird daraus gemittelt.'}
+          </p>
+        </div>
+
+        <div>
+          <div className="flex items-baseline gap-2 mb-1.5">
+            <span className="text-footnote text-text-secondary">Kategorien</span>
+            <span className="ml-auto text-caption2 text-text-tertiary num-tabular">
+              {gewaehlt.length} von {KATEGORIE_KATALOG.length}
             </span>
           </div>
-          <NotenWahl wert={werte[k.id]} beschriftung={k.label} farbe={farbe}
-                     onChange={(n) => onChange({ ...werte, [k.id]: n })} />
+          <div className="space-y-3">
+            {KATEGORIE_GRUPPEN.map((gruppe) => (
+              <div key={gruppe}>
+                <div className="text-caption2 text-text-tertiary mb-1.5">{gruppe}</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {KATEGORIE_KATALOG.filter((k) => k.gruppe === gruppe).map((k) => {
+                    const an = gewaehlt.includes(k.id);
+                    return (
+                      <button key={k.id} type="button" onClick={() => umschalten(k.id)}
+                              title={k.hilfe}
+                              className={`px-2.5 py-1.5 rounded-lg text-caption1 font-medium transition-colors ${
+                                an ? 'bg-system-yellow/15 text-system-yellow ring-1 ring-system-yellow/40'
+                                   : 'bg-bg-tertiary text-text-secondary'}`}>
+                        {k.label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            ))}
+          </div>
+          <button type="button" onClick={() => setGewaehlt(STANDARD_KATEGORIEN)}
+                  className="mt-2 text-caption2 text-text-tertiary underline">
+            Auf die drei Standardkategorien zurücksetzen
+          </button>
         </div>
-      ))}
-    </div>
+
+        <p className="text-caption2 text-text-tertiary">
+          Abgewählte Kategorien verschwinden nur aus dem Formular. Vergebene
+          Noten bleiben gespeichert und zählen in der Bilanz weiter.
+        </p>
+
+        <button onClick={speichern} disabled={speichert} className="btn-primary w-full">
+          {speichert ? 'Speichert…' : 'Sichern'}
+        </button>
+      </div>
+    </Modal>
   );
 }
 
@@ -127,14 +250,18 @@ export default function BierboerseTab() {
   const [fehler, setFehler] = useState(null);
   const [offen, setOffen] = useState(null);        // id der geöffneten Börse
   const [formular, setFormular] = useState(null);  // 'boerse' | 'bier' | {bearbeiten}
-  const [ansicht, setAnsicht] = useState('boersen'); // boersen | katalog
+  const [ansicht, setAnsicht] = useState('boersen'); // boersen | katalog | bilanz
   const [bierOffen, setBierOffen] = useState(null);   // Bier-Detailansicht
+  const [einstellungen, setEinstellungen] = useState(
+    { modus: 'einfach', kategorien: STANDARD_KATEGORIEN });
 
   const laden4 = useCallback(async () => {
     setLaden(true); setFehler(null);
     try {
-      const [b, k, v] = await Promise.all([ladeBoersen(), ladeKatalog(), ladeVerkostungen()]);
-      setBoersen(b); setKatalog(k); setVerkostungen(v);
+      const [b, k, v, e] = await Promise.all([
+        ladeBoersen(), ladeKatalog(), ladeVerkostungen(), ladeEinstellungen(),
+      ]);
+      setBoersen(b); setKatalog(k); setVerkostungen(v); setEinstellungen(e);
     } catch (e) {
       setFehler(e?.message || 'Die Bierbörsen konnten nicht geladen werden.');
     } finally {
@@ -172,7 +299,8 @@ export default function BierboerseTab() {
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom space-y-4">
-      <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl">
+      <div className="flex items-center gap-2">
+      <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl flex-1 min-w-0">
         {[['boersen', 'Börsen'], ['katalog', 'Alle Biere'], ['bilanz', 'Bilanz']].map(([id, label]) => (
           <button key={id} onClick={() => setAnsicht(id)}
             className={`flex-1 py-1.5 rounded-lg text-footnote font-semibold transition-colors ${
@@ -180,6 +308,12 @@ export default function BierboerseTab() {
             {label}
           </button>
         ))}
+      </div>
+        <button onClick={() => setFormular({ art: 'einstellungen' })}
+                className="w-10 h-10 rounded-xl bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
+                aria-label="Einstellungen" title="Einstellungen">
+          <Icon name="settings" size={17} strokeWidth={2.2} />
+        </button>
       </div>
 
       {ansicht === 'bilanz' ? (
@@ -231,12 +365,20 @@ export default function BierboerseTab() {
         <BierDetail bier={bierOffen} verkostungen={verkostungen} boersen={boersen}
                     onSchliessen={() => setBierOffen(null)} />
       )}
+      {formular?.art === 'einstellungen' && (
+        <EinstellungenFormular
+          einstellungen={einstellungen}
+          onSchliessen={() => setFormular(null)}
+          onFertig={() => { setFormular(null); laden4(); }}
+        />
+      )}
       {formular?.art === 'bier' && (
         <BierFormular
           boerse={formular.boerse}
           verkostung={formular.verkostung}
           katalog={katalog}
           verkostungen={verkostungen}
+          einstellungen={einstellungen}
           onSchliessen={() => setFormular(null)}
           onFertig={() => { setFormular(null); laden4(); }}
         />
@@ -987,7 +1129,7 @@ function BoersenFormular({ boerse, onSchliessen, onFertig }) {
 }
 
 /** Bier zu einer Börse eintragen oder ändern. */
-function BierFormular({ boerse, verkostung, katalog, verkostungen, onSchliessen, onFertig }) {
+function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen, onSchliessen, onFertig }) {
   const vorhandenes = verkostung ? katalog.find((b) => b.id === verkostung.bier_id) : null;
   const [name, setName] = useState(vorhandenes?.name || '');
   const [brauerei, setBrauerei] = useState(vorhandenes?.brauerei || '');
@@ -997,17 +1139,23 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, onSchliessen,
   const [ml, setMl] = useState(alsText(verkostung?.groesse_ml));
   const [anzahlAek, setAnzahlAek] = useState(verkostung?.anzahl_aek ?? 0);
   const [anzahlReal, setAnzahlReal] = useState(verkostung?.anzahl_real ?? 0);
-  const [katAek, setKatAek] = useState(() => kategorienVon(verkostung, 'aek'));
-  const [katReal, setKatReal] = useState(() => kategorienVon(verkostung, 'real'));
+  const [notenAek, setNotenAek] = useState(() => notenVon(verkostung, 'aek'));
+  const [notenReal, setNotenReal] = useState(() => notenVon(verkostung, 'real'));
+  const [gesamtAek, setGesamtAek] = useState(verkostung?.note_aek ?? null);
+  const [gesamtReal, setGesamtReal] = useState(verkostung?.note_real ?? null);
   const [notiz, setNotiz] = useState(verkostung?.notiz || '');
   const [zahler, setZahler] = useState(verkostung?.bezahlt_von ?? null);
   const [speichert, setSpeichert] = useState(false);
 
-  // Gesamtnoten aus der Zeit vor den Kategorien. Sie bleiben stehen, solange
-  // niemand eine Kategorie vergibt — sonst verlöre ein alter Eintrag seine
-  // Bewertung, nur weil jemand den Preis korrigiert.
-  const altNoteAek = verkostung?.note_aek ?? null;
-  const altNoteReal = verkostung?.note_real ?? null;
+  // Der Modus kommt aus den Einstellungen, lässt sich hier aber je Bier
+  // umschalten: auf einer langen Börse tippt man schnell durch und macht
+  // beim einen besonderen Bier eine Ausnahme.
+  // Ein Eintrag, der bereits Kategorienoten hat, öffnet ausführlich — sonst
+  // sähe man seine Bewertung nicht.
+  const [modus, setModus] = useState(() =>
+    Object.keys(notenVon(verkostung, 'aek')).length ||
+    Object.keys(notenVon(verkostung, 'real')).length
+      ? 'ausfuehrlich' : einstellungen.modus);
 
   const summe = (zahl(preis) || 0) * ((Number(anzahlAek) || 0) + (Number(anzahlReal) || 0));
 
@@ -1059,18 +1207,17 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, onSchliessen,
         groesse_ml: g,
         anzahl_aek: Number(anzahlAek) || 0,
         anzahl_real: Number(anzahlReal) || 0,
-        // Die Gesamtnote wird gerechnet, nicht getippt — sie ist die Zahl, mit
-        // der alle Auswertungen arbeiten. Ohne vergebene Kategorie bleibt die
-        // bisherige stehen (Eintraege von vor der Umstellung).
-        note_aek: noteAusKategorien(katAek) ?? altNoteAek,
-        note_real: noteAusKategorien(katReal) ?? altNoteReal,
+        // Die Gesamtnote ist in beiden Modi dieselbe Zahl — nur ihre Herkunft
+        // unterscheidet sich. Im ausfuehrlichen Modus ohne eine einzige
+        // vergebene Kategorie bleibt die bisherige stehen, sonst verloere ein
+        // Eintrag seine Bewertung, nur weil jemand den Preis korrigiert.
+        note_aek: modus === 'ausfuehrlich' ? (noteAusKategorien(notenAek) ?? gesamtAek) : gesamtAek,
+        note_real: modus === 'ausfuehrlich' ? (noteAusKategorien(notenReal) ?? gesamtReal) : gesamtReal,
+        noten_aek: notenAek,
+        noten_real: notenReal,
         notiz: notiz.trim() || null,
         bezahlt_von: zahler,
       };
-      for (const k of KATEGORIEN) {
-        daten[katSpalte(k.id, 'aek')] = katAek[k.id] ?? null;
-        daten[katSpalte(k.id, 'real')] = katReal[k.id] ?? null;
-      }
       const { error } = verkostung
         ? await supabaseDb.update('bier_verkostungen', daten, verkostung.id)
         : await supabaseDb.insert('bier_verkostungen', daten);
@@ -1153,13 +1300,30 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, onSchliessen,
           )}
         </div>
 
+        {/* Modus je Bier. Steht bewusst über den Personen und nicht in den
+            Einstellungen allein: die Entscheidung "schnell oder genau" faellt
+            beim einzelnen Bier, nicht einmal für immer. */}
+        <div className="flex items-center gap-2">
+          <span className="text-footnote text-text-secondary flex-shrink-0">Bewertung</span>
+          <div className="ml-auto flex gap-1 p-0.5 bg-bg-tertiary rounded-lg">
+            {[['einfach', 'Einfach'], ['ausfuehrlich', 'Ausführlich']].map(([id, label]) => (
+              <button key={id} type="button" onClick={() => setModus(id)}
+                      className={`px-2.5 py-1 rounded-md text-caption2 font-semibold transition-colors ${
+                        modus === id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+                {label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         {/* Anzahl und Bewertung getrennt je Person */}
         {PERSONEN.map((p) => {
           const anzahl = p.key === 'aek' ? anzahlAek : anzahlReal;
           const setAnzahl = p.key === 'aek' ? setAnzahlAek : setAnzahlReal;
-          const kat = p.key === 'aek' ? katAek : katReal;
-          const setKat = p.key === 'aek' ? setKatAek : setKatReal;
-          const altNote = p.key === 'aek' ? altNoteAek : altNoteReal;
+          const noten = p.key === 'aek' ? notenAek : notenReal;
+          const setNoten = p.key === 'aek' ? setNotenAek : setNotenReal;
+          const gesamt = p.key === 'aek' ? gesamtAek : gesamtReal;
+          const setGesamt = p.key === 'aek' ? setGesamtAek : setGesamtReal;
           return (
             <div key={p.key} className="panel-gray rounded-xl p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -1178,7 +1342,13 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, onSchliessen,
                           aria-label="Mehr">+</button>
                 </div>
               </div>
-              <BewertungsBlock werte={kat} onChange={setKat} farbe={p.farbe} altNote={altNote} />
+              <BewertungsBlock
+                modus={modus}
+                kategorien={einstellungen.kategorien}
+                noten={noten} onNoten={setNoten}
+                gesamt={gesamt} onGesamt={setGesamt}
+                farbe={p.farbe}
+              />
             </div>
           );
         })}
@@ -1245,11 +1415,11 @@ function BierDetail({ bier, verkostungen, boersen, onSchliessen }) {
   // oder eines, das nur wegen des Preises so weit oben steht.
   const proKategorie = useMemo(() => {
     const eigene = (verkostungen || []).filter((x) => x.bier_id === bier.id);
-    return KATEGORIEN.map((k) => {
+    return KATEGORIE_KATALOG.map((k) => {
       const werte = [];
       for (const x of eigene) {
         for (const key of ['aek', 'real']) {
-          const n = x[katSpalte(k.id, key)];
+          const n = notenVon(x, key)[k.id];
           if (n != null) werte.push(Number(n));
         }
       }

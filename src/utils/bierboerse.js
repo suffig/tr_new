@@ -356,46 +356,107 @@ export function sortenVerteilung(verkostungen, katalog) {
 }
 
 /* ===========================================================================
-   Bewertung in Kategorien (db/21_bierboerse_kategorien.sql)
+   Bewertung: einfach oder ausführlich (db/21_bierboerse_kategorien.sql)
    =========================================================================== */
 
 /**
- * Die drei Kategorien.
+ * Was sich an einem Bier bewerten lässt.
  *
- * Die Gesamtnote note_aek / note_real bleibt die Zahl, mit der ALLE
- * Auswertungen rechnen — sie wird beim Speichern aus den ausgefuellten
- * Kategorien gemittelt. Dadurch bleiben Eintraege aus der Zeit vor den
- * Kategorien vergleichbar, ohne dass eine einzige Auswertung angefasst
- * werden musste.
+ * Der Katalog steht im Code, nicht in der Datenbank: eine neue Kategorie ist
+ * damit eine Zeile hier statt einer Migration. In der Datenbank steht nur,
+ * welche davon gerade abgefragt werden (bierboerse_einstellungen.kategorien)
+ * und die vergebenen Noten als JSONB.
+ *
+ * `standard` markiert die Vorauswahl — drei reichen für den Anfang, alles
+ * andere schaltet man in den Einstellungen dazu.
  */
-export const KATEGORIEN = [
-  { id: 'geschmack', label: 'Geschmack', kurz: 'Geschmack', icon: 'beer' },
-  { id: 'aussehen', label: 'Aussehen', kurz: 'Aussehen', icon: 'eye' },
-  { id: 'pl', label: 'Preis-Leistung', kurz: 'Preis-Leistung', icon: 'euro' },
+export const KATEGORIE_KATALOG = [
+  // Der erste Eindruck
+  { id: 'aussehen', label: 'Aussehen', hilfe: 'Farbe, Klarheit, Schaumkrone', gruppe: 'Optik', standard: true },
+  { id: 'schaum', label: 'Schaum', hilfe: 'Wie fest, wie lange er steht', gruppe: 'Optik' },
+  { id: 'geruch', label: 'Geruch', hilfe: 'Was in der Nase ankommt', gruppe: 'Optik' },
+
+  // Der Kern
+  { id: 'geschmack', label: 'Geschmack', hilfe: 'Der Gesamteindruck im Mund', gruppe: 'Geschmack', standard: true },
+  { id: 'antrunk', label: 'Antrunk', hilfe: 'Der erste Schluck', gruppe: 'Geschmack' },
+  { id: 'abgang', label: 'Abgang', hilfe: 'Was bleibt, nachdem geschluckt ist', gruppe: 'Geschmack' },
+  { id: 'bittere', label: 'Bittere', hilfe: 'Hopfen — 0 süß, 10 sehr bitter', gruppe: 'Geschmack' },
+  { id: 'malz', label: 'Malz', hilfe: 'Brot, Karamell, Röstaromen', gruppe: 'Geschmack' },
+  { id: 'frische', label: 'Frische', hilfe: 'Spritzig oder schal', gruppe: 'Geschmack' },
+  { id: 'koerper', label: 'Körper', hilfe: 'Dünn oder vollmundig', gruppe: 'Geschmack' },
+
+  // Drumherum
+  { id: 'preisleistung', label: 'Preis-Leistung', hilfe: 'War es das Geld wert?', gruppe: 'Drumherum', standard: true },
+  { id: 'suffigkeit', label: 'Suffigkeit', hilfe: 'Könnte man davon drei trinken?', gruppe: 'Drumherum' },
+  { id: 'temperatur', label: 'Temperatur', hilfe: 'Richtig kalt ausgeschenkt?', gruppe: 'Drumherum' },
+  { id: 'zapfung', label: 'Zapfung', hilfe: 'Sauber gezapft oder hingerotzt', gruppe: 'Drumherum' },
+  { id: 'etikett', label: 'Etikett', hilfe: 'Flasche, Aufmachung, Name', gruppe: 'Drumherum' },
+  { id: 'wiederholung', label: 'Nochmal?', hilfe: 'Würdest du es wieder bestellen?', gruppe: 'Drumherum' },
 ];
 
-/** Spaltenname einer Kategorie fuer eine Person: 'geschmack' + 'aek'. */
-export const katSpalte = (katId, personKey) => `${katId}_${personKey}`;
+/** Nach Schlüssel nachschlagen. */
+export const kategorie = (id) => KATEGORIE_KATALOG.find((k) => k.id === id) || null;
+
+export const STANDARD_KATEGORIEN = KATEGORIE_KATALOG.filter((k) => k.standard).map((k) => k.id);
+
+/** Die Gruppen in der Reihenfolge, in der sie im Katalog vorkommen. */
+export const KATEGORIE_GRUPPEN = [...new Set(KATEGORIE_KATALOG.map((k) => k.gruppe))];
 
 /**
- * Gesamtnote aus den Kategorien einer Person — Mittel der ausgefuellten.
+ * Einstellungen laden.
  *
- * `null`, wenn keine einzige Kategorie vergeben wurde. Der Aufrufer behaelt
- * dann die bisherige Gesamtnote, statt sie zu loeschen: sonst wuerde ein alter
- * Eintrag seine Bewertung verlieren, nur weil jemand den Preis korrigiert.
+ * Faellt auf die Vorauswahl zurueck, wenn die Tabelle noch nicht existiert —
+ * die Bierboerse soll auch dann bedienbar sein, wenn die Migration noch nicht
+ * gelaufen ist. Dann eben im einfachen Modus.
  */
-export function noteAusKategorien(werte) {
-  const gesetzt = KATEGORIEN.map((k) => werte?.[k.id]).filter((n) => n != null && n !== '');
-  if (!gesetzt.length) return null;
-  const mittel = gesetzt.reduce((s, n) => s + Number(n), 0) / gesetzt.length;
+export async function ladeEinstellungen() {
+  try {
+    const { data, error } = await supabaseDb.select('bierboerse_einstellungen', '*', { skipFifaFilter: true });
+    if (error) throw error;
+    const e = (data || [])[0];
+    if (!e) throw new Error('keine Zeile');
+    return {
+      modus: e.modus === 'ausfuehrlich' ? 'ausfuehrlich' : 'einfach',
+      // Unbekannte Schluessel filtern: wer eine Kategorie aus dem Katalog
+      // entfernt, soll keine leere Zeile im Formular bekommen.
+      kategorien: (Array.isArray(e.kategorien) ? e.kategorien : []).filter(kategorie),
+    };
+  } catch {
+    return { modus: 'einfach', kategorien: STANDARD_KATEGORIEN };
+  }
+}
+
+/** Einstellungen sichern. */
+export async function sichereEinstellungen({ modus, kategorien }) {
+  const { error } = await supabaseDb.update('bierboerse_einstellungen', {
+    modus,
+    kategorien,
+    geaendert: new Date().toISOString(),
+  }, 1);
+  if (error) throw error;
+}
+
+/**
+ * Gesamtnote aus den Kategorienoten — Mittel der vergebenen.
+ *
+ * `null`, wenn keine einzige vergeben wurde. Der Aufrufer behaelt dann die
+ * bisherige Gesamtnote, statt sie zu loeschen: sonst verloere ein Eintrag
+ * seine Bewertung, nur weil jemand den Preis korrigiert.
+ */
+export function noteAusKategorien(noten) {
+  const werte = Object.values(noten || {}).filter((n) => n != null && n !== '');
+  if (!werte.length) return null;
+  const mittel = werte.reduce((s, n) => s + Number(n), 0) / werte.length;
   return Math.round(mittel * 10) / 10;
 }
 
-/** Die drei Kategoriewerte einer Person aus einer Verkostungszeile lesen. */
-export function kategorienVon(verkostung, personKey) {
-  const raus = {};
-  for (const k of KATEGORIEN) raus[k.id] = verkostung?.[katSpalte(k.id, personKey)] ?? null;
-  return raus;
+/** Die Kategorienoten einer Person aus einer Verkostungszeile. */
+export function notenVon(verkostung, personKey) {
+  const roh = verkostung?.[personKey === 'aek' ? 'noten_aek' : 'noten_real'];
+  if (!roh) return {};
+  // Supabase liefert jsonb als Objekt; aus dem Demo-Fallback kann ein String kommen.
+  if (typeof roh === 'string') { try { return JSON.parse(roh); } catch { return {}; } }
+  return { ...roh };
 }
 
 /* ===========================================================================
@@ -432,16 +493,21 @@ export function geschmacksDuell(verkostungen, katalog) {
   const einig = paare.filter((p) => p.abstand <= 1);
   const sortiert = [...paare].sort((a, b) => b.abstand - a.abstand);
 
-  const proKategorie = KATEGORIEN.map((k) => {
-    const zeilen = (verkostungen || []).filter(
-      (v) => v[katSpalte(k.id, 'aek')] != null && v[katSpalte(k.id, 'real')] != null);
+  // Ueber alle Kategorien, zu denen es Noten gibt — nicht nur die gerade
+  // eingeschalteten. Sonst verschwaende eine abgewaehlte Kategorie rueckwirkend
+  // die Bewertungen, die man mit ihr vergeben hat.
+  const proKategorie = KATEGORIE_KATALOG.map((k) => {
+    const zeilen = (verkostungen || []).filter((v) => {
+      const a = notenVon(v, 'aek')[k.id], r = notenVon(v, 'real')[k.id];
+      return a != null && r != null;
+    });
     return {
       ...k,
       anzahl: zeilen.length,
-      aek: mittel(zeilen.map((v) => Number(v[katSpalte(k.id, 'aek')]))),
-      real: mittel(zeilen.map((v) => Number(v[katSpalte(k.id, 'real')]))),
+      aek: mittel(zeilen.map((v) => Number(notenVon(v, 'aek')[k.id]))),
+      real: mittel(zeilen.map((v) => Number(notenVon(v, 'real')[k.id]))),
       abstand: mittel(zeilen.map(
-        (v) => Math.abs(Number(v[katSpalte(k.id, 'aek')]) - Number(v[katSpalte(k.id, 'real')])))),
+        (v) => Math.abs(Number(notenVon(v, 'aek')[k.id]) - Number(notenVon(v, 'real')[k.id])))),
     };
   }).filter((k) => k.anzahl > 0);
 
