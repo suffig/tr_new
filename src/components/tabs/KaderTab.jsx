@@ -4,9 +4,7 @@ import ZahlFeld from '../ZahlFeld';
 import { zahl, alsText, dez } from '../../utils/zahlen';
 import { useSupabaseQuery, useSupabaseMutation } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
-import ExportImportManager from '../ExportImportManager';
 import PlayerDetailModal from '../PlayerDetailModal';
-import CollapsibleCard from '../CollapsibleCard';
 import TeamLogo from '../TeamLogo';
 import { POSITIONS } from '../../utils/errorHandling';
 import { getTeamDisplay } from '../../constants/teams';
@@ -18,8 +16,10 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   const { user } = useAuth();
   // Player mutations are admin-only — same rule as the admin area and the "+" FAB.
   const isAdmin = user?.email === ADMIN_EMAIL;
-  const [openPanel, setOpenPanel] = useState(null);
-  const [showExportImport, setShowExportImport] = useState(false);
+  // Ein Team ist sichtbar, nicht drei zugeklappte Karten. Das Akkordeon
+  // zeigte im Normalfall NICHTS — man musste erst aufklappen, um einen Kader
+  // zu sehen, und konnte immer nur einen offen haben.
+  const [aktivesTeam, setAktivesTeam] = useState('AEK');
   const [editingPlayer, setEditingPlayer] = useState(null);
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showPlayerDetail, setShowPlayerDetail] = useState(false);
@@ -82,19 +82,6 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   // hier blue-600/red-400 — andere Farbtoene als die app-weiten system-blue /
   // system-red, und im Dunkelmodus unveraendert, weil sie keine CSS-Variablen
   // sind. AEK ist ueberall blau, Real ueberall rot.
-  const getTeamCardClass = (teamName) => {
-    const base = "modern-card overflow-hidden border-l-4";
-    if (teamName === "AEK") return `${base} border-l-system-blue`;
-    if (teamName === "Real") return `${base} border-l-system-red`;
-    return `${base} border-l-border-strong`;
-  };
-
-  const getTeamColor = (teamName) => {
-    if (teamName === "AEK") return "text-system-blue";
-    if (teamName === "Real") return "text-system-red";
-    return "text-text-secondary";
-  };
-
   // Minimal CRUD functions without changing the design
   const handleEditPlayer = async (player) => {
     setEditingPlayer(player);
@@ -156,7 +143,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       displayName: getTeamDisplay('AEK'), 
       players: aekPlayers,
       squadValue: getTeamSquadValue('AEK'),
-      logoComponent: <TeamLogo team="aek" size="md" />
+      logoComponent: <TeamLogo team="aek" size="xs" />
     },
     { 
       id: 'real', 
@@ -164,7 +151,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       displayName: getTeamDisplay('Real'), 
       players: realPlayers,
       squadValue: getTeamSquadValue('Real'),
-      logoComponent: <TeamLogo team="real" size="md" />
+      logoComponent: <TeamLogo team="real" size="xs" />
     },
     { 
       id: 'ehemalige', 
@@ -174,8 +161,8 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       squadValue: getTeamSquadValue('Ehemalige'),
       // Kein Emoji: neutrale Icon-Kachel im Stil der beiden Team-Logos
       logoComponent: (
-        <span className="w-9 h-9 rounded-full bg-bg-tertiary text-text-tertiary flex items-center justify-center flex-shrink-0">
-          <Icon name="users" size={17} strokeWidth={2.2} />
+        <span className="w-5 h-5 rounded-full bg-bg-tertiary text-text-tertiary flex items-center justify-center flex-shrink-0">
+          <Icon name="users" size={12} strokeWidth={2.2} />
         </span>
       )
     }
@@ -184,176 +171,136 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
 
-      {/* Sortierung gilt fuer alle drei Kader gleichzeitig — sie getrennt je
-          Team einstellen zu koennen waere mehr Bedienung als Nutzen. */}
-      <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl mb-4">
-        {SORTIERUNGEN.map((o) => (
-          <button
-            key={o.id}
-            onClick={() => setSortierung(o.id)}
-            className={`flex-1 py-1.5 rounded-lg text-caption1 font-semibold transition-colors ${
-              sortierung === o.id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}
-          >
-            {o.label}
-          </button>
-        ))}
-      </div>
+      {(() => {
+        const team = teams.find((t) => t.name === aktivesTeam) || teams[0];
+        const tore = team.players.reduce((sum, p) => sum + (p.goals || 0), 0);
+        return (
+          <>
+            {/* Teamauswahl statt drei Akkordeon-Karten. Die Karten zeigten im
+                Ausgangszustand nur Namen und mussten einzeln aufgeklappt
+                werden, und "Ehemalige" stand gleichrangig neben den beiden
+                echten Teams. Hier ist immer genau ein Kader zu sehen. */}
+            <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl mb-3">
+              {teams.map((t) => {
+                const aktiv = t.name === aktivesTeam;
+                const farbe = t.name === 'AEK' ? 'text-system-blue'
+                  : t.name === 'Real' ? 'text-system-red' : 'text-text-secondary';
+                return (
+                  <button
+                    key={t.id}
+                    onClick={() => setAktivesTeam(t.name)}
+                    className={`flex-1 min-w-0 flex items-center justify-center gap-1.5 py-2 rounded-lg text-footnote font-semibold transition-colors ${
+                      aktiv ? `bg-bg-secondary shadow-sm ${farbe}` : 'text-text-secondary'}`}
+                    aria-pressed={aktiv}
+                  >
+                    {t.logoComponent}
+                    <span className="truncate">{t.displayName}</span>
+                  </button>
+                );
+              })}
+            </div>
 
-      {/* Team Accordions */}
-      <div className="space-y-4">
-            {teams.map((team) => (
-              <div key={team.id} className={getTeamCardClass(team.name)}>
-                {/* Team Header */}
+            {/* Kopfzahlen des gewaehlten Kaders */}
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {[
+                ['Spieler', team.players.length],
+                ['Kaderwert', team.squadValue > 0 ? formatCurrencyInMillions(team.squadValue) : '—'],
+                ['Tore', tore],
+              ].map(([label, wert]) => (
+                <div key={label} className="panel-gray rounded-xl p-2.5 text-center">
+                  <div className="stat-display text-[15px] num-tabular text-text-primary truncate">{wert}</div>
+                  <div className="text-caption2 text-text-tertiary">{label}</div>
+                </div>
+              ))}
+            </div>
+
+            {/* Sortierung — gilt fuer den gerade gezeigten Kader. */}
+            <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl mb-3">
+              {SORTIERUNGEN.map((o) => (
                 <button
-                  onClick={() => setOpenPanel(openPanel === team.id ? null : team.id)}
-                  className="w-full text-left p-4 focus:outline-none"
+                  key={o.id}
+                  onClick={() => setSortierung(o.id)}
+                  className={`flex-1 py-1.5 rounded-lg text-caption1 font-semibold transition-colors ${
+                    sortierung === o.id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}
                 >
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {team.logoComponent || <span className="text-2xl">{team.icon}</span>}
-                      <div className="min-w-0">
-                        <h3 className={`font-semibold text-callout truncate ${getTeamColor(team.name)}`}>
-                          {team.displayName}
-                        </h3>
-                        <p className="text-footnote text-text-tertiary num-tabular">
-                          {team.players.length} {team.players.length === 1 ? 'Spieler' : 'Spieler'}
-                          {team.squadValue > 0 && (
-                            <span className="ml-2">
-                              {'· '}{formatCurrencyInMillions(team.squadValue)}
+                  {o.label}
+                </button>
+              ))}
+            </div>
+
+            {team.players.length > 0 ? (
+              <div className="space-y-2">
+                {team.players.map((player) => (
+                  /* Die ganze Zeile oeffnet die Spielerkarte. */
+                  <button
+                    key={player.id}
+                    type="button"
+                    onClick={() => handleShowPlayerDetail(player)}
+                    className="w-full modern-card p-3 text-left hover:bg-bg-hover transition-colors group"
+                  >
+                    <div className="flex items-center gap-2">
+                      <div className="min-w-0 flex-1">
+                        <div className="font-medium text-text-primary truncate group-hover:text-system-blue transition-colors">
+                          {player.name}
+                        </div>
+                        <div className="flex items-center flex-wrap gap-2 mt-1">
+                          <span className={getPositionBadgeClass(player.position)}>
+                            {player.position}
+                          </span>
+                          {player.goals > 0 && (
+                            <span className="text-caption2 text-system-yellow font-medium num-tabular">
+                              {player.goals} {player.goals === 1 ? 'Tor' : 'Tore'}
                             </span>
                           )}
-                        </p>
-                      </div>
-                    </div>
-                    <span className={`text-text-tertiary transition-transform duration-200 ${openPanel === team.id ? 'rotate-90' : ''}`}>
-                      <Icon name="chevronRight" size={20} strokeWidth={2.2} />
-                    </span>
-                  </div>
-                </button>
-
-                {/* Team Players */}
-                {openPanel === team.id && (
-                  <div className="px-4 pb-4 border-t border-border-light mt-4 pt-4">
-                    {team.players.length > 0 ? (
-                      <div className="grid gap-3">
-                        {team.players.map((player) => (
-                          /* Die ganze Zeile oeffnet die Spielerkarte. Vorher
-                             sass daneben zusaetzlich ein Statistik-Knopf, der
-                             exakt dasselbe tat — zwei Wege zum selben Ziel,
-                             einer davon 44px breit, die dem Namen fehlten. */
-                          <button
-                            key={player.id}
-                            type="button"
-                            onClick={() => handleShowPlayerDetail(player)}
-                            className="w-full panel-gray rounded-xl p-3 text-left hover:bg-bg-hover transition-colors group"
-                          >
-                            <div className="flex items-center gap-2">
-                              <div className="min-w-0 flex-1">
-                                <div className="font-medium text-text-primary truncate group-hover:text-system-blue transition-colors">
-                                  {player.name}
-                                </div>
-                                <div className="flex items-center flex-wrap gap-2 mt-1">
-                                  <span className={getPositionBadgeClass(player.position)}>
-                                    {player.position}
-                                  </span>
-                                  {/* Tore standen bisher nur im Dialog, obwohl
-                                      sie die interessanteste Zahl einer
-                                      Kaderliste sind. */}
-                                  {player.goals > 0 && (
-                                    <span className="text-caption2 text-system-yellow font-medium num-tabular">
-                                      {player.goals} {player.goals === 1 ? 'Tor' : 'Tore'}
-                                    </span>
-                                  )}
-                                  {player.staerke && (
-                                    <span className="text-caption2 text-text-tertiary num-tabular">
-                                      Stärke {player.staerke}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                              <div className="text-right flex-shrink-0">
-                                <div className="text-callout font-semibold text-text-primary num-tabular">
-                                  {(player.value !== null && player.value !== undefined)
-                                    ? formatCurrencyInMillions(player.value) : '—'}
-                                </div>
-                              </div>
-                              {isAdmin && (
-                                <span
-                                  role="button"
-                                  tabIndex={0}
-                                  onClick={(e) => { e.stopPropagation(); handleEditPlayer(player); }}
-                                  onKeyDown={(e) => {
-                                    if (e.key === 'Enter' || e.key === ' ') {
-                                      e.preventDefault(); e.stopPropagation(); handleEditPlayer(player);
-                                    }
-                                  }}
-                                  className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-system-green transition-colors rounded-lg flex-shrink-0 cursor-pointer"
-                                  title="Bearbeiten"
-                                  aria-label={`${player.name} bearbeiten`}
-                                >
-                                  <Icon name="edit" size={16} strokeWidth={2} />
-                                </span>
-                              )}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
-                      <div className="text-center py-8">
-                        <div className="text-4xl mb-2 flex justify-center">
-                          {team.logoComponent || <span>{team.icon}</span>}
+                          {player.staerke && (
+                            <span className="text-caption2 text-text-tertiary num-tabular">
+                              Stärke {player.staerke}
+                            </span>
+                          )}
                         </div>
-                        <p className="text-text-muted">
-                          Keine Spieler in {team.displayName}
-                        </p>
                       </div>
-                    )}
-                  </div>
-                )}
+                      <div className="text-callout font-semibold text-text-primary num-tabular flex-shrink-0">
+                        {(player.value !== null && player.value !== undefined)
+                          ? formatCurrencyInMillions(player.value) : '—'}
+                      </div>
+                      {isAdmin && (
+                        <span
+                          role="button"
+                          tabIndex={0}
+                          onClick={(e) => { e.stopPropagation(); handleEditPlayer(player); }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault(); e.stopPropagation(); handleEditPlayer(player);
+                            }
+                          }}
+                          className="w-11 h-11 flex items-center justify-center text-text-tertiary hover:text-system-green transition-colors rounded-lg flex-shrink-0 cursor-pointer"
+                          title="Bearbeiten"
+                          aria-label={`${player.name} bearbeiten`}
+                        >
+                          <Icon name="edit" size={16} strokeWidth={2} />
+                        </span>
+                      )}
+                    </div>
+                  </button>
+                ))}
               </div>
-            ))}
-          </div>
+            ) : (
+              <div className="modern-card p-8 text-center">
+                <Icon name="users" size={28} strokeWidth={1.8} className="text-text-tertiary mx-auto mb-2" />
+                <p className="text-text-muted">Keine Spieler in {team.displayName}.</p>
+              </div>
+            )}
+          </>
+        );
+      })()}
 
-      {/* Kader-Management — unter den Kadern (Hauptinhalt zuerst) */}
-      <CollapsibleCard
-        title="Kader-Management"
-        icon="zap"
-        subtitle="Export/Import & Analyse"
-        className="mt-6"
-      >
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <button
-            onClick={() => setShowExportImport(true)}
-            className="flex items-center justify-center space-x-2 btn-soft btn-soft-orange py-3 px-4 rounded-xl text-sm"
-          >
-            <Icon name="share" size={16} strokeWidth={2} />
-            <span>Export/Import</span>
-          </button>
-          <button
-            onClick={() => {
-              const totalValue = (getTeamSquadValue('AEK') + getTeamSquadValue('Real') + getTeamSquadValue('Ehemalige'));
-              const avgValue = players?.length ? totalValue / players.length : 0;
-              toast.success(
-                `📈 Kader-Analyse:\n\n` +
-                `Gesamtwert: ${formatCurrencyInMillions(totalValue)}\n` +
-                `Durchschnitt: ${formatCurrencyInMillions(avgValue)}\n` +
-                `Spieler gesamt: ${players?.length || 0}`,
-                { duration: 5000 }
-              );
-            }}
-            className="flex items-center justify-center space-x-2 btn-soft btn-soft-teal py-3 px-4 rounded-xl text-sm"
-          >
-            <Icon name="trendingUp" size={16} strokeWidth={2} />
-            <span>Kader-Analyse</span>
-          </button>
-        </div>
-      </CollapsibleCard>
+      {/* Kader-Management entfernt: Export/Import gibt es im Admin-Bereich
+          unter System (dort auch fuer Spiele und Transaktionen, nicht nur
+          Spieler), und die "Kader-Analyse" war eine Kurzmeldung mit drei
+          Zahlen, die die Marktwert-Ansicht dauerhaft und ausfuehrlicher
+          zeigt. */}
 
       {/* New Feature Modals */}
-      {showExportImport && (
-        <ExportImportManager onClose={() => setShowExportImport(false)} />
-      )}
-      
       {/* Player Detail Modal with FIFA Stats */}
       {showPlayerDetail && selectedPlayer && (
         <PlayerDetailModal

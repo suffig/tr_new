@@ -3,9 +3,7 @@ import { useState } from 'react';
 import { dez } from '../../utils/zahlen';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
-import ExportImportManager from '../ExportImportManager';
 import HorizontalNavigation from '../HorizontalNavigation';
-import CollapsibleCard from '../CollapsibleCard';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay } from '../../constants/teams';
 import OffeneRechnung from './finanzen/OffeneRechnung';
@@ -13,7 +11,6 @@ import '../../styles/match-animations.css';
 
 export default function FinanzenTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   const [expandedMatches, setExpandedMatches] = useState(null); // null = not yet initialized
-  const [showExportImport, setShowExportImport] = useState(false);
   const [currentView, setCurrentView] = useState('overview');
   // Transaction list: discreet filters + "show only the latest" by default
   const [txFilters, setTxFilters] = useState({ team: 'all', type: 'all', search: '' });
@@ -595,9 +592,9 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
               </span>
               <span className="flex-1 min-w-0 text-sm text-text-primary">
                 <span className="font-semibold">Echtgeld-Schulden offen:</span>{' '}
-                {(aekFinances.debt || 0) > 0 && `${getTeamDisplay('AEK')} ${aekFinances.debt}€`}
+                {(aekFinances.debt || 0) > 0 && `${getTeamDisplay('AEK')} ${formatCurrency(aekFinances.debt)}`}
                 {(aekFinances.debt || 0) > 0 && (realFinances.debt || 0) > 0 && ' · '}
-                {(realFinances.debt || 0) > 0 && `${getTeamDisplay('Real')} ${realFinances.debt}€`}
+                {(realFinances.debt || 0) > 0 && `${getTeamDisplay('Real')} ${formatCurrency(realFinances.debt)}`}
               </span>
               <Icon name="chevronRight" size={18} strokeWidth={2.2} className="text-system-red flex-shrink-0" />
             </button>
@@ -651,21 +648,10 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         </div>
       </div>
 
-      {/* Financial Management Actions */}
-      <CollapsibleCard
-        title="Daten"
-        icon="briefcase"
-        subtitle="Sichern & wiederherstellen"
-        className="mb-6"
-      >
-        <button
-          onClick={() => setShowExportImport(true)}
-          className="w-full flex items-center justify-center gap-2 btn-soft btn-soft-green py-3 px-4 rounded-xl text-sm"
-        >
-          <Icon name="save" size={16} strokeWidth={2} />
-          <span>Export / Import</span>
-        </button>
-      </CollapsibleCard>
+      {/* Karte "Daten · Sichern & wiederherstellen" entfernt: Export/Import
+          liegt im Admin-Bereich unter System und deckt dort Spieler, Spiele
+          UND Transaktionen ab — hier stand nur ein zweiter Einstieg in
+          dieselbe Funktion. */}
 
       {/* Match-grouped Transactions */}
       <div className="mb-6">
@@ -858,10 +844,6 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         </>
       )}
 
-      {/* Export/Import Modal */}
-      {showExportImport && (
-        <ExportImportManager onClose={() => setShowExportImport(false)} />
-      )}
         </>
       )}
     </div>
