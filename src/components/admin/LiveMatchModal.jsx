@@ -102,8 +102,8 @@ export default function LiveMatchModal({ players, onClose, onFinish }) {
         + Tor
       </button>
       <div className="w-full grid grid-cols-2 gap-1.5 text-[11px]">
-        <CardStepper label="🟨" value={team === 'AEK' ? live.yellowa : live.yellowb} onChange={(d) => bump(team === 'AEK' ? 'yellowa' : 'yellowb', d)} />
-        <CardStepper label="🟥" value={team === 'AEK' ? live.reda : live.redb} onChange={(d) => bump(team === 'AEK' ? 'reda' : 'redb', d)} />
+        <CardStepper label="bg-system-yellow" value={team === 'AEK' ? live.yellowa : live.yellowb} onChange={(d) => bump(team === 'AEK' ? 'yellowa' : 'yellowb', d)} />
+        <CardStepper label="bg-system-red" value={team === 'AEK' ? live.reda : live.redb} onChange={(d) => bump(team === 'AEK' ? 'reda' : 'redb', d)} />
       </div>
     </div>
   );
@@ -148,7 +148,7 @@ export default function LiveMatchModal({ players, onClose, onFinish }) {
           {lastGoal && (
             <div className="flex items-center justify-between text-footnote bg-bg-tertiary rounded-xl px-3 py-2">
               <span className="text-text-secondary truncate">
-                ⚽ {lastGoal.player} <span className={lastGoal.team === 'AEK' ? 'text-system-blue' : 'text-system-red'}>({getTeamShort(lastGoal.team)})</span>
+                {lastGoal.player} <span className={lastGoal.team === 'AEK' ? 'text-system-blue' : 'text-system-red'}>({getTeamShort(lastGoal.team)})</span>
               </span>
               <button onClick={undoGoal} className="text-system-red font-semibold flex-shrink-0 ml-2">Rückgängig</button>
             </div>
@@ -172,7 +172,10 @@ function CardStepper({ label, value, onChange }) {
   return (
     <div className="flex items-center justify-between bg-bg-tertiary rounded-lg px-1.5 py-1">
       <button onClick={() => onChange(-1)} className="w-6 h-6 rounded text-text-secondary font-bold">−</button>
-      <span className="tabular-nums font-semibold">{label} {value}</span>
+      <span className="tabular-nums font-semibold inline-flex items-center gap-1.5">
+        <span className={`inline-block w-2.5 h-3.5 rounded-[2px] ${label}`} aria-hidden="true" />
+        {value}
+      </span>
       <button onClick={() => onChange(1)} className="w-6 h-6 rounded text-text-secondary font-bold">+</button>
     </div>
   );

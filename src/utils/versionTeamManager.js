@@ -35,7 +35,7 @@ const DEFAULT_TEAMS_FC25 = {
     label: 'Ehemalige',
     short: 'Ehem.',
     color: 'gray',
-    icon: '⚫',
+    icon: null,   // kein Zeichen: TeamLogo zeigt dann einen grauen Punkt
     customIcon: null
   }
 };
@@ -62,7 +62,7 @@ const DEFAULT_TEAMS_FC26 = {
     label: 'Ehemalige',
     short: 'Ehem.',
     color: 'gray',
-    icon: '⚫',
+    icon: null,   // kein Zeichen: TeamLogo zeigt dann einen grauen Punkt
     customIcon: null
   }
 };
@@ -304,7 +304,7 @@ export const getVersionTeamDisplay = (teamValue, version = null) => {
     const team = teams[teamValue] ?? teams[schluessel(teams, teamValue)];
     
     if (!team) {
-      return { value: teamValue, label: teamValue, short: deriveShort(teamValue), color: 'gray', icon: '⚽' };
+      return { value: teamValue, label: teamValue, short: deriveShort(teamValue), color: 'gray', icon: null };
     }
 
     return {
@@ -319,7 +319,7 @@ export const getVersionTeamDisplay = (teamValue, version = null) => {
     };
   } catch (error) {
     console.error('Error getting version team display:', error);
-    return { value: teamValue, label: teamValue, short: deriveShort(teamValue), color: 'gray', icon: '⚽' };
+    return { value: teamValue, label: teamValue, short: deriveShort(teamValue), color: 'gray', icon: null };
   }
 };
 

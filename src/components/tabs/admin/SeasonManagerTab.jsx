@@ -126,7 +126,7 @@ const SeasonManagerTab = () => {
             </div>
           </div>
           <div className="text-6xl opacity-20">
-            {currentSeason === SEASONS.FC26 ? '⚡' : '📚'}
+            <Icon name={currentSeason === SEASONS.FC26 ? 'zap' : 'clock'} size={20} strokeWidth={2.1} />
           </div>
         </div>
       </div>
@@ -171,7 +171,7 @@ const SeasonManagerTab = () => {
                       className="w-12 h-12 rounded-full flex items-center justify-center text-xl"
                       style={{ backgroundColor: season.color + '20', color: season.color }}
                     >
-                      {season.icon}
+                      <Icon name={season.icon} size={20} strokeWidth={2.1} />
                     </div>
                     <div>
                       <h4 className="karten-titel">{season.name}</h4>
@@ -195,26 +195,26 @@ const SeasonManagerTab = () => {
                   
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">⚽ Spiele:</span>
+                      <span className="text-text-secondary">Spiele:</span>
                       <span className="font-medium">{counts.matches || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">👥 Spieler:</span>
+                      <span className="text-text-secondary">Spieler:</span>
                       <span className="font-medium">{counts.players || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">🚫 Sperren:</span>
+                      <span className="text-text-secondary">Sperren:</span>
                       <span className="font-medium">{counts.bans || 0}</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-text-secondary">💰 Transaktionen:</span>
+                      <span className="text-text-secondary">Transaktionen:</span>
                       <span className="font-medium">{counts.transactions || 0}</span>
                     </div>
                   </div>
 
                   {counts.alcoholCalculator > 0 && (
                     <div className="flex justify-between text-sm pt-2 border-t border-border-light">
-                      <span className="text-text-secondary">🍺 Alkohol-Tracker:</span>
+                      <span className="text-text-secondary">Alkohol-Tracker:</span>
                       <span className="font-medium text-system-green">Konfiguriert</span>
                     </div>
                   )}
@@ -235,7 +235,7 @@ const SeasonManagerTab = () => {
                     
                     {season.hasData && (
                       <div className="flex-1 px-3 py-2 text-center text-sm">
-                        <span className="text-system-green font-medium">✓ Daten vorhanden</span>
+                        <span className="text-system-green font-medium inline-flex items-center gap-1"><Icon name="check" size={13} strokeWidth={2.1} /> Daten vorhanden</span>
                       </div>
                     )}
                   </div>
@@ -249,7 +249,7 @@ const SeasonManagerTab = () => {
       {/* Information Section */}
       <div className="bg-system-orange/10 border border-system-orange/25 rounded-xl p-6">
         <div className="flex items-start gap-3">
-          <span className="text-system-orange text-2xl">💡</span>
+          <span className="text-system-orange"><Icon name="bulb" size={20} strokeWidth={2.1} /></span>
           <div>
             <h4 className="karten-titel text-system-orange mb-2">FC26 Saison-System</h4>
             <div className="space-y-2 text-sm text-system-orange">

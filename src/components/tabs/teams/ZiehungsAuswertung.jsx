@@ -148,7 +148,7 @@ function DuellAuswertung({ people, catalog }) {
           {bilanz.unentschiedenInBilanz
             ? 'Gleichstand'
             : `${nameVon(bilanz.fuehrend)} führt`}
-          {bilanz.serie.laenge > 1 && ` · 🔥 ${nameVon(bilanz.serie.person)} ${bilanz.serie.laenge}×`}
+          {bilanz.serie.laenge > 1 && ` · Serie: ${nameVon(bilanz.serie.person)} ${bilanz.serie.laenge}×`}
         </span>
         <span>{people[1]?.name}</span>
       </div>

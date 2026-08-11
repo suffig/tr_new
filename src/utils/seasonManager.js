@@ -46,14 +46,14 @@ const SEASON_METADATA = {
   [SEASONS.LEGACY]: {
     name: 'Legacy FIFA',
     description: 'Alle bisherigen Daten und Statistiken',
-    icon: '📚',
+    icon: 'clock',      // Name aus dem Icon-Satz, siehe components/icons/Icon
     version: '1.0',
     color: '#6B7280' // Gray for legacy
   },
   [SEASONS.FC26]: {
     name: 'FIFA Club 26',
     description: 'Neue Saison mit frischen Daten',
-    icon: '⚡',
+    icon: 'zap',        // Name aus dem Icon-Satz, siehe components/icons/Icon
     version: '2.0',
     color: '#3B82F6' // Blue for new season
   }

@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { notificationService } from '../services/NotificationService';
+import Icon from './icons/Icon';
 
 export default function NotificationSettings() {
   const [status, setStatus] = useState(notificationService.getStatus());
@@ -73,13 +74,13 @@ export default function NotificationSettings() {
       <div className="space-y-6">
         <div className="bg-bg-secondary rounded-lg p-6 border border-border-light">
           <h3 className="karten-titel mb-4 flex items-center">
-            <span className="text-xl mr-2">📱</span>
+            <Icon name="phone" size={18} strokeWidth={2.1} className="mr-2 text-system-blue" />
             Push-Benachrichtigungen
           </h3>
           
           <div className="bg-system-yellow/10 dark:bg-system-yellow/20 border border-system-yellow/25 dark:border-system-yellow rounded-lg p-4">
             <div className="flex items-start space-x-3">
-              <div className="text-system-yellow text-xl flex-shrink-0">⚠️</div>
+              <div className="text-system-yellow flex-shrink-0"><Icon name="warning" size={18} strokeWidth={2.1} /></div>
               <div>
                 <div className="text-sm font-medium text-system-yellow dark:text-yellow-200 mb-1">
                   Nicht unterstützt
@@ -100,7 +101,7 @@ export default function NotificationSettings() {
     <div className="space-y-6">
       <div className="bg-bg-secondary rounded-lg p-6 border border-border-light">
         <h3 className="karten-titel mb-4 flex items-center">
-          <span className="text-xl mr-2">📱</span>
+          <Icon name="phone" size={18} strokeWidth={2.1} className="mr-2 text-system-blue" />
           Push-Benachrichtigungen
         </h3>
 
@@ -178,7 +179,7 @@ export default function NotificationSettings() {
               <div className="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
                 <div>
                   <div className="text-sm font-medium text-text-primary">
-                    ⚽ Spiel-Erinnerungen
+                    Spiel-Erinnerungen
                   </div>
                   <div className="text-xs text-text-muted">
                     Erinnerungen vor Spielbeginn
@@ -219,7 +220,7 @@ export default function NotificationSettings() {
               <div className="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
                 <div>
                   <div className="text-sm font-medium text-text-primary">
-                    ⚽ Tor-Benachrichtigungen
+                    Tor-Benachrichtigungen
                   </div>
                   <div className="text-xs text-text-muted">
                     Bei Toren während Live-Matches
@@ -240,7 +241,7 @@ export default function NotificationSettings() {
               <div className="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
                 <div>
                   <div className="text-sm font-medium text-text-primary">
-                    🏆 Achievement-Benachrichtigungen
+                    Achievement-Benachrichtigungen
                   </div>
                   <div className="text-xs text-text-muted">
                     Bei freigeschalteten Erfolgen
@@ -261,7 +262,7 @@ export default function NotificationSettings() {
               <div className="flex items-center justify-between p-3 bg-bg-tertiary rounded-lg">
                 <div>
                   <div className="text-sm font-medium text-text-primary">
-                    🎉 Event-Benachrichtigungen
+                    Event-Benachrichtigungen
                   </div>
                   <div className="text-xs text-text-muted">
                     Bei neuen Events und Turnieren
@@ -303,7 +304,7 @@ export default function NotificationSettings() {
         {status.isIOS && (
           <div className="mt-6 p-4 bg-system-blue/10 dark:bg-system-blue/20 rounded-lg border border-system-blue/25 dark:border-system-blue">
             <div className="flex items-start space-x-3">
-              <div className="text-system-blue text-xl flex-shrink-0">📱</div>
+              <div className="text-system-blue flex-shrink-0"><Icon name="phone" size={18} strokeWidth={2.1} /></div>
               <div>
                 <div className="text-sm font-medium text-system-blue dark:text-blue-200 mb-1">
                   iOS-Hinweis

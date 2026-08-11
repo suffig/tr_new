@@ -187,7 +187,7 @@ export default function TeamSettingsTab() {
         <div className="modern-card">
         <div className="flex justify-between items-center mb-4">
           <h3 className="karten-titel">
-            🏆 Team-Manager Einstellungen
+            Team-Manager Einstellungen
           </h3>
           {hasChanges && (
             <span className="text-sm text-system-orange font-medium">

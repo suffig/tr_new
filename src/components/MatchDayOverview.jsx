@@ -286,9 +286,10 @@ export default function MatchDayOverview({ matches }) {
               </div>
               <button
                 onClick={() => setSelectedDate(null)}
+                aria-label="Auswahl aufheben"
                 className="text-text-muted hover:text-text-primary"
               >
-                ✕
+                <Icon name="x" size={16} strokeWidth={2.4} />
               </button>
             </div>
 
@@ -460,7 +461,7 @@ export default function MatchDayOverview({ matches }) {
                   {/* Man of the Match */}
                   {match.manofthematch && (
                     <div className="mt-2 text-sm">
-                      <span className="text-system-yellow font-medium">⭐ Spieler des Spiels: </span>
+                      <span className="text-system-yellow font-medium inline-flex items-center gap-1"><Icon name="starFilled" size={13} strokeWidth={0} />Spieler des Spiels: </span>
                       <span className="text-text-secondary">{match.manofthematch}</span>
                     </div>
                   )}

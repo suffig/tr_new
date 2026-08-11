@@ -15,6 +15,7 @@ import {
   getFifaVersionDisplayName
 } from '../../../utils/fifaVersionManager.js';
 import { pushTeamsToDB } from '../../../utils/fifaVersionsSync.js';
+import Icon from '../../icons/Icon';
 
 const VersionTeamSettingsTab = () => {
   const [currentVersion, setCurrentVersion] = useState('');
@@ -228,7 +229,7 @@ const VersionTeamSettingsTab = () => {
               Konfigurieren Sie Team-Namen und Icons für verschiedene FIFA Versionen
             </p>
           </div>
-          <div className="text-4xl">⚽</div>
+          <div className="text-text-tertiary"><Icon name="football" size={32} strokeWidth={2.1} /></div>
         </div>
       </div>
 
@@ -291,10 +292,11 @@ const VersionTeamSettingsTab = () => {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <span className="text-2xl">
-                        {teamConfig.icon === 'aek' ? '🔵' : 
-                         teamConfig.icon === 'real' ? '🔴' : teamConfig.icon}
-                      </span>
+                      // Farbiger Punkt statt der Emojis, wie im Rest der App:
+                      // TeamLogo zeigt ohne Wappen ebenfalls einen Punkt.
+                      <span className={`inline-block w-5 h-5 rounded-full ${
+                        teamConfig.icon === 'aek' ? 'bg-system-blue'
+                        : teamConfig.icon === 'real' ? 'bg-system-red' : 'bg-text-tertiary'}`} />
                     )}
                   </div>
                   <div className="flex-1">

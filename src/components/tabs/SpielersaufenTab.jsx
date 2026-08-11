@@ -293,13 +293,13 @@ export default function SpielersaufenTab() {
   const startGame = () =>
     save({ ...data, currentGame: { id: `g_${Date.now()}`, active: true, startedAt: new Date().toISOString(), mentions: {}, events: [] } });
 
-  // ⬅ NEW: reset only the running game, keep all setup / assignments
+  // Nur das laufende Spiel zuruecksetzen, Aufstellung und Auslosung bleiben.
   const newGame = () => {
     if (!window.confirm('Laufendes Spiel zurücksetzen und neu starten?\n(Aufstellungen & Auslosung bleiben erhalten)')) return;
     save({ ...data, currentGame: { id: null, active: false, startedAt: null, mentions: {}, events: [] } });
   };
 
-  // ⬅ NEW: full hard reset
+  // Alles zuruecksetzen, auch Aufstellung und Auslosung.
   const fullReset = () => {
     if (!window.confirm('ALLES zurücksetzen? (Spieler, Teilnehmer, Statistik – alles weg!)')) return;
     save(mkInitial());
@@ -391,7 +391,7 @@ export default function SpielersaufenTab() {
         <div className="flex justify-end mb-3">
           <div className="flex items-center gap-1 bg-system-green/15 text-system-green px-2.5 py-1.5 rounded-full text-xs font-bold border border-system-green/45">
             <span className="w-1.5 h-1.5 rounded-full bg-system-green animate-pulse" />
-            {totalShotsAll()} 🥃
+            {totalShotsAll()} <Icon name="glass" size={15} strokeWidth={2.2} />
           </div>
         </div>
       )}
@@ -404,7 +404,7 @@ export default function SpielersaufenTab() {
         >
           <span className="w-2.5 h-2.5 rounded-full bg-bg-elevated animate-pulse flex-shrink-0" />
           <span className="font-bold text-sm flex-1 text-left">Spiel läuft – {fmtElapsed(elapsed)}</span>
-          <span className="text-sm font-black">{totalShotsAll()} 🥃</span>
+          <span className="text-sm font-black">{totalShotsAll()} <Icon name="glass" size={15} strokeWidth={2.2} /></span>
           <span className="text-white/80 text-xs">→ Counter</span>
         </button>
       )}
@@ -450,7 +450,7 @@ export default function SpielersaufenTab() {
             </div>
             <div className="bg-system-orange/10 rounded-xl px-3 py-2 text-xs text-system-orange font-medium">
               Beispiel: Teilnehmer hat Spieler A + B → A: 1 Nennung + B: 1 Nennung
-              = <strong>2 Gesamt</strong> → {data.settings.mentionsPerShot <= 2 ? '→ 1 Shot 🥃' : `noch kein Shot (Schwelle ${data.settings.mentionsPerShot})`}
+              = <strong>2 Gesamt</strong> → {data.settings.mentionsPerShot <= 2 ? '→ 1 Shot' : `noch kein Shot (Schwelle ${data.settings.mentionsPerShot})`}
             </div>
           </div>
 
@@ -507,7 +507,10 @@ export default function SpielersaufenTab() {
               { ok: Object.values(data.assignments).some(a => a.length > 0), label: 'Spieler ausgelost' },
             ].map((item, i) => (
               <div key={i} className="flex items-center gap-2 text-sm mb-1">
-                <span>{item.ok ? '✅' : '⬜'}</span>
+                <span className={`w-4 h-4 rounded-full border flex items-center justify-center flex-shrink-0 ${
+                  item.ok ? 'bg-system-green border-system-green text-white' : 'border-border-strong'}`}>
+                  {item.ok && <Icon name="check" size={10} strokeWidth={3} />}
+                </span>
                 <span className={item.ok ? 'text-system-green' : 'text-text-tertiary'}>{item.label}</span>
               </div>
             ))}
@@ -515,10 +518,10 @@ export default function SpielersaufenTab() {
 
           {/* Danger zone */}
           <div className="panel-red rounded-2xl p-4">
-            <h4 className="karten-titel text-system-red mb-2">⚠️ Reset</h4>
+            <h4 className="karten-titel text-system-red mb-2 inline-flex items-center gap-1.5"><Icon name="warning" size={15} strokeWidth={2.2} /> Reset</h4>
             <button onClick={fullReset}
-              className="w-full py-2.5 rounded-xl bg-system-red/15 hover:bg-system-red/25 active:scale-95 text-system-red font-semibold text-sm border border-system-red/25 transition-all">
-              🗑️ Alles zurücksetzen (Neues Setup)
+              className="inline-flex items-center justify-center gap-1.5 w-full py-2.5 rounded-xl bg-system-red/15 hover:bg-system-red/25 active:scale-95 text-system-red font-semibold text-sm border border-system-red/25 transition-all">
+              <Icon name="trash" size={15} strokeWidth={2.2} /> Alles zurücksetzen (Neues Setup)
             </button>
           </div>
         </div>
@@ -531,7 +534,7 @@ export default function SpielersaufenTab() {
         <div className="space-y-5">
           {subState && (
             <div className="bg-system-yellow/10 border-2 border-system-yellow/45 rounded-2xl p-3 text-center">
-              <p className="font-bold text-system-yellow text-sm">⬅️ Einwechslung – wähle den eingewechselten Spieler:</p>
+              <p className="font-bold text-system-yellow text-sm inline-flex items-center gap-1.5"><Icon name="swap" size={14} strokeWidth={2.2} /> Einwechslung – wähle den eingewechselten Spieler:</p>
               <button onClick={() => setSubState(null)} className="text-xs text-system-yellow mt-1 underline">Abbrechen</button>
             </div>
           )}
@@ -539,10 +542,10 @@ export default function SpielersaufenTab() {
           {/* Add player form */}
           <div className="bg-bg-elevated border border-border-light rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="karten-titel">➕ Spieler hinzufügen</h3>
+              <h3 className="karten-titel inline-flex items-center gap-1.5"><Icon name="plus" size={15} strokeWidth={2.2} /> Spieler hinzufügen</h3>
               <button onClick={() => setShowBulk(v => !v)}
-                className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold border transition-all ${showBulk ? 'bg-system-purple/15 text-system-purple border-system-purple/45' : 'bg-bg-tertiary text-text-tertiary border-border-light'}`}>
-                📋 Bulk
+                className={`inline-flex items-center justify-center gap-1.5 text-xs px-2.5 py-1.5 rounded-lg font-semibold border transition-all ${showBulk ? 'bg-system-purple/15 text-system-purple border-system-purple/45' : 'bg-bg-tertiary text-text-tertiary border-border-light'}`}>
+                <Icon name="clipboard" size={14} strokeWidth={2.2} /> Bulk
               </button>
             </div>
             {showBulk ? (
@@ -568,8 +571,8 @@ export default function SpielersaufenTab() {
                 <p className="text-[10px] text-text-tertiary">Format: Name oder #Nr Name (Komma oder Zeilenumbruch als Trenner)</p>
                 <div className="flex gap-2">
                   <button onClick={bulkAddPlayers}
-                    className="flex-1 bg-system-purple hover:bg-system-purple active:scale-95 text-white font-bold text-sm py-2.5 rounded-xl transition-all">
-                    ✅ Alle hinzufügen ({bulkInput.split(/[\n,]/).filter(l=>l.trim()).length})
+                    className="flex-1 inline-flex items-center justify-center gap-1.5 bg-system-purple hover:bg-system-purple active:scale-95 text-white font-bold text-sm py-2.5 rounded-xl transition-all">
+                    <Icon name="check" size={15} strokeWidth={2.4} /> Alle hinzufügen ({bulkInput.split(/[\n,]/).filter(l=>l.trim()).length})
                   </button>
                   <button onClick={() => { setShowBulk(false); setBulkInput(''); }}
                     className="px-4 py-2.5 rounded-xl bg-bg-tertiary text-text-secondary border border-border-light text-sm">Abbrechen</button>
@@ -640,21 +643,21 @@ export default function SpielersaufenTab() {
                             <input value={editingPl.name} onChange={e => setEditingPl(ep => ({ ...ep, name: e.target.value }))}
                               onKeyDown={e => { if(e.key==='Enter') saveEditPl(); if(e.key==='Escape') setEditingPl(null); }}
                               className="flex-1 border border-border-medium rounded text-sm px-2 py-1" autoFocus />
-                            <button onClick={saveEditPl} className="text-system-green font-bold p-1">✓</button>
-                            <button onClick={() => setEditingPl(null)} className="text-text-tertiary p-1">✕</button>
+                            <button onClick={saveEditPl} aria-label="Speichern" className="text-system-green p-1"><Icon name="check" size={16} strokeWidth={2.6} /></button>
+                            <button onClick={() => setEditingPl(null)} aria-label="Abbrechen" className="text-text-tertiary p-1"><Icon name="x" size={16} strokeWidth={2.2} /></button>
                           </>
                         ) : (
                           <>
                             {pl.number && <span className={`text-[11px] font-bold px-1.5 py-0.5 rounded-full border ${color.badge}`}>#{pl.number}</span>}
                             <span className="flex-1 text-sm font-medium text-text-primary">{pl.name}</span>
                             {subState?.teamId===teamId && !isSubOut ? (
-                              <button onClick={() => completeSub(pl.id)} className="text-xs bg-system-green text-white px-2 py-1 rounded-lg font-semibold">⬆️ Rein</button>
+                              <button onClick={() => completeSub(pl.id)} className="text-xs bg-system-green text-white px-2 py-1 rounded-lg font-semibold inline-flex items-center gap-1"><Icon name="chevronUp" size={12} strokeWidth={2.2} /> Rein</button>
                             ) : (
                               <>
-                                <button onClick={() => startSub(teamId, pl.id)} title="Auswechseln" className="text-system-orange p-1">🔄</button>
-                                <button onClick={() => setEditingPl({ teamId, id: pl.id, name: pl.name, number: pl.number||'' })} className="text-text-tertiary p-1">✏️</button>
-                                <button onClick={() => toggleActive(teamId, pl.id)} title="Bank" className="text-system-yellow p-1">⏸</button>
-                                <button onClick={() => { if(window.confirm(`${pl.name} löschen?`)) removePlayer(teamId, pl.id); }} className="text-system-red p-1">🗑️</button>
+                                <button onClick={() => startSub(teamId, pl.id)} title="Auswechseln" aria-label="Auswechseln" className="text-system-orange p-1"><Icon name="swap" size={16} strokeWidth={2.2} /></button>
+                                <button onClick={() => setEditingPl({ teamId, id: pl.id, name: pl.name, number: pl.number||'' })} aria-label="Bearbeiten" className="text-text-tertiary p-1"><Icon name="edit" size={16} strokeWidth={2.2} /></button>
+                                <button onClick={() => toggleActive(teamId, pl.id)} title="Bank" aria-label="Auf die Bank" className="text-system-yellow p-1"><Icon name="undo" size={16} strokeWidth={2.2} /></button>
+                                <button onClick={() => { if(window.confirm(`${pl.name} löschen?`)) removePlayer(teamId, pl.id); }} aria-label="Löschen" className="text-system-red p-1"><Icon name="trash" size={16} strokeWidth={2.2} /></button>
                               </>
                             )}
                           </>
@@ -671,11 +674,11 @@ export default function SpielersaufenTab() {
                           {pl.number && <span className="text-xs text-text-tertiary">#{pl.number}</span>}
                           <span className="flex-1 text-sm text-text-tertiary line-through">{pl.name}</span>
                           {subState?.teamId===teamId ? (
-                            <button onClick={() => completeSub(pl.id)} className="text-xs bg-system-green text-white px-2 py-1 rounded-lg font-semibold">⬆️ Rein</button>
+                            <button onClick={() => completeSub(pl.id)} className="text-xs bg-system-green text-white px-2 py-1 rounded-lg font-semibold inline-flex items-center gap-1"><Icon name="chevronUp" size={12} strokeWidth={2.2} /> Rein</button>
                           ) : (
                             <>
-                              <button onClick={() => toggleActive(teamId, pl.id)} className="text-system-green p-1">▶️</button>
-                              <button onClick={() => { if(window.confirm(`${pl.name} löschen?`)) removePlayer(teamId, pl.id); }} className="text-system-red p-1">🗑️</button>
+                              <button onClick={() => toggleActive(teamId, pl.id)} aria-label="Einwechseln" className="text-system-green p-1"><Icon name="play" size={16} strokeWidth={2.2} /></button>
+                              <button onClick={() => { if(window.confirm(`${pl.name} löschen?`)) removePlayer(teamId, pl.id); }} aria-label="Löschen" className="text-system-red p-1"><Icon name="trash" size={16} strokeWidth={2.2} /></button>
                             </>
                           )}
                         </div>
@@ -695,7 +698,7 @@ export default function SpielersaufenTab() {
       {section === 'auslosung' && (
         <div className="space-y-5">
           <div className="panel-orange rounded-2xl p-4">
-            <div className="flex items-center gap-2 mb-1"><span className="text-xl">🎲</span><span className="font-bold text-system-orange">Spieler auslosen</span></div>
+            <div className="flex items-center gap-2 mb-1"><Icon name="dice" size={18} strokeWidth={2.2} className="text-system-orange" /><span className="font-bold text-system-orange">Spieler auslosen</span></div>
             <p className="text-sm text-system-orange mb-2">Mehrere Spieler pro Person möglich – einfach mehrmals auslosen.</p>
             <div className="flex gap-4 text-sm text-system-orange">
               <span>Aktive: <strong>{allActivePlayers().length}</strong></span>
@@ -704,8 +707,8 @@ export default function SpielersaufenTab() {
           </div>
 
           <button onClick={drawAll} disabled={!data.participants.length}
-            className="w-full py-4 bg-system-orange hover:opacity-90 active:scale-95 text-white font-bold text-base rounded-2xl shadow-lg border-b-4 border-system-orange disabled:opacity-40 transition-all">
-            🎲 Alle neu auslosen (je 1 Spieler)
+            className="inline-flex items-center justify-center gap-1.5 w-full py-4 bg-system-orange hover:opacity-90 active:scale-95 text-white font-bold text-base rounded-2xl shadow-lg border-b-4 border-system-orange disabled:opacity-40 transition-all">
+            <Icon name="dice" size={15} strokeWidth={2.2} /> Alle neu auslosen (je 1 Spieler)
           </button>
 
           <div className="space-y-4">
@@ -730,20 +733,20 @@ export default function SpielersaufenTab() {
                             {a.playerNumber ? `#${a.playerNumber} ` : ''}{a.playerName}
                           </span>
                           <span className="text-xs text-text-tertiary">{a.teamName}</span>
-                          <button onClick={() => removeFromParticipant(p.id, a.playerId)} className="text-text-tertiary hover:text-system-red text-xs px-1">✕</button>
+                          <button onClick={() => removeFromParticipant(p.id, a.playerId)} aria-label="Entfernen" className="text-text-tertiary hover:text-system-red px-1"><Icon name="x" size={12} strokeWidth={2.4} /></button>
                         </div>
                       );
                     })}
                     {!assigned.length && <p className="text-xs text-text-tertiary italic">Noch kein Spieler zugewiesen</p>}
                     <div className="flex gap-2 pt-1">
                       <button onClick={() => drawOneFor(p.id)}
-                        className="flex-1 bg-system-orange/10 hover:bg-system-orange/15 active:scale-95 text-system-orange text-sm font-semibold px-3 py-2 rounded-xl border border-system-orange/25 transition-all">
-                        🎲 + Spieler hinzulosen
+                        className="flex-1 inline-flex items-center justify-center gap-1.5 bg-system-orange/10 hover:bg-system-orange/15 active:scale-95 text-system-orange text-sm font-semibold px-3 py-2 rounded-xl border border-system-orange/25 transition-all">
+                        <Icon name="dice" size={14} strokeWidth={2.2} /> Spieler hinzulosen
                       </button>
                       {assigned.length > 0 && (
                         <button onClick={() => clearParticipant(p.id)}
-                          className="text-xs text-text-tertiary hover:text-system-red px-3 py-2 rounded-xl border border-border-light transition-all">
-                          Alle ✕
+                          className="inline-flex items-center justify-center gap-1.5 text-xs text-text-tertiary hover:text-system-red px-3 py-2 rounded-xl border border-border-light transition-all">
+                          Alle <Icon name="x" size={12} strokeWidth={2.2} />
                         </button>
                       )}
                     </div>
@@ -789,11 +792,11 @@ export default function SpielersaufenTab() {
           {/* ── Not started ── */}
           {!data.currentGame.active ? (
             <div className="bg-bg-elevated border border-border-light rounded-2xl p-5 text-center shadow-sm">
-              <div className="text-5xl mb-3">⏱️</div>
+              <div className="mb-3 flex justify-center text-text-tertiary"><Icon name="clock" size={44} strokeWidth={1.6} /></div>
               <p className="text-text-tertiary text-sm mb-5">Kein aktives Spiel.</p>
               <button onClick={startGame} disabled={!data.participants.length}
-                className="w-full py-4 bg-system-green hover:opacity-90 active:scale-95 text-white font-bold text-lg rounded-2xl shadow-lg border-b-4 border-system-green disabled:opacity-40 transition-all mb-3">
-                ▶️ Spiel starten
+                className="inline-flex items-center justify-center gap-1.5 w-full py-4 bg-system-green hover:opacity-90 active:scale-95 text-white font-bold text-lg rounded-2xl shadow-lg border-b-4 border-system-green disabled:opacity-40 transition-all mb-3">
+                <Icon name="play" size={16} strokeWidth={2.2} /> Spiel starten
               </button>
               {data.games.length > 0 && (
                 <p className="text-xs text-text-tertiary">Vorherige Spiele: {data.games.length} · Letztes Spiel: {(data.games[data.games.length-1].summary||[]).reduce((s,r)=>s+r.totalShots,0)} Shots</p>
@@ -816,23 +819,23 @@ export default function SpielersaufenTab() {
                   </div>
                 </div>
                 <span className="text-xs panel-green text-system-green px-2 py-1 rounded-full font-bold">
-                  {totalShotsAll()} 🥃
+                  {totalShotsAll()} <Icon name="glass" size={15} strokeWidth={2.2} />
                 </span>
                 <button onClick={() => setShowOverview(v => !v)}
                   className={`text-xs px-2 py-1 rounded-lg border font-medium transition-all ${showOverview ? 'bg-system-blue/15 text-system-blue border-system-blue/45' : 'bg-bg-tertiary text-text-tertiary border-border-light'}`}>
-                  🗃️
+                  <Icon name="clipboard" size={16} strokeWidth={2.2} />
                 </button>
               </div>
 
               {/* Shot rule banner */}
               <div className="panel-orange rounded-xl px-3 py-2 text-xs text-system-orange text-center font-medium">
-                🥃 Jede <strong>{data.settings.mentionsPerShot}. Nennung</strong> pro Teilnehmer (alle Spieler zusammen) = 1 Shot
+                <Icon name="glass" size={14} strokeWidth={2.2} /> Jede <strong>{data.settings.mentionsPerShot}. Nennung</strong> pro Teilnehmer (alle Spieler zusammen) = 1 Shot
               </div>
 
               {/* Overview matrix */}
               {showOverview && (
                 <div className="bg-bg-elevated border border-border-light rounded-2xl p-4">
-                  <h4 className="karten-titel mb-3">👁️ Wer hat wen?</h4>
+                  <h4 className="karten-titel mb-3 inline-flex items-center gap-1.5"><Icon name="eye" size={15} strokeWidth={2.2} /> Wer hat wen?</h4>
                   <div className="space-y-2.5">
                     {data.participants.map(p => {
                       const c = pc(p);
@@ -847,7 +850,7 @@ export default function SpielersaufenTab() {
                               <div className={`w-2 h-2 rounded-full ${c.dot}`} />
                               <span className={`text-xs font-bold ${c.text} truncate`}>{p.name}</span>
                             </div>
-                            <span className="text-[10px] text-text-tertiary">{total}× · {shots}🥃</span>
+                            <span className="text-[10px] text-text-tertiary">{total}× · {shots} <Icon name="glass" size={10} strokeWidth={2.2} /></span>
                           </div>
                           <div className="flex flex-wrap gap-1 flex-1">
                             {assigned.map(a => {
@@ -891,7 +894,11 @@ export default function SpielersaufenTab() {
                       {/* Flash */}
                       {isFlash && (
                         <div className="bg-system-red text-white text-center py-2.5 font-black text-lg animate-bounce">
-                          🥃 {p.name.toUpperCase()} TRINKEN! 🥃
+                          <span className="inline-flex items-center justify-center gap-2">
+                            <Icon name="glass" size={18} strokeWidth={2.4} />
+                            {p.name.toUpperCase()} TRINKEN!
+                            <Icon name="glass" size={18} strokeWidth={2.4} />
+                          </span>
                         </div>
                       )}
 
@@ -907,12 +914,12 @@ export default function SpielersaufenTab() {
                           </div>
                           <div className="text-center">
                             <div className="text-xl font-black text-system-orange leading-none">{shots}</div>
-                            <div className="text-[10px] text-text-tertiary leading-none mt-0.5">🥃</div>
+                            <div className="text-text-tertiary leading-none mt-0.5"><Icon name="glass" size={11} strokeWidth={2.2} /></div>
                           </div>
                           {/* Next shot indicator */}
                           <div className={`text-center w-10 ${nearShot ? 'opacity-100' : 'opacity-40'}`}>
                             <div className={`text-xl font-black leading-none ${nearShot ? 'text-system-red animate-pulse' : 'text-text-tertiary'}`}>{next}</div>
-                            <div className="text-[10px] text-text-tertiary leading-none mt-0.5">bis 🥃</div>
+                            <div className="text-[10px] text-text-tertiary leading-none mt-0.5 inline-flex items-center gap-0.5">bis <Icon name="glass" size={11} strokeWidth={2.2} /></div>
                           </div>
                         </div>
                       </div>
@@ -968,20 +975,20 @@ export default function SpielersaufenTab() {
                   ↩ Undo
                 </button>
                 <button onClick={newGame}
-                  className="py-3 rounded-xl bg-system-blue/10 hover:bg-system-blue/15 active:scale-95 text-system-blue font-semibold text-sm border border-system-blue/25 transition-all">
-                  🔄 Neu
+                  className="inline-flex items-center justify-center gap-1.5 py-3 rounded-xl bg-system-blue/10 hover:bg-system-blue/15 active:scale-95 text-system-blue font-semibold text-sm border border-system-blue/25 transition-all">
+                  <Icon name="undo" size={14} strokeWidth={2.2} /> Neu
                 </button>
                 <button onClick={() => { if(window.confirm('Spiel beenden?')) endGame(); }}
-                  className="py-3 rounded-xl bg-system-red hover:bg-system-red active:scale-95 text-white font-bold text-sm border-b-4 border-system-red transition-all">
-                  🏁 Ende
+                  className="inline-flex items-center justify-center gap-1.5 py-3 rounded-xl bg-system-red hover:bg-system-red active:scale-95 text-white font-bold text-sm border-b-4 border-system-red transition-all">
+                  <Icon name="check" size={14} strokeWidth={2.2} /> Ende
                 </button>
               </div>
 
               {/* Events log */}
               {data.currentGame.events.length > 0 && (
                 <div className="bg-bg-elevated border border-border-light rounded-2xl p-4">
-                  <h4 className="karten-titel mb-2">
-                    📋 Verlauf · {data.currentGame.events.length} Ereignisse
+                  <h4 className="inline-flex items-center justify-center gap-1.5 karten-titel mb-2">
+                    <Icon name="clipboard" size={14} strokeWidth={2.2} /> Verlauf · {data.currentGame.events.length} Ereignisse
                   </h4>
                   <div className="space-y-1 max-h-44 overflow-y-auto">
                     {[...data.currentGame.events].reverse().slice(0, 30).map((ev, i) => {
@@ -990,7 +997,7 @@ export default function SpielersaufenTab() {
                       const tColor = tc(data.assignments[ev.participantId]?.find?.(a => a.playerId === ev.playerId)?.teamColor || 'blue');
                       return (
                         <div key={ev.id||i} className={`flex items-center gap-2 px-2.5 py-1.5 rounded-lg text-xs ${ev.shotTriggered ? 'panel-orange' : 'panel-gray'}`}>
-                          {ev.shotTriggered ? <span className="text-sm">🥃</span> : <span className="text-sm opacity-0">·</span>}
+                          {ev.shotTriggered ? <Icon name="glass" size={14} strokeWidth={2.2} className="text-system-orange" /> : <span className="w-3.5" />}
                           <div className={`w-1.5 h-1.5 rounded-full ${c.dot} flex-shrink-0`} />
                           <span className={`font-semibold ${c.text}`}>{ev.participantName}</span>
                           <span className="text-text-tertiary">→</span>
@@ -1015,14 +1022,14 @@ export default function SpielersaufenTab() {
         <div className="space-y-5">
           {!lastGame ? (
             <div className="text-center py-12 text-text-tertiary">
-              <div className="text-5xl mb-3">🏆</div>
+              <div className="mb-3 flex justify-center text-system-yellow"><Icon name="trophy" size={44} strokeWidth={1.6} /></div>
               <p>Noch kein abgeschlossenes Spiel.</p>
             </div>
           ) : (
             <>
               {/* Header */}
               <div className="bg-system-orange border-2 border-system-orange/45 rounded-2xl p-4 text-center">
-                <div className="text-4xl mb-1">🏆</div>
+                <div className="mb-1 flex justify-center text-system-yellow"><Icon name="trophy" size={34} strokeWidth={1.8} /></div>
                 <div className="font-black text-xl text-system-orange mb-1">Spielergebnis</div>
                 <div className="text-sm text-system-orange">
                   {new Date(lastGame.startedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit',year:'numeric'})}
@@ -1031,7 +1038,7 @@ export default function SpielersaufenTab() {
                 </div>
                 <div className="text-xs text-system-orange mt-1">Jede {lastGame.settings.mentionsPerShot}. Nennung = 1 Shot</div>
                 <div className="text-3xl font-black text-system-orange mt-2">
-                  {(lastGame.summary||[]).reduce((s,r)=>s+r.totalShots,0)} 🥃 gesamt
+                  {(lastGame.summary||[]).reduce((s,r)=>s+r.totalShots,0)} <Icon name="glass" size={13} strokeWidth={2.2} /> gesamt
                 </div>
               </div>
 
@@ -1043,15 +1050,19 @@ export default function SpielersaufenTab() {
                     {sorted.map((row, i) => {
                       const part = data.participants.find(p => p.id === row.participantId);
                       const c    = part ? pc(part) : P_COLORS[i % P_COLORS.length];
-                      const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':`${i+1}.`;
+                      // Rangzahl statt Medaillen-Emoji: Gold, Silber und Bronze reichen nur
+                      // bis Platz drei, danach stand dort ohnehin die Zahl. Jetzt durchgehend
+                      // die Zahl, die ersten drei in ihrer Farbe.
+                      const platzKlasse = i === 0 ? 'text-system-yellow' : i === 1 ? 'text-text-secondary'
+                        : i === 2 ? 'text-system-orange' : 'text-text-tertiary';
                       return (
                         <div key={row.participantId} className={`rounded-2xl overflow-hidden ${c.panel}`}>
                           <div className={`${c.panel} border-0 rounded-none px-4 py-2.5 flex items-center gap-3`}>
-                            <span className="text-xl">{medal}</span>
+                            <span className={`text-lg font-bold num-tabular ${platzKlasse}`}>{i + 1}.</span>
                             <span className={`font-bold ${c.text} flex-1`}>{row.participantName}</span>
                             <div className="flex gap-3 items-center">
                               <span className="text-sm text-text-tertiary">{row.totalMentions}×</span>
-                              <span className="text-2xl font-black text-system-orange">{row.totalShots} 🥃</span>
+                              <span className="text-2xl font-black text-system-orange inline-flex items-center gap-1">{row.totalShots}<Icon name="glass" size={18} strokeWidth={2.2} /></span>
                             </div>
                           </div>
                           <div className="bg-bg-elevated px-4 py-2.5 flex flex-wrap gap-1.5">
@@ -1087,7 +1098,9 @@ export default function SpielersaufenTab() {
                     <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Meistgenannte Spieler</h4>
                     {top.map(([name, info], i) => (
                       <div key={name} className="flex items-center gap-3 mb-1.5">
-                        <span className="w-6 text-center">{i===0?'🏅':i===1?'🥈':i===2?'🥉':'  '}</span>
+                        <span className={`w-6 text-center num-tabular font-semibold ${
+                          i===0 ? 'text-system-yellow' : i===1 ? 'text-text-secondary'
+                          : i===2 ? 'text-system-orange' : 'text-text-tertiary'}`}>{i+1}.</span>
                         <span className="flex-1 text-sm font-medium text-text-primary">{name}</span>
                         <span className="text-xs text-text-tertiary">{info.team}</span>
                         <span className="text-sm font-black text-system-blue w-8 text-right">{info.count}×</span>
@@ -1099,14 +1112,14 @@ export default function SpielersaufenTab() {
 
               {/* New game from results */}
               <button onClick={() => { setSection('counter'); }}
-                className="w-full py-3.5 bg-system-green hover:opacity-90 active:scale-95 text-white font-bold rounded-2xl shadow-lg border-b-4 border-system-green transition-all">
-                ▶️ Neues Spiel starten
+                className="inline-flex items-center justify-center gap-1.5 w-full py-3.5 bg-system-green hover:opacity-90 active:scale-95 text-white font-bold rounded-2xl shadow-lg border-b-4 border-system-green transition-all">
+                <Icon name="play" size={16} strokeWidth={2.2} /> Neues Spiel starten
               </button>
 
               {/* History */}
               {data.games.length > 1 && (
                 <div className="bg-bg-elevated border border-border-light rounded-2xl p-4">
-                  <h4 className="karten-titel mb-3">📜 Alle Spiele ({data.games.length})</h4>
+                  <h4 className="karten-titel mb-3 inline-flex items-center gap-1.5"><Icon name="clipboard" size={15} strokeWidth={2.2} /> Alle Spiele ({data.games.length})</h4>
                   <div className="space-y-2">
                     {[...data.games].reverse().map((g, i) => {
                       const totalShots = (g.summary||[]).reduce((s,r)=>s+r.totalShots,0);
@@ -1115,8 +1128,8 @@ export default function SpielersaufenTab() {
                         <div key={g.id||i} className="flex items-center gap-3 px-3 py-2 bg-bg-tertiary rounded-xl border border-border-light text-sm">
                           <span className="text-text-tertiary font-mono text-xs w-5">#{data.games.length-i}</span>
                           <span className="text-text-secondary">{new Date(g.startedAt).toLocaleDateString('de-DE',{day:'2-digit',month:'2-digit'})}</span>
-                          {winner && <span className="text-xs text-text-tertiary flex-1 truncate">🏆 {winner.participantName}</span>}
-                          <span className="text-system-orange font-bold">{totalShots} 🥃</span>
+                          {winner && <span className="text-xs text-text-tertiary flex-1 truncate"><Icon name="trophy" size={12} strokeWidth={2.2} className="text-system-yellow" /> {winner.participantName}</span>}
+                          <span className="text-system-orange font-bold">{totalShots} <Icon name="glass" size={13} strokeWidth={2.2} /></span>
                         </div>
                       );
                     })}

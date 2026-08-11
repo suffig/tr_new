@@ -245,7 +245,7 @@ export default function SearchTab({ onNavigate }) {
                     {item.position} • {item.team} • {item.value || 0}M €
                   </p>
                   {(item.goals || 0) > 0 && (
-                    <p className="text-xs text-primary-green">⚽ {item.goals || 0} Tore</p>
+                    <p className="text-xs text-primary-green">{item.goals || 0} Tore</p>
                   )}
                 </div>
                 <div className="text-right ml-4">
@@ -301,7 +301,7 @@ export default function SearchTab({ onNavigate }) {
                     
                     return goalscorers.length > 0 ? (
                       <p className="text-xs text-text-muted mt-1">
-                        ⚽ {goalscorers.slice(0, 3).join(', ')}
+                        {goalscorers.slice(0, 3).join(', ')}
                         {goalscorers.length > 3 ? '...' : ''}
                       </p>
                     ) : null;
@@ -310,7 +310,7 @@ export default function SearchTab({ onNavigate }) {
                   {/* Show Man of the Match if available */}
                   {item.manofthematch && (
                     <p className="text-xs text-system-yellow mt-1">
-                      ⭐ SdS: {item.manofthematch}
+                      SdS: {item.manofthematch}
                     </p>
                   )}
                 </div>

@@ -6,6 +6,7 @@ import { ErrorHandler, FormValidator } from '../utils/errorHandling';
 // blieb die URL bei jedem Logo-Wechsel gleich — der Service Worker lieferte
 // dann weiter das alte Bild aus dem Zwischenspeicher.
 import logoFusta from '../assets/logo-fusta.png';
+import Icon from './icons/Icon';
 
 export default function Login() {
   // Always login mode, no registration - removed unused isLogin state
@@ -17,12 +18,11 @@ export default function Login() {
 
   // Listen for fallback mode activation
   useEffect(() => {
-    const handleFallbackActivation = (event) => {
-      console.log('🔄 Fallback mode activated:', event.detail);
+    const handleFallbackActivation = () => {
       setIsDemoMode(true);
       // Show helpful message
       setErrors({ 
-        form: '🌐 Demo-Modus aktiviert - Verwenden Sie beliebige Anmeldedaten für die Vorschau!' 
+        form: 'Demo-Modus aktiviert — beliebige Anmeldedaten genügen für die Vorschau.' 
       });
     };
 
@@ -58,7 +58,6 @@ export default function Login() {
     const formEmail = formData.get('email') || email;
     const formPassword = formData.get('password') || password;
 
-    console.log('🔑 Attempting login with:', formEmail, 'isDemoMode:', isDemoMode);
 
     try {
       // Client-side validation
@@ -86,7 +85,6 @@ export default function Login() {
       // production logins fall through to the try/catch below, which switches
       // to fallback on an actual 'Failed to fetch'. (No CDN <script> check.)
       if (isDemoMode || usingFallback || window.location.hostname === 'localhost') {
-        console.warn('🔄 Force switching to fallback mode for demo');
         await switchToFallbackMode();
         setIsDemoMode(true);
       }
@@ -105,7 +103,6 @@ export default function Login() {
         if (authError.message?.includes('Failed to fetch') || 
             authError.name === 'AuthRetryableFetchError' ||
             authError.message?.includes('NetworkError')) {
-          console.warn('🔄 Auth failed, switching to fallback mode');
           await switchToFallbackMode();
           setIsDemoMode(true);
           
@@ -119,7 +116,6 @@ export default function Login() {
         }
       }
 
-      console.log('🔍 Auth result:', result);
 
       if (result.error) {
         if (result.error.message?.includes('Invalid login credentials')) {
@@ -133,7 +129,6 @@ export default function Login() {
         }
       } else {
         // Success - component will unmount when user state changes
-        console.log('✅ Login successful, should redirect to main app');
       }
     } catch (error) {
       console.error('Auth error:', error);
@@ -173,7 +168,7 @@ export default function Login() {
             {isDemoMode && (
               <div className="mt-4 p-3 bg-system-blue/10 border border-system-blue/30 rounded-ios-lg">
                 <div className="flex items-center justify-center gap-2 text-system-blue">
-                  <span className="text-lg">🌐</span>
+                  <Icon name="grid" size={16} strokeWidth={2.1} />
                   <span className="text-footnote font-medium">Demo-Modus aktiv</span>
                 </div>
                 <p className="text-caption1 text-text-secondary mt-1">

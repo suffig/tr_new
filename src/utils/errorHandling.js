@@ -9,7 +9,6 @@ export class ErrorHandler {
       // Use info style for warnings since react-hot-toast doesn't have warning
       toast(message, { 
         duration,
-        icon: '⚠️',
         style: {
           background: '#FEF3C7',
           color: '#92400E',

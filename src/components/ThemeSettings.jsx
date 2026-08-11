@@ -1,4 +1,5 @@
 import { useTheme } from '../contexts/ThemeContext';
+import Icon from './icons/Icon';
 
 export default function ThemeSettings() {
   const { theme, autoMode, toggleTheme, setAutoTheme, setManualTheme } = useTheme();
@@ -7,7 +8,7 @@ export default function ThemeSettings() {
     <div className="space-y-6">
       <div className="bg-bg-secondary rounded-lg p-6 border border-border-light">
         <h3 className="karten-titel mb-4 flex items-center">
-          <span className="text-xl mr-2">🎨</span>
+          <Icon name="sparkles" size={18} strokeWidth={2.1} className="mr-2 text-system-purple" />
           Design & Darstellung
         </h3>
         
@@ -27,7 +28,7 @@ export default function ThemeSettings() {
                     : 'border-border-medium hover:border-border-strong'
                 }`}
               >
-                <div className="text-2xl">🌗</div>
+                <div className="text-text-secondary"><Icon name="grid" size={22} strokeWidth={2.1} /></div>
                 <div className="text-sm font-medium text-text-primary">Automatisch</div>
                 <div className="text-xs text-text-muted text-center">
                   Folgt den Systemeinstellungen
@@ -43,7 +44,7 @@ export default function ThemeSettings() {
                     : 'border-border-medium hover:border-border-strong'
                 }`}
               >
-                <div className="text-2xl">☀️</div>
+                <div className="text-system-yellow"><Icon name="sun" size={22} strokeWidth={2.1} /></div>
                 <div className="text-sm font-medium text-text-primary">Hell</div>
                 <div className="text-xs text-text-muted text-center">
                   Helle Darstellung
@@ -59,7 +60,7 @@ export default function ThemeSettings() {
                     : 'border-border-medium hover:border-border-strong'
                 }`}
               >
-                <div className="text-2xl">🌙</div>
+                <div className="text-system-indigo"><Icon name="moon" size={22} strokeWidth={2.1} /></div>
                 <div className="text-sm font-medium text-text-primary">Dunkel</div>
                 <div className="text-xs text-text-muted text-center">
                   Dunkle Darstellung
@@ -82,8 +83,8 @@ export default function ThemeSettings() {
                   }
                 </div>
               </div>
-              <div className="text-2xl">
-                {theme === 'dark' ? '🌙' : '☀️'}
+              <div className={theme === 'dark' ? 'text-system-indigo' : 'text-system-yellow'}>
+                <Icon name={theme === 'dark' ? 'moon' : 'sun'} size={22} strokeWidth={2.1} />
               </div>
             </div>
           </div>
@@ -102,7 +103,7 @@ export default function ThemeSettings() {
               onClick={toggleTheme}
               className="bg-primary-green hover:bg-primary-green-dark text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2"
             >
-              <span>{theme === 'dark' ? '☀️' : '🌙'}</span>
+              <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} strokeWidth={2.1} />
               <span className="text-sm font-medium">
                 Zu {theme === 'dark' ? 'Hell' : 'Dunkel'}
               </span>
@@ -113,7 +114,7 @@ export default function ThemeSettings() {
         {/* Info Section */}
         <div className="mt-6 p-4 bg-system-blue/10 dark:bg-system-blue/20 rounded-lg border border-system-blue/25 dark:border-system-blue">
           <div className="flex items-start space-x-3">
-            <div className="text-system-blue text-xl flex-shrink-0">💡</div>
+            <div className="text-system-blue flex-shrink-0"><Icon name="bulb" size={18} strokeWidth={2.1} /></div>
             <div>
               <div className="text-sm font-medium text-system-blue dark:text-blue-200 mb-1">
                 Darstellungshinweise

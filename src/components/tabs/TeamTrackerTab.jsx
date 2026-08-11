@@ -289,7 +289,7 @@ function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeich
                   <strong className="text-text-primary">{siegerTeam.name}</strong>
                   {' ('}{fmtRating(siegerTeam.rating)}{'★) → '}
                   <strong className="text-system-orange">
-                    +{fmtRating(gutschrift)} ⭐
+                    +{fmtRating(gutschrift)} Sterne
                   </strong>
                   <span className="text-text-tertiary">{' (6 − '}{fmtRating(siegerTeam.rating)}{')'}</span>
                 </p>
@@ -443,7 +443,7 @@ export default function TeamTrackerTab() {
     setDuellOffen(false);
     toast.success(
       gutschrift > 0
-        ? `${siegerName} gewinnt — +${fmtRating(gutschrift)} ⭐ im Sterne-Zähler`
+        ? `${siegerName} gewinnt — +${fmtRating(gutschrift)} Sterne im Zähler`
         : `${siegerName} gewinnt — Ziehungen erfasst (kein Rating, keine Sterne)`,
       { duration: 4500 }
     );
@@ -521,7 +521,7 @@ export default function TeamTrackerTab() {
       const before = computeMilestones(pulls, catalog, current.id);
       const after = computeMilestones([...pulls, { person: current.id, team: team.name }], catalog, current.id);
       for (const k of Object.keys(after)) {
-        if (after[k] && !before[k]) toast.success(`🏆 ${current.name}: ${MILESTONE_LABELS[k]}`, { duration: 4000 });
+        if (after[k] && !before[k]) toast.success(`${current.name}: ${MILESTONE_LABELS[k]}`, { duration: 4000 });
       }
     }
     // Bewusst AUSSERHALB des State-Updaters: addPull/removeLatestPull schreiben
@@ -1079,7 +1079,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
             <div className="text-[11px] text-text-tertiary">{all[0].name} · ⌀</div>
           </div>
           <div className="px-2 text-xs font-semibold text-text-tertiary">
-            {qualityLeader ? <span className="inline-flex items-center gap-1 text-system-orange">🔥 {qualityLeader.name}</span> : 'Gleichstand'}
+            {qualityLeader ? <span className="inline-flex items-center gap-1 text-system-orange"><Icon name="zap" size={12} strokeWidth={2.4} />{qualityLeader.name}</span> : 'Gleichstand'}
           </div>
           <div className="flex-1">
             <div className="text-2xl font-bold text-system-red tabular-nums inline-flex items-center gap-1"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />{avgP ? fmtRating(avgP) : '—'}</div>
@@ -1096,7 +1096,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
               <span className="text-xs font-medium text-text-secondary">Bessere Ziehung je Spiel</span>
               <span className="text-[11px] text-text-tertiary">
                 {duel.n} Spiele{duel.dr ? ' · ' + duel.dr + '× gleich' : ''}
-                {duel.streakLen > 1 ? ' · 🔥 ' + personName(duel.streakWho) + ' ' + duel.streakLen + '×' : ''}
+                {duel.streakLen > 1 ? ' · Serie: ' + personName(duel.streakWho) + ' ' + duel.streakLen + '×' : ''}
               </span>
             </div>
             <div className="flex items-center gap-2">

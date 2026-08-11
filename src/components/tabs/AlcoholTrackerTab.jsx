@@ -57,26 +57,20 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // Load manager data from database
   const loadManagersFromDatabase = useCallback(async () => {
     try {
-      console.log('🔄 Loading managers from database...');
       const result = await dataManager.getManagers();
-      console.log('📊 Manager data result:', result);
       
       if (result && result.data && Array.isArray(result.data) && result.data.length >= 2) {
-        console.log('✅ Manager data loaded successfully:', result.data);
         // Convert database format to component format
         // Assuming id=1 is AEK manager, id=2 is Real manager
         const aekManager = result.data.find(m => m.id === 1) || { name: 'Alexander', gewicht: 110 };
         const realManager = result.data.find(m => m.id === 2) || { name: 'Philip', gewicht: 105 };
         
-        console.log('👤 AEK Manager:', aekManager);
-        console.log('👤 Real Manager:', realManager);
         
         setManagers({
           aek: { name: aekManager.name, age: aekManager.age || 30, weight: aekManager.gewicht },
           real: { name: realManager.name, age: realManager.age || 30, weight: realManager.gewicht }
         });
       } else {
-        console.warn('⚠️ No manager data found, using defaults. Result:', result);
         // Use defaults if no data
         setManagers({
           aek: { name: 'Alexander', age: 30, weight: 110 },
@@ -835,7 +829,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               const rem = schnapsShotsData.target - done;
               return rem > 0
                 ? <span className="text-xs bg-system-orange/15 text-system-orange px-1.5 py-0.5 rounded-full">{rem}</span>
-                : <span className="text-xs bg-system-green/15 text-system-green px-1.5 py-0.5 rounded-full">✓</span>;
+                : <span className="bg-system-green/15 text-system-green px-1.5 py-0.5 rounded-full inline-flex items-center"><Icon name="check" size={11} strokeWidth={3} /></span>;
             })()}
           </button>
           <button
@@ -1071,7 +1065,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                               className="w-16 text-center border border-system-orange/45 rounded-lg px-1 py-0.5 text-sm font-bold text-system-orange bg-bg-elevated focus:outline-none focus:ring-2 focus:ring-system-orange"
                               autoFocus
                             />
-                            <button onClick={applySchnapsTarget} className="text-xs bg-system-orange text-white px-2 py-0.5 rounded-md font-medium">✓</button>
+                            <button onClick={applySchnapsTarget} aria-label="Übernehmen" className="bg-system-orange text-white px-2 py-1 rounded-md inline-flex items-center"><Icon name="check" size={12} strokeWidth={3} /></button>
                             <button onClick={() => setEditingSchnapsTarget(false)} className="text-xs text-text-tertiary" aria-label="Abbrechen"><Icon name="x" size={12} strokeWidth={2.4} /></button>
                           </>
                         ) : (

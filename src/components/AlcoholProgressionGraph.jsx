@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import Icon from './icons/Icon';
 
 const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, drinkingStartTime }) => {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -175,7 +176,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
         <div className="flex items-center justify-center bg-bg-tertiary rounded-lg border-2 border-dashed border-border-medium" 
              style={{ width: `${width}px`, height: `${height}px` }}>
           <div className="text-center text-text-tertiary">
-            <div className="text-4xl mb-2">📊</div>
+            <div className="mb-2 flex justify-center text-text-tertiary"><Icon name="chart" size={34} strokeWidth={1.6} /></div>
             <p>Keine Daten zum Anzeigen</p>
             <p className="text-sm">Trinken starten, um den Verlauf zu sehen</p>
           </div>
@@ -292,16 +293,12 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
         const hasShots = (event.shots?.alexander?.shots20 > 0) || (event.shots?.alexander?.shots40 > 0) || 
                         (event.shots?.philip?.shots20 > 0) || (event.shots?.philip?.shots40 > 0);
         
-        let icon = '🍺'; // Default beer
-        let iconColor = '#8b5cf6';
-        
-        if (hasShots && !hasBeers) {
-          icon = '🥃';
-          iconColor = '#f59e0b';
-        } else if (hasShots && hasBeers) {
-          icon = '🍻';
-          iconColor = '#10b981';
-        }
+        // Die Farbe des Punktes sagt, worum es ging — das Emoji darin war
+        // eine zweite, unschaerfere Kodierung derselben Sache und bei der
+        // Punktgroesse ohnehin kaum zu erkennen.
+        let iconColor = '#8b5cf6';                       // Bier
+        if (hasShots && !hasBeers) iconColor = '#f59e0b'; // Shots
+        else if (hasShots && hasBeers) iconColor = '#10b981'; // beides
         
         return (
           <g key={i}>
@@ -328,20 +325,11 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
                 filter: 'drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3))'
               }}
             />
-            {/* Drink icon */}
-            <text
-              x={x}
-              y={isMobile ? "-10" : "-7"}
-              textAnchor="middle"
-              fontSize={isMobile ? "11" : "13"}
-              fill="white"
-              className="font-bold"
-              style={{
-                filter: 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5))'
-              }}
-            >
-              {icon}
-            </text>
+            {/* Kein Zeichen mehr im Punkt: hier stand das Getraenke-Emoji in
+                11 Pixeln Schriftgroesse auf einem 16 Pixel breiten Kreis — zu
+                klein, um es voneinander zu unterscheiden. Die Farbe des
+                Kreises sagt dasselbe und ist auf einen Blick lesbar; die
+                Legende darunter nennt sie beim Namen. */}
           </g>
         );
       }
@@ -518,11 +506,11 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
               <line x1={5} y1={30} x2={20} y2={30} stroke="#ef4444" strokeWidth="4"/>
               <text x={25} y={34} fontSize="11" fill="#374151" className="font-medium">Philip</text>
               <line x1={5} y1={50} x2={20} y2={50} stroke="#8b5cf6" strokeWidth="2" strokeDasharray="4,2"/>
-              <text x={25} y={54} fontSize="11" fill="#374151" className="font-medium">🍺 Bier</text>
+              <text x={25} y={54} fontSize="11" fill="#374151" className="font-medium">Bier</text>
               <line x1={5} y1={70} x2={20} y2={70} stroke="#f59e0b" strokeWidth="2" strokeDasharray="4,2"/>
-              <text x={25} y={74} fontSize="11" fill="#374151" className="font-medium">🥃 Shots</text>
+              <text x={25} y={74} fontSize="11" fill="#374151" className="font-medium">Shots</text>
               <line x1={5} y1={90} x2={20} y2={90} stroke="#10b981" strokeWidth="2" strokeDasharray="4,2"/>
-              <text x={25} y={94} fontSize="11" fill="#374151" className="font-medium">🍻 Mix</text>
+              <text x={25} y={94} fontSize="11" fill="#374151" className="font-medium">Mix</text>
             </g>
           )}
         </svg>
@@ -541,11 +529,11 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
                 <span className="text-sm">Philip</span>
               </div>
               <div className="flex items-center gap-2 justify-center">
-                <span className="text-lg">🍺</span>
+                <Icon name="beer" size={16} strokeWidth={2.2} className="text-system-purple" />
                 <span className="text-sm">Bier</span>
               </div>
               <div className="flex items-center gap-2 justify-center">
-                <span className="text-lg">🥃</span>
+                <Icon name="glass" size={16} strokeWidth={2.2} className="text-system-orange" />
                 <span className="text-sm">Shots</span>
               </div>
             </div>
@@ -565,8 +553,8 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h3 className="karten-titel">
-          📈 Alkoholverlauf beider Manager
+        <h3 className="karten-titel inline-flex items-center gap-1.5">
+          <Icon name="trendingUp" size={15} strokeWidth={2.2} /> Alkoholverlauf beider Manager
         </h3>
         <div className="flex items-center gap-2">
           {/* Current BAC indicators */}
@@ -586,8 +574,9 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
               </span>
             </div>
           </div>
-          <button className="text-2xl transition-transform duration-200">
-            {isExpanded ? '📉' : '📊'}
+          <button aria-label={isExpanded ? 'Verlauf einklappen' : 'Verlauf ausklappen'}
+                  className="text-text-tertiary transition-transform duration-200">
+            <Icon name={isExpanded ? 'chevronUp' : 'chevronDown'} size={20} strokeWidth={2.2} />
           </button>
         </div>
       </div>
@@ -607,7 +596,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
           
           <div className="mt-4 grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="p-3 bg-system-yellow/10 border border-system-yellow/25 rounded-lg">
-              <div className="font-medium text-system-yellow mb-1">⚠️ Grenzwerte</div>
+              <div className="font-medium text-system-yellow mb-1 inline-flex items-center gap-1.5"><Icon name="warning" size={14} strokeWidth={2.2} /> Grenzwerte</div>
               <div className="text-system-yellow space-y-1">
                 <div>0,3‰: Reaktionszeit verlangsamt</div>
                 <div>0,5‰: Fahruntüchtig</div>
@@ -616,7 +605,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
             </div>
             
             <div className="p-3 bg-system-blue/10 border border-system-blue/25 rounded-lg">
-              <div className="font-medium text-system-blue mb-1">🔵 Alexander aktuell</div>
+              <div className="font-medium text-system-blue mb-1">Alexander aktuell</div>
               <div className="text-system-blue">
                 <div>Gewicht: {managers.aek.weight}kg</div>
                 <div>Biere: {beerConsumption.alexander}</div>
@@ -625,7 +614,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
             </div>
             
             <div className="p-3 bg-system-red/10 border border-system-red/25 rounded-lg">
-              <div className="font-medium text-system-red mb-1">🔴 Philip aktuell</div>
+              <div className="font-medium text-system-red mb-1">Philip aktuell</div>
               <div className="text-system-red">
                 <div>Gewicht: {managers.real.weight}kg</div>
                 <div>Biere: {beerConsumption.philip}</div>
@@ -638,7 +627,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
           {drinkEvents.length > 0 && (
             <div className="mt-4 p-3 bg-system-purple/10 border border-system-purple/25 rounded-lg">
               <div className="font-medium text-system-purple mb-3 flex items-center gap-2">
-                <span className="text-lg">🍺</span>
+                <Icon name="beer" size={16} strokeWidth={2.2} className="text-system-purple" />
                 <span>Getränke-Timeline (letzte 5)</span>
               </div>
               <div className="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
@@ -663,12 +652,12 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
                             <span className="text-xs text-system-blue font-medium">Alex:</span>
                             {alexanderBeers > 0 && (
                               <span className="flex items-center text-sm">
-                                🍺<span className="text-xs text-system-blue ml-0.5">+{event.alexanderChange}</span>
+                                <Icon name="beer" size={12} strokeWidth={2.2} className="inline" /><span className="text-xs text-system-blue ml-0.5">+{event.alexanderChange}</span>
                               </span>
                             )}
                             {alexanderShots > 0 && (
                               <span className="flex items-center text-sm">
-                                🥃<span className="text-xs text-system-blue ml-0.5">+{event.alexanderChange}</span>
+                                <Icon name="glass" size={12} strokeWidth={2.2} className="inline" /><span className="text-xs text-system-blue ml-0.5">+{event.alexanderChange}</span>
                               </span>
                             )}
                           </div>
@@ -679,12 +668,12 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
                             <span className="text-xs text-system-red font-medium">Phil:</span>
                             {philipBeers > 0 && (
                               <span className="flex items-center text-sm">
-                                🍺<span className="text-xs text-system-red ml-0.5">+{event.philipChange}</span>
+                                <Icon name="beer" size={12} strokeWidth={2.2} className="inline" /><span className="text-xs text-system-red ml-0.5">+{event.philipChange}</span>
                               </span>
                             )}
                             {philipShots > 0 && (
                               <span className="flex items-center text-sm">
-                                🥃<span className="text-xs text-system-red ml-0.5">+{event.philipChange}</span>
+                                <Icon name="glass" size={12} strokeWidth={2.2} className="inline" /><span className="text-xs text-system-red ml-0.5">+{event.philipChange}</span>
                               </span>
                             )}
                           </div>

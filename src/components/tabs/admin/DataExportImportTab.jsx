@@ -14,6 +14,7 @@ import {
   getFifaVersionDisplayName,
   getCurrentFifaVersion
 } from '../../../utils/fifaVersionManager.js';
+import Icon from '../../icons/Icon';
 
 const DataExportImportTab = () => {
   const [versions, setVersions] = useState([]);
@@ -182,7 +183,7 @@ const DataExportImportTab = () => {
               Legacy-Daten downloaden und Finanzdaten zwischen Versionen kopieren
             </p>
           </div>
-          <div className="text-4xl">📊</div>
+          <div className="text-text-tertiary"><Icon name="chart" size={32} strokeWidth={2.1} /></div>
         </div>
       </div>
 

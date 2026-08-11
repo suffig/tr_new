@@ -145,10 +145,10 @@ export default function AbendRueckblick() {
             {(a.stand.sterne.gesamt > 0 || a.getraenke > 0) && (
               <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5 border-t border-border-light">
                 {a.stand.sterne.alexander > 0 && (
-                  <span className="chip chip-sm chip-blue">Alexander +{fmt(a.stand.sterne.alexander)} ⭐</span>
+                  <span className="chip chip-sm chip-blue">Alexander +{fmt(a.stand.sterne.alexander)} Sterne</span>
                 )}
                 {a.stand.sterne.philip > 0 && (
-                  <span className="chip chip-sm chip-red">Philip +{fmt(a.stand.sterne.philip)} ⭐</span>
+                  <span className="chip chip-sm chip-red">Philip +{fmt(a.stand.sterne.philip)} Sterne</span>
                 )}
                 {a.stand.bier.alexander > 0 && (
                   <span className="chip chip-sm chip-gray">Alexander {a.stand.bier.alexander} Bier</span>

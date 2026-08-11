@@ -160,7 +160,7 @@ export default function ColorCustomization() {
     <div className="space-y-6">
       <div className="bg-bg-secondary rounded-lg p-6 border border-border-light">
         <h3 className="karten-titel mb-4 flex items-center">
-          <span className="text-xl mr-2">🎨</span>
+          <Icon name="sparkles" size={18} strokeWidth={2.1} className="mr-2 text-system-purple" />
           Farbkonfiguration
         </h3>
 
@@ -315,7 +315,7 @@ export default function ColorCustomization() {
         {/* Info */}
         <div className="mt-4 p-4 bg-system-blue/10 dark:bg-system-blue/20 rounded-lg border border-system-blue/25 dark:border-system-blue">
           <div className="flex items-start space-x-3">
-            <div className="text-system-blue text-xl flex-shrink-0">💡</div>
+            <div className="text-system-blue flex-shrink-0"><Icon name="bulb" size={18} strokeWidth={2.1} /></div>
             <div>
               <div className="text-sm font-medium text-system-blue dark:text-blue-200 mb-1">
                 Farbhinweise

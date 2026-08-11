@@ -6,14 +6,17 @@ import { supabaseDb } from '../../../utils/supabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
 import toast from 'react-hot-toast';
 
+// Ohne Icon-Feld: die Liste steht in einem <select>, und in einem <option>
+// kann kein SVG stehen. Vorher trug jeder Eintrag ein Emoji — die einzige
+// Stelle der App, an der eines im Klartext einer Auswahl stand.
 const TRANSACTION_TYPES = [
-  { value: 'Preisgeld', label: 'Preisgeld', icon: '🏆' },
-  { value: 'Strafe', label: 'Strafe', icon: '📉' },
-  { value: 'Spielerkauf', label: 'Spielerkauf', icon: '👤' },
-  { value: 'Spielerverkauf', label: 'Spielerverkauf', icon: '💰' },
-  { value: 'Echtgeld-Ausgleich', label: 'Echtgeld-Ausgleich', icon: '💳' },
-  { value: 'SdS Bonus', label: 'Spieler des Spiels Bonus', icon: '⭐' },
-  { value: 'Sonstiges', label: 'Sonstiges', icon: '📈' },
+  { value: 'Preisgeld', label: 'Preisgeld' },
+  { value: 'Strafe', label: 'Strafe' },
+  { value: 'Spielerkauf', label: 'Spielerkauf' },
+  { value: 'Spielerverkauf', label: 'Spielerverkauf' },
+  { value: 'Echtgeld-Ausgleich', label: 'Echtgeld-Ausgleich' },
+  { value: 'SdS Bonus', label: 'Spieler des Spiels Bonus' },
+  { value: 'Sonstiges', label: 'Sonstiges' },
 ];
 
 export default function AddTransactionTab() {
@@ -205,7 +208,7 @@ export default function AddTransactionTab() {
                     <option value="">Typ wählen</option>
                     {TRANSACTION_TYPES.map((type) => (
                       <option key={type.value} value={type.value}>
-                        {type.icon} {type.label}
+                        {type.label}
                       </option>
                     ))}
                   </select>

@@ -35,8 +35,7 @@ export default function TeamLogo({ team, size = 'md', className = '', version = 
     if (typeof eigenes === 'string' && !eigenes.startsWith('data:') && !/^[a-z]+$/.test(eigenes)) {
       return eigenes;
     }
-    const t = team?.toLowerCase();
-    return t === 'aek' ? '🔵' : t === 'real' ? '🔴' : '⚽';
+    return null;   // kein eigenes Zeichen hinterlegt
   };
 
   const quelle = (() => {
@@ -55,7 +54,11 @@ export default function TeamLogo({ team, size = 'md', className = '', version = 
     }
   })();
 
-  if (!quelle) return <span className={className}>{ersatzEmoji()}</span>;
+  // Ohne Bild ein farbiger Punkt in der Farbe der Seite. Vorher standen hier
+  // die Emojis 🔵/🔴/⚽ — in einer App, die sonst durchgehend SVG-Icons
+  // benutzt, waren das die einzigen bunten Systemzeichen, und sie sehen auf
+  // jedem Geraet anders aus.
+  if (!quelle) return <Ersatz team={team} zeichen={ersatzEmoji()} size={size} sizes={sizes} className={className} />;
 
   return (
     <img
@@ -67,9 +70,24 @@ export default function TeamLogo({ team, size = 'md', className = '', version = 
       alt={teamDisplay.label || team || ''}
       className={`${sizes[size]} object-contain ${className}`}
       onError={(e) => {
-        // Fehlt die Datei, das Emoji zeigen statt eines kaputten Bildes.
-        e.target.outerHTML = `<span class="${className}">${ersatzEmoji()}</span>`;
+        // Fehlt die Datei, einen farbigen Punkt zeigen statt eines kaputten
+        // Bildes. Als reines HTML, weil hier kein React mehr laeuft.
+        const farbe = team?.toLowerCase() === 'aek' ? 'var(--system-blue)'
+          : team?.toLowerCase() === 'real' ? 'var(--system-red)' : 'var(--text-tertiary)';
+        e.target.outerHTML = `<span class="${sizes[size]} ${className}" style="display:inline-block;border-radius:9999px;background:${farbe}"></span>`;
       }}
     />
   );
+}
+
+/**
+ * Rueckfall, wenn kein Bild hinterlegt ist: ein farbiger Punkt in der Farbe
+ * der Seite. Traegt ein Team ein eigenes Zeichen in der Konfiguration, steht
+ * das stattdessen da.
+ */
+function Ersatz({ team, zeichen, size, sizes, className }) {
+  if (zeichen) return <span className={className}>{zeichen}</span>;
+  const t = team?.toLowerCase();
+  const farbe = t === 'aek' ? 'bg-system-blue' : t === 'real' ? 'bg-system-red' : 'bg-text-tertiary';
+  return <span aria-hidden="true" className={`${sizes[size]} ${farbe} rounded-full inline-block flex-shrink-0 ${className}`} />;
 }

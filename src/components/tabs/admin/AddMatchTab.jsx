@@ -671,9 +671,15 @@ export default function AddMatchTab() {
   };
 
   // One card counter (yellow/red) for a team
-  const renderCardCounter = (label, field) => (
+  // Das Kartensymbol als farbiges Rechteck statt als Emoji 🟨/🟥 — dieselbe
+  // Loesung wie im Sperren-Bereich. Emojis brachen dort auf dem Handy mitten
+  // im Paar um und sehen auf jedem Geraet anders aus.
+  const renderCardCounter = (farbe, text, field) => (
     <div>
-      <label className="block text-[11px] text-text-muted mb-1">{label}</label>
+      <label className="flex items-center gap-1.5 text-[11px] text-text-muted mb-1">
+        <span className={`inline-block w-2.5 h-3.5 rounded-[2px] ${farbe}`} aria-hidden="true" />
+        {text}
+      </label>
       <div className="flex items-center justify-between bg-bg-tertiary rounded-lg px-2 py-1.5">
         {renderStepper(
           formData[field] || 0,
@@ -849,8 +855,8 @@ export default function AddMatchTab() {
                     </div>
                     {(formData.goalsa > 0 || formData.goalsb > 0) && (
                       <div className="text-xs font-medium text-text-secondary mt-1">
-                        {formData.goalsa > formData.goalsb ? `🏆 ${getTeamDisplay('AEK')} führt` :
-                         formData.goalsb > formData.goalsa ? `🏆 ${getTeamDisplay('Real')} führt` : '⚖️ Unentschieden'}
+                        {formData.goalsa > formData.goalsb ? `${getTeamDisplay('AEK')} führt` :
+                         formData.goalsb > formData.goalsa ? `${getTeamDisplay('Real')} führt` : 'Unentschieden'}
                       </div>
                     )}
                   </div>
@@ -868,15 +874,15 @@ export default function AddMatchTab() {
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-system-blue flex items-center gap-1.5"><TeamLogo team="aek" size="xs" />{getTeamDisplay('AEK')}</p>
                       <div className="grid grid-cols-2 gap-2">
-                        {renderCardCounter('🟨 Gelb', 'yellowa')}
-                        {renderCardCounter('🟥 Rot', 'reda')}
+                        {renderCardCounter('bg-system-yellow', 'Gelb', 'yellowa')}
+                        {renderCardCounter('bg-system-red', 'Rot', 'reda')}
                       </div>
                     </div>
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-system-red flex items-center gap-1.5"><TeamLogo team="real" size="xs" />{getTeamDisplay('Real')}</p>
                       <div className="grid grid-cols-2 gap-2">
-                        {renderCardCounter('🟨 Gelb', 'yellowb')}
-                        {renderCardCounter('🟥 Rot', 'redb')}
+                        {renderCardCounter('bg-system-yellow', 'Gelb', 'yellowb')}
+                        {renderCardCounter('bg-system-red', 'Rot', 'redb')}
                       </div>
                     </div>
                   </div>
@@ -1006,7 +1012,7 @@ export default function AddMatchTab() {
                       {echtgeldPreview && (
                         <div className="mt-2 pt-2 border-t border-system-green/25">
                           <div className="flex justify-between">
-                            <span className="text-system-green">💳 Echtgeld-Ausgleich:</span>
+                            <span className="text-system-green inline-flex items-center gap-1.5"><Icon name="swap" size={13} strokeWidth={2.1} /> Echtgeld-Ausgleich:</span>
                             <span className="font-bold text-system-red">{getTeamDisplay(echtgeldPreview.loser)} schuldet {echtgeldPreview.loserBetrag}€</span>
                           </div>
                           <div className="mt-1 text-xs text-system-green italic">
@@ -1022,7 +1028,7 @@ export default function AddMatchTab() {
                 {!isFormValid() && echtgeldPreview && (
                   <div className="bg-system-blue/10 border border-system-blue/25 rounded-lg p-3">
                     <h5 className="font-medium text-system-blue mb-2 flex items-center text-sm">
-                      💳 Echtgeld-Vorschau
+                      Echtgeld-Vorschau
                     </h5>
                     <div className="space-y-1 text-sm">
                       <div className="flex justify-between">
@@ -1072,7 +1078,7 @@ export default function AddMatchTab() {
                 {!isFormValid() && (
                   <div className="bg-system-red/10 border border-system-red/25 rounded-lg p-3">
                     <div className="flex items-start">
-                      <div className="text-system-red mr-2 mt-1">⚠️</div>
+                      <div className="text-system-red mr-2 mt-1"><Icon name="warning" size={16} strokeWidth={2.1} /></div>
                       <div className="flex-1">
                         <h5 className="font-medium text-system-red mb-1">Formular unvollständig</h5>
                         <ul className="text-sm text-system-red space-y-1">

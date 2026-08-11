@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect, useRef } from 'react';
+import Icon from './icons/Icon';
 
 export default function EnhancedSearch({ 
   data = [], 
@@ -112,7 +113,7 @@ export default function EnhancedSearch({
       <div className="p-4 border-b border-border-light">
         <div className="relative">
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
-            <span className="text-text-secondary" aria-hidden="true">🔍</span>
+            <span className="text-text-secondary" aria-hidden="true"><Icon name="search" size={16} strokeWidth={2.1} /></span>
           </div>
           <input
             type="text"
@@ -130,7 +131,7 @@ export default function EnhancedSearch({
               className="text-text-secondary hover:text-primary-green transition-colors p-1 rounded"
               title="Globale Suche öffnen (Strg+K)"
             >
-              <span aria-hidden="true">🌐</span>
+              <span aria-hidden="true"><Icon name="grid" size={14} strokeWidth={2.1} /></span>
             </button>
             {query && (
               <button
@@ -138,7 +139,7 @@ export default function EnhancedSearch({
                 className="text-text-secondary hover:text-text-primary transition-colors p-1 rounded"
                 title="Suchfeld leeren"
               >
-                <span aria-hidden="true">✕</span>
+                <span aria-hidden="true"><Icon name="x" size={14} strokeWidth={2.1} /></span>
               </button>
             )}
           </div>
@@ -227,7 +228,7 @@ export default function EnhancedSearch({
               <div className="flex items-center gap-2">
                 {query && (
                   <span className="bg-primary-green bg-opacity-10 text-primary-green px-2 py-1 rounded text-xs">
-                    🔍 &quot;{query}&quot;
+                    &quot;{query}&quot;
                   </span>
                 )}
                 {Object.entries(activeFilters)
@@ -247,7 +248,7 @@ export default function EnhancedSearch({
                 }
                 {sortBy && (
                   <span className="bg-system-yellow/15 text-system-yellow px-2 py-1 rounded text-xs">
-                    📊 {formatFieldName(sortBy)} {sortOrder === 'asc' ? '↑' : '↓'}
+                    {formatFieldName(sortBy)} {sortOrder === 'asc' ? '↑' : '↓'}
                   </span>
                 )}
               </div>

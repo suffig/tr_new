@@ -309,7 +309,7 @@ export default function DeleteTab() {
 
   const getTeamIcon = (team) => {
     const teamData = TEAMS.find(t => t.value === team);
-    return teamData ? teamData.icon : '⚫';
+    return teamData ? teamData.icon : null;
   };
 
   // Filter functions

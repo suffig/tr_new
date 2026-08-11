@@ -11,6 +11,7 @@ import {
 import { getVersionTeams } from '../../../utils/versionTeamManager';
 import { pushVersionToDB, setActiveVersionInDB, deleteVersionFromDB } from '../../../utils/fifaVersionsSync';
 import NewSeasonModal from '../../admin/NewSeasonModal';
+import Icon from '../../icons/Icon';
 
 const FifaVersionManagerTab = () => {
   const [versions, setVersions] = useState([]);
@@ -172,7 +173,7 @@ const FifaVersionManagerTab = () => {
         <div className="flex items-center gap-4">
           <div className="w-12 h-12 bg-system-blue rounded-xl 
                           flex items-center justify-center text-white text-xl font-bold">
-            🎮
+            
           </div>
           <div>
             <h2 className="text-2xl font-bold text-text-primary">FIFA Versionen-Manager</h2>
@@ -220,7 +221,7 @@ const FifaVersionManagerTab = () => {
             </p>
           </div>
           <div className="text-4xl">
-            🎮
+            
           </div>
         </div>
       </div>
@@ -336,7 +337,7 @@ const FifaVersionManagerTab = () => {
                 </div>
                 
                 <div className="text-2xl">
-                  {version.isLegacy ? '📚' : version.isCurrent ? '⚡' : '🎮'}
+                  <Icon name={version.isLegacy ? 'clock' : version.isCurrent ? 'zap' : 'dice'} size={18} strokeWidth={2.1} />
                 </div>
               </div>
 
@@ -378,7 +379,7 @@ const FifaVersionManagerTab = () => {
                 
                 {version.isActive && (
                   <div className="flex-1 px-3 py-2 text-center text-sm">
-                    <span className="text-system-green font-medium">✓ Aktive Version</span>
+                    <span className="text-system-green font-medium inline-flex items-center gap-1"><Icon name="check" size={13} strokeWidth={2.1} /> Aktive Version</span>
                   </div>
                 )}
               </div>
@@ -390,7 +391,7 @@ const FifaVersionManagerTab = () => {
       {/* Information Section */}
       <div className="bg-system-orange/10 border border-system-orange/25 rounded-xl p-6">
         <div className="flex items-start gap-3">
-          <span className="text-system-orange text-2xl">💡</span>
+          <span className="text-system-orange"><Icon name="bulb" size={20} strokeWidth={2.1} /></span>
           <div>
             <h4 className="karten-titel text-system-orange mb-2">FIFA Versionen-System</h4>
             <div className="space-y-2 text-sm text-system-orange">

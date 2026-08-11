@@ -297,7 +297,7 @@ function getSearchResults(query, data) {
           id: match.id,
           icon: 'football',
           title: `AEK ${match.goalsa || 0} - ${match.goalsb || 0} Real`,
-          description: `${saison(match)}${matchDate} • ${match.sds ? `⭐ SdS: ${match.sds}` : 'Kein SdS'}`,
+          description: `${saison(match)}${matchDate} • ${match.sds ? `SdS: ${match.sds}` : 'Kein SdS'}`,
           category: 'Spiel',
           tab: 'matches',
           action: { type: 'showMatch', matchId: match.id }

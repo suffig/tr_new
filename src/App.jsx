@@ -91,7 +91,7 @@ function App() {
         // Kurz verzögert, damit der Toast nicht im Mount-Trubel des App-Starts
         // untergeht (StrictMode-Doppelmount im Dev räumt frühe Toasts weg).
         setTimeout(() => {
-          toast('🎮 Heute ist Spieltag! Möge das bessere Team gewinnen.', { duration: 8000 });
+          toast('Heute ist Spieltag! Möge das bessere Team gewinnen.', { duration: 8000 });
         }, 1500);
       } else if (md < today) {
         localStorage.removeItem('fusta_next_matchday'); // abgelaufen → aufräumen
@@ -476,7 +476,7 @@ function ErrorBoundary({ children }) {
     return (
       <div className="flex items-center justify-center min-h-[50vh] p-4">
         <div className="alert alert-error max-w-md text-center">
-          <div className="text-4xl mb-4" aria-hidden="true">⚠️</div>
+          <div className="mb-4 flex justify-center" aria-hidden="true"><Icon name="warning" size={34} strokeWidth={1.8} /></div>
           <h3 className="text-lg font-semibold mb-2">Etwas ist schiefgelaufen</h3>
           <p className="text-sm mb-4">
             Ein unerwarteter Fehler ist aufgetreten. Bitte laden Sie die Seite neu.
