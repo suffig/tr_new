@@ -72,7 +72,15 @@ export default function AddTransactionTab() {
         throw new Error(`Transaction insert failed: ${transactionResult.error.message}`);
       }
 
+      // Update finances based on transaction type
+      await updateFinances(formData.team.trim(), formData.type.trim(), amount);
       // Kauf und Verkauf sind Wechsel — hier wird der Verlauf mitgeschrieben.
+      //
+      // ZULETZT, nach der Kontobuchung. Vorher stand dieser Block davor: haette
+      // wechselEintragen geworfen statt einen Fehler zurueckzugeben, waere die
+      // Transaktion gebucht und der Kontostand NICHT angepasst gewesen — Geld
+      // in der Liste, das auf keinem Konto fehlt. Der Verlauf ist die
+      // nachrangige Information und gehoert deshalb ans Ende.
       //
       // Bisher endete ein Spielerkauf in einer Geldbuchung, und dass jemand
       // die Seite gewechselt hat, stand nirgends: players.team wurde von Hand
@@ -100,8 +108,6 @@ export default function AddTransactionTab() {
         if (fehler) toast.error(`Wechsel nicht festgehalten: ${fehler.message}`);
       }
 
-      // Update finances based on transaction type
-      await updateFinances(formData.team.trim(), formData.type.trim(), amount);
       
       // Reset form and close modal
       setFormData({

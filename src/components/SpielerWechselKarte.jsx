@@ -6,7 +6,7 @@ import { getTeamDisplay } from '../constants/teams';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import { getCurrentFifaVersion } from '../utils/fifaVersionManager';
 import {
-  SEITEN, ladeWechsel, wechselVon, abschnitte, kaderSpiele,
+  SEITEN, ladeWechsel, wechselVon, abschnitte, kaderSpiele, seiteAmDatum,
   wechselEintragen, wechselLoeschen, heute,
 } from '../utils/spielerWechsel';
 
@@ -62,12 +62,21 @@ export default function SpielerWechselKarte({ player }) {
 
   const verlauf = useMemo(() => abschnitte(meine), [meine]);
   const spiele = useMemo(() => kaderSpiele(meine, matches || []), [meine, matches]);
-  const aktuelleSeite = verlauf.length ? verlauf[verlauf.length - 1].seite : null;
+  // Die Seite AM GEWAEHLTEN TAG, nicht die von heute: wer einen Wechsel auf
+  // ein zurueckliegendes Datum eintraegt, soll die Auswahl sehen, die dort
+  // gilt. Vorher wurde immer die heutige Seite ausgeblendet — bei einer
+  // Rueckdatierung war damit genau das falsche Ziel weggefiltert.
+  const seiteAmTag = useMemo(() => seiteAmDatum(meine, datum), [meine, datum]);
 
   if (laedt || alleWechsel == null) return null;
 
   const speichern = async () => {
     if (!ziel) { toast.error('Wohin soll der Wechsel gehen?'); return; }
+    if (ziel === seiteAmTag) {
+      toast.error(`${player.name} ist an diesem Tag bereits dort.`);
+      setZiel('');
+      return;
+    }
     setSpeichert(true);
     const { fehler } = await wechselEintragen({
       name: player.name,
@@ -140,7 +149,7 @@ export default function SpielerWechselKarte({ player }) {
       {formularOffen && (
         <div className="mt-3 pt-3 border-t border-border-light space-y-2">
           <div className="flex gap-1.5">
-            {SEITEN.filter((s) => s !== aktuelleSeite).map((s) => (
+            {SEITEN.filter((s) => s !== seiteAmTag).map((s) => (
               <button key={s} onClick={() => setZiel(s)}
                       className={`flex-1 py-2 rounded-xl text-caption1 font-semibold transition-colors ${
                         ziel === s ? 'bg-bg-elevated ring-2 ring-current text-text-primary'
@@ -168,10 +177,18 @@ export default function SpielerWechselKarte({ player }) {
       )}
 
       {/* Spiele im Kader. Bewusst so beschriftet — die App erfasst keine
-          Aufstellung, "Einsätze" wäre gelogen. */}
-      {(spiele.gesamt > 0 || spiele.ohneZuordnung > 0) && (
+          Aufstellung, "Einsätze" wäre gelogen.
+
+          Der Stichtag steht daneben und nicht als Warnung darunter: gezählt
+          wird ab der ersten erfassten Zeile, alles davor liegt ausserhalb
+          dessen, worüber der Verlauf etwas sagt. Anders herum stünde bei allen
+          41 Spielern dieselbe Meldung über 903 nicht zuordenbare Spiele. */}
+      {spiele.ab && (
         <div className="mt-3 pt-3 border-t border-border-light">
-          <div className="text-caption2 text-text-tertiary mb-1.5">Spiele im Kader</div>
+          <div className="flex items-baseline justify-between gap-2 mb-1.5">
+            <span className="text-caption2 text-text-tertiary">Spiele im Kader</span>
+            <span className="text-caption2 text-text-tertiary num-tabular">seit {datumLang(spiele.ab)}</span>
+          </div>
           <div className="flex gap-2">
             {['AEK', 'Real'].map((s) => (
               <div key={s} className="flex-1 min-w-0">
@@ -181,10 +198,16 @@ export default function SpielerWechselKarte({ player }) {
               </div>
             ))}
           </div>
-          {spiele.ohneZuordnung > 0 && (
+          {spiele.gesamt === 0 && spiele.Ehemalige === 0 && (
             <p className="text-caption2 text-text-tertiary mt-2">
-              {spiele.ohneZuordnung} {spiele.ohneZuordnung === 1 ? 'Spiel liegt' : 'Spiele liegen'} vor
-              dem Beginn der Erfassung und lassen sich keiner Seite zuordnen.
+              Seit dem Stichtag wurde noch kein Spiel erfasst.
+            </p>
+          )}
+          {spiele.ohneZuordnung > 0 && (
+            <p className="text-caption2 text-system-orange mt-2">
+              {spiele.ohneZuordnung} {spiele.ohneZuordnung === 1 ? 'Spiel liegt' : 'Spiele liegen'} im
+              erfassten Zeitraum, lassen sich aber keiner Seite zuordnen — vermutlich ist ein Wechsel
+              vor die eigene Startzeile datiert.
             </p>
           )}
         </div>

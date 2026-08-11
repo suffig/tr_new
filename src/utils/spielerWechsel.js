@@ -95,32 +95,46 @@ export function abschnitte(wechselDerPerson) {
 }
 
 /**
- * In wie vielen Spielen gehörte die Person zum Kader — je Seite.
- *
- * Ein Spiel zählt für die Seite, bei der die Person am Spieltag war. Spiele
- * vor der ersten erfassten Zeile zählen für niemanden und werden getrennt als
- * `ohneZuordnung` zurückgegeben, damit die Lücke sichtbar bleibt statt sich
- * still auf eine Seite zu schlagen.
- */
-export function kaderSpiele(wechselDerPerson, matches) {
-  const zaehler = { AEK: 0, Real: 0, Ehemalige: 0 };
-  let ohneZuordnung = 0;
-  for (const m of matches || []) {
-    if (!m?.date) continue;
-    const seite = seiteAmDatum(wechselDerPerson, m.date);
-    if (seite && zaehler[seite] != null) zaehler[seite] += 1;
-    else ohneZuordnung += 1;
-  }
-  return { ...zaehler, ohneZuordnung, gesamt: zaehler.AEK + zaehler.Real };
-}
-
-/**
  * Ab wann ist der Verlauf überhaupt belastbar? Vor diesem Datum wurde nichts
  * erfasst — jede Auswertung muss das sagen dürfen.
  */
 export function erfasstSeit(alleWechsel) {
   const daten = (alleWechsel || []).map((w) => String(w.datum).slice(0, 10)).filter(Boolean);
   return daten.length ? daten.sort()[0] : null;
+}
+
+/**
+ * In wie vielen Spielen gehörte die Person zum Kader — je Seite.
+ *
+ * Gezählt wird ERST AB der ersten erfassten Zeile. Alles davor liegt
+ * ausserhalb dessen, worüber der Verlauf etwas sagt.
+ *
+ * Das war zuerst anders gelöst: Spiele davor wurden als `ohneZuordnung`
+ * mitgezählt und angezeigt. Mit den echten Zahlen ist das unbrauchbar — bei
+ * 903 erfassten Spielen und einer Startzeile von heute stünde bei JEDEM der
+ * 41 Spieler "903 Spiele liegen vor dem Beginn der Erfassung" und sonst nur
+ * Nullen. Eine Karte, die bei allen dasselbe sagt, sagt nichts.
+ *
+ * `ab` nennt stattdessen den Stichtag, damit die Zahl einordbar bleibt.
+ * `ohneZuordnung` gibt es weiterhin, greift aber nur noch bei einer echten
+ * Lücke INNERHALB des erfassten Zeitraums — etwa wenn ein Wechsel
+ * nachträglich vor die eigene Startzeile datiert wird.
+ */
+export function kaderSpiele(wechselDerPerson, matches) {
+  const zaehler = { AEK: 0, Real: 0, Ehemalige: 0 };
+  const ab = erfasstSeit(wechselDerPerson);
+  let ohneZuordnung = 0;
+  if (!ab) return { ...zaehler, ohneZuordnung: 0, gesamt: 0, ab: null };
+
+  for (const m of matches || []) {
+    if (!m?.date) continue;
+    const tag = String(m.date).slice(0, 10);
+    if (tag < ab) continue;                 // vor dem Stichtag: kein Thema
+    const seite = seiteAmDatum(wechselDerPerson, tag);
+    if (seite && zaehler[seite] != null) zaehler[seite] += 1;
+    else ohneZuordnung += 1;
+  }
+  return { ...zaehler, ohneZuordnung, gesamt: zaehler.AEK + zaehler.Real, ab };
 }
 
 /* --------------------------------------------------------------------------
@@ -149,6 +163,17 @@ export async function wechselEintragen({
     verlauf = wechsel;
   }
   const meine = wechselVon(verlauf, name);
+
+  // Vor dem eigenen Stichtag geht nichts. Dort waere `von` unbekannt, die
+  // neue Zeile wuerde sich vor die Startzeile sortieren und die Laufbahn
+  // haette zwei Anfaenge. Der Verlauf beginnt bewusst am Stichtag.
+  const ab = erfasstSeit(meine);
+  if (ab && String(datum).slice(0, 10) < ab) {
+    return { fehler: new Error(
+      `Vor dem ${ab.split('-').reverse().join('.')} gibt es für ${name} keinen Verlauf — ` +
+      'so weit zurück lässt sich kein Wechsel eintragen.') };
+  }
+
   const von = seiteAmDatum(meine, datum);
   if (von === nach) {
     return { fehler: new Error(`${name} ist an diesem Tag bereits bei ${nach}.`) };
@@ -165,7 +190,49 @@ export async function wechselEintragen({
     transaktion_id: transaktionId,
     notiz,
   });
-  return { eintrag: data, fehler: error };
+  if (error) return { fehler: error };
+
+  // Den Kader nachziehen.
+  //
+  // Ohne das widersprechen sich zwei Anzeigen derselben Sache: der Verlauf
+  // sagt "seit heute bei Philip", die Kaderliste zeigt ihn weiter bei
+  // Alexander, weil dort players.team steht. Wer den Wechsel eintraegt, hat
+  // ihn gemeint — also wird er auch vollzogen.
+  //
+  // Nur wenn dieser Wechsel der juengste ist: eine nachtraegliche Korrektur
+  // mitten im Verlauf darf den heutigen Stand nicht umwerfen.
+  const juengster = meine.length === 0
+    || String(datum).slice(0, 10) >= String(meine[meine.length - 1].datum).slice(0, 10);
+  if (juengster) {
+    const { fehler: kaderFehler } = await kaderNachziehen(name, nach, fifaVersion);
+    if (kaderFehler) return { eintrag: data, fehler: null, kaderFehler };
+  }
+
+  return { eintrag: data, fehler: null };
+}
+
+/**
+ * players.team der laufenden Saison auf die neue Seite setzen.
+ *
+ * Ueber den Namen, nicht ueber die id: der Wechsel kann aus dem
+ * Transaktions-Formular kommen, wo es keine Spielerzeile gibt, sondern nur
+ * einen eingetippten Namen.
+ */
+async function kaderNachziehen(name, nach, fifaVersion) {
+  const { data, error } = await supabaseDb.select('players', 'id,name,team,fifa_version', {
+    skipFifaFilter: true,
+  });
+  if (error) return { fehler: error };
+  const k = nameKey(name);
+  const treffer = (data || []).filter(
+    (p) => nameKey(p.name) === k && (p.fifa_version || 'FC25') === fifaVersion);
+  if (treffer.length === 0) return { fehler: null };   // nur im Verlauf, kein Kadereintrag
+  for (const p of treffer) {
+    if (p.team === nach) continue;
+    const { error: e } = await supabaseDb.update('players', { team: nach }, p.id);
+    if (e) return { fehler: e };
+  }
+  return { fehler: null };
 }
 
 /** Einen falsch eingetragenen Wechsel wieder entfernen. */
