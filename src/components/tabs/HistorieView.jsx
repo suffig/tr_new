@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import SpielerWappen from '../SpielerWappen';
@@ -160,26 +161,15 @@ export default function HistorieView() {
         <>
           <div className="modern-card p-4">
             <div className="text-footnote font-semibold text-text-muted mb-3">Sperren je Team</div>
-            <div className="grid grid-cols-2 gap-2">
-              {['AEK', 'Real'].map((team) => {
-                const t = disz.teams[team];
-                return (
-                  <div key={team} className="panel-gray rounded-xl p-3">
-                    <div className="flex items-center gap-1.5 mb-1.5">
-                      <TeamLogo team={team.toLowerCase()} size="xs" />
-                      <span className={`text-footnote font-semibold truncate ${
-                        team === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
-                        {getTeamDisplay(team)}
-                      </span>
-                    </div>
-                    <div className="stat-display text-[22px] num-tabular text-text-primary">{t.anzahl}</div>
-                    <div className="text-caption2 text-text-tertiary">
-                      {t.anzahl === 1 ? 'Sperre' : 'Sperren'} · {t.spiele} verpasste{' '}
-                      {t.spiele === 1 ? 'Spiel' : 'Spiele'}
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="divide-y divide-border-light">
+              <Kraefteverhaeltnis
+                label="Sperren"
+                aek={disz.teams.AEK.anzahl} real={disz.teams.Real.anzahl}
+                aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+              <Kraefteverhaeltnis
+                label="Verpasste Spiele" zusatz="dadurch"
+                aek={disz.teams.AEK.spiele} real={disz.teams.Real.spiele}
+                aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
             </div>
             {disz.arten.length > 0 && (
               <div className="mt-3 pt-3 border-t border-border-light space-y-1.5">

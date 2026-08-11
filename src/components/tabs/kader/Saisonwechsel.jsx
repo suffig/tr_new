@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import Kraefteverhaeltnis from '../../Kraefteverhaeltnis';
 import toast from 'react-hot-toast';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
@@ -198,23 +199,21 @@ function Abschluss({ stand, version, onAktualisieren, onWeiter }) {
           </p>
         )}
 
-        <div className="grid grid-cols-2 gap-x-4 gap-y-1.5 text-caption1">
-          {['AEK', 'Real'].map((team) => {
-            const s = team === 'AEK' ? stand.aek : stand.real;
-            return (
-              <div key={team} className="panel-gray rounded-xl p-2.5">
-                <div className={`text-caption2 font-semibold mb-1 ${team === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
-                  {getTeamDisplay(team, version)}
-                </div>
-                <div className="flex justify-between"><span className="text-text-secondary">Konto</span>
-                  <span className="num-tabular text-text-primary">{mio(s.konto)}</span></div>
-                <div className="flex justify-between"><span className="text-text-secondary">Kader</span>
-                  <span className="num-tabular text-text-primary">{s.kaderwert.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Mio</span></div>
-                <div className="flex justify-between"><span className="text-text-secondary">Spieler</span>
-                  <span className="num-tabular text-text-primary">{s.spieler}</span></div>
-              </div>
-            );
-          })}
+        <div className="divide-y divide-border-light">
+          <Kraefteverhaeltnis
+            label="Konto" klein
+            aek={stand.aek.konto} real={stand.real.konto}
+            anzeige={(n) => mio(n)}
+            aekName={getTeamDisplay('AEK', version)} realName={getTeamDisplay('Real', version)} />
+          <Kraefteverhaeltnis
+            label="Kaderwert" klein
+            aek={stand.aek.kaderwert} real={stand.real.kaderwert}
+            anzeige={(n) => `${n.toLocaleString('de-DE', { maximumFractionDigits: 1 })} Mio`}
+            aekName={getTeamDisplay('AEK', version)} realName={getTeamDisplay('Real', version)} />
+          <Kraefteverhaeltnis
+            label="Spieler" klein
+            aek={stand.aek.spieler} real={stand.real.spieler}
+            aekName={getTeamDisplay('AEK', version)} realName={getTeamDisplay('Real', version)} />
         </div>
 
         {stand.torschuetzenkoenig && (

@@ -30,6 +30,7 @@ const TRINKER = [
 ];
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { dataManager } from '../../../dataManager.js';
+import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 
 export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   // Sub-navigation state
@@ -1238,19 +1239,26 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
         const net = sterneData.philip - sterneData.alex; // positive = Philip leads
         const absNet = Math.abs(net);
         const leader = net > 0 ? managers.real.name : net < 0 ? managers.aek.name : null;
-        const leaderColor = net > 0 ? 'green' : 'blue';
+        // Philip ist rot, nicht gruen. Hier stand `net > 0 ? 'green' : 'blue'`,
+        // Philip fuehrte also in einer Farbe, die ihm in der ganzen uebrigen
+        // App nicht gehoert — damit sagte die Farbe des Fuehrenden nichts mehr.
+        const leaderKlasse = net > 0 ? 'text-system-red' : 'text-system-blue';
 
         const starOptions = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
 
         return (
           <>
             {/* Balance card */}
-            <div className={`modern-card mb-6 border-2 ${leader ? `border-system-yellow/45 bg-system-yellow` : 'border-border-light bg-bg-tertiary'}`}>
+            {/* Vorher: vollflaechig gelber Kartenhintergrund mit zweifarbigem
+                Rand, darauf farbiger Text — beides gab es nur an dieser Stelle
+                der App. Jetzt eine ruhige Karte, der gelbe Stern ist der
+                Akzent. */}
+            <div className="modern-card mb-6">
               <div className="text-center mb-5">
                 <div className="flex justify-center mb-2 text-system-yellow"><Icon name="starFilled" size={38} strokeWidth={0} /></div>
                 {leader ? (
                   <>
-                    <div className={`text-2xl font-black ${leaderColor === 'green' ? 'text-system-green' : 'text-system-blue'} mb-1`}>
+                    <div className={`text-title3 font-bold ${leaderKlasse} mb-1`}>
                       {leader} führt
                     </div>
                     <div className="flex justify-center gap-1 text-3xl mb-1">
@@ -1268,24 +1276,19 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 )}
               </div>
 
-              {/* Per-person totals */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
-                <div className="bg-system-blue/10 border-2 border-system-blue/25 rounded-xl p-3 text-center">
-                  <div className="text-system-blue font-bold text-sm mb-1">{managers.aek.name}</div>
-                  <div className="flex justify-center gap-0.5 text-xl mb-1">{renderStars(sterneData.alex, 5)}</div>
-                  <div className="text-2xl font-black text-system-blue">
-                    {dezKurz(sterneData.alex)}
-                  </div>
-                  <div className="text-xs text-system-blue">Sterne gesamt</div>
-                </div>
-                <div className="bg-system-red/10 border-2 border-system-red/25 rounded-xl p-3 text-center">
-                  <div className="text-system-red font-bold text-sm mb-1">{managers.real.name}</div>
-                  <div className="flex justify-center gap-0.5 text-xl mb-1">{renderStars(sterneData.philip, 5)}</div>
-                  <div className="text-2xl font-black text-system-red">
-                    {dezKurz(sterneData.philip)}
-                  </div>
-                  <div className="text-xs text-system-red">Sterne gesamt</div>
-                </div>
+              {/* Die Gesamtstaende standen als zwei Kacheln nebeneinander,
+                  jede mit Namen, Sternreihe und Zahl. Wer mehr hat, musste man
+                  quer ueber die Luecke vergleichen — genau das zeigt die
+                  geteilte Flaeche unmittelbar, wie ueberall sonst in der App.
+                  Die Sternreihe steht oben beim Vorsprung, wo sie etwas
+                  aussagt; zweimal fuenf Sterne nebeneinander waren vor allem
+                  Dekoration. */}
+              <div className="mb-6 pt-3 border-t border-border-light">
+                <Kraefteverhaeltnis
+                  label="Sterne gesamt"
+                  aek={sterneData.alex} real={sterneData.philip}
+                  anzeige={(n) => dezKurz(n)}
+                  aekName={managers.aek.name} realName={managers.real.name} />
               </div>
 
               {/* Star entry form */}
