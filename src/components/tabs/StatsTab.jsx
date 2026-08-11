@@ -905,11 +905,14 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         </div>
 
         <div className="p-5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="flex flex-col items-center gap-1.5 w-24 min-w-0">
-              <TeamLogo team="aek" size="lg" />
-              <span className="text-xs font-semibold text-system-blue text-center truncate w-full">{getTeamDisplay('AEK')}</span>
-            </div>
+          {/* Wappen und Stand in einer Zeile, die Namen in einer eigenen
+              darunter. Vorher standen die Namen unter den Wappen in einer
+              w-24-Spalte — das sind genau 96 px, und "Dynamo Dresden" braucht
+              100. Der grosse Spielstand in der Mitte laesst links und rechts
+              auch bei flex-1 nicht mehr Platz; eine eigene Zeile schon: dort
+              hat jeder Name die halbe Kartenbreite. */}
+          <div className="flex items-center justify-between gap-3">
+            <TeamLogo team="aek" size="lg" />
             <div className="text-center flex-shrink-0">
               <div className="stat-display text-[38px] flex items-baseline justify-center gap-2">
                 <CountUp value={h2h.aekWins} className="text-system-blue" />
@@ -918,10 +921,11 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
               </div>
               <div className="text-caption2 text-text-tertiary mt-1.5">Siege</div>
             </div>
-            <div className="flex flex-col items-center gap-1.5 w-24 min-w-0">
-              <TeamLogo team="real" size="lg" />
-              <span className="text-xs font-semibold text-system-red text-center truncate w-full">{getTeamDisplay('Real')}</span>
-            </div>
+            <TeamLogo team="real" size="lg" />
+          </div>
+          <div className="flex justify-between gap-3 mt-2">
+            <span className="text-xs font-semibold text-system-blue truncate min-w-0">{getTeamDisplay('AEK')}</span>
+            <span className="text-xs font-semibold text-system-red truncate min-w-0 text-right">{getTeamDisplay('Real')}</span>
           </div>
 
           {/* Win share bar */}
@@ -1060,97 +1064,47 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             daneben — sie gehört inhaltlich zu den Sperren. Die Überschrift kam
             zudem in der Teams-Ansicht ein zweites Mal vor. */}
 
-        {/* Longest Winning Streaks */}
-        <div className="modern-card">
-          <h3 className="text-title3 mb-4 inline-flex items-center gap-2">
-            <Icon name="zap" size={18} strokeWidth={2.2} className="text-system-orange" />
+        {/* Längste Siegesserien.
+            Standen als zwei Kacheln nebeneinander mit Wappen und Vereinsnamen.
+            Auf 375 px blieben je rund 96 px fuer den Namen — "Dynamo Dresden"
+            brauchte 100 und wurde abgeschnitten, laengere Vereinsnamen erst
+            recht. Als Kraefteverhaeltnis stellt sich die Frage nicht mehr: die
+            Farbe sagt, wer gemeint ist, so wie in dieser Ansicht inzwischen
+            ueberall. Die Zeitraeume stehen darunter an ihrer jeweiligen Seite.
+            Vorleseprogramme bekommen die Namen weiterhin. */}
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-1 inline-flex items-center gap-2">
+            <Icon name="zap" size={15} strokeWidth={2.2} className="text-system-orange" />
             Längste Siegesserien
-          </h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {[
-              { key: 'aek', team: 'AEK', accent: 'text-system-blue', data: winningStreaks.aek },
-              { key: 'real', team: 'Real', accent: 'text-system-red', data: winningStreaks.real },
-            ].map((side) => (
-              <div key={side.key} className="bg-bg-tertiary rounded-xl p-4">
-                <div className="flex items-center gap-2.5 mb-2">
-                  <TeamLogo team={side.key} size="sm" />
-                  <span className="text-footnote font-semibold text-text-secondary truncate">
-                    {getTeamDisplay(side.team)}
-                  </span>
-                </div>
-                <div className={`stat-display text-[26px] ${side.accent}`}>
-                  {side.data.streak}
-                  <span className="text-footnote font-semibold text-text-tertiary ml-1.5">
-                    {side.data.streak === 1 ? 'Sieg' : 'Siege'}
-                  </span>
-                </div>
-                {side.data.startDate && side.data.endDate ? (
-                  <div className="text-caption2 text-text-tertiary num-tabular mt-1.5">
-                    {new Date(side.data.startDate).toLocaleDateString('de-DE')}
-                    {' – '}
-                    {new Date(side.data.endDate).toLocaleDateString('de-DE')}
-                  </div>
-                ) : (
-                  <div className="text-caption2 text-text-tertiary mt-1.5">
-                    {side.data.streak === 0 ? 'Keine Serie im Zeitraum' : 'Kein Datumsbereich verfügbar'}
-                  </div>
-                )}
-              </div>
+          </div>
+          <Kraefteverhaeltnis
+            label="Siege in Folge" zusatz="im gewählten Zeitraum"
+            aek={winningStreaks.aek.streak} real={winningStreaks.real.streak}
+            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+          <div className="flex justify-between gap-3 text-caption2 text-text-tertiary num-tabular mt-1">
+            {[winningStreaks.aek, winningStreaks.real].map((seite, i) => (
+              <span key={i} className={`min-w-0 truncate ${i ? 'text-right' : ''}`}>
+                {seite.startDate && seite.endDate
+                  ? `${new Date(seite.startDate).toLocaleDateString('de-DE')} – ${new Date(seite.endDate).toLocaleDateString('de-DE')}`
+                  : seite.streak === 0 ? 'keine Serie' : '—'}
+              </span>
             ))}
           </div>
-
         </div>
 
-        {/* Other Interesting Statistics */}
-        <div className="modern-card">
-          <h3 className="text-title3 mb-4 inline-flex items-center gap-2"><Icon name="bulb" size={18} strokeWidth={2.2} className="text-system-yellow" />Besondere Statistiken</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {(() => {
-              // Wer am haeufigsten getroffen hat — gezaehlt in Spielen mit
-              // Tor, nicht in Einsaetzen: die stehen nirgends.
-              let bestRatio = 0;
-              let bestPlayer = 'Keine Daten';
-              playerStats.forEach((player) => {
-                if (player.trefferSpiele > bestRatio) {
-                  bestRatio = player.trefferSpiele; bestPlayer = player.name;
-                }
-              });
+        {/* "Besondere Statistiken" stand hier — zwei Kacheln, beide unbrauchbar:
 
-              // Team balance (how close the teams are in wins)
-              const aekWins = teamRecords.aek.wins;
-              const realWins = teamRecords.real.wins;
-              const balance = (aekWins + realWins) === 0
-                ? 100
-                : (Math.min(aekWins, realWins) / Math.max(aekWins, realWins)) * 100;
+            "Effizientester Spieler ... 12,00 Tore/Spiel" nahm bestRatio =
+            player.trefferSpiele, also die ANZAHL DER SPIELE MIT TOR, und
+            beschriftete sie als Tore je Spiel. Wer in zwoelf Spielen getroffen
+            hat, stand dort mit "12,00 Tore/Spiel". Die Variable wurde beim
+            Umbau auf Trefferspiele umgestellt, das Etikett nicht. Und selbst
+            richtig beschriftet waere es "in den meisten Spielen getroffen" —
+            das steht bei jedem Spieler als "Trifft in".
 
-              return (
-                <>
-                  <div className="bg-bg-tertiary rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-1">
-                      <Icon name="star" size={15} strokeWidth={2.2} className="text-system-orange" />
-                      Effizientester Spieler
-                    </div>
-                    <div className="text-title3 font-bold text-text-primary truncate">{bestPlayer}</div>
-                    <div className="text-caption2 text-text-tertiary num-tabular mt-0.5">
-                      {bestRatio > 0 ? `${dez(bestRatio)} Tore/Spiel` : 'Keine Daten'}
-                    </div>
-                  </div>
-
-                  <div className="bg-bg-tertiary rounded-xl p-4">
-                    <div className="flex items-center gap-2 text-footnote font-medium text-text-muted mb-1">
-                      <Icon name="scale" size={15} strokeWidth={2.2} className="text-system-blue" />
-                      Team-Balance
-                    </div>
-                    <div className="stat-display text-title3 text-system-blue">{balance.toFixed(0)}%</div>
-                    <div className="text-caption2 text-text-tertiary num-tabular mt-0.5">
-                      Ausgeglichenheit ({aekWins}:{realWins})
-                    </div>
-                  </div>
-                </>
-              );
-            })()}
-          </div>
-        </div>
+            "Team-Balance 67 % · Ausgeglichenheit (2:1)" war min/max der Siege
+            als Prozentzahl. Ein erfundener Index fuer etwas, das der Balken im
+            Direktvergleich zwei Karten weiter oben unmittelbar zeigt. */}
 
       {/* Team-Bilanz, Torschuetzenliste und SdS-Liste standen hier ein
           zweites Mal: Siege/Niederlagen/Zu Null wiederholen den
