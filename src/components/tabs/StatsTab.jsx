@@ -5,6 +5,7 @@ import { useAktuelleSaison } from '../../hooks/useAktuelleSaison';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import VorsprungVerlauf from './stats/VorsprungVerlauf';
+import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 import MatchDayOverview from '../MatchDayOverview';
 import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
@@ -1603,34 +1604,16 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <span className="text-caption2 text-text-tertiary">neueste zuerst</span>
           </div>
           <div className="divide-y divide-border-light">
-            {monate.map((m) => {
-              const entschieden = m.aekS + m.realS;
-              const anteil = entschieden > 0 ? (m.aekS / entschieden) * 100 : 50;
-              return (
-                <div key={m.key} className="py-2.5">
-                  <div className="flex items-baseline gap-2 mb-1.5">
-                    <span className={`text-footnote font-bold num-tabular ${
-                      m.aekS > m.realS ? 'text-system-blue' : 'text-text-secondary'}`}>{m.aekS}</span>
-                    <span className="flex-1 text-center text-caption2 text-text-tertiary truncate">
-                      {m.name}
-                      <span className="block text-[10px] opacity-80">
-                        {m.spiele} {m.spiele === 1 ? 'Spiel' : 'Spiele'}
-                        {m.remis > 0 ? ` · ${m.remis} Remis` : ''}
-                        {' · '}{m.aekT}:{m.realT} Tore
-                      </span>
-                    </span>
-                    <span className={`text-footnote font-bold num-tabular ${
-                      m.realS > m.aekS ? 'text-system-red' : 'text-text-secondary'}`}>{m.realS}</span>
-                  </div>
-                  <div className="relative h-1.5 rounded-full overflow-hidden bg-bg-tertiary flex">
-                    <div className="bg-system-blue h-full" style={{ width: `${anteil}%` }} />
-                    <div className="bg-system-red h-full" style={{ width: `${100 - anteil}%` }} />
-                    <div className="absolute inset-y-0 left-1/2 w-px bg-bg-secondary/70" />
-                  </div>
-                  <div className="sr-only">{aekName} {m.aekS} Siege, {realName} {m.realS} Siege</div>
-                </div>
-              );
-            })}
+            {monate.map((m) => (
+              <Kraefteverhaeltnis
+                key={m.key} klein
+                label={m.name}
+                zusatz={`${m.spiele} ${m.spiele === 1 ? 'Spiel' : 'Spiele'}`
+                  + (m.remis > 0 ? ` · ${m.remis} Remis` : '')
+                  + ` · ${m.aekT}:${m.realT} Tore`}
+                aek={m.aekS} real={m.realS}
+                aekName={aekName} realName={realName} />
+            ))}
           </div>
         </div>
       </div>

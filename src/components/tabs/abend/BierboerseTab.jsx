@@ -1,4 +1,5 @@
 import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import Kraefteverhaeltnis from '../../Kraefteverhaeltnis';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../../icons/Icon';
@@ -59,6 +60,63 @@ function Kruege({ note, groesse = 14 }) {
 }
 
 /** Note setzen: elf Knöpfe, direkt antippbar. */
+/**
+ * Zwei Noten auf einer gemeinsamen Skala.
+ *
+ * Fuer Mengen — Glaeser, Ausgaben, Siege — ist die geteilte Flaeche die
+ * richtige Darstellung: 12 zu 9 Glaeser sind wirklich 57 % zu 43 % des
+ * Getrunkenen. Fuer Noten ist sie falsch. 7,5 zu 7,0 waeren 52 % zu 48 %, ein
+ * fast mittiger Balken — er behauptete Gleichstand, wo auf einer Skala von
+ * null bis zehn ein halber Punkt Unterschied liegt. Eine Note ist keine Menge,
+ * die man zwischen zweien aufteilt.
+ *
+ * Also die Skala selbst: null links, zehn rechts, zwei Punkte darauf. Der
+ * Abstand zwischen ihnen ist die Uneinigkeit, und die Lage sagt zusaetzlich,
+ * ob es beiden gut oder beiden schlecht geschmeckt hat — das geht in jedem
+ * Verhaeltnisbalken verloren.
+ */
+function Notenvergleich({ label, aek, real, aekName, realName, klein = false }) {
+  const a = Math.min(10, Math.max(0, Number(aek) || 0));
+  const r = Math.min(10, Math.max(0, Number(real) || 0));
+  const einig = Math.abs(a - r) < 0.05;
+  const pos = (v) => `${(v / 10) * 100}%`;
+  const von = Math.min(a, r), bis = Math.max(a, r);
+
+  return (
+    <div className={klein ? 'py-2' : 'py-2.5'}>
+      <div className={`flex items-baseline gap-2 ${klein ? 'mb-1.5' : 'mb-2'}`}>
+        <span className={`${klein ? 'text-footnote' : 'text-callout'} font-bold num-tabular ${
+          a > r ? 'text-system-blue' : 'text-text-secondary'}`}>{note(a)}</span>
+        <span className="flex-1 text-center text-caption2 text-text-tertiary truncate">{label}</span>
+        <span className={`${klein ? 'text-footnote' : 'text-callout'} font-bold num-tabular ${
+          r > a ? 'text-system-red' : 'text-text-secondary'}`}>{note(r)}</span>
+      </div>
+      <div className="relative h-1.5 rounded-full bg-bg-tertiary">
+        {/* Die Strecke zwischen den beiden Noten — so weit lagt ihr auseinander. */}
+        {!einig && (
+          <div className="absolute inset-y-0 bg-text-tertiary/30 rounded-full"
+               style={{ left: pos(von), width: pos(bis - von) }} />
+        )}
+        {einig ? (
+          <span className="absolute w-2.5 h-2.5 rounded-full bg-system-green border-2 border-bg-secondary"
+                style={{ left: pos(a), top: '50%', transform: 'translate(-50%, -50%)' }} />
+        ) : (
+          <>
+            <span className="absolute w-2.5 h-2.5 rounded-full bg-system-blue border-2 border-bg-secondary"
+                  style={{ left: pos(a), top: '50%', transform: 'translate(-50%, -50%)' }} />
+            <span className="absolute w-2.5 h-2.5 rounded-full bg-system-red border-2 border-bg-secondary"
+                  style={{ left: pos(r), top: '50%', transform: 'translate(-50%, -50%)' }} />
+          </>
+        )}
+      </div>
+      <div className="sr-only">
+        {label}: {aekName} {note(a)} von 10, {realName} {note(r)} von 10.
+        {einig ? ' Einig.' : ''}
+      </div>
+    </div>
+  );
+}
+
 function NotenWahl({ wert, onChange, farbe, beschriftung = 'Note' }) {
   return (
     <div className="flex flex-wrap gap-1">
@@ -859,6 +917,8 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
   }
 
   const maxGlaeser = Math.max(1, ...b.proBoerse.map((e) => e.glaeser));
+  const aekSumme = b.proPerson[PERSONEN[0].team];
+  const realSumme = b.proPerson[PERSONEN[1].team];
 
   const rekorde = [
     b.rekorde.groessterAbend && {
@@ -922,32 +982,33 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
         )}
       </div>
 
-      {/* Je Person über alles */}
-      <div className="grid grid-cols-2 gap-2">
-        {PERSONEN.map((p) => {
-          const s = b.proPerson[p.team];
-          return (
-            <div key={p.key} className="modern-card p-3">
-              <div className="flex items-center gap-1.5 mb-2">
-                <TeamLogo team={p.key} size="xs" />
-                <span className={`text-footnote font-semibold truncate ${p.farbe}`}>{p.name}</span>
-              </div>
-              <div className="space-y-0.5 text-caption1">
-                {[
-                  ['Gläser', s.glaeser],
-                  ['Liter', kommaEins(s.ml / 1000, 2)],
-                  ['Ausgaben', euro(s.ausgaben)],
-                  ['Ø Note', note(s.schnitt)],
-                ].map(([k, v]) => (
-                  <div key={k} className="flex justify-between gap-2">
-                    <span className="text-text-secondary">{k}</span>
-                    <span className="num-tabular text-text-primary">{v}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+      {/* Je Person über alles.
+          Standen als zwei Karten nebeneinander, jede mit vier Zeilen
+          "Schlüssel — Wert". Wer wissen wollte, ob er mehr getrunken oder mehr
+          ausgegeben hat als der andere, musste die Zahlen quer über die Lücke
+          zwischen den Karten vergleichen. Als geteilte Fläche ist genau das
+          die Darstellung — dieselbe wie im Duell und in der Statistik. */}
+      <div className="modern-card p-4">
+        <div className="text-footnote font-semibold text-text-muted mb-1">Wer wie viel</div>
+        <div className="divide-y divide-border-light">
+          <Kraefteverhaeltnis
+            label="Gläser" aek={aekSumme.glaeser} real={realSumme.glaeser}
+            aekName={PERSONEN[0].name} realName={PERSONEN[1].name} />
+          <Kraefteverhaeltnis
+            label="Liter" aek={aekSumme.ml / 1000} real={realSumme.ml / 1000}
+            anzeige={(n) => kommaEins(n, 2)}
+            aekName={PERSONEN[0].name} realName={PERSONEN[1].name} />
+          <Kraefteverhaeltnis
+            label="Ausgaben" aek={aekSumme.ausgaben} real={realSumme.ausgaben}
+            anzeige={(n) => euro(n)}
+            aekName={PERSONEN[0].name} realName={PERSONEN[1].name} />
+          {/* Die Note nicht als geteilte Fläche, sondern auf ihrer Skala —
+              warum, steht bei Notenvergleich. */}
+          <Notenvergleich
+            label="Ø Note (0–10)"
+            aek={aekSumme.schnitt} real={realSumme.schnitt}
+            aekName={PERSONEN[0].name} realName={PERSONEN[1].name} />
+        </div>
       </div>
 
       {/* Geschmacks-Duell */}
@@ -976,25 +1037,14 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
 
           {/* Je Kategorie: wer vergibt hier mehr Punkte */}
           {duell.proKategorie.length > 0 && (
-            <div className="space-y-2 mb-3">
-              {duell.proKategorie.map((k) => {
-                const gesamt = (k.aek || 0) + (k.real || 0);
-                const anteilAek = gesamt ? (k.aek / gesamt) * 100 : 50;
-                return (
-                  <div key={k.id}>
-                    <div className="flex items-baseline gap-2 text-caption2 mb-1">
-                      <span className="text-text-secondary">{k.label}</span>
-                      <span className="ml-auto num-tabular text-system-blue font-semibold">{note(k.aek)}</span>
-                      <span className="text-text-tertiary">:</span>
-                      <span className="num-tabular text-system-red font-semibold">{note(k.real)}</span>
-                    </div>
-                    <div className="flex h-1.5 rounded-full overflow-hidden bg-bg-tertiary">
-                      <div className="bg-system-blue" style={{ width: `${anteilAek}%` }} />
-                      <div className="bg-system-red" style={{ width: `${100 - anteilAek}%` }} />
-                    </div>
-                  </div>
-                );
-              })}
+            <div className="divide-y divide-border-light mb-3">
+              {duell.proKategorie.map((k) => (
+                <Notenvergleich
+                  key={k.id} klein
+                  label={k.label}
+                  aek={k.aek} real={k.real}
+                  aekName={PERSONEN[0].name} realName={PERSONEN[1].name} />
+              ))}
             </div>
           )}
 
