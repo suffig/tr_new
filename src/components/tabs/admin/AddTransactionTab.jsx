@@ -5,6 +5,9 @@ import Icon from '../../icons/Icon';
 import { supabaseDb } from '../../../utils/supabase';
 import { TEAMS, getTeamDisplay } from '../../../constants/teams';
 import toast from 'react-hot-toast';
+import { wechselEintragen } from '../../../utils/spielerWechsel';
+import { getCurrentFifaVersion } from '../../../utils/fifaVersionManager';
+import { useSupabaseQuery } from '../../../hooks/useSupabase';
 
 // Ohne Icon-Feld: die Liste steht in einem <select>, und in einem <option>
 // kann kein SVG stehen. Vorher trug jeder Eintrag ein Emoji — die einzige
@@ -26,9 +29,14 @@ export default function AddTransactionTab() {
     type: '',
     amount: '',
     info: '',
-    date: new Date().toISOString().split('T')[0]
+    date: new Date().toISOString().split('T')[0],
+    // Nur fuer Kauf und Verkauf: welcher Spieler, und wohin er geht.
+    spieler: '',
+    wechselZiel: '',
   });
   const [loading, setLoading] = useState(false);
+  // Fuer die Namensvorschlaege im Spielerfeld.
+  const { data: spieler } = useSupabaseQuery('players', 'id,name,team');
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -64,6 +72,34 @@ export default function AddTransactionTab() {
         throw new Error(`Transaction insert failed: ${transactionResult.error.message}`);
       }
 
+      // Kauf und Verkauf sind Wechsel — hier wird der Verlauf mitgeschrieben.
+      //
+      // Bisher endete ein Spielerkauf in einer Geldbuchung, und dass jemand
+      // die Seite gewechselt hat, stand nirgends: players.team wurde von Hand
+      // ueberschrieben und der alte Wert war weg. Der Wechsel haengt jetzt an
+      // der Transaktion (transaktion_id), damit spaeter nachvollziehbar ist,
+      // was er gekostet hat.
+      //
+      // Freiwillig: bleibt das Spielerfeld leer, passiert nichts weiter —
+      // eine Sammelbuchung ohne konkreten Spieler soll moeglich bleiben.
+      const istWechsel = ['Spielerkauf', 'Spielerverkauf'].includes(formData.type.trim());
+      if (istWechsel && formData.spieler.trim()) {
+        const nach = formData.type.trim() === 'Spielerkauf'
+          ? formData.team.trim()             // wer kauft, bekommt ihn
+          : (formData.wechselZiel || 'Ehemalige');
+        const { fehler } = await wechselEintragen({
+          name: formData.spieler.trim(),
+          nach,
+          datum: formData.date,
+          fifaVersion: getCurrentFifaVersion(),
+          transaktionId: transactionResult.data?.id ?? null,
+          notiz: `${formData.type.trim()} · ${amount.toLocaleString('de-DE')} €`,
+        });
+        // Die Geldbuchung ist durch — ein Fehler beim Verlauf darf sie nicht
+        // zurueckrollen, aber er muss sichtbar sein.
+        if (fehler) toast.error(`Wechsel nicht festgehalten: ${fehler.message}`);
+      }
+
       // Update finances based on transaction type
       await updateFinances(formData.team.trim(), formData.type.trim(), amount);
       
@@ -73,7 +109,9 @@ export default function AddTransactionTab() {
         type: '',
         amount: '',
         info: '',
-        date: new Date().toISOString().split('T')[0]
+        date: new Date().toISOString().split('T')[0],
+        spieler: '',
+        wechselZiel: '',
       });
       setShowModal(false);
       
@@ -213,6 +251,56 @@ export default function AddTransactionTab() {
                     ))}
                   </select>
                 </div>
+
+                {/* Spieler — nur bei Kauf und Verkauf. */}
+                {['Spielerkauf', 'Spielerverkauf'].includes(formData.type) && (
+                  <div className="space-y-3 p-3 rounded-xl bg-bg-tertiary">
+                    <div>
+                      <label className="block text-sm font-medium text-text-primary mb-2">
+                        Welcher Spieler?
+                      </label>
+                      <input
+                        list="fusta-spielerliste"
+                        value={formData.spieler}
+                        onChange={(e) => handleInputChange('spieler', e.target.value)}
+                        placeholder="Name — leer lassen, wenn es um keinen bestimmten geht"
+                        className="form-input"
+                        disabled={loading}
+                      />
+                      <datalist id="fusta-spielerliste">
+                        {(spieler || []).map((p) => <option key={p.id} value={p.name} />)}
+                      </datalist>
+                    </div>
+
+                    {formData.type === 'Spielerverkauf' && formData.spieler.trim() && (
+                      <div>
+                        <label className="block text-sm font-medium text-text-primary mb-2">
+                          Wohin geht er?
+                        </label>
+                        <div className="flex gap-1.5">
+                          {[
+                            { wert: formData.team === 'AEK' ? 'Real' : 'AEK',
+                              text: getTeamDisplay(formData.team === 'AEK' ? 'Real' : 'AEK') },
+                            { wert: 'Ehemalige', text: 'Ehemalige' },
+                          ].map((o) => (
+                            <button key={o.wert} type="button"
+                                    onClick={() => handleInputChange('wechselZiel', o.wert)}
+                                    className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-colors ${
+                                      (formData.wechselZiel || 'Ehemalige') === o.wert
+                                        ? 'bg-bg-elevated ring-2 ring-current text-text-primary'
+                                        : 'bg-bg-secondary text-text-secondary'}`}>
+                              {o.text}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <p className="text-xs text-text-muted">
+                      Wird als Wechsel festgehalten und mit dieser Buchung verknüpft.
+                    </p>
+                  </div>
+                )}
 
                 {/* Amount */}
                 <div>

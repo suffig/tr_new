@@ -5,6 +5,7 @@ import { dez } from '../utils/zahlen';
 import Icon from './icons/Icon';
 import SpielerWappen from './SpielerWappen';
 import PlayerKarriere from './PlayerKarriere';
+import SpielerWechselKarte from './SpielerWechselKarte';
 
 /**
  * Spielerkarte.
@@ -76,6 +77,9 @@ export default function PlayerDetailModal({ player, isOpen, onClose }) {
               </div>
             ))}
           </div>
+
+          {/* Wo und seit wann — der Verlauf, den players.team nicht hergibt. */}
+          <SpielerWechselKarte player={player} />
 
           <PlayerKarriere player={player} />
         </div>
