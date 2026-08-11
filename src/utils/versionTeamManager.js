@@ -10,12 +10,17 @@ const VERSION_TEAMS_STORAGE_KEY = 'fifa_version_teams';
 const VERSION_ICONS_STORAGE_KEY = 'fifa_version_icons';
 
 // Default team configurations for FC25 (Legacy)
+//
+// `wappen` ist ein Slug aus src/constants/wappenKatalog.js, also eine Datei in
+// public/logos/. Steht hier keiner, faellt TeamLogo auf die vier
+// mitgelieferten PNGs zurueck. Neue Wappen holt scripts/wappen-holen.mjs.
 const DEFAULT_TEAMS_FC25 = {
   AEK: {
     label: 'AEK Athen',
     short: 'AEK',
     color: 'blue',
     icon: 'aek',
+    wappen: 'aek-athens',
     customIcon: null
   },
   Real: {
@@ -23,6 +28,7 @@ const DEFAULT_TEAMS_FC25 = {
     short: 'Real',
     color: 'red',
     icon: 'real',
+    wappen: 'real-madrid',
     customIcon: null
   },
   Ehemalige: {
@@ -41,6 +47,7 @@ const DEFAULT_TEAMS_FC26 = {
     short: 'Dynamo',
     color: 'blue',
     icon: 'dynamo',
+    wappen: 'dynamo-dresden',
     customIcon: null
   },
   Real: {
@@ -48,6 +55,7 @@ const DEFAULT_TEAMS_FC26 = {
     short: 'S04',
     color: 'red',
     icon: 'real',
+    wappen: 'schalke-04',
     customIcon: null
   },
   Ehemalige: {
@@ -268,6 +276,22 @@ export const removeTeamIcon = (teamKey, version = null) => {
 };
 
 /**
+ * Den passenden Schluessel finden, egal wie gross geschrieben.
+ *
+ * Die Konfiguration heisst {AEK, Real, Ehemalige}, aber 32 Stellen in der App
+ * schreiben `<TeamLogo team="aek" />` klein. Der direkte Zugriff lief dort ins
+ * Leere und lieferte die Notfall-Antwort ("label: 'aek'", kein Wappen, kein
+ * Farbwert). Auffallen konnte das nicht: TeamLogo hat sein eigenes
+ * toLowerCase() und zeigte trotzdem das richtige mitgelieferte PNG — nur ein
+ * selbst hochgeladenes Wappen hat an diesen 32 Stellen nie gewirkt.
+ */
+const schluessel = (teams, gesucht) => {
+  if (!gesucht) return undefined;
+  const klein = String(gesucht).toLowerCase();
+  return Object.keys(teams).find((k) => k.toLowerCase() === klein);
+};
+
+/**
  * Get team display information for current version
  * Backward compatibility with existing team constants
  * @param {string} teamValue - Team value
@@ -277,7 +301,7 @@ export const removeTeamIcon = (teamKey, version = null) => {
 export const getVersionTeamDisplay = (teamValue, version = null) => {
   try {
     const teams = getVersionTeams(version);
-    const team = teams[teamValue];
+    const team = teams[teamValue] ?? teams[schluessel(teams, teamValue)];
     
     if (!team) {
       return { value: teamValue, label: teamValue, short: deriveShort(teamValue), color: 'gray', icon: '⚽' };
@@ -288,7 +312,10 @@ export const getVersionTeamDisplay = (teamValue, version = null) => {
       label: team.label,
       short: team.short || deriveShort(team.label),
       color: team.color,
-      icon: team.customIcon || team.icon
+      icon: team.customIcon || team.icon,
+      // Ohne diese Zeile faellt der Slug hier still heraus: die Funktion baut
+      // eine feste Form und uebernimmt nicht, was sonst noch im Datensatz steht.
+      wappen: team.wappen || null
     };
   } catch (error) {
     console.error('Error getting version team display:', error);

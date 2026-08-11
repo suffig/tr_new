@@ -166,7 +166,13 @@ export default function UserProfile({ onClose, onNavigate }) {
             </div>
           </div>
 
-          <p className="text-center text-[11px] text-text-tertiary pt-1">FUSTA · FIFA Statistik-Tracker</p>
+          {/* Quellenangabe, um die footylogos.com bittet ("Credit
+              FootyLogos.com as the source"). Die Wappen liegen als SVG in
+              public/logos/, geholt mit scripts/wappen-holen.mjs. */}
+          <p className="text-center text-[11px] text-text-tertiary pt-1">
+            FUSTA · FIFA Statistik-Tracker
+            <span className="block mt-0.5">Vereinswappen: FootyLogos.com</span>
+          </p>
         </div>
       </div>
     </div>

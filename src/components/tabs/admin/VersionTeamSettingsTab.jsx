@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { WAPPEN } from '../../../constants/wappenKatalog.js';
 import toast from 'react-hot-toast';
 import { 
   getVersionTeams, 
@@ -335,9 +336,38 @@ const VersionTeamSettingsTab = () => {
                     </select>
                   </div>
 
+                  {/* Wappen aus dem Katalog.
+                      Die Liste kommt aus src/constants/wappenKatalog.js und
+                      damit aus dem Inhalt von public/logos/ — es kann also
+                      nichts angeboten werden, das nicht als Datei daliegt.
+                      Anders als das hochgeladene Bild darunter landet diese
+                      Auswahl ueber fifa_versions.teams in der gemeinsamen
+                      Datenbank: was hier eingestellt wird, sieht der andere
+                      auch. Fehlt ein Verein, holt ihn
+                      `node scripts/wappen-holen.mjs "Vereinsname"`. */}
                   <div className="md:col-span-2">
                     <label className="block text-sm font-medium text-text-secondary mb-2">
-                      Icon hochladen
+                      Wappen
+                    </label>
+                    <select
+                      value={teamConfig.wappen || ''}
+                      onChange={(e) => handleTeamChange(teamKey, 'wappen', e.target.value || null)}
+                      className="w-full px-3 py-2 border border-border-light rounded-lg focus:ring-2 focus:ring-system-blue focus:border-system-blue"
+                    >
+                      <option value="">— keins (mitgeliefertes Bild) —</option>
+                      {WAPPEN.map((w) => (
+                        <option key={w.slug} value={w.slug}>{w.name}</option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-text-muted mt-1">
+                      Gilt für beide Geräte. Fehlt ein Verein, muss sein Wappen einmal
+                      ins Repo geholt werden.
+                    </p>
+                  </div>
+
+                  <div className="md:col-span-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-2">
+                      Eigenes Bild hochladen
                     </label>
                     <div className="flex gap-2">
                       <input
@@ -356,7 +386,8 @@ const VersionTeamSettingsTab = () => {
                       )}
                     </div>
                     <p className="text-xs text-text-muted mt-1">
-                      Maximale Dateigröße: 2MB. Unterstützte Formate: JPG, PNG, GIF
+                      Höchstens 2 MB, JPG/PNG/GIF. Bleibt nur auf diesem Gerät —
+                      für beide sichtbar ist die Wappen-Auswahl darüber.
                     </p>
                   </div>
                 </div>
