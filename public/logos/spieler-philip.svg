@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" role="img">
+  <!-- FUSTA-Platzhalter fuer Saisons, in denen die Seite kein Verein ist,
+       sondern die Person selbst (FC19 bis FC24: "Alexander" gegen "Philip").
+       Ein Vereinswappen waere dort schlicht falsch.
+
+       Reine Geometrie, keine Schrift: ein <img> mit SVG rendert in einem
+       eigenen Zusammenhang, in dem sich auf keine Schriftart der Seite
+       verlassen laesst — ein Buchstabe koennte also je nach Geraet anders
+       oder gar nicht erscheinen. Eine Silhouette kann das nicht passieren,
+       und sie bleibt bei 16 Pixeln lesbar.
+
+       Die Farbe traegt die Zuordnung: blau ist in der ganzen App die eine,
+       rot die andere Seite. -->
+  <defs><clipPath id="rund"><circle cx="50" cy="50" r="50"/></clipPath></defs>
+  <circle cx="50" cy="50" r="50" fill="#FF3B30"/>
+  <g clip-path="url(#rund)" fill="#ffffff">
+    <circle cx="50" cy="37" r="16"/>
+    <path d="M50 59c-19 0-34 13-34 30v22h68V89c0-17-15-30-34-30z"/>
+  </g>
+</svg>

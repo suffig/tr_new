@@ -31,11 +31,26 @@ import { mkdir, writeFile, readdir } from 'node:fs/promises';
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { pathToFileURL } from 'node:url';
 
 const HIER = dirname(fileURLToPath(import.meta.url));
 const WURZEL = join(HIER, '..');
 const ZIEL = join(WURZEL, 'public', 'logos');
 const KATALOG = join(WURZEL, 'src', 'constants', 'wappenKatalog.js');
+
+/**
+ * Bilder, die NICHT von footylogos stammen, sondern selbst gezeichnet sind.
+ *
+ * Nötig, weil nicht jede Saison zwei Vereine hat: in FC19 bis FC24 heissen die
+ * Seiten schlicht "Alexander" und "Philip". Ein Vereinswappen waere dort
+ * falsch, ein leeres Feld nichtssagend. Sie stehen hier, damit der Katalog
+ * ihnen einen ordentlichen Namen gibt und die Quellenangabe ehrlich bleibt —
+ * `eigen: true` heisst "nicht von footylogos".
+ */
+const EIGENE = {
+  'spieler-alexander': 'Alexander (Platzhalter)',
+  'spieler-philip': 'Philip (Platzhalter)',
+};
 
 const url = (slug) => `https://assets.footylogos.com/logos/${slug}/${slug}-logo-footylogos.svg`;
 
@@ -110,15 +125,28 @@ async function holen(name) {
  */
 async function katalogSchreiben(neue) {
   const dateien = (await readdir(ZIEL)).filter((f) => f.endsWith('.svg'));
-  const namen = new Map(neue.filter(Boolean).map((e) => [e.slug, e.name]));
+
+  // Namen aus dem bisherigen Katalog uebernehmen. Ohne das verlieren alle
+  // anderen Vereine ihren ordentlichen Namen, sobald man das Skript fuer einen
+  // einzelnen neuen laufen laesst — der Rest faellt dann auf die automatische
+  // Grossschreibung zurueck, und aus "AEK Athen" wird "Aek Athens".
+  const namen = new Map();
+  try {
+    const alt = await import(pathToFileURL(KATALOG).href + `?v=${Date.now()}`);
+    for (const e of alt.WAPPEN || []) namen.set(e.slug, e.name);
+  } catch { /* erster Lauf, noch kein Katalog */ }
+  for (const e of neue.filter(Boolean)) namen.set(e.slug, e.name);
 
   const eintraege = dateien.map((f) => {
     const slug = f.replace(/\.svg$/, '');
     // Für schon vorhandene Dateien den Slug in einen lesbaren Namen zurück-
     // verwandeln: "borussia-dortmund" → "Borussia Dortmund".
-    const name = namen.get(slug)
+    // Die automatische Grossschreibung ist nur die letzte Rueckfallebene: sie
+    // macht aus "hertha-bsc" ein "Hertha Bsc". Wer den Verein einmal mit
+    // richtigem Namen geholt hat, behaelt ihn (siehe oben).
+    const name = EIGENE[slug] || namen.get(slug)
       || slug.split('-').map((w) => (/^\d+$/.test(w) ? w : w[0].toUpperCase() + w.slice(1))).join(' ');
-    return { slug, name };
+    return EIGENE[slug] ? { slug, name, eigen: true } : { slug, name };
   }).sort((a, b) => a.name.localeCompare(b.name, 'de'));
 
   const inhalt = `/**
@@ -129,7 +157,9 @@ async function katalogSchreiben(neue) {
  * nicht danebengeführt, damit die Auswahl in der Verwaltung nichts anbieten
  * kann, was nicht wirklich daliegt.
  *
- * Wappen von footylogos.com. Quellenangabe steht im Profil.
+ * Vereinswappen von footylogos.com, Quellenangabe steht im Profil. Eintraege
+ * mit \`eigen: true\` sind selbst gezeichnete Platzhalter und stammen nicht
+ * von dort.
  */
 
 export const WAPPEN = ${JSON.stringify(eintraege, null, 2).replace(/"([a-z]+)":/g, '$1:')};

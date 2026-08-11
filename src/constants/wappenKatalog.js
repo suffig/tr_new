@@ -6,17 +6,41 @@
  * nicht danebengeführt, damit die Auswahl in der Verwaltung nichts anbieten
  * kann, was nicht wirklich daliegt.
  *
- * Wappen von footylogos.com. Quellenangabe steht im Profil.
+ * Vereinswappen von footylogos.com, Quellenangabe steht im Profil. Eintraege
+ * mit `eigen: true` sind selbst gezeichnete Platzhalter und stammen nicht
+ * von dort.
  */
 
 export const WAPPEN = [
+  {
+    slug: "ac-milan",
+    name: "AC Milan"
+  },
   {
     slug: "aek-athens",
     name: "AEK Athen"
   },
   {
+    slug: "spieler-alexander",
+    name: "Alexander (Platzhalter)",
+    eigen: true
+  },
+  {
     slug: "dynamo-dresden",
     name: "Dynamo Dresden"
+  },
+  {
+    slug: "hertha-bsc",
+    name: "Hertha BSC"
+  },
+  {
+    slug: "manchester-city",
+    name: "Manchester City"
+  },
+  {
+    slug: "spieler-philip",
+    name: "Philip (Platzhalter)",
+    eigen: true
   },
   {
     slug: "real-madrid",
