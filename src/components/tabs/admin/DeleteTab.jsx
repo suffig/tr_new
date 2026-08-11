@@ -368,7 +368,7 @@ export default function DeleteTab() {
             <div className="flex items-center space-x-3">
               <span className="text-lg">{getTeamIcon(player.team)}</span>
               <div>
-                <h4 className="font-medium text-text-primary">{player.name}</h4>
+                <h4 className="karten-titel">{player.name}</h4>
                 <p className="text-sm text-text-muted">
                   {player.team} • {player.position}
                   {player.goals !== undefined && (
@@ -454,7 +454,7 @@ export default function DeleteTab() {
               <div className="flex-1">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h4 className="font-medium text-text-primary">
+                    <h4 className="karten-titel">
                       ID {match.id} • {new Date(match.date).toLocaleDateString('de-DE')}
                     </h4>
                     <p className="text-sm text-text-muted">
@@ -515,7 +515,7 @@ export default function DeleteTab() {
             <div className="flex items-center space-x-3">
               <span className="text-lg">{getTeamIcon(ban.team)}</span>
               <div>
-                <h4 className="font-medium text-text-primary">{getPlayerName(ban)}</h4>
+                <h4 className="karten-titel">{getPlayerName(ban)}</h4>
                 <p className="text-sm text-text-muted">
                   {ban.type} • {ban.totalgames || 0} Spiele 
                   {getRemainingGames(ban) > 0 ? ` (${getRemainingGames(ban)} verbleibend)` : ' (abgesessen)'}
@@ -564,7 +564,7 @@ export default function DeleteTab() {
             <div className="flex items-center space-x-3">
               <span className="text-lg">{getTeamIcon(transaction.team)}</span>
               <div className="flex-1">
-                <h4 className="font-medium text-text-primary">{transaction.type}</h4>
+                <h4 className="karten-titel">{transaction.type}</h4>
                 <p className="text-sm text-text-muted">
                   <span className={transaction.amount > 0 ? 'text-system-green' : 'text-system-red'}>
                     {transaction.amount > 0 ? '+' : ''}{transaction.amount}M €
@@ -618,7 +618,7 @@ export default function DeleteTab() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary mb-2">
+        <h3 className="karten-titel mb-2">
           Daten löschen
         </h3>
         <p className="text-text-muted text-sm">
@@ -699,7 +699,7 @@ export default function DeleteTab() {
             <Icon name="warning" size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="font-semibold text-system-red mb-1">Achtung</h4>
+            <h4 className="karten-titel text-system-red mb-1">Achtung</h4>
             <p className="text-system-red text-sm">
               Das Löschen von Daten ist permanent und kann nicht rückgängig gemacht werden. 
               Bitte überprüfen Sie Ihre Auswahl sorgfältig, bevor Sie fortfahren.

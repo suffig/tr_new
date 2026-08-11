@@ -816,7 +816,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
             <Icon name="scale" size={28} strokeWidth={1.6} />
           </div>
-          <h4 className="font-medium text-text-primary mb-1">Noch kein direkter Vergleich</h4>
+          <h4 className="karten-titel mb-1">Noch kein direkter Vergleich</h4>
           <p className="text-sm text-text-muted">Sobald Spiele erfasst sind, erscheint hier die Saison-Bilanz.</p>
         </div>
       );
@@ -825,7 +825,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     return (
       <div className="modern-card mb-2 p-0 overflow-hidden">
         <div className="p-4 border-b border-border-light flex items-center justify-between">
-          <h3 className="font-semibold text-text-primary inline-flex items-center gap-2">
+          <h3 className="karten-titel inline-flex items-center gap-2">
             <Icon name="scale" size={18} strokeWidth={2.2} className="text-system-purple" />
             Direkter Vergleich
           </h3>
@@ -1023,7 +1023,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
 
   const renderPlayers = () => (
     <div className="modern-card">
-      <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="chart" size={18} strokeWidth={2.2} />Spielerstatistiken</h3>
+      <h3 className="karten-titel mb-4 inline-flex items-center gap-2"><Icon name="chart" size={18} strokeWidth={2.2} />Spielerstatistiken</h3>
 
       {/* Wie viel von dem, was hier steht, ist ueberhaupt belegt?
           "Trifft in" und "Bestes Spiel" kommen aus den Torschuetzenlisten der
@@ -1161,7 +1161,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           durch einen erfundenen Nenner geteilt hat.) */}
       <div className="mt-6 grid md:grid-cols-2 gap-4">
         <div className="p-4 bg-system-yellow/10 rounded-lg border border-system-yellow/20">
-          <h4 className="font-semibold text-system-orange mb-2 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} />SdS-König</h4>
+          <h4 className="karten-titel text-system-orange mb-2 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} />SdS-König</h4>
           {(() => {
             // Nach ANZAHL sortieren, nicht nach Quote: die Quote ist nicht in
             // jedem Umfang berechenbar, und parseFloat(null) haette die
@@ -1185,7 +1185,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         </div>
 
         <div className="p-4 bg-system-red/10 rounded-lg border border-system-red/20">
-          <h4 className="font-semibold text-system-red mb-2 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} />Disziplin-Problem</h4>
+          <h4 className="karten-titel text-system-red mb-2 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} />Disziplin-Problem</h4>
           {(() => {
             const mostBans = playerStats
               .filter(p => p.totalBans > 0)
@@ -1442,7 +1442,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     return (
       <div className="space-y-6">
 <div className="modern-card p-6">
-        <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
+        <h3 className="karten-titel mb-1 flex items-center gap-2">
           <Icon name="zap" size={18} strokeWidth={2.2} />
           Wenn sie treffen, dann richtig
         </h3>
@@ -1478,7 +1478,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         </div>
       </div>
 <div className="modern-card p-6">
-        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+        <h3 className="karten-titel mb-4 flex items-center gap-2">
           <Icon name="euro" size={18} strokeWidth={2.2} />
           Preis-Leistungs-Verhältnis
         </h3>

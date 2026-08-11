@@ -323,7 +323,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
           <div className="bg-bg-elevated border border-border-light rounded-2xl shadow-ios-floating max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto">
             <div className="p-5">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-text-primary">Spieler bearbeiten</h3>
+                <h3 className="karten-titel">Spieler bearbeiten</h3>
                 <button
                   onClick={() => setEditingPlayer(null)}
                   className="text-text-muted hover:text-text-primary"

@@ -23,7 +23,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-red/12 text-system-red flex items-center justify-center" aria-hidden="true">
             <Icon name="ban" size={32} strokeWidth={1.8} />
           </div>
-          <h3 className="text-xl font-bold mb-2 text-text-primary">Zugriff verweigert</h3>
+          <h3 className="karten-titel mb-2">Zugriff verweigert</h3>
           <p className="text-text-secondary mb-4">
             Sie haben keine Berechtigung, auf den Admin-Bereich zuzugreifen.
           </p>

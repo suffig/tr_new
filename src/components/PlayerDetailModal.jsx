@@ -55,7 +55,7 @@ export default function PlayerDetailModal({ player, isOpen, onClose }) {
         <div className="sticky top-0 bg-bg-secondary px-4 py-3 border-b border-border-light flex items-center gap-2.5 z-10">
           <SpielerWappen team={player.team} size="sm" />
           <div className="min-w-0 flex-1">
-            <h3 className="text-callout font-semibold text-text-primary truncate">{player.name}</h3>
+            <h3 className="karten-titel truncate">{player.name}</h3>
             <div className={`text-caption2 truncate ${akzent}`}>
               {[getTeamDisplay(player.team) || player.team, player.position].filter(Boolean).join(' · ')}
             </div>

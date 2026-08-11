@@ -397,6 +397,43 @@ button {
 .tile-orange { background: linear-gradient(135deg, var(--system-orange), var(--system-yellow)); }
 
 /* iOS grouped-list section label */
+/**
+ * Der Titel einer Karte — eine Schreibweise fuer alle.
+ *
+ * Vorher gab es dafuer vierzehn: "text-lg font-semibold text-text-primary",
+ * "font-semibold text-text-primary mb-4", "text-xl font-semibold", "text-sm
+ * font-semibold", "font-medium text-text-primary" und so weiter. Auf einem
+ * Bildschirm sah man dadurch regelmaessig zwei verschiedene Behandlungen
+ * derselben Sache nebeneinander.
+ *
+ * 15 px statt der frueher haeufigen 18 px: auf einem Handy ist ein
+ * Kartentitel eine Beschriftung, keine Schlagzeile. Die grosse Type gehoert
+ * den Zahlen (stat-display) und der Seitenueberschrift (large-title).
+ *
+ * Nur Typografie, kein Aussenabstand: die Abstaende bleiben als
+ * Tailwind-Klassen an der Stelle stehen, weil ein Titel mal in einer Zeile
+ * mit einem Knopf sitzt und mal allein ueber einem Block.
+ */
+.karten-titel {
+  font-size: 15px;
+  line-height: 20px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+/*
+ * Die Grundfarbe in :where(), also mit Spezifitaet null.
+ *
+ * Diese Datei wird zuletzt geladen und schlaegt damit die Tailwind-Klassen.
+ * Stuende `color` oben im Block, waere eine Ueberschrift wie
+ * `karten-titel text-system-red` ("Achtung" im Loeschen-Bereich) nicht mehr
+ * rot — die Klasse wuerde die Absicht der Akzentfarbe ueberschreiben. So
+ * gewinnt jede gesetzte Farbe, und wo keine steht, gilt die Grundfarbe.
+ */
+:where(.karten-titel) {
+  color: var(--text-primary);
+}
+
 .section-label {
   font-size: 13px;
   font-weight: 600;

@@ -459,7 +459,7 @@ export default function MatchesTab({ onNavigate, user }) {
               <div key={dateGroup.date}>
                 {/* Date group label */}
                 <div className="flex items-center justify-between px-1 mb-2">
-                  <h3 className="text-sm font-semibold text-text-secondary">
+                  <h3 className="karten-titel">
                     {new Date(dateGroup.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'long', year: 'numeric' })}
                   </h3>
                   <div className="flex items-center gap-2">
@@ -547,7 +547,7 @@ export default function MatchesTab({ onNavigate, user }) {
 
                             {/* Goal scorers */}
                             <div className="bg-bg-tertiary rounded-xl p-3">
-                              <h4 className="text-sm font-semibold text-text-primary mb-2 inline-flex items-center gap-2">
+                              <h4 className="karten-titel mb-2 inline-flex items-center gap-2">
                                 <Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Torschützen
                               </h4>
                               <div className="space-y-3">
@@ -587,7 +587,7 @@ export default function MatchesTab({ onNavigate, user }) {
                             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                               {/* MVP */}
                               <div className="bg-bg-tertiary rounded-xl p-3">
-                                <h4 className="text-sm font-semibold text-text-primary mb-2 inline-flex items-center gap-2">
+                                <h4 className="karten-titel mb-2 inline-flex items-center gap-2">
                                   <Icon name="star" size={16} strokeWidth={2.2} className="text-system-orange" />Spieler des Spiels
                                 </h4>
                                 {match.manofthematch ? (
@@ -607,7 +607,7 @@ export default function MatchesTab({ onNavigate, user }) {
 
                               {/* Cards */}
                               <div className="bg-bg-tertiary rounded-xl p-3">
-                                <h4 className="text-sm font-semibold text-text-primary mb-2 inline-flex items-center gap-2">
+                                <h4 className="karten-titel mb-2 inline-flex items-center gap-2">
                                   <Icon name="ban" size={16} strokeWidth={2.2} className="text-system-red" />Karten
                                 </h4>
                                 <div className="grid grid-cols-2 gap-2 text-sm">
@@ -629,7 +629,7 @@ export default function MatchesTab({ onNavigate, user }) {
 
                             {/* Prize money */}
                             <div className="bg-bg-tertiary rounded-xl p-3">
-                              <h4 className="text-sm font-semibold text-text-primary mb-2 inline-flex items-center gap-2">
+                              <h4 className="karten-titel mb-2 inline-flex items-center gap-2">
                                 <Icon name="euro" size={16} strokeWidth={2.2} className="text-system-green" />Preisgelder
                               </h4>
                               <div className="grid grid-cols-2 gap-2">
@@ -682,7 +682,7 @@ export default function MatchesTab({ onNavigate, user }) {
             <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
               <Icon name={hasAny ? 'filter' : 'football'} size={28} strokeWidth={1.6} />
             </div>
-            <h3 className="text-lg font-medium text-text-primary mb-2">
+            <h3 className="karten-titel mb-2">
               {hasAny ? 'Keine Spiele im Filter' : 'Noch keine Spiele'}
             </h3>
             <p className="text-text-muted mb-4">

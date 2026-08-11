@@ -128,7 +128,7 @@ export default function AddTransactionTab() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary">
+        <h3 className="karten-titel">
           Neue Transaktion hinzufügen
         </h3>
       </div>
@@ -138,7 +138,7 @@ export default function AddTransactionTab() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
             <Icon name="euro" size={32} strokeWidth={1.8} />
           </div>
-          <h4 className="text-lg font-medium text-text-primary mb-6">
+          <h4 className="karten-titel mb-6">
             Transaktion hinzufügen
           </h4>
 
@@ -158,7 +158,7 @@ export default function AddTransactionTab() {
           <div className="bg-bg-secondary rounded-lg max-w-md w-full modal-content modal-mobile-safe">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-text-primary">Neue Transaktion</h3>
+                <h3 className="karten-titel">Neue Transaktion</h3>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-text-muted hover:text-text-primary text-2xl"

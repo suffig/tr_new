@@ -1204,7 +1204,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 {/* History */}
                 {schnapsShotsData.history.length > 0 && (
                   <div className="modern-card">
-                    <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                    <h4 className="karten-titel mb-3 flex items-center gap-2">
                       Verlauf
                     </h4>
                     <div className="space-y-1 max-h-64 overflow-y-auto">
@@ -1377,7 +1377,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             {/* History */}
             {sterneData.history.length > 0 && (
               <div className="modern-card">
-                <h4 className="font-bold text-lg mb-3 flex items-center gap-2">
+                <h4 className="karten-titel mb-3 flex items-center gap-2">
                   Verlauf
                 </h4>
                 <div className="space-y-1.5 max-h-64 overflow-y-auto">
@@ -1442,7 +1442,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
           {/* Game Counter and Account Balances */}
           <div className="modern-card mb-6 bg-system-purple border-2 border-system-purple/45">
-            <h4 className="font-bold text-lg mb-4 text-system-purple inline-flex items-center gap-2">
+            <h4 className="karten-titel mb-4 text-system-purple inline-flex items-center gap-2">
               <Icon name="chart" size={17} strokeWidth={2.2} />Übersicht
             </h4>
             
@@ -1491,7 +1491,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
           {/* Main Action Buttons */}
           <div className="modern-card mb-6 bg-system-yellow border-2 border-system-yellow/45">
-            <h4 className="font-bold text-lg mb-4 text-system-orange flex items-center gap-2">
+            <h4 className="karten-titel mb-4 text-system-orange flex items-center gap-2">
               <Icon name="play" size={17} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Gewinn eintragen
             </h4>
             
@@ -1666,7 +1666,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
           {/* Round Management */}
           <div className="modern-card mb-6 panel-blue">
-            <h4 className="font-bold text-lg mb-4 text-system-indigo flex items-center gap-2">
+            <h4 className="karten-titel mb-4 text-system-indigo flex items-center gap-2">
               Runden-Verwaltung
             </h4>
             
@@ -1732,7 +1732,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           {/* Rounds Display with Tabs */}
           {bjTracking.rounds.length > 0 && (
             <div className="modern-card mb-6">
-              <h4 className="font-bold text-lg mb-4 text-text-secondary flex items-center gap-2">
+              <h4 className="karten-titel mb-4 flex items-center gap-2">
                 Rundenübersicht
               </h4>
               
@@ -1798,7 +1798,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           {/* Current Round Games Display */}
           {bjTracking.currentRound.active && bjTracking.currentRound.games.length > 0 && (
             <div className="modern-card mb-6 bg-system-yellow border-2 border-system-yellow/45">
-              <h4 className="font-bold text-lg mb-4 text-system-orange flex items-center gap-2">
+              <h4 className="karten-titel mb-4 text-system-orange flex items-center gap-2">
                 Aktuelle Runde {bjTracking.currentRound.roundNumber} — Spiele
               </h4>
               

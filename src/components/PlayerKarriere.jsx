@@ -46,7 +46,7 @@ export default function PlayerKarriere({ player }) {
 
   return (
     <div className="panel-gray rounded-xl p-4">
-      <h4 className="text-footnote font-semibold text-text-muted mb-3 flex items-center gap-2">
+      <h4 className="karten-titel mb-3 flex items-center gap-2">
         <Icon name="calendar" size={16} strokeWidth={2.2} />
         Laufbahn · {saisons.length} Saisons
       </h4>

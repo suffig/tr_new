@@ -97,7 +97,7 @@ export default function AddPlayerTab() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary">
+        <h3 className="karten-titel">
           Neuen Spieler hinzufügen
         </h3>
       </div>
@@ -107,7 +107,7 @@ export default function AddPlayerTab() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
             <Icon name="user" size={32} strokeWidth={1.8} />
           </div>
-          <h4 className="text-lg font-medium text-text-primary mb-6">
+          <h4 className="karten-titel mb-6">
             Spieler hinzufügen
           </h4>
 
@@ -127,7 +127,7 @@ export default function AddPlayerTab() {
           <div className="bg-bg-secondary rounded-lg max-w-md w-full modal-content modal-mobile-safe">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-text-primary">Neuer Spieler</h3>
+                <h3 className="karten-titel">Neuer Spieler</h3>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-text-muted hover:text-text-primary text-2xl"
@@ -263,7 +263,7 @@ export default function AddPlayerTab() {
 
       {/* Teams Reference */}
       <div className="mt-6 modern-card">
-        <h4 className="font-semibold text-text-primary mb-3">Verfügbare Teams</h4>
+        <h4 className="karten-titel mb-3">Verfügbare Teams</h4>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-2">
           {TEAMS.map((team) => (
             <div key={team.value} className="p-3 bg-bg-secondary rounded-lg text-center">
@@ -281,7 +281,7 @@ export default function AddPlayerTab() {
 
       {/* Positions Reference */}
       <div className="mt-6 modern-card">
-        <h4 className="font-semibold text-text-primary mb-3">Verfügbare Positionen</h4>
+        <h4 className="karten-titel mb-3">Verfügbare Positionen</h4>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
           {POSITIONS.map((position) => (
             <div key={position} className="p-3 bg-bg-secondary rounded-lg text-center">
@@ -297,7 +297,7 @@ export default function AddPlayerTab() {
             <Icon name="bulb" size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="font-semibold text-text-primary mb-1">Hinweis</h4>
+            <h4 className="karten-titel mb-1">Hinweis</h4>
             <p className="text-footnote text-text-secondary">
               Nach dem Hinzufügen können Sie den Spieler in der Kader-Übersicht einsehen und verwalten.
             </p>

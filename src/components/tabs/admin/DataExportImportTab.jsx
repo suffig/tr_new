@@ -177,7 +177,7 @@ const DataExportImportTab = () => {
       <div className="bg-system-orange rounded-xl p-6 border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-text-primary">Daten Export & Import</h3>
+            <h3 className="karten-titel">Daten Export & Import</h3>
             <p className="text-text-secondary mt-1">
               Legacy-Daten downloaden und Finanzdaten zwischen Versionen kopieren
             </p>
@@ -188,7 +188,7 @@ const DataExportImportTab = () => {
 
       {/* Data Overview */}
       <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
-        <h4 className="font-semibold text-text-primary mb-4">Datenübersicht</h4>
+        <h4 className="karten-titel mb-4">Datenübersicht</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {/* Legacy Data */}
           {dataStats.legacy && (
@@ -220,7 +220,7 @@ const DataExportImportTab = () => {
 
       {/* Export Section */}
       <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
-        <h4 className="font-semibold text-text-primary mb-4">Daten exportieren</h4>
+        <h4 className="karten-titel mb-4">Daten exportieren</h4>
         
         <div className="space-y-4">
           {/* Legacy Export */}
@@ -264,7 +264,7 @@ const DataExportImportTab = () => {
       {/* Finance Copy Section */}
       <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-semibold text-text-primary">Finanzdaten kopieren</h4>
+          <h4 className="karten-titel">Finanzdaten kopieren</h4>
           <button
             onClick={() => setShowCopyModal(true)}
             className="px-4 py-2 bg-system-green text-white rounded-lg hover:bg-system-green transition-colors"
@@ -284,7 +284,7 @@ const DataExportImportTab = () => {
       {/* Import Section */}
       <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
         <div className="flex items-center justify-between mb-4">
-          <h4 className="font-semibold text-text-primary">Daten importieren</h4>
+          <h4 className="karten-titel">Daten importieren</h4>
           <button
             onClick={() => setShowImportModal(true)}
             className="px-4 py-2 bg-system-blue text-white rounded-lg hover:bg-system-blue/90 transition-colors"
@@ -305,7 +305,7 @@ const DataExportImportTab = () => {
       {showCopyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4">
-            <h4 className="font-semibold text-text-primary mb-4">Finanzdaten kopieren</h4>
+            <h4 className="karten-titel mb-4">Finanzdaten kopieren</h4>
             
             <div className="space-y-4">
               <div>
@@ -381,7 +381,7 @@ const DataExportImportTab = () => {
       {showImportModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4">
-            <h4 className="font-semibold text-text-primary mb-4">Daten importieren</h4>
+            <h4 className="karten-titel mb-4">Daten importieren</h4>
             
             <div className="space-y-4">
               <div>

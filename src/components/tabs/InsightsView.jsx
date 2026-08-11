@@ -216,7 +216,7 @@ function computeInsights(matches, players, bans) {
 function Section({ icon, iconClass, title, hint, children }) {
   return (
     <div className="modern-card">
-      <h3 className="text-title3 inline-flex items-center gap-2 mb-1">
+      <h3 className="karten-titel inline-flex items-center gap-2 mb-1">
         <Icon name={icon} size={18} strokeWidth={2.2} className={iconClass} />
         {title}
       </h3>

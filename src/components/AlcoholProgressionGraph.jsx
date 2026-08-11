@@ -565,7 +565,7 @@ const AlcoholProgressionGraph = ({ managers, beerConsumption, shotConsumption, d
         className="flex items-center justify-between cursor-pointer"
         onClick={() => setIsExpanded(!isExpanded)}
       >
-        <h3 className="font-bold text-lg text-text-primary">
+        <h3 className="karten-titel">
           📈 Alkoholverlauf beider Manager
         </h3>
         <div className="flex items-center gap-2">

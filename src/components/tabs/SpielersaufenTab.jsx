@@ -430,7 +430,7 @@ export default function SpielersaufenTab() {
 
           {/* Shot rule */}
           <div className="bg-bg-elevated border border-border-light rounded-2xl p-4 shadow-sm">
-            <h3 className="font-bold text-text-primary mb-1 inline-flex items-center gap-2"><Icon name="glass" size={18} strokeWidth={2.2} />Shot-Regel</h3>
+            <h3 className="karten-titel mb-1 inline-flex items-center gap-2"><Icon name="glass" size={18} strokeWidth={2.2} />Shot-Regel</h3>
             <p className="text-xs text-text-tertiary mb-3">
               Jede wievielte Nennung (über <em>alle</em> Spieler eines Teilnehmers zusammen) = 1 Shot?
             </p>
@@ -457,7 +457,7 @@ export default function SpielersaufenTab() {
           {/* Participants */}
           <div className="bg-bg-elevated border border-border-light rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-text-primary inline-flex items-center gap-2"><Icon name="users" size={18} strokeWidth={2.2} />Mitspieler</h3>
+              <h3 className="karten-titel inline-flex items-center gap-2"><Icon name="users" size={18} strokeWidth={2.2} />Mitspieler</h3>
               <span className="text-xs bg-bg-tertiary text-text-tertiary px-2 py-0.5 rounded-full">{data.participants.length}</span>
             </div>
             <div className="flex gap-2 mb-4">
@@ -499,7 +499,7 @@ export default function SpielersaufenTab() {
 
           {/* Checklist */}
           <div className="panel-orange rounded-2xl p-4">
-            <h4 className="font-bold text-system-orange text-sm mb-2 inline-flex items-center gap-1.5"><Icon name="check" size={15} strokeWidth={2.4} />Bereit zum Spielen?</h4>
+            <h4 className="karten-titel text-system-orange mb-2 inline-flex items-center gap-1.5"><Icon name="check" size={15} strokeWidth={2.4} />Bereit zum Spielen?</h4>
             {[
               { ok: data.participants.length >= 2, label: `≥ 2 Mitspieler (${data.participants.length})` },
               { ok: activePCount('home') >= 1,     label: `Heimteam hat Spieler (${activePCount('home')})` },
@@ -515,7 +515,7 @@ export default function SpielersaufenTab() {
 
           {/* Danger zone */}
           <div className="panel-red rounded-2xl p-4">
-            <h4 className="font-bold text-system-red text-sm mb-2">⚠️ Reset</h4>
+            <h4 className="karten-titel text-system-red mb-2">⚠️ Reset</h4>
             <button onClick={fullReset}
               className="w-full py-2.5 rounded-xl bg-system-red/15 hover:bg-system-red/25 active:scale-95 text-system-red font-semibold text-sm border border-system-red/25 transition-all">
               🗑️ Alles zurücksetzen (Neues Setup)
@@ -539,7 +539,7 @@ export default function SpielersaufenTab() {
           {/* Add player form */}
           <div className="bg-bg-elevated border border-border-light rounded-2xl p-4 shadow-sm">
             <div className="flex items-center justify-between mb-3">
-              <h3 className="font-bold text-text-primary">➕ Spieler hinzufügen</h3>
+              <h3 className="karten-titel">➕ Spieler hinzufügen</h3>
               <button onClick={() => setShowBulk(v => !v)}
                 className={`text-xs px-2.5 py-1.5 rounded-lg font-semibold border transition-all ${showBulk ? 'bg-system-purple/15 text-system-purple border-system-purple/45' : 'bg-bg-tertiary text-text-tertiary border-border-light'}`}>
                 📋 Bulk
@@ -755,7 +755,7 @@ export default function SpielersaufenTab() {
 
           {/* Player pool */}
           <div className="bg-bg-elevated border border-border-light rounded-2xl p-4">
-            <h4 className="font-semibold text-text-secondary text-sm mb-3 inline-flex items-center gap-2"><Icon name="chart" size={15} strokeWidth={2.2} />Spieler-Pool</h4>
+            <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="chart" size={15} strokeWidth={2.2} />Spieler-Pool</h4>
             {['home','away'].map(tid => {
               const team = data.teams[tid]; const color = tc(team.color);
               const active = team.players.filter(p => p.active);
@@ -832,7 +832,7 @@ export default function SpielersaufenTab() {
               {/* Overview matrix */}
               {showOverview && (
                 <div className="bg-bg-elevated border border-border-light rounded-2xl p-4">
-                  <h4 className="font-bold text-text-secondary text-sm mb-3">👁️ Wer hat wen?</h4>
+                  <h4 className="karten-titel mb-3">👁️ Wer hat wen?</h4>
                   <div className="space-y-2.5">
                     {data.participants.map(p => {
                       const c = pc(p);
@@ -980,7 +980,7 @@ export default function SpielersaufenTab() {
               {/* Events log */}
               {data.currentGame.events.length > 0 && (
                 <div className="bg-bg-elevated border border-border-light rounded-2xl p-4">
-                  <h4 className="font-bold text-text-secondary text-sm mb-2">
+                  <h4 className="karten-titel mb-2">
                     📋 Verlauf · {data.currentGame.events.length} Ereignisse
                   </h4>
                   <div className="space-y-1 max-h-44 overflow-y-auto">
@@ -1084,7 +1084,7 @@ export default function SpielersaufenTab() {
                 if (!top.length) return null;
                 return (
                   <div className="bg-bg-elevated border border-border-light rounded-2xl p-4">
-                    <h4 className="font-bold text-text-secondary mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Meistgenannte Spieler</h4>
+                    <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Meistgenannte Spieler</h4>
                     {top.map(([name, info], i) => (
                       <div key={name} className="flex items-center gap-3 mb-1.5">
                         <span className="w-6 text-center">{i===0?'🏅':i===1?'🥈':i===2?'🥉':'  '}</span>
@@ -1106,7 +1106,7 @@ export default function SpielersaufenTab() {
               {/* History */}
               {data.games.length > 1 && (
                 <div className="bg-bg-elevated border border-border-light rounded-2xl p-4">
-                  <h4 className="font-bold text-text-secondary mb-3">📜 Alle Spiele ({data.games.length})</h4>
+                  <h4 className="karten-titel mb-3">📜 Alle Spiele ({data.games.length})</h4>
                   <div className="space-y-2">
                     {[...data.games].reverse().map((g, i) => {
                       const totalShots = (g.summary||[]).reduce((s,r)=>s+r.totalShots,0);

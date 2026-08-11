@@ -72,7 +72,7 @@ export default function NotificationSettings() {
     return (
       <div className="space-y-6">
         <div className="bg-bg-secondary rounded-lg p-6 border border-border-light">
-          <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
+          <h3 className="karten-titel mb-4 flex items-center">
             <span className="text-xl mr-2">📱</span>
             Push-Benachrichtigungen
           </h3>
@@ -99,7 +99,7 @@ export default function NotificationSettings() {
   return (
     <div className="space-y-6">
       <div className="bg-bg-secondary rounded-lg p-6 border border-border-light">
-        <h3 className="text-lg font-semibold text-text-primary mb-4 flex items-center">
+        <h3 className="karten-titel mb-4 flex items-center">
           <span className="text-xl mr-2">📱</span>
           Push-Benachrichtigungen
         </h3>
@@ -169,7 +169,7 @@ export default function NotificationSettings() {
         {/* Settings */}
         {status.permission === 'granted' && (
           <div className="space-y-4">
-            <h4 className="text-md font-medium text-text-primary">
+            <h4 className="karten-titel text-md">
               Benachrichtigungseinstellungen
             </h4>
             

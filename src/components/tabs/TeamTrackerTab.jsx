@@ -736,7 +736,7 @@ export default function TeamTrackerTab() {
             return (
               <div className="modern-card mb-3">
                 <div className="flex items-center justify-between mb-3">
-                  <h3 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2">
+                  <h3 className="karten-titel inline-flex items-center gap-2">
                     <Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />Sterne-Verteilung
                   </h3>
                   <span className="text-[11px] text-text-tertiary">
@@ -1058,7 +1058,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
     return (
       <div className="modern-card text-center py-10 animate-mobile-slide-in">
         <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center"><Icon name="chart" size={28} strokeWidth={1.6} /></div>
-        <h4 className="font-medium text-text-primary mb-1">Keine Teams im Zeitraum</h4>
+        <h4 className="karten-titel mb-1">Keine Teams im Zeitraum</h4>
         <p className="text-sm text-text-muted">Für den Zeitraum {windowLabel} wurden noch keine Mannschaften erfasst.</p>
       </div>
     );
@@ -1069,7 +1069,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
       {/* Quality comparison (counts are always equal → compare team QUALITY) */}
       <div className="modern-card">
         <div className="flex items-center justify-between mb-3">
-          <h3 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2"><Icon name="scale" size={17} strokeWidth={2.2} className="text-system-purple" />Wer bekommt die besseren Teams?</h3>
+          <h3 className="karten-titel inline-flex items-center gap-2"><Icon name="scale" size={17} strokeWidth={2.2} className="text-system-purple" />Wer bekommt die besseren Teams?</h3>
           <span className="text-[11px] text-text-tertiary whitespace-nowrap">{windowLabel} · {combinedPulls}</span>
         </div>
 
@@ -1239,7 +1239,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
       {matchdays.length > 0 && (
         <div className="modern-card">
           <div className="flex items-start justify-between gap-2 mb-1">
-            <h3 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />Sterne-Ø pro Spieltag</h3>
+            <h3 className="karten-titel inline-flex items-center gap-2"><Icon name="starFilled" size={15} strokeWidth={0} className="text-system-yellow" />Sterne-Ø pro Spieltag</h3>
             {bestMatchday && bestMatchday.val > 0 && <span className="text-[10px] text-text-tertiary whitespace-nowrap">Bester: {bestMatchday.day.label} ({fmtRating(bestMatchday.val)}★)</span>}
           </div>
           <p className="text-[11px] text-text-tertiary mb-3">⌀ Team-Rating je Person und Spieltag</p>
@@ -1278,7 +1278,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
             style={{ maxHeight: 'calc(100dvh - 2rem)', paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}
           >
             <div className="flex items-center justify-between mb-3 flex-shrink-0">
-              <h3 className="text-base font-semibold text-text-primary inline-flex items-center gap-2">
+              <h3 className="karten-titel inline-flex items-center gap-2">
                 <Icon name="award" size={18} strokeWidth={2.2} className="text-system-orange" />
                 Errungenschaften · {personName(achievePerson)}
               </h3>

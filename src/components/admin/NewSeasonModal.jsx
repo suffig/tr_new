@@ -97,7 +97,7 @@ export default function NewSeasonModal({ onClose, onCreated }) {
       <div className="bg-bg-secondary rounded-2xl max-w-md w-full modal-content modal-mobile-safe">
         <div className="p-5">
           <div className="flex justify-between items-center mb-4">
-            <h3 className="text-title3 font-bold text-text-primary">Neue Saison anlegen</h3>
+            <h3 className="karten-titel">Neue Saison anlegen</h3>
             <button onClick={onClose} className="text-text-muted hover:text-text-primary text-2xl leading-none" disabled={loading}>×</button>
           </div>
 

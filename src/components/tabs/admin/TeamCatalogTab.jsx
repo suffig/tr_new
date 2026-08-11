@@ -70,7 +70,7 @@ export default function TeamCatalogTab() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-4">
-        <h3 className="text-lg font-semibold text-text-primary mb-1 inline-flex items-center gap-2">
+        <h3 className="karten-titel mb-1 inline-flex items-center gap-2">
           <Icon name="trophy" size={18} strokeWidth={2.2} className="text-system-orange" />FC26-Team-Katalog
         </h3>
         <p className="text-text-muted text-sm">Ratings bearbeiten, Teams hinzufügen oder entfernen. Änderungen werden lokal &amp; in der Datenbank gespeichert.</p>

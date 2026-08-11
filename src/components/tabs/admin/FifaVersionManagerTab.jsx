@@ -206,7 +206,7 @@ const FifaVersionManagerTab = () => {
       <div className="bg-bg-tertiary rounded-xl p-6 border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-text-primary">Aktuelle FIFA Version</h3>
+            <h3 className="karten-titel">Aktuelle FIFA Version</h3>
             <div className="flex items-center gap-3 mt-1">
               <p className="text-3xl font-bold text-system-blue">
                 {currentVersion}
@@ -228,7 +228,7 @@ const FifaVersionManagerTab = () => {
       {/* Add Version Form */}
       {showAddForm && (
         <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">Neue FIFA Version hinzufügen</h3>
+          <h3 className="karten-titel mb-4">Neue FIFA Version hinzufügen</h3>
           
           <form onSubmit={handleAddVersion} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -303,7 +303,7 @@ const FifaVersionManagerTab = () => {
 
       {/* Versions List */}
       <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-text-primary">Verfügbare FIFA Versionen</h3>
+        <h3 className="karten-titel">Verfügbare FIFA Versionen</h3>
         
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
           {versions.map(version => (
@@ -319,7 +319,7 @@ const FifaVersionManagerTab = () => {
                 <div className="flex items-center gap-3">
                   <div className="flex flex-col">
                     <div className="flex items-center gap-2">
-                      <h4 className="text-xl font-bold text-text-primary">{version.id}</h4>
+                      <h4 className="karten-titel">{version.id}</h4>
                       <span className="text-sm text-text-secondary">({version.name})</span>
                     </div>
                     <div className="flex items-center gap-2 mt-1">
@@ -392,7 +392,7 @@ const FifaVersionManagerTab = () => {
         <div className="flex items-start gap-3">
           <span className="text-system-orange text-2xl">💡</span>
           <div>
-            <h4 className="font-semibold text-system-orange mb-2">FIFA Versionen-System</h4>
+            <h4 className="karten-titel text-system-orange mb-2">FIFA Versionen-System</h4>
             <div className="space-y-2 text-sm text-system-orange">
               <p>• <strong>Built-in Versionen:</strong> FC25 (Legacy) und FC26 (Standard) sind vorinstalliert</p>
               <p>• <strong>Custom Versionen:</strong> Erstellen Sie eigene Versionen für zukünftige FIFA-Editionen</p>
@@ -406,7 +406,7 @@ const FifaVersionManagerTab = () => {
 
       {/* Technical Details */}
       <div className="bg-bg-tertiary rounded-xl p-6">
-        <h4 className="font-semibold text-text-primary mb-3">Technische Details</h4>
+        <h4 className="karten-titel mb-3">Technische Details</h4>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-text-secondary">
           <div>
             <strong>Version-Management:</strong><br />

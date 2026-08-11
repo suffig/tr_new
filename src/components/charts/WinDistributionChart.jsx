@@ -214,7 +214,7 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
 
   return (
     <div ref={containerRef} className="w-full">
-      <h3 className="text-lg font-semibold mb-4 text-text-primary text-center">{title}</h3>
+      <h3 className="karten-titel mb-4 text-center">{title}</h3>
       <div className="bg-bg-elevated dark:bg-gray-800 rounded-lg p-4 shadow-sm flex justify-center">
         <svg ref={svgRef}></svg>
         <div ref={tooltipRef}></div>

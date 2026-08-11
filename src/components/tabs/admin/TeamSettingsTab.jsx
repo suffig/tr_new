@@ -186,7 +186,7 @@ export default function TeamSettingsTab() {
       ) : (
         <div className="modern-card">
         <div className="flex justify-between items-center mb-4">
-          <h3 className="text-lg font-semibold text-text-primary">
+          <h3 className="karten-titel">
             🏆 Team-Manager Einstellungen
           </h3>
           {hasChanges && (
@@ -203,7 +203,7 @@ export default function TeamSettingsTab() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* AEK Manager */}
           <div className="space-y-4 p-4 border border-system-blue/25 rounded-lg bg-system-blue/10">
-            <h4 className="font-medium text-system-blue flex items-center">
+            <h4 className="karten-titel text-system-blue flex items-center">
               <div className="w-6 h-6 bg-system-blue rounded mr-2"></div>
               AEK Manager
             </h4>
@@ -244,7 +244,7 @@ export default function TeamSettingsTab() {
 
           {/* Real Manager */}
           <div className="space-y-4 p-4 border border-system-red/25 rounded-lg bg-system-red/10">
-            <h4 className="font-medium text-system-red flex items-center">
+            <h4 className="karten-titel text-system-red flex items-center">
               <div className="w-6 h-6 bg-system-red rounded mr-2"></div>
               Real Manager
             </h4>

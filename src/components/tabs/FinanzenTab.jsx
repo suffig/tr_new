@@ -258,7 +258,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         {/* Recent transactions for this team */}
         <div className="modern-card p-0 overflow-hidden mb-6">
           <div className="p-4 border-b border-border-light flex items-center justify-between">
-            <h3 className="font-semibold text-text-primary">Letzte Transaktionen</h3>
+            <h3 className="karten-titel">Letzte Transaktionen</h3>
             <span className="text-xs text-text-tertiary">{txns.length}</span>
           </div>
           {txns.length > 0 ? (
@@ -334,7 +334,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
               {/* Header row with a discreet filter toggle */}
               <div className="flex items-center justify-between gap-2">
                 <div className="min-w-0">
-                  <h3 className="text-lg font-semibold text-text-primary leading-tight">Transaktionen</h3>
+                  <h3 className="karten-titel">Transaktionen</h3>
                   <p className="text-xs text-text-tertiary">
                     {filtered.length} {filtered.length === 1 ? 'Buchung' : 'Buchungen'}
                     {txFiltersActive ? ' (gefiltert)' : ''}
@@ -548,7 +548,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
 
       {/* Match-grouped Transactions */}
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary mb-4">
+        <h3 className="karten-titel mb-4">
           Match-Transaktionen
         </h3>
         
@@ -636,7 +636,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
             <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
               <Icon name="football" size={28} strokeWidth={1.6} />
             </div>
-            <h4 className="text-lg font-medium text-text-primary mb-2">
+            <h4 className="karten-titel mb-2">
               Keine Match-Transaktionen
             </h4>
             <p className="text-text-muted">
@@ -649,7 +649,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
       {/* Non-Match Transactions */}
       {nonMatchTransactions.length > 0 && (
         <div className="mb-6">
-          <h3 className="text-lg font-semibold text-text-primary mb-4">
+          <h3 className="karten-titel mb-4">
             Sonstige Transaktionen
           </h3>
           
@@ -712,7 +712,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                 <Icon name="bulb" size={18} strokeWidth={2} />
               </div>
               <div>
-                <h4 className="font-semibold text-system-blue mb-1">Hinweis zu Marktwerten</h4>
+                <h4 className="karten-titel text-system-blue mb-1">Hinweis zu Marktwerten</h4>
                 <p className="text-system-blue text-sm">
                   Spieler-Marktwerte werden in der Datenbank in Millionen Euro gespeichert (z.B. 12.5 = 12,5M €).
                   Für die Gesamtkapital-Berechnung werden diese automatisch in Euro umgerechnet.
@@ -727,7 +727,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
                 <Icon name="bulb" size={18} strokeWidth={2} />
               </div>
               <div>
-                <h4 className="font-semibold text-system-blue mb-1">Transaktionen verwalten</h4>
+                <h4 className="karten-titel text-system-blue mb-1">Transaktionen verwalten</h4>
                 <p className="text-system-blue text-sm">
                   Um neue Transaktionen hinzuzufügen, nutzen Sie den Verwaltungsbereich.
                 </p>

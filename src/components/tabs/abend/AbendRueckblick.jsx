@@ -86,7 +86,7 @@ export default function AbendRueckblick() {
         <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-bg-tertiary text-text-tertiary flex items-center justify-center">
           <Icon name="calendar" size={28} strokeWidth={1.6} />
         </div>
-        <h4 className="font-medium text-text-primary mb-1">Noch kein Abend erfasst</h4>
+        <h4 className="karten-titel mb-1">Noch kein Abend erfasst</h4>
         <p className="text-sm text-text-muted">
           Sobald ihr Spiele eintragt, Teams zieht oder etwas trinkt, erscheint der Abend hier.
         </p>
@@ -101,7 +101,7 @@ export default function AbendRueckblick() {
         return (
           <div key={a.datum} className="modern-card">
             <div className="flex items-baseline justify-between gap-2 mb-3">
-              <h3 className="font-semibold text-text-primary truncate">{datumLabel(a.datum)}</h3>
+              <h3 className="karten-titel truncate">{datumLabel(a.datum)}</h3>
               {/* Ohne Spiele stand hier "0 Spiele" — eine Null, die nichts sagt.
                   "kein Spiel" statt einer Vermutung, was sonst passiert ist:
                   was es war, steht in den Kacheln darunter. */}

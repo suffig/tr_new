@@ -39,7 +39,7 @@ export default function SterneVerlauf({ history, namen }) {
   return (
     <div className="modern-card">
       <div className="flex items-center justify-between mb-3 gap-2">
-        <h4 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2">
+        <h4 className="karten-titel inline-flex items-center gap-2">
           <Icon name="trendingUp" size={17} strokeWidth={2.2} className="text-system-yellow" />
           Sterne-Verlauf
         </h4>

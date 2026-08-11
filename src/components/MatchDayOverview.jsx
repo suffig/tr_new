@@ -206,7 +206,7 @@ export default function MatchDayOverview({ matches }) {
           <span className="w-9 h-9 rounded-xl bg-system-purple/12 text-system-purple flex items-center justify-center flex-shrink-0">
             <Icon name="calendar" size={18} strokeWidth={2.1} />
           </span>
-          <h3 className="text-title3 font-bold text-text-primary">Spieltag-Übersicht</h3>
+          <h3 className="karten-titel">Spieltag-Übersicht</h3>
         </div>
 
         {/* Date Selector */}
@@ -277,7 +277,7 @@ export default function MatchDayOverview({ matches }) {
           <div className="modern-card">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-xl font-bold text-text-primary">
+                <h3 className="karten-titel">
                   {formatDate(selectedDate)}
                 </h3>
                 <p className="text-text-secondary">
@@ -295,7 +295,7 @@ export default function MatchDayOverview({ matches }) {
             {/* Special Events */}
             {selectedDateStats.specialEvents.length > 0 && (
               <div className="mb-4">
-                <h4 className="font-semibold text-text-primary mb-2 inline-flex items-center gap-2"><Icon name="sparkles" size={16} strokeWidth={2.2} className="text-system-yellow" />Besondere Ereignisse</h4>
+                <h4 className="karten-titel mb-2 inline-flex items-center gap-2"><Icon name="sparkles" size={16} strokeWidth={2.2} className="text-system-yellow" />Besondere Ereignisse</h4>
                 <div className="space-y-2">
                   {selectedDateStats.specialEvents.map((event, index) => (
                     <div
@@ -351,7 +351,7 @@ export default function MatchDayOverview({ matches }) {
 
           {/* Match Details */}
           <div className="modern-card">
-            <h4 className="font-semibold text-text-primary mb-4 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Spiele im Detail</h4>
+            <h4 className="karten-titel mb-4 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Spiele im Detail</h4>
             <div className="space-y-4">
               {matchesByDate[selectedDate].map((match) => (
                 <div key={match.id} className="p-4 bg-bg-secondary rounded-lg border border-border-light">
@@ -472,7 +472,7 @@ export default function MatchDayOverview({ matches }) {
           {/* Game Analysis */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="modern-card">
-              <h4 className="font-semibold text-text-primary mb-4 inline-flex items-center gap-2"><Icon name="chart" size={16} strokeWidth={2.2} className="text-system-blue" />Spielanalyse</h4>
+              <h4 className="karten-titel mb-4 inline-flex items-center gap-2"><Icon name="chart" size={16} strokeWidth={2.2} className="text-system-blue" />Spielanalyse</h4>
               <div className="space-y-3">
                 <div className="flex justify-between">
                   <span className="text-text-secondary">Durchschnittliche Tordifferenz:</span>
@@ -496,7 +496,7 @@ export default function MatchDayOverview({ matches }) {
             </div>
 
             <div className="modern-card">
-              <h4 className="font-semibold text-text-primary mb-4 inline-flex items-center gap-2"><Icon name="user" size={16} strokeWidth={2.2} className="text-system-purple" />Top-Torschützen des Tages</h4>
+              <h4 className="karten-titel mb-4 inline-flex items-center gap-2"><Icon name="user" size={16} strokeWidth={2.2} className="text-system-purple" />Top-Torschützen des Tages</h4>
               <div className="space-y-2">
                 {Object.entries(selectedDateStats.playerGoals)
                   .sort(([,a], [,b]) => b - a)

@@ -688,7 +688,7 @@ export default function AddMatchTab() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary">
+        <h3 className="karten-titel">
           Neues Spiel hinzufügen
         </h3>
       </div>
@@ -698,7 +698,7 @@ export default function AddMatchTab() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
             <Icon name="football" size={32} strokeWidth={1.8} />
           </div>
-          <h4 className="text-lg font-medium text-text-primary mb-6">
+          <h4 className="karten-titel mb-6">
             Spiel hinzufügen
           </h4>
 
@@ -732,7 +732,7 @@ export default function AddMatchTab() {
       {/* Draft matches — saved locally, not yet on the DB */}
       {drafts.length > 0 && (
         <div className="modern-card mt-4">
-          <h4 className="font-semibold text-text-primary mb-1 inline-flex items-center gap-2">
+          <h4 className="karten-titel mb-1 inline-flex items-center gap-2">
             <Icon name="clipboard" size={18} strokeWidth={2.2} className="text-system-orange" />
             Entwürfe
             <span className="text-xs font-medium bg-system-orange/15 text-system-orange px-2 py-0.5 rounded-full">{drafts.length}</span>
@@ -784,7 +784,7 @@ export default function AddMatchTab() {
           >
             <div className="p-4 sm:p-6 overflow-y-auto mobile-safe-bottom flex-1 min-h-0">
               <div className="flex justify-between items-center mb-6 sticky top-0 bg-bg-secondary z-10 pb-4">
-                <h3 className="text-xl font-semibold text-text-primary">{editingDraftId ? 'Entwurf bearbeiten' : 'Neues Spiel'}</h3>
+                <h3 className="karten-titel">{editingDraftId ? 'Entwurf bearbeiten' : 'Neues Spiel'}</h3>
                 <button
                   onClick={closeModal}
                   aria-label="Schließen (als Entwurf speichern)"
@@ -834,7 +834,7 @@ export default function AddMatchTab() {
 
                 {/* Live Goal Scoring */}
                 <div className="border-t border-border-light pt-4">
-                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Live Torwertung</h4>
+                  <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Live Torwertung</h4>
 
                   {/* Compact score display */}
                   <div className="rounded-xl p-4 mb-4 text-center bg-bg-tertiary">
@@ -863,7 +863,7 @@ export default function AddMatchTab() {
 
                 {/* Cards */}
                 <div className="border-t border-border-light pt-4">
-                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} className="text-system-red" />Karten</h4>
+                  <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} className="text-system-red" />Karten</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <p className="text-xs font-medium text-system-blue flex items-center gap-1.5"><TeamLogo team="aek" size="xs" />{getTeamDisplay('AEK')}</p>
@@ -884,7 +884,7 @@ export default function AddMatchTab() {
 
                 {/* Player of the Match */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} className="text-system-orange" />Spieler des Spiels</h4>
+                  <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} className="text-system-orange" />Spieler des Spiels</h4>
                   
                   {/* Team Filter */}
                   <div className="mb-3">
@@ -952,7 +952,7 @@ export default function AddMatchTab() {
 
                 {/* Prize Money */}
                 <div className="border-t pt-4">
-                  <h4 className="text-sm font-semibold text-text-primary mb-3 inline-flex items-center gap-2"><Icon name="euro" size={16} strokeWidth={2.2} className="text-system-green" />Preisgelder (automatisch berechnet)</h4>
+                  <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="euro" size={16} strokeWidth={2.2} className="text-system-green" />Preisgelder (automatisch berechnet)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Kein Eingabefeld: die Betraege werden gerechnet, nicht
                         getippt. Als <input type="number"> stand hier "1000000"

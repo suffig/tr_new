@@ -25,7 +25,7 @@ function Karte({ icon, farbe, titel, hinweis, children }) {
   return (
     <div className="modern-card">
       <div className="flex items-center justify-between mb-3 gap-2">
-        <h3 className="font-semibold text-text-primary text-sm inline-flex items-center gap-2 min-w-0">
+        <h3 className="karten-titel inline-flex items-center gap-2 min-w-0">
           <Icon name={icon} size={17} strokeWidth={2.2} className={farbe} />
           <span className="truncate">{titel}</span>
         </h3>

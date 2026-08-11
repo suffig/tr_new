@@ -66,7 +66,7 @@ export default function SpielerVerlauf({ spieler, onSchliessen }) {
         <div className="sticky top-0 bg-bg-secondary px-4 py-3 border-b border-border-light flex items-center gap-2.5 z-10">
           <SpielerWappen team={spieler.currentTeam} size="sm" />
           <div className="min-w-0 flex-1">
-            <h3 className="text-callout font-semibold text-text-primary truncate">{spieler.name}</h3>
+            <h3 className="karten-titel truncate">{spieler.name}</h3>
             <p className="text-caption2 text-text-tertiary truncate">
               {zeilen.length} {zeilen.length === 1 ? 'Saison' : 'Saisons'}
               {stationen.length > 0 ? ` · ${stationen.join(' → ')}` : ''}

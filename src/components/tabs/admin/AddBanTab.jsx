@@ -103,7 +103,7 @@ export default function AddBanTab() {
   return (
     <div className="p-4 pb-20">
       <div className="mb-6">
-        <h3 className="text-lg font-semibold text-text-primary">
+        <h3 className="karten-titel">
           Neue Sperre hinzufügen
         </h3>
       </div>
@@ -113,7 +113,7 @@ export default function AddBanTab() {
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-red/12 text-system-red flex items-center justify-center">
             <Icon name="ban" size={32} strokeWidth={1.8} />
           </div>
-          <h4 className="text-lg font-medium text-text-primary mb-6">
+          <h4 className="karten-titel mb-6">
             Sperre hinzufügen
           </h4>
 
@@ -133,7 +133,7 @@ export default function AddBanTab() {
           <div className="bg-bg-secondary rounded-lg max-w-md w-full modal-content modal-mobile-safe">
             <div className="p-6">
               <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-semibold text-text-primary">Neue Sperre</h3>
+                <h3 className="karten-titel">Neue Sperre</h3>
                 <button
                   onClick={() => setShowModal(false)}
                   className="text-text-muted hover:text-text-primary text-2xl"
@@ -303,7 +303,7 @@ export default function AddBanTab() {
 
       {/* Available Ban Types */}
       <div className="mt-6 modern-card">
-        <h4 className="font-semibold text-text-primary mb-3">Verfügbare Sperrarten</h4>
+        <h4 className="karten-titel mb-3">Verfügbare Sperrarten</h4>
         <div className="space-y-2">
           {BAN_TYPES.map((banType) => (
             <div key={banType.value} className="flex justify-between items-center p-3 bg-bg-secondary rounded-lg">
@@ -328,7 +328,7 @@ export default function AddBanTab() {
             <Icon name="bulb" size={18} strokeWidth={2} />
           </div>
           <div>
-            <h4 className="font-semibold text-text-primary mb-1">Hinweis</h4>
+            <h4 className="karten-titel mb-1">Hinweis</h4>
             <p className="text-footnote text-text-secondary">
               Nach dem Hinzufügen können Sie die Sperre in der Sperren-Übersicht einsehen und verwalten.
             </p>

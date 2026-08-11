@@ -2021,7 +2021,7 @@ function Modal({ titel, onSchliessen, children }) {
       <div className="bg-bg-secondary w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[88dvh] overflow-y-auto"
            onClick={(e) => e.stopPropagation()}>
         <div className="sticky top-0 bg-bg-secondary px-4 py-3 border-b border-border-light flex items-center justify-between z-10">
-          <h3 className="text-callout font-semibold text-text-primary">{titel}</h3>
+          <h3 className="karten-titel">{titel}</h3>
           <button onClick={onSchliessen} className="w-8 h-8 rounded-full bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
                   aria-label="Schließen">
             <Icon name="x" size={16} strokeWidth={2.4} />

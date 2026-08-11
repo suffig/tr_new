@@ -223,7 +223,7 @@ const VersionTeamSettingsTab = () => {
       <div className="bg-bg-tertiary rounded-xl p-6 border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-text-primary">Versions-spezifische Team-Einstellungen</h3>
+            <h3 className="karten-titel">Versions-spezifische Team-Einstellungen</h3>
             <p className="text-text-secondary mt-1">
               Konfigurieren Sie Team-Namen und Icons für verschiedene FIFA Versionen
             </p>
@@ -234,7 +234,7 @@ const VersionTeamSettingsTab = () => {
 
       {/* Version Selector */}
       <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
-        <h4 className="font-semibold text-text-primary mb-4">Version auswählen</h4>
+        <h4 className="karten-titel mb-4">Version auswählen</h4>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
           {versions.map(version => (
             <button
@@ -260,7 +260,7 @@ const VersionTeamSettingsTab = () => {
       {selectedVersion && (
         <div className="bg-bg-secondary rounded-xl border border-border-light p-6">
           <div className="flex items-center justify-between mb-6">
-            <h4 className="font-semibold text-text-primary">
+            <h4 className="karten-titel">
               Team-Konfiguration für {getFifaVersionDisplayName(selectedVersion)}
             </h4>
             <div className="flex gap-2">
@@ -414,7 +414,7 @@ const VersionTeamSettingsTab = () => {
       {showCopyModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4">
-            <h4 className="font-semibold text-text-primary mb-4">Team-Einstellungen kopieren</h4>
+            <h4 className="karten-titel mb-4">Team-Einstellungen kopieren</h4>
             <p className="text-text-secondary mb-4">
               Von welcher Version möchten Sie die Team-Einstellungen kopieren?
             </p>

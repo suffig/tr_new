@@ -175,7 +175,7 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
           <div className="w-14 h-14 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
             <Icon name="check" size={26} strokeWidth={2} />
           </div>
-          <h3 className="text-lg font-medium text-text-primary mb-2">
+          <h3 className="karten-titel mb-2">
             {status === 'aktiv' ? 'Keine aktiven Sperren' : 'Keine Sperren gefunden'}
           </h3>
           <p className="text-text-muted">

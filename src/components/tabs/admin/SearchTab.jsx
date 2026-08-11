@@ -240,7 +240,7 @@ export default function SearchTab({ onNavigate }) {
             {activeSearchType === 'players' && (
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="font-medium text-text-primary">{item.name}</h3>
+                  <h3 className="karten-titel">{item.name}</h3>
                   <p className="text-sm text-text-secondary">
                     {item.position} • {item.team} • {item.value || 0}M €
                   </p>
@@ -260,7 +260,7 @@ export default function SearchTab({ onNavigate }) {
             {activeSearchType === 'matches' && (
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="font-medium text-text-primary">
+                  <h3 className="karten-titel">
                     {new Date(item.date).toLocaleDateString('de-DE')}
                   </h3>
                   <p className="text-sm text-text-secondary">
@@ -326,7 +326,7 @@ export default function SearchTab({ onNavigate }) {
             {activeSearchType === 'transactions' && (
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="font-medium text-text-primary">{item.type || 'Transaktion'}</h3>
+                  <h3 className="karten-titel">{item.type || 'Transaktion'}</h3>
                   <p className="text-sm text-text-secondary">{item.description || 'Keine Beschreibung'}</p>
                   <p className="text-xs text-text-secondary">
                     {new Date(item.date).toLocaleDateString('de-DE')}
@@ -346,7 +346,7 @@ export default function SearchTab({ onNavigate }) {
             {activeSearchType === 'bans' && (
               <div className="flex items-center justify-between">
                 <div className="flex-1">
-                  <h3 className="font-medium text-text-primary">{item.player_name}</h3>
+                  <h3 className="karten-titel">{item.player_name}</h3>
                   <p className="text-sm text-text-secondary">{item.team} • {item.type}</p>
                   {item.reason && (
                     <p className="text-xs text-text-secondary">{item.reason}</p>
@@ -374,7 +374,7 @@ export default function SearchTab({ onNavigate }) {
     <div className="p-4 pb-20 space-y-4">
       {/* Header */}
       <div>
-        <h3 className="text-lg font-semibold text-text-primary mb-1 inline-flex items-center gap-2"><Icon name="search" size={18} strokeWidth={2.2} className="text-system-blue" />Globale Suche</h3>
+        <h3 className="karten-titel mb-1 inline-flex items-center gap-2"><Icon name="search" size={18} strokeWidth={2.2} className="text-system-blue" />Globale Suche</h3>
         <p className="text-text-muted text-sm">
           Durchsuche alle Daten zentral an einem Ort
         </p>
@@ -417,7 +417,7 @@ export default function SearchTab({ onNavigate }) {
       {/* Search Results */}
       <div className="modern-card">
         <div className="p-4 border-b border-border-light">
-          <h4 className="font-medium text-text-primary">
+          <h4 className="karten-titel">
             {searchResults.length > 0 ? 'Suchergebnisse' : `Alle ${currentSearchType.label}`}
             <span className="text-text-secondary ml-2">
               ({searchResults.length > 0 ? searchResults.length : currentSearchType.data.length})
