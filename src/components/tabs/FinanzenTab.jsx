@@ -1,5 +1,6 @@
 ﻿import Icon from '../icons/Icon';
 import { useState } from 'react';
+import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 import { dez } from '../../utils/zahlen';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
@@ -495,36 +496,33 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         </>
       ) : (
         <>
-          {/* Compact team comparison */}
-      <div className="modern-card mb-4 p-0 overflow-hidden">
-        <div className="grid grid-cols-2 divide-x divide-border-light">
-          {[
-            { key: 'AEK', logo: 'aek', accent: 'text-system-blue', fin: aekFinances },
-            { key: 'Real', logo: 'real', accent: 'text-system-red', fin: realFinances },
-          ].map((t) => (
-            <div key={t.key} className="p-4 text-center">
-              <div className="flex items-center justify-center gap-2 mb-3">
-                <TeamLogo team={t.logo} size="md" />
-                <h3 className={`font-semibold text-sm ${t.accent}`}>{getTeamDisplay(t.key)}</h3>
-              </div>
-              <div className={`text-2xl font-bold ${getAmountColorClass(t.fin.balance)} animate-numberCount`}>
-                {formatCurrency(t.fin.balance)}
-              </div>
-              <div className="text-[11px] text-text-tertiary mb-3">Kontostand</div>
-              <div className="flex justify-center gap-4 text-xs">
-                <div>
-                  <div className={`font-semibold ${t.accent}`}>{formatPlayerValue(getTeamSquadValue(t.key))}</div>
-                  <div className="text-text-tertiary">Kaderwert</div>
-                </div>
-                <div>
-                  <div className={`font-semibold ${(t.fin.debt || 0) > 0 ? 'text-system-red' : 'text-text-secondary'}`}>{formatCurrency(t.fin.debt || 0)}</div>
-                  <div className="text-text-tertiary">Schulden</div>
-                </div>
-              </div>
+          {/* Die beiden Seiten als Kräfteverhältnis.
+              Hier standen zwei halbbreite Spalten mit Wappen, Namen,
+              Kontostand, Kaderwert und Schulden. Zwei Dinge stimmten daran
+              nicht:
+
+              * Die Schulden-Spalte wiederholte, was die offene Rechnung
+                direkt darüber schon in einem Satz sagt — und zwar besser,
+                weil sie die Differenz nennt statt zwei Zahlen, die man selbst
+                verrechnen muss. Sie ist raus.
+              * Vergleichen musste man quer über die Trennlinie zwischen den
+                Spalten, also genau über die Stelle, an der ein Balken die
+                Antwort schon gibt. */}
+          <div className="modern-card p-4 mb-4">
+            <div className="text-footnote font-semibold text-text-muted mb-1">Wer steht wie da</div>
+            <div className="divide-y divide-border-light">
+              <Kraefteverhaeltnis
+                label="Kontostand" zusatz="Bargeld"
+                aek={aekFinances.balance} real={realFinances.balance}
+                anzeige={(n) => formatCurrency(n)}
+                aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+              <Kraefteverhaeltnis
+                label="Kaderwert" zusatz="heutige Marktwerte"
+                aek={getTeamSquadValue('AEK')} real={getTeamSquadValue('Real')}
+                anzeige={(n) => formatPlayerValue(n)}
+                aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
 
       {/* Total capital banner */}
       <div className="modern-card mb-6 flex items-center justify-between">

@@ -25,13 +25,23 @@
 export default function Kraefteverhaeltnis({
   label, zusatz, aek, real, anzeige, aekName, realName, klein = false,
 }) {
-  const a = Math.max(0, Number(aek) || 0);
-  const r = Math.max(0, Number(real) || 0);
+  const a = Number(aek) || 0;
+  const r = Number(real) || 0;
+  const zeig = anzeige || ((n) => n.toLocaleString('de-DE'));
+  const vorn = a === r ? null : a > r ? 'aek' : 'real';
+
+  // Ein Verhältnis gibt es nur für Werte, die sich aufteilen lassen. Bei einem
+  // negativen — einem überzogenen Konto etwa — ergibt "Anteil an der Summe"
+  // keinen Sinn mehr: −500 gegen 1500 wären "−50 % zu 150 %". Dann bleibt die
+  // Fläche ungeteilt und grau, die Zahlen stehen weiter da.
+  //
+  // Vorher wurden negative Werte mit Math.max(0, …) auf null gezogen — und
+  // diese Null wurde dann auch ANGEZEIGT. Ein Konto von −500 € stand als
+  // "0 €" in der Zeile, mit vollem Balken für die Gegenseite.
+  const vergleichbar = a >= 0 && r >= 0;
   const summe = a + r;
   // Ohne Daten eine ruhige, mittige Linie statt eines zufälligen Ausschlags.
-  const anteilA = summe > 0 ? (a / summe) * 100 : 50;
-  const zeig = anzeige || ((n) => n.toLocaleString('de-DE'));
-  const vorn = summe === 0 ? null : a > r ? 'aek' : r > a ? 'real' : null;
+  const anteilA = vergleichbar && summe > 0 ? (a / summe) * 100 : 50;
 
   return (
     <div className={klein ? 'py-2' : 'py-2.5'}>
@@ -50,16 +60,21 @@ export default function Kraefteverhaeltnis({
         </span>
       </div>
       <div className={`relative ${klein ? 'h-1.5' : 'h-2'} rounded-full overflow-hidden bg-bg-tertiary flex`}>
-        <div className="bg-system-blue h-full transition-all duration-500"
-             style={{ width: `${anteilA}%` }} />
-        <div className="bg-system-red h-full transition-all duration-500"
-             style={{ width: `${100 - anteilA}%` }} />
-        {/* Die Mitte als Bezug: ohne sie sieht man zwar, wo die Trennlinie
-            liegt, aber nicht, wie weit sie vom Gleichstand entfernt ist. */}
-        <div className="absolute inset-y-0 left-1/2 w-px bg-bg-secondary/70" />
+        {vergleichbar && (
+          <>
+            <div className="bg-system-blue h-full transition-all duration-500"
+                 style={{ width: `${anteilA}%` }} />
+            <div className="bg-system-red h-full transition-all duration-500"
+                 style={{ width: `${100 - anteilA}%` }} />
+            {/* Die Mitte als Bezug: ohne sie sieht man zwar, wo die Trennlinie
+                liegt, aber nicht, wie weit sie vom Gleichstand entfernt ist. */}
+            <div className="absolute inset-y-0 left-1/2 w-px bg-bg-secondary/70" />
+          </>
+        )}
       </div>
       <div className="sr-only">
         {aekName} {zeig(a)}, {realName} {zeig(r)}
+        {vergleichbar ? '' : ' — als Verhältnis nicht darstellbar, weil ein Wert negativ ist.'}
       </div>
     </div>
   );
