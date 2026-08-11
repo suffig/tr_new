@@ -1347,211 +1347,137 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     </div>
   );
 
-  const renderTeams = () => (
-    <div className="space-y-6">
-      {/* Team Comparison */}
-      <div className="modern-card">
-        <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="scale" size={18} strokeWidth={2.2} />Team-Vergleich</h3>
-        <div className="grid md:grid-cols-2 gap-6">
-          <div className="space-y-3">
-            <h4 className="font-semibold text-system-blue">{getTeamDisplay('AEK')}</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Aktive Spieler:</span>
-                <span className="font-medium text-text-primary">{aekPlayers.length}</span>
+  /**
+   * Die Teams-Ansicht.
+   *
+   * Hier standen fuenf Karten mit zusammen ueber vierzig Zahlen, von denen die
+   * meisten dieselbe Frage dreimal beantworteten:
+   *
+   * * "Siege" als Anzahl, dazu "Erfolgsquote AEK/Real" in Prozent und
+   *   "Niederlagen", die definitionsgemaess die Siege des anderen sind.
+   * * "Aktive Spieler" je Team und noch einmal als Summe zwei Karten weiter.
+   * * Wie eng die Spiele sind, in drei verschiedenen Einteilungen: "Enge
+   *   Spiele (<=1 Tor)" und "Deutliche Siege (>=3 Tore)" in einer Karte,
+   *   "Torspektakel (5+ Tore)" und "Hoechste Tordifferenz" in einer zweiten,
+   *   "1-Tor / 2-Tor / 3-4 Tore / 5+ Tore" in einer dritten.
+   *
+   * Und eine Zahl war schlicht falsch: "Laengste Serie: AEK (243 Siege)" nahm
+   * Math.max(aekWins, realWins) — das sind die Gesamtsiege, nicht die Serie.
+   * Die echte laengste Serie steht im Duell.
+   *
+   * Jetzt zwei Karten: wer steht wie da, und wie deutlich gehen die Spiele
+   * aus. Die Verteilung wird aus filteredMatches frisch gerechnet, damit die
+   * Klassen luecken- und ueberschneidungsfrei sind — vorher stammten sie aus
+   * drei Feldern mit drei verschiedenen Definitionen.
+   */
+  const renderTeams = () => {
+    const aekName = getTeamDisplay('AEK');
+    const realName = getTeamDisplay('Real');
+    const spiele = filteredMatches || [];
+
+    const klassen = [
+      { id: 'remis', label: 'Unentschieden', pruef: (d) => d === 0 },
+      { id: 'eins', label: '1 Tor Unterschied', pruef: (d) => d === 1 },
+      { id: 'zwei', label: '2 Tore', pruef: (d) => d === 2 },
+      { id: 'drei', label: '3 bis 4 Tore', pruef: (d) => d >= 3 && d <= 4 },
+      { id: 'fuenf', label: '5 Tore und mehr', pruef: (d) => d >= 5 },
+    ].map((k) => ({ ...k, anzahl: 0 }));
+
+    let beideTreffen = 0;
+    for (const m of spiele) {
+      const a = m.goalsa || 0, b = m.goalsb || 0;
+      const treffer = klassen.find((k) => k.pruef(Math.abs(a - b)));
+      if (treffer) treffer.anzahl++;
+      if (a > 0 && b > 0) beideTreffen++;
+    }
+    const maxKlasse = Math.max(1, ...klassen.map((k) => k.anzahl));
+
+    if (spiele.length === 0) {
+      return (
+        <div className="text-center py-8 text-text-muted">
+          <div className="mb-2 text-system-blue"><Icon name="scale" size={30} strokeWidth={1.8} /></div>
+          <p>Keine Spiele im gewählten Zeitraum</p>
+        </div>
+      );
+    }
+
+    return (
+      <div className="space-y-4">
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-1">Die beiden Seiten</div>
+          <div className="divide-y divide-border-light">
+            <Kraefteverhaeltnis
+              label="Siege"
+              zusatz={`${totalMatches} Spiele`
+                + (klassen[0].anzahl ? ` · ${klassen[0].anzahl} Remis` : '')}
+              aek={aekWins} real={realWins}
+              aekName={aekName} realName={realName} />
+            {/* "Ohne Gegentor", nicht "Zu-Null-Siege": cleanSheets zaehlt
+                Spiele ohne Gegentor, beim 0:0 also fuer beide Seiten. Ein
+                Etikett mit "gewonnen" wuerde etwas anderes behaupten, als die
+                Zahl misst. Die Zu-Null-SIEGE stehen im Duell. */}
+            <Kraefteverhaeltnis
+              label="Ohne Gegentor" zusatz="Remis eingerechnet"
+              aek={advancedStats.cleanSheets.aek} real={advancedStats.cleanSheets.real}
+              aekName={aekName} realName={realName} />
+            <Kraefteverhaeltnis
+              label="Tore je Spiel"
+              aek={advancedStats.goalEfficiency.aekAvg} real={advancedStats.goalEfficiency.realAvg}
+              anzeige={(n) => dez(n, 1)}
+              aekName={aekName} realName={realName} />
+            <Kraefteverhaeltnis
+              label="Kader" zusatz="aktive Spieler"
+              aek={aekPlayers.length} real={realPlayers.length}
+              aekName={aekName} realName={realName} />
+          </div>
+        </div>
+
+        {/* Wie deutlich es ausgeht — eine Verteilung statt drei Einteilungen.
+            Die Balken sind am haeufigsten Fall ausgerichtet, nicht an der
+            Gesamtzahl: sonst waeren bei 903 Spielen alle fuenf Balken kurz
+            und untereinander nicht zu unterscheiden. */}
+        <div className="modern-card p-4">
+          <div className="flex items-baseline justify-between gap-2 mb-2">
+            <span className="text-footnote font-semibold text-text-muted">Wie deutlich es ausgeht</span>
+            <span className="text-caption2 text-text-tertiary">{spiele.length} Spiele</span>
+          </div>
+          <div className="space-y-2">
+            {klassen.map((k) => (
+              <div key={k.id}>
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-caption2 text-text-secondary truncate flex-1">{k.label}</span>
+                  <span className="text-caption2 num-tabular text-text-primary font-semibold">{k.anzahl}</span>
+                  <span className="text-caption2 num-tabular text-text-tertiary w-10 text-right">
+                    {dez((k.anzahl / spiele.length) * 100, 0)} %
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden">
+                  <div className={`h-full rounded-full ${
+                    k.id === 'remis' ? 'bg-border-strong' : 'bg-system-blue'}`}
+                       style={{ width: `${(k.anzahl / maxKlasse) * 100}%` }} />
+                </div>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Siege:</span>
-                <span className="font-medium text-text-primary">{aekWins}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Niederlagen:</span>
-                <span className="font-medium text-text-primary">{teamRecords.aek.losses}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Zu Null Spiele:</span>
-                <span className="font-medium text-text-primary">{advancedStats.cleanSheets.aek}</span>
+            ))}
+          </div>
+
+          <div className="mt-3 pt-3 border-t border-border-light grid grid-cols-2 gap-3">
+            <div>
+              <div className="stat-display text-[17px] num-tabular text-text-primary">{beideTreffen}</div>
+              <div className="text-caption2 text-text-tertiary">
+                Beide treffen · {dez((beideTreffen / spiele.length) * 100, 0)} % der Spiele
               </div>
             </div>
-          </div>
-          <div className="space-y-3">
-            <h4 className="font-semibold text-system-red">{getTeamDisplay('Real')}</h4>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Aktive Spieler:</span>
-                <span className="font-medium text-text-primary">{realPlayers.length}</span>
+            <div>
+              <div className="stat-display text-[17px] num-tabular text-text-primary">
+                {advancedStats.highestScoringMatch}
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Siege:</span>
-                <span className="font-medium text-text-primary">{realWins}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Niederlagen:</span>
-                <span className="font-medium text-text-primary">{teamRecords.real.losses}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Zu Null Spiele:</span>
-                <span className="font-medium text-text-primary">{advancedStats.cleanSheets.real}</span>
-              </div>
+              <div className="text-caption2 text-text-tertiary">Tore im torreichsten Spiel</div>
             </div>
           </div>
         </div>
       </div>
-
-      {/* Advanced Team Stats */}
-      <div className="modern-card">
-        <h3 className="font-bold text-lg mb-4 inline-flex items-center gap-2"><Icon name="trendingUp" size={18} strokeWidth={2.2} />Torausbeute &amp; Serien</h3>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="text-center p-4 bg-bg-secondary rounded-lg">
-            <div className="text-2xl font-bold text-primary-green">{advancedStats.highScoringGames}</div>
-            <div className="text-sm text-text-muted">Torspektakel</div>
-            <div className="text-xs text-text-muted mt-1">Spiele mit 5+ Toren</div>
-          </div>
-          <div className="text-center p-4 bg-bg-secondary rounded-lg">
-            <div className="text-2xl font-bold text-accent-orange">{advancedStats.biggestWinMargin}</div>
-            <div className="text-sm text-text-muted">Höchste Tordifferenz</div>
-            <div className="text-xs text-text-muted mt-1">über alle Spiele</div>
-          </div>
-          <div className="text-center p-4 bg-bg-secondary rounded-lg">
-            <div className="text-2xl font-bold text-accent-blue">
-              {dez(advancedStats.avgGoalsPerMatch)}
-            </div>
-            <div className="text-sm text-text-muted">⌀ Tore pro Spiel</div>
-            <div className="text-xs text-text-muted mt-1">Durchschnittswert</div>
-          </div>
-          <div className="text-center p-4 bg-bg-secondary rounded-lg">
-            <div className="text-2xl font-bold text-system-purple">
-              {advancedStats.currentStreak.count > 0 ? 
-                `${advancedStats.currentStreak.count}` : '0'}
-            </div>
-            <div className="text-sm text-text-muted">Siegesserie</div>
-            <div className="text-xs text-text-muted mt-1">
-              {advancedStats.currentStreak.count > 0 ? 
-                getTeamDisplay(advancedStats.currentStreak.team) : 'Keine aktuelle Serie'}
-            </div>
-          </div>
-        </div>
-
-        {/* New Enhanced Statistics Section */}
-        <div className="mt-6 grid md:grid-cols-3 gap-6">
-          {/* "Heim und Auswaerts" entfernt: in dieser App steht AEK immer
-              als teama, also waren "Heimspiele" schlicht ALLE Spiele und
-              "Heimstaerke" nur die Siegquote unter falschem Namen. Eine
-              Zahl, die etwas anderes behauptet als sie misst, ist schlechter
-              als keine. */}
-
-          <div className="space-y-3">
-            <h4 className="font-semibold text-system-green inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} />Wie die Spiele ausgehen</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Beide Teams treffen:</span>
-                <span className="font-medium text-text-primary">{advancedStats.scoringPatterns.bothTeamsScore}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">1:0 Siege:</span>
-                <span className="font-medium text-text-primary">{advancedStats.scoringPatterns.oneNilWins}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">4+ Tore Siege:</span>
-                <span className="font-medium text-text-primary">{advancedStats.scoringPatterns.highScoringWins}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="space-y-3">
-            <h4 className="font-semibold text-system-purple inline-flex items-center gap-2"><Icon name="target" size={16} strokeWidth={2.2} />Wie eng es zugeht</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Enge Spiele (≤1 Tor):</span>
-                <span className="font-medium text-text-primary">{advancedStats.competitiveness.closeGames}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Deutliche Siege (≥3 Tore):</span>
-                <span className="font-medium text-text-primary">{advancedStats.competitiveness.blowouts}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">{getTeamDisplay('AEK')} Tor-Schnitt:</span>
-                <span className="font-medium text-text-primary">{dez(advancedStats.goalEfficiency.aekAvg)}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">{getTeamDisplay('Real')} Tor-Schnitt:</span>
-                <span className="font-medium text-text-primary">{dez(advancedStats.goalEfficiency.realAvg)}</span>
-              </div>
-            </div>
-          </div>
-        </div>
-        
-        {/* "Offensive Highlights" und "Team-Balance" entfernt: torreichstes
-            Team und aktivster Torschuetze stehen schon im Banner bzw. in der
-            Ansicht "Spieler", der Kader-Unterschied ergibt sich aus "Aktive
-            Spieler" zwei Karten weiter oben, "Marktwert-Verhaeltnis: Real
-            fuehrt" sagt weniger als die Marktwert-Ansicht, und "Dominanteres
-            Team" wiederholt den Siegestand. */}
-      </div>
-
-      {/* Hier stand ein zweiter "Direkter Vergleich": Siege, Quoten und
-          Tore je Spiel — dieselben vier Zahlen, die die Uebersicht schon
-          ganz oben zeigt, nur anders angeordnet. Wer die Teams-Ansicht
-          oeffnet, kommt an der Uebersicht ohnehin vorbei. */}
-      
-      {/* New Advanced Analytics */}
-      <div className="modern-card">
-        <h3 className="font-bold text-lg mb-4"><Icon name="search" size={17} strokeWidth={2.2} className="inline mr-2 -mt-0.5" />Detailanalyse</h3>
-        <div className="mb-4 text-sm text-text-muted">
-          Erweiterte Metriken für eine tiefgreifende Team-Analyse.
-        </div>
-        <div className="grid md:grid-cols-2 gap-6">          
-          <div className="space-y-3">
-            <h4 className="font-semibold text-system-red"><Icon name="dice" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Spielstatistiken</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Spiele gespielt:</span>
-                <span className="font-medium text-text-primary">{totalMatches}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Längste Serie:</span>
-                <span className="font-medium text-text-primary">
-                  {aekWins >= realWins ? 'AEK' : 'Real'} ({Math.max(aekWins, realWins)} Siege)
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Torreichstes Spiel:</span>
-                <span className="font-medium text-text-primary">{advancedStats.highestScoringMatch} Tore</span>
-              </div>
-            </div>
-          </div>
-          
-          <div className="space-y-3">
-            <h4 className="font-semibold text-system-purple"><Icon name="trophy" size={15} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Leistungswerte</h4>
-            <div className="space-y-2 text-sm">
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Aktive Spieler:</span>
-                <span className="font-medium text-text-primary">{aekPlayers.length + realPlayers.length}</span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Torschützen:</span>
-                <span className="font-medium text-text-primary">
-                  {playerStats.filter(p => p.goals > 0).length} Spieler
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Erfolgsquote AEK:</span>
-                <span className="font-medium text-text-primary">
-                  {totalMatches > 0 ? `${((aekWins / totalMatches) * 100).toFixed(0)}%` : '0%'}
-                </span>
-              </div>
-              <div className="flex justify-between">
-                <span className="text-text-secondary">Erfolgsquote Real:</span>
-                <span className="font-medium text-text-primary">
-                  {totalMatches > 0 ? `${((realWins / totalMatches) * 100).toFixed(0)}%` : '0%'}
-                </span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderTrends = () => {
     // Monatszahlen — jetzt als Zeilen, nicht als Karten.
@@ -1620,251 +1546,112 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     );
   };
 
-  const renderAdvancedStats = () => {
-    // Calculate advanced performance metrics
-    const calculateAdvancedMetrics = () => {
-      if (!filteredMatches || filteredMatches.length === 0) return null;
+  /**
+   * Zwei Ranglisten, die frueher in der Teams-Ansicht standen.
+   *
+   * "Wenn sie treffen, dann richtig" und "Preis-Leistung" sind Spielerwerte —
+   * in einem Team-Vergleich hatten sie nichts zu suchen. Sie stehen jetzt bei
+   * den Spielern, wohin sie gehoeren.
+   *
+   * Mit ihnen geflogen sind zwei Karten aus derselben Ansicht:
+   * "Spielintensitaet & Tordifferenzen" (dieselbe Verteilung, die die
+   * Teams-Ansicht jetzt vollstaendig zeigt) und "Aktuelle Form (letzte 10)",
+   * die auf der Startseite, im Duell als Formkurve und im Saisonverlauf ueber
+   * der Spieleliste schon dreimal steht. Ausserdem war goalTimingAnalysis tot:
+   * die drei Zaehler wurden angelegt, nie hochgezaehlt und nie angezeigt —
+   * Halbzeit-Tore erfasst diese App gar nicht.
+   */
+  const renderSpielerRanglisten = () => {
+    const jeTrefferSpiel = playerStats
+      .filter((p) => (p.trefferSpiele || 0) > 0)
+      .map((player) => ({
+        name: player.name,
+        team: player.team,
+        goals: player.goals || 0,
+        trefferSpiele: player.trefferSpiele || 0,
+        jeTrefferSpiel: player.toreJeTrefferSpiel || 0,
+        value: player.value || 0,
+        valuePerGoal: player.goals > 0 ? (player.value || 0) / player.goals : null,
+      }))
+      .sort((a, b) => b.jeTrefferSpiel - a.jeTrefferSpiel || b.goals - a.goals)
+      .slice(0, 10);
 
-      // Goal timing analysis
-      const goalTimingAnalysis = {
-        firstHalfGoals: 0,
-        secondHalfGoals: 0,
-        overtimeGoals: 0
-      };
-
-      // Score margin analysis
-      const scoreMargins = {
-        oneGoal: 0,
-        twoGoals: 0,
-        threeOrMore: 0,
-        blowouts: 0 // 5+ goal difference
-      };
-
-      // Wie durchschlagend ein Torschuetze ist, wenn er trifft: Tore geteilt
-      // durch die Spiele MIT Tor. Vorher stand hier "Tore je Spiel" mit den
-      // nicht erfassten Einsaetzen im Nenner.
-      const playerEfficiency = playerStats
-        .filter((p) => (p.trefferSpiele || 0) > 0)
-        .map(player => ({
-          name: player.name,
-          team: player.team,
-          goals: player.goals || 0,
-          trefferSpiele: player.trefferSpiele || 0,
-          jeTrefferSpiel: player.toreJeTrefferSpiel || 0,
-          value: player.value || 0,
-          valuePerGoal: player.goals > 0 ? (player.value || 0) / player.goals : null
-        }))
-        .sort((a, b) => b.jeTrefferSpiel - a.jeTrefferSpiel || b.goals - a.goals)
-        .slice(0, 10);
-
-      // Recent form analysis (last 10 matches)
-      const recentMatches = filteredMatches.slice(-10);
-      const recentForm = {
-        aekWins: 0,
-        realWins: 0,
-        aekGoals: 0,
-        realGoals: 0,
-        totalMatches: recentMatches.length
-      };
-
-      filteredMatches.forEach(match => {
-        const aekGoals = match.goalsa || 0;
-        const realGoals = match.goalsb || 0;
-        const difference = Math.abs(aekGoals - realGoals);
-
-        // Score margin analysis
-        if (difference === 1) scoreMargins.oneGoal++;
-        else if (difference === 2) scoreMargins.twoGoals++;
-        else if (difference >= 3 && difference < 5) scoreMargins.threeOrMore++;
-        else if (difference >= 5) scoreMargins.blowouts++;
-      });
-
-      recentMatches.forEach(match => {
-        const aekGoals = match.goalsa || 0;
-        const realGoals = match.goalsb || 0;
-        
-        recentForm.aekGoals += aekGoals;
-        recentForm.realGoals += realGoals;
-        
-        if (aekGoals > realGoals) recentForm.aekWins++;
-        else if (realGoals > aekGoals) recentForm.realWins++;
-      });
-
-      return {
-        goalTimingAnalysis,
-        scoreMargins,
-        playerEfficiency,
-        recentForm
-      };
-    };
-
-    const metrics = calculateAdvancedMetrics();
-
-    if (!metrics) {
-      return (
-        <div className="text-center py-8 text-text-muted">
-          <div className="mb-2 text-system-blue"><Icon name="chart" size={30} strokeWidth={1.8} /></div>
-          <p>Keine Daten für den gewählten Zeitraum verfügbar</p>
-        </div>
-      );
-    }
+    if (jeTrefferSpiel.length === 0) return null;
+    const metrics = { playerEfficiency: jeTrefferSpiel };
 
     return (
       <div className="space-y-6">
-        {/* Score Margin Analysis */}
-        <div className="modern-card p-6">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Icon name="target" size={18} strokeWidth={2.2} />
-            Spielintensität & Tordifferenzen
-          </h3>
-          
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="text-center p-3 bg-system-green/10 rounded-lg">
-              <div className="text-xl font-bold text-system-green">{metrics.scoreMargins.oneGoal}</div>
-              <div className="text-xs text-text-secondary">1-Tor-Spiele</div>
-              <div className="text-xs text-text-muted">Spannend</div>
+<div className="modern-card p-6">
+        <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
+          <Icon name="zap" size={18} strokeWidth={2.2} />
+          Wenn sie treffen, dann richtig
+        </h3>
+        <p className="text-caption2 text-text-tertiary mb-4">
+          Tore geteilt durch die Spiele, in denen sie getroffen haben.
+        </p>
+        
+        <div className="space-y-3">
+          {metrics.playerEfficiency.slice(0, 8).map((player, index) => (
+            <div key={player.name} className="flex items-center justify-between p-3 bg-bg-secondary rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                  index === 0 ? 'bg-system-orange text-white' :
+                  index === 1 ? 'bg-text-tertiary text-white' :
+                  index === 2 ? 'bg-system-orange text-white' :
+                  'bg-bg-tertiary text-text-primary'
+                }`}>
+                  {index + 1}
+                </div>
+                <div>
+                  <div className="font-medium text-text-primary">{player.name}</div>
+                  <div className="text-xs text-text-muted">{getTeamDisplay(player.team)}</div>
+                </div>
+              </div>
+              <div className="text-right">
+                <div className="font-bold text-text-primary num-tabular">{dez(player.jeTrefferSpiel)}</div>
+                <div className="text-xs text-text-muted">
+                  Tore je Trefferspiel · {player.goals} in {player.trefferSpiele}
+                </div>
+              </div>
             </div>
-            <div className="text-center p-3 bg-system-blue/10 rounded-lg">
-              <div className="text-xl font-bold text-system-blue">{metrics.scoreMargins.twoGoals}</div>
-              <div className="text-xs text-text-secondary">2-Tor-Spiele</div>
-              <div className="text-xs text-text-muted">Umkämpft</div>
-            </div>
-            <div className="text-center p-3 bg-system-yellow/10 rounded-lg">
-              <div className="text-xl font-bold text-system-orange">{metrics.scoreMargins.threeOrMore}</div>
-              <div className="text-xs text-text-secondary">3-4 Tore Diff.</div>
-              <div className="text-xs text-text-muted">Deutlich</div>
-            </div>
-            <div className="text-center p-3 bg-system-red/10 rounded-lg">
-              <div className="text-xl font-bold text-system-red">{metrics.scoreMargins.blowouts}</div>
-              <div className="text-xs text-text-secondary">5+ Tore Diff.</div>
-              <div className="text-xs text-text-muted">Dominant</div>
-            </div>
-          </div>
+          ))}
         </div>
-
-        {/* Wenn sie treffen, wie oft dann */}
-        <div className="modern-card p-6">
-          <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
-            <Icon name="zap" size={18} strokeWidth={2.2} />
-            Wenn sie treffen, dann richtig
-          </h3>
-          <p className="text-caption2 text-text-tertiary mb-4">
-            Tore geteilt durch die Spiele, in denen sie getroffen haben.
-          </p>
-          
-          <div className="space-y-3">
-            {metrics.playerEfficiency.slice(0, 8).map((player, index) => (
+      </div>
+<div className="modern-card p-6">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <Icon name="euro" size={18} strokeWidth={2.2} />
+          Preis-Leistungs-Verhältnis
+        </h3>
+        
+        <div className="space-y-3">
+          {metrics.playerEfficiency
+            .filter(p => p.value > 0 && p.goals > 0)
+            .filter(p => p.valuePerGoal != null)
+            .sort((a, b) => a.valuePerGoal - b.valuePerGoal)
+            .slice(0, 5)
+            .map((player, index) => (
               <div key={player.name} className="flex items-center justify-between p-3 bg-bg-secondary rounded-lg">
                 <div className="flex items-center gap-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
-                    index === 0 ? 'bg-system-orange text-white' :
-                    index === 1 ? 'bg-text-tertiary text-white' :
-                    index === 2 ? 'bg-system-orange text-white' :
-                    'bg-bg-tertiary text-text-primary'
-                  }`}>
-                    {index + 1}
+                  <div className="w-6 h-6 bg-system-green/10 rounded-full flex items-center justify-center">
+                    <span className="text-xs font-bold text-system-green">{index + 1}</span>
                   </div>
                   <div>
                     <div className="font-medium text-text-primary">{player.name}</div>
-                    <div className="text-xs text-text-muted">{getTeamDisplay(player.team)}</div>
+                    <div className="text-xs text-text-muted">{getTeamDisplay(player.team)} • {player.goals} Tore</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold text-text-primary num-tabular">{dez(player.jeTrefferSpiel)}</div>
-                  <div className="text-xs text-text-muted">
-                    Tore je Trefferspiel · {player.goals} in {player.trefferSpiele}
-                  </div>
+                  <div className="font-bold text-system-green num-tabular">{dez(player.valuePerGoal)} Mio €</div>
+                  <div className="text-xs text-text-muted">pro Tor</div>
                 </div>
               </div>
             ))}
-          </div>
         </div>
-
-        {/* Recent Form Analysis */}
-        <div className="modern-card p-6">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Icon name="zap" size={18} strokeWidth={2.2} />
-            Aktuelle Form (Letzte {metrics.recentForm.totalMatches} Spiele)
-          </h3>
-          
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <div className="text-center p-4 bg-system-blue/10 rounded-lg">
-              <div className="text-2xl font-bold text-system-blue">{metrics.recentForm.aekWins}</div>
-              <div className="text-sm text-text-secondary mb-2">{getTeamDisplay('AEK')} Siege</div>
-              <div className="text-xs text-text-muted">{metrics.recentForm.aekGoals} Tore geschossen</div>
-            </div>
-            <div className="text-center p-4 bg-system-red/10 rounded-lg">
-              <div className="text-2xl font-bold text-system-red">{metrics.recentForm.realWins}</div>
-              <div className="text-sm text-text-secondary mb-2">{getTeamDisplay('Real')} Siege</div>
-              <div className="text-xs text-text-muted">{metrics.recentForm.realGoals} Tore geschossen</div>
-            </div>
-          </div>
-          
-          <div className="space-y-2 text-sm">
-            <div className="flex justify-between">
-              <span className="text-text-secondary">Siegesquote AEK:</span>
-              <span className="font-medium text-text-primary">
-                {metrics.recentForm.totalMatches > 0 ? 
-                  `${((metrics.recentForm.aekWins / metrics.recentForm.totalMatches) * 100).toFixed(0)}%` : 
-                  '0%'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-text-secondary">Siegesquote Real:</span>
-              <span className="font-medium text-text-primary">
-                {metrics.recentForm.totalMatches > 0 ? 
-                  `${((metrics.recentForm.realWins / metrics.recentForm.totalMatches) * 100).toFixed(0)}%` : 
-                  '0%'}
-              </span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-text-secondary">Durchschnitt Tore/Spiel:</span>
-              <span className="font-medium text-text-primary">
-                {metrics.recentForm.totalMatches > 0 ? 
-                  dez((metrics.recentForm.aekGoals + metrics.recentForm.realGoals) / metrics.recentForm.totalMatches, 1) : 
-                  '0.0'}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Value for Money Analysis */}
-        <div className="modern-card p-6">
-          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-            <Icon name="euro" size={18} strokeWidth={2.2} />
-            Preis-Leistungs-Verhältnis
-          </h3>
-          
-          <div className="space-y-3">
-            {metrics.playerEfficiency
-              .filter(p => p.value > 0 && p.goals > 0)
-              .filter(p => p.valuePerGoal != null)
-              .sort((a, b) => a.valuePerGoal - b.valuePerGoal)
-              .slice(0, 5)
-              .map((player, index) => (
-                <div key={player.name} className="flex items-center justify-between p-3 bg-bg-secondary rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="w-6 h-6 bg-system-green/10 rounded-full flex items-center justify-center">
-                      <span className="text-xs font-bold text-system-green">{index + 1}</span>
-                    </div>
-                    <div>
-                      <div className="font-medium text-text-primary">{player.name}</div>
-                      <div className="text-xs text-text-muted">{getTeamDisplay(player.team)} • {player.goals} Tore</div>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-bold text-system-green num-tabular">{dez(player.valuePerGoal)} Mio €</div>
-                    <div className="text-xs text-text-muted">pro Tor</div>
-                  </div>
-                </div>
-              ))}
-          </div>
-        </div>
+      </div>
       </div>
     );
   };
 
-  // D3.js Interactive Visualizations View
   /**
    * Tore über die Zeit — das eine Diagramm, das hier uebrig bleibt.
    *
@@ -1915,10 +1702,9 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       case 'historie':
         return <HistorieView />;
       case 'players':
-        return renderPlayers();
+        return <div className="space-y-6">{renderPlayers()}{renderSpielerRanglisten()}</div>;
       case 'teams':
-        // Teamvergleich + wie deutlich die Ergebnisse ausfallen (frueher "Erweitert")
-        return <div className="space-y-6">{renderTeams()}{renderAdvancedStats()}</div>;
+        return renderTeams();
       case 'trends':
         // Alles Zeitliche an einem Ort: Entwicklung, Diagramme, Spieltage
         return (
