@@ -4,18 +4,14 @@ import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { useAktuelleSaison } from '../../hooks/useAktuelleSaison';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
+import VorsprungVerlauf from './stats/VorsprungVerlauf';
 import MatchDayOverview from '../MatchDayOverview';
 import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
 import HistorieView from './HistorieView';
 import CountUp from '../CountUp';
 import { getTeamDisplay } from '../../constants/teams';
-import {
-  TrendLineChart,
-  PlayerBarChart,
-  WinDistributionChart,
-  GoalTrendAreaChart
-} from '../charts';
+import { GoalTrendAreaChart } from '../charts';
 
 /**
  * Karte fuer eine herausragende Einzelleistung.
@@ -1557,208 +1553,86 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   );
 
   const renderTrends = () => {
-    // Enhanced trends calculation with better organization
-    const calculateEnhancedTrends = () => {
-      if (!filteredMatches || filteredMatches.length === 0) return [];
-      
-      const monthlyStats = {};
-      
-      filteredMatches.forEach(match => {
-        const date = new Date(match.date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const monthName = date.toLocaleDateString('de-DE', { year: 'numeric', month: 'long' });
-        
-        if (!monthlyStats[monthKey]) {
-          monthlyStats[monthKey] = {
-            month: monthName,
-            key: monthKey,
-            aekWins: 0,
-            realWins: 0,
-            aekGoals: 0,
-            realGoals: 0,
-            matchCount: 0,
-            matches: []
+    // Monatszahlen — jetzt als Zeilen, nicht als Karten.
+    //
+    // Hier stand je Monat eine bildschirmhohe Karte, in der dieselbe Zahl
+    // dreimal auftauchte: Siege als Anzahl, als Prozentsatz und als Balken,
+    // Tore als Summe, als Schnitt und darunter noch einmal als Gesamtsumme.
+    // Bei einer Saison ueber sechs Monate war das sechsmal Scrollen fuer
+    // Zahlen, die in eine Zeile passen.
+    const monate = (() => {
+      const gesammelt = {};
+      for (const m of filteredMatches || []) {
+        const d = new Date(m.date);
+        if (Number.isNaN(d.getTime())) continue;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!gesammelt[key]) {
+          gesammelt[key] = {
+            key,
+            name: d.toLocaleDateString('de-DE', { year: 'numeric', month: 'long' }),
+            aekS: 0, realS: 0, remis: 0, aekT: 0, realT: 0, spiele: 0,
           };
         }
-        
-        const aekGoals = match.goalsa || 0;
-        const realGoals = match.goalsb || 0;
-        
-        monthlyStats[monthKey].aekGoals += aekGoals;
-        monthlyStats[monthKey].realGoals += realGoals;
-        monthlyStats[monthKey].matchCount++;
-        monthlyStats[monthKey].matches.push(match);
-        
-        if (aekGoals > realGoals) {
-          monthlyStats[monthKey].aekWins++;
-        } else if (realGoals > aekGoals) {
-          monthlyStats[monthKey].realWins++;
-        }
-      });
-      
-      return Object.values(monthlyStats).sort((a, b) => b.key.localeCompare(a.key));
-    };
+        const g = gesammelt[key];
+        const a = m.goalsa || 0, b = m.goalsb || 0;
+        g.aekT += a; g.realT += b; g.spiele++;
+        if (a > b) g.aekS++; else if (b > a) g.realS++; else g.remis++;
+      }
+      return Object.values(gesammelt).sort((x, y) => y.key.localeCompare(x.key));
+    })();
 
-    const enhancedTrends = calculateEnhancedTrends();
-
-    if (enhancedTrends.length === 0) {
+    if (!filteredMatches || filteredMatches.length === 0) {
       return (
         <div className="text-center py-8 text-text-muted">
           <div className="mb-2 text-system-blue"><Icon name="trendingUp" size={30} strokeWidth={1.8} /></div>
-          <p>Keine Spiele für Trends-Analyse im gewählten Zeitraum</p>
+          <p>Keine Spiele für den Verlauf im gewählten Zeitraum</p>
         </div>
       );
     }
 
+    const aekName = getTeamDisplay('AEK');
+    const realName = getTeamDisplay('Real');
+
     return (
-      <div className="space-y-6">
-        {/* Trends Overview Header */}
-        <div className="modern-card p-6">
-          <div className="flex items-center gap-3 mb-4">
-            <Icon name="trendingUp" size={20} strokeWidth={2.2} />
-            <div>
-              <h3 className="text-lg font-bold text-text-primary">Performance-Trends</h3>
-              <p className="text-sm text-text-muted">Monatliche Entwicklung der Teams</p>
-            </div>
+      <div className="space-y-4">
+        <VorsprungVerlauf matches={filteredMatches} aekName={aekName} realName={realName} />
+
+        <div className="modern-card p-4">
+          <div className="flex items-baseline justify-between gap-2 mb-1">
+            <span className="text-footnote font-semibold text-text-muted">Monat für Monat</span>
+            <span className="text-caption2 text-text-tertiary">neueste zuerst</span>
           </div>
-          
-          {/* Overall Trend Summary */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-            <div className="text-center p-4 bg-system-blue/10 rounded-lg">
-              <div className="text-xl font-bold text-system-blue">
-                {enhancedTrends.reduce((sum, trend) => sum + trend.aekWins, 0)}
-              </div>
-              <div className="text-sm text-system-blue">{getTeamDisplay('AEK')} Siege gesamt</div>
-            </div>
-            <div className="text-center p-4 bg-system-red/10 rounded-lg">
-              <div className="text-xl font-bold text-system-red">
-                {enhancedTrends.reduce((sum, trend) => sum + trend.realWins, 0)}
-              </div>
-              <div className="text-sm text-system-red">{getTeamDisplay('Real')} Siege gesamt</div>
-            </div>
-            <div className="text-center p-4 bg-system-green/10 rounded-lg">
-              <div className="text-xl font-bold text-system-green">
-                {enhancedTrends.reduce((sum, trend) => sum + trend.matchCount, 0)}
-              </div>
-              <div className="text-sm text-system-green">Spiele gesamt</div>
-            </div>
+          <div className="divide-y divide-border-light">
+            {monate.map((m) => {
+              const entschieden = m.aekS + m.realS;
+              const anteil = entschieden > 0 ? (m.aekS / entschieden) * 100 : 50;
+              return (
+                <div key={m.key} className="py-2.5">
+                  <div className="flex items-baseline gap-2 mb-1.5">
+                    <span className={`text-footnote font-bold num-tabular ${
+                      m.aekS > m.realS ? 'text-system-blue' : 'text-text-secondary'}`}>{m.aekS}</span>
+                    <span className="flex-1 text-center text-caption2 text-text-tertiary truncate">
+                      {m.name}
+                      <span className="block text-[10px] opacity-80">
+                        {m.spiele} {m.spiele === 1 ? 'Spiel' : 'Spiele'}
+                        {m.remis > 0 ? ` · ${m.remis} Remis` : ''}
+                        {' · '}{m.aekT}:{m.realT} Tore
+                      </span>
+                    </span>
+                    <span className={`text-footnote font-bold num-tabular ${
+                      m.realS > m.aekS ? 'text-system-red' : 'text-text-secondary'}`}>{m.realS}</span>
+                  </div>
+                  <div className="relative h-1.5 rounded-full overflow-hidden bg-bg-tertiary flex">
+                    <div className="bg-system-blue h-full" style={{ width: `${anteil}%` }} />
+                    <div className="bg-system-red h-full" style={{ width: `${100 - anteil}%` }} />
+                    <div className="absolute inset-y-0 left-1/2 w-px bg-bg-secondary/70" />
+                  </div>
+                  <div className="sr-only">{aekName} {m.aekS} Siege, {realName} {m.realS} Siege</div>
+                </div>
+              );
+            })}
           </div>
         </div>
-
-        {/* Monthly Breakdown */}
-        <div className="space-y-4">
-          {enhancedTrends.map((trend, index) => {
-            const totalGoals = trend.aekGoals + trend.realGoals;
-            const aekWinRate = trend.matchCount > 0 ? (trend.aekWins / trend.matchCount * 100).toFixed(0) : 0;
-            const realWinRate = trend.matchCount > 0 ? (trend.realWins / trend.matchCount * 100).toFixed(0) : 0;
-            const avgGoalsPerMatch = trend.matchCount > 0 ? totalGoals / trend.matchCount : 0;
-            
-            return (
-              <div key={trend.key} className="modern-card p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 bg-gradient-info rounded-full flex items-center justify-center">
-                      <span className="text-white text-sm font-bold">{index + 1}</span>
-                    </div>
-                    <div>
-                      <h4 className="font-bold text-text-primary">{trend.month}</h4>
-                      <p className="text-sm text-text-muted">{trend.matchCount} Spiele gespielt</p>
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="text-lg font-bold text-text-primary">⌀ {dez(avgGoalsPerMatch)}</div>
-                    <div className="text-xs text-text-muted">Tore/Spiel</div>
-                  </div>
-                </div>
-
-                {/* Team Performance Comparison */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
-                  <div className="p-4 bg-system-blue/10 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-system-blue">{getTeamDisplay('AEK')}</span>
-                      <span className="text-sm text-system-blue">{aekWinRate}% Siege</span>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">Siege:</span>
-                        <span className="font-medium text-text-primary">{trend.aekWins}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">Tore:</span>
-                        <span className="font-medium text-text-primary">{trend.aekGoals}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">⌀ Tore/Spiel:</span>
-                        <span className="font-medium text-text-primary">
-                          {dez(trend.matchCount > 0 ? trend.aekGoals / trend.matchCount : 0, 1)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="p-4 bg-system-red/10 rounded-lg">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="font-medium text-system-red">{getTeamDisplay('Real')}</span>
-                      <span className="text-sm text-system-red">{realWinRate}% Siege</span>
-                    </div>
-                    <div className="space-y-1 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">Siege:</span>
-                        <span className="font-medium text-text-primary">{trend.realWins}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">Tore:</span>
-                        <span className="font-medium text-text-primary">{trend.realGoals}</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">⌀ Tore/Spiel:</span>
-                        <span className="font-medium text-text-primary">
-                          {dez(trend.matchCount > 0 ? trend.realGoals / trend.matchCount : 0, 1)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Visual Progress Bar */}
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs text-text-muted">
-                    <span className="text-text-secondary">{getTeamDisplay('AEK')} Dominanz</span>
-                    <span className="text-text-secondary">{getTeamDisplay('Real')} Dominanz</span>
-                  </div>
-                  <div className="w-full bg-bg-tertiary rounded-full h-3 overflow-hidden">
-                    <div className="h-full flex">
-                      <div 
-                        className="bg-system-blue" 
-                        style={{ width: `${aekWinRate}%` }}
-                      ></div>
-                      <div 
-                        className="bg-system-red" 
-                        style={{ width: `${realWinRate}%` }}
-                      ></div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Month Highlights */}
-                {trend.matchCount > 0 && (
-                  <div className="mt-4 pt-4 border-t border-border-light">
-                    <div className="flex items-center gap-4 text-xs text-text-muted">
-                      {/* "Bestes Team" und "Intensitaet: Hoch/Mittel/Niedrig"
-                          standen hier. Das erste wiederholte die Siegzahlen
-                          zwei Zeilen darueber, das zweite war der
-                          Tordurchschnitt mit fest verdrahteten Schwellen als
-                          Etikett — bei drei Spielen im Monat sagt beides
-                          nichts. */}
-                      <span className="text-text-secondary">{totalGoals} Tore insgesamt</span>
-                    </div>
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
       </div>
     );
   };
@@ -2008,135 +1882,46 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   };
 
   // D3.js Interactive Visualizations View
-  const renderVisualizations = () => {
-    // Prepare data for monthly trends line chart
-    const monthlyTrendsData = (() => {
-      if (!filteredMatches || filteredMatches.length === 0) return [];
-      
-      const monthlyStats = {};
-      
-      filteredMatches.forEach(match => {
-        const date = new Date(match.date);
-        const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-        const monthName = date.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' });
-        
-        if (!monthlyStats[monthKey]) {
-          monthlyStats[monthKey] = {
-            label: monthName,
-            key: monthKey,
-            aek: 0,
-            real: 0
+  /**
+   * Tore über die Zeit — das eine Diagramm, das hier uebrig bleibt.
+   *
+   * Es standen vier: eine Linie (Tore je Monat), eine Flaeche (Tore der
+   * letzten zwoelf Monate) — also zweimal dieselben Zahlen —, ein Ring mit
+   * der Siegverteilung, die inzwischen auf der Startseite, im Duell und drei
+   * Zeilen weiter oben als geteilte Flaeche steht, und die zehn besten
+   * Torschuetzen, die in der Ansicht "Spieler" ihren Platz haben.
+   *
+   * Dazu zwei Karten, die nichts ueber die Daten sagten: eine Ueberschrift
+   * "Dynamische D3.js-Charts fuer detaillierte Datenanalyse" und darunter eine
+   * Erklaerung, was ein Liniendiagramm ist. Beides ist weg.
+   */
+  const renderToreUeberZeit = () => {
+    const proMonat = (() => {
+      const gesammelt = {};
+      for (const m of filteredMatches || []) {
+        const d = new Date(m.date);
+        if (Number.isNaN(d.getTime())) continue;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
+        if (!gesammelt[key]) {
+          gesammelt[key] = {
+            key, label: d.toLocaleDateString('de-DE', { month: 'short', year: '2-digit' }),
+            aek: 0, real: 0,
           };
         }
-        
-        const aekGoals = match.goalsa || 0;
-        const realGoals = match.goalsb || 0;
-        
-        monthlyStats[monthKey].aek += aekGoals;
-        monthlyStats[monthKey].real += realGoals;
-      });
-      
-      return Object.values(monthlyStats).sort((a, b) => a.key.localeCompare(b.key));
+        gesammelt[key].aek += m.goalsa || 0;
+        gesammelt[key].real += m.goalsb || 0;
+      }
+      return Object.values(gesammelt).sort((a, b) => a.key.localeCompare(b.key));
     })();
 
-    // Prepare data for player bar chart (top 10 scorers)
-    const topScorersData = playerStats
-      .slice(0, 10)
-      .map(player => ({
-        name: player.name,
-        value: player.goals || 0,
-        team: player.team,
-        trefferSpiele: player.trefferSpiele
-      }));
-
-    // Prepare data for win distribution donut chart
-    const winDistributionData = [
-      { label: `${getTeamDisplay('AEK')} Siege`, value: aekWins },
-      { label: `${getTeamDisplay('Real')} Siege`, value: realWins }
-    ];
-
-    // Prepare data for goal trends area chart (last 12 periods)
-    const goalTrendsData = monthlyTrendsData.slice(-12);
+    if (proMonat.length < 2) return null;
 
     return (
-      <div className="space-y-6">
-        {/* Header */}
-        <div className="modern-card p-6">
-          <div className="flex items-center gap-3 mb-3">
-            <Icon name="trendingUp" size={24} strokeWidth={2} />
-            <div>
-              <h3 className="text-xl font-bold text-text-primary">Interaktive Visualisierungen</h3>
-              <p className="text-sm text-text-secondary">
-                Dynamische D3.js-Charts für detaillierte Datenanalyse
-              </p>
-            </div>
-          </div>
-          <div className="mt-4 p-4 bg-system-blue/10 rounded-lg">
-            <p className="text-sm text-text-secondary">
-              Alle Visualisierungen sind animiert und interaktiv.
-            </p>
-          </div>
-        </div>
-
-        {/* Win Distribution & Top Scorers Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <WinDistributionChart 
-            data={winDistributionData}
-            title="Siegesverteilung"
-            height={350}
-          />
-          <PlayerBarChart 
-            data={topScorersData}
-            title="Top 10 Torschützen"
-            height={350}
-          />
-        </div>
-
-        {/* Goal Trends Area Chart */}
-        {goalTrendsData.length > 0 && (
-          <GoalTrendAreaChart 
-            data={goalTrendsData}
-            title="Tor-Entwicklung (Letzte 12 Monate)"
-            height={320}
-          />
-        )}
-
-        {/* Monthly Performance Line Chart */}
-        {monthlyTrendsData.length > 0 && (
-          <TrendLineChart 
-            data={monthlyTrendsData}
-            title="Monatliche Leistungsentwicklung"
-            height={320}
-          />
-        )}
-
-        {/* Die drei Kennzahlen, die hier standen (⌀ Tore/Spiel, aktive
-            Torschuetzen, gespielte Spiele), stehen in derselben Ansicht schon
-            weiter oben in den Trends — sie waren nur noch eine zweite Anzeige
-            derselben Werte. */}
-
-        {/* Performance Info */}
-        <div className="modern-card p-6">
-          <h4 className="font-semibold text-text-primary mb-3 flex items-center gap-2">
-            <span className="text-text-secondary">ℹ️</span>
-            Über die Visualisierungen
-          </h4>
-          <div className="space-y-2 text-sm text-text-secondary">
-            <p>
-              • <strong>Liniendiagramm:</strong> Zeigt die monatliche Entwicklung der Toranzahl beider Teams
-            </p>
-            <p>
-              • <strong>Balkendiagramm:</strong> Vergleicht die Top-Torschützen mit farblicher Team-Zuordnung
-            </p>
-            <p>
-              • <strong>Donut-Diagramm:</strong> Visualisiert die Verteilung der Siege zwischen den Teams
-            </p>
-            <p>
-              • <strong>Flächendiagramm:</strong> Stellt Tor-Trends über die Zeit mit Verlaufsdarstellung dar
-            </p>
-          </div>
-        </div>
-      </div>
+      <GoalTrendAreaChart
+        data={proMonat.slice(-12)}
+        title="Tore über die Zeit"
+        height={300}
+      />
     );
   };
 
@@ -2156,7 +1941,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         return (
           <div className="space-y-6">
             {renderTrends()}
-            {renderVisualizations()}
+            {renderToreUeberZeit()}
             <MatchDayOverview matches={matches} />
           </div>
         );

@@ -1,5 +1,6 @@
-import { useMemo, useRef, useState } from 'react';
+import { useMemo } from 'react';
 import { chronoAsc } from '../../../utils/matchChronology';
+import { useStreifen } from '../../../hooks/useStreifen';
 
 /**
  * Die Saison als eine Linie.
@@ -23,10 +24,8 @@ import { chronoAsc } from '../../../utils/matchChronology';
  * Dieselbe Darstellung trägt damit vier Spiele wie 176 — mit Divs hätte eine
  * volle Saison bei 2 px Mindestbreite 527 px gebraucht und die Karte gesprengt.
  *
- * Bei 176 Spielen ist ein Strich knapp zwei Pixel breit — zum Antippen zu
- * wenig. Deshalb wird nicht getippt, sondern gestrichen: der Finger fährt über
- * die Saison, oben steht, wo er gerade ist. Wer loslässt, ohne gezogen zu
- * haben, springt zu dem Spiel in der Liste.
+ * Bedient wird der Streifen mit useStreifen: gestrichen statt getippt, weil
+ * ein Strich bei einer vollen Saison keine zwei Pixel breit ist.
  */
 
 const HOEHE = 76;          // Gesamthöhe des Streifens in Pixeln
@@ -45,9 +44,10 @@ const datumKurz = (d) => {
 export default function SaisonZeitstrahl({ matches, aekName, realName, onMatchWaehlen }) {
   const spiele = useMemo(() => [...(matches || [])].sort(chronoAsc), [matches]);
 
-  const [aktiv, setAktiv] = useState(null);
-  const streifen = useRef(null);
-  const gezogen = useRef(false);
+  const { aktiv, zeigerProps } = useStreifen(
+    spiele.length,
+    (i) => spiele[i] && onMatchWaehlen?.(spiele[i]),
+  );
 
   const maxDiff = useMemo(() => {
     let m = 1;
@@ -58,17 +58,6 @@ export default function SaisonZeitstrahl({ matches, aekName, realName, onMatchWa
   if (spiele.length === 0) return null;
 
   const n = spiele.length;
-
-  const indexAus = (clientX) => {
-    const r = streifen.current?.getBoundingClientRect();
-    if (!r || r.width === 0) return null;
-    return Math.min(n - 1, Math.max(0, Math.floor(((clientX - r.left) / r.width) * n)));
-  };
-
-  const zeigen = (e) => {
-    const i = indexAus(e.clientX);
-    if (i != null) setAktiv(i);
-  };
 
   const gewaehlt = aktiv != null ? spiele[aktiv] : null;
   const gA = gewaehlt ? gewaehlt.goalsa || 0 : 0;
@@ -108,27 +97,9 @@ export default function SaisonZeitstrahl({ matches, aekName, realName, onMatchWa
       </div>
 
       <div
-        ref={streifen}
         className="relative select-none touch-pan-y cursor-crosshair"
         style={{ height: HOEHE }}
-        onPointerDown={(e) => {
-          gezogen.current = false;
-          // Zeiger festhalten, damit die Bewegung weiterkommt, wenn der Finger
-          // den Streifen nach oben oder unten verlaesst. Muss in ein try:
-          // setPointerCapture wirft NotFoundError, sobald die Zeiger-ID nicht
-          // mehr aktiv ist — und ein Wurf hier reisst die ganze App in die
-          // Fehlergrenze. Das Festhalten ist eine Bequemlichkeit, kein Muss.
-          try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* egal */ }
-          zeigen(e);
-        }}
-        onPointerMove={(e) => { if (e.buttons || e.pointerType === 'touch') { gezogen.current = true; zeigen(e); } }}
-        onPointerUp={(e) => {
-          const i = indexAus(e.clientX);
-          // Ein Tipp (ohne Ziehen) springt zum Spiel, ein Streichen nicht —
-          // sonst landete man nach jedem Erkunden ungewollt in der Liste.
-          if (!gezogen.current && i != null && spiele[i]) onMatchWaehlen?.(spiele[i]);
-        }}
-        onPointerLeave={() => setAktiv(null)}
+        {...zeigerProps}
       >
         <svg
           width="100%" height={HOEHE}

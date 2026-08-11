@@ -199,16 +199,14 @@ export default function MatchDayOverview({ matches }) {
     <div className="space-y-6">
       {/* Header */}
       <div className="modern-card">
+        {/* Kopf wie ueberall sonst in der App: SVG-Icon statt Emoji, und ohne
+            den Untertitel "Detaillierte Analyse pro Spieltag mit interessanten
+            Statistiken" — der beschrieb, was die Ueberschrift schon sagt. */}
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-system-purple rounded-full flex items-center justify-center">
-            <span className="text-white text-lg">📅</span>
-          </div>
-          <div>
-            <h3 className="text-title3 font-bold text-text-primary">Spieltag-Übersicht</h3>
-            <p className="text-caption1 text-text-secondary">
-              Detaillierte Analyse pro Spieltag mit interessanten Statistiken
-            </p>
-          </div>
+          <span className="w-9 h-9 rounded-xl bg-system-purple/12 text-system-purple flex items-center justify-center flex-shrink-0">
+            <Icon name="calendar" size={18} strokeWidth={2.1} />
+          </span>
+          <h3 className="text-title3 font-bold text-text-primary">Spieltag-Übersicht</h3>
         </div>
 
         {/* Date Selector */}
