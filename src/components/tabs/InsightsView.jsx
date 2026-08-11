@@ -1,4 +1,5 @@
 import { useMemo } from 'react';
+import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 
 /** Dezimalzahl deutsch — dieselbe Schreibweise wie in Statistik und Duell. */
 const dez = (n, stellen = 1) =>
@@ -377,30 +378,23 @@ export default function InsightsView({ matches, players, bans }) {
         icon="ban" iconClass="text-system-yellow" title="Disziplin"
         hint="Karten werden bei jedem Spiel erfasst — hier zum ersten Mal ausgewertet."
       >
-        <div className="grid grid-cols-2 gap-3">
-          {['AEK', 'Real'].map((t) => {
-            const c = r.cards[t];
-            const per = r.totalGames ? (c.yellow + c.red) / r.totalGames : 0;
-            return (
-              <div key={t} className="bg-bg-tertiary rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <TeamLogo team={t === 'AEK' ? 'aek' : 'real'} size="xs" />
-                  <span className="text-caption1 font-semibold text-text-secondary truncate">{getTeamDisplay(t)}</span>
-                </div>
-                <div className="flex items-baseline gap-3">
-                  <span className="inline-flex items-baseline gap-1">
-                    <span className="w-2.5 h-3.5 rounded-sm bg-system-yellow inline-block translate-y-0.5" />
-                    <span className="stat-display text-[20px] text-text-primary">{c.yellow}</span>
-                  </span>
-                  <span className="inline-flex items-baseline gap-1">
-                    <span className="w-2.5 h-3.5 rounded-sm bg-system-red inline-block translate-y-0.5" />
-                    <span className="stat-display text-[20px] text-text-primary">{c.red}</span>
-                  </span>
-                </div>
-                <div className="text-caption2 text-text-tertiary num-tabular mt-1">{dez(per, 2)} Karten/Spiel</div>
-              </div>
-            );
-          })}
+        {/* Karten als Kraefteverhaeltnis statt als zwei Kacheln: die Frage
+            ist "wer sammelt mehr", und die beantwortet eine geteilte Flaeche
+            unmittelbar. Nebenbei loest es das Platzproblem — "Dynamo Dresden"
+            passte in die halbbreite Kachel neben dem Wappen nicht hinein. */}
+        <div className="divide-y divide-border-light">
+          <Kraefteverhaeltnis
+            label="Gelbe Karten" aek={r.cards.AEK.yellow} real={r.cards.Real.yellow}
+            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+          <Kraefteverhaeltnis
+            label="Rote Karten" aek={r.cards.AEK.red} real={r.cards.Real.red}
+            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+          <Kraefteverhaeltnis
+            label="Karten je Spiel" zusatz={`${r.totalGames} Spiele`}
+            aek={r.totalGames ? (r.cards.AEK.yellow + r.cards.AEK.red) / r.totalGames : 0}
+            real={r.totalGames ? (r.cards.Real.yellow + r.cards.Real.red) / r.totalGames : 0}
+            anzeige={(n) => dez(n, 2)}
+            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
         </div>
       </Section>
 
@@ -409,19 +403,31 @@ export default function InsightsView({ matches, players, bans }) {
         icon="euro" iconClass="text-system-green" title="Kaderwert gegen Bilanz"
         hint="Zahlt sich der teurere Kader aus? Kaderwert ist der heutige Stand."
       >
-        <div className="grid grid-cols-2 gap-3">
+        <div className="divide-y divide-border-light">
+          <Kraefteverhaeltnis
+            label="Kaderwert" zusatz="heutiger Stand"
+            aek={r.value[0]?.squadValue} real={r.value[1]?.squadValue}
+            anzeige={(n) => `${dez(n)} Mio`}
+            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+          <Kraefteverhaeltnis
+            label="Siege"
+            aek={r.value[0]?.wins} real={r.value[1]?.wins}
+            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+        </div>
+        {/* Die eigentliche Antwort auf die Frage der Ueberschrift. Sie steht
+            bewusst NICHT als Balken da: "Millionen je Sieg" ist ein Preis, und
+            beim Preis ist weniger besser — eine geteilte Flaeche wuerde die
+            teurere Seite als die groessere zeigen und damit das Gegenteil
+            nahelegen. */}
+        <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border-light">
           {r.value.map((v) => (
-            <div key={v.team} className="bg-bg-tertiary rounded-xl p-4">
-              <div className="flex items-center gap-2 mb-1">
-                <TeamLogo team={v.team === 'AEK' ? 'aek' : 'real'} size="xs" />
-                <span className="text-caption1 font-semibold text-text-secondary truncate">{getTeamDisplay(v.team)}</span>
+            <div key={v.team}>
+              <div className={`stat-display text-[17px] num-tabular ${
+                v.team === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
+                {v.costPerWin != null ? `${dez(v.costPerWin)} Mio` : '—'}
               </div>
-              <div className="stat-display text-[20px] text-text-primary">{dez(v.squadValue)} Mio €</div>
-              <div className="text-caption2 text-text-tertiary num-tabular mt-1">
-                {v.wins} {v.wins === 1 ? 'Sieg' : 'Siege'} · {v.winRate.toFixed(0)}%
-              </div>
-              <div className="text-caption2 text-text-tertiary num-tabular">
-                {v.costPerWin != null ? `${dez(v.costPerWin)} Mio € pro Sieg` : 'noch kein Sieg'}
+              <div className="text-caption2 text-text-tertiary truncate">
+                je Sieg · {getTeamDisplay(v.team)}
               </div>
             </div>
           ))}
@@ -435,24 +441,27 @@ export default function InsightsView({ matches, players, bans }) {
       >
         {(r.banStats.AEK.count + r.banStats.Real.count) > 0 ? (
           <>
-            <div className="grid grid-cols-2 gap-3">
+            <div className="divide-y divide-border-light">
+              <Kraefteverhaeltnis
+                label="Sperren"
+                aek={r.banStats.AEK.count} real={r.banStats.Real.count}
+                aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+              <Kraefteverhaeltnis
+                label="Spiele Ausfall" zusatz="dadurch verpasst"
+                aek={r.banStats.AEK.games} real={r.banStats.Real.games}
+                aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+            </div>
+            {/* Der haeufigste Grund je Seite — eine Zahl ist das nicht, also
+                auch kein Balken. */}
+            <div className="flex justify-between gap-2 mt-3">
               {['AEK', 'Real'].map((t) => {
-                const b = r.banStats[t];
-                const topReason = Object.entries(b.reasons).sort((x, y) => y[1] - x[1])[0];
+                const grund = Object.entries(r.banStats[t].reasons).sort((x, y) => y[1] - x[1])[0];
                 return (
-                  <div key={t} className="bg-bg-tertiary rounded-xl p-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <TeamLogo team={t === 'AEK' ? 'aek' : 'real'} size="xs" />
-                      <span className="text-caption1 font-semibold text-text-secondary truncate">{getTeamDisplay(t)}</span>
-                    </div>
-                    <div className="stat-display text-[26px] text-text-primary">{b.count}</div>
-                    <div className="text-caption2 text-text-tertiary num-tabular">
-                      {b.count === 1 ? 'Sperre' : 'Sperren'} · {b.games} {b.games === 1 ? 'Spiel' : 'Spiele'} Ausfall
-                    </div>
-                    {topReason && (
-                      <span className="chip chip-sm chip-orange mt-2">{topReason[0]}</span>
-                    )}
-                  </div>
+                  <span key={t} className="min-w-0">
+                    {grund
+                      ? <span className="chip chip-sm chip-orange">{grund[0]}</span>
+                      : <span className="text-caption2 text-text-tertiary">keine</span>}
+                  </span>
                 );
               })}
             </div>
@@ -530,35 +539,38 @@ export default function InsightsView({ matches, players, bans }) {
         icon="zap" iconClass="text-system-purple" title="Längste Serien"
         hint="Die längste Kette am Stück — chronologisch gerechnet, nicht nach Listenreihenfolge."
       >
-        <div className="grid grid-cols-2 gap-3">
-          {['AEK', 'Real'].map((t) => {
-            const s = r.serien[t];
-            const zeilen = [
-              ['Ohne Gegentor', s.beste.zuNull, s.aktuell.zuNull],
-              ['Ungeschlagen', s.beste.ungeschlagen, s.aktuell.ungeschlagen],
-              ['Siege', s.beste.siege, s.aktuell.siege],
-            ];
+        {/* Drei Serien-Arten nebeneinander, jede als geteilte Flaeche. Sie
+            standen als zwei halbbreite Kacheln da, in denen jeweils dieselben
+            drei Zeilen wiederholt wurden — vergleichen musste man quer ueber
+            die Luecke zwischen den Kacheln, also genau ueber die Stelle, an
+            der ein Balken die Antwort schon gibt. */}
+        <div className="divide-y divide-border-light">
+          {[
+            { id: 'zuNull', label: 'Ohne Gegentor' },
+            { id: 'ungeschlagen', label: 'Ungeschlagen' },
+            { id: 'siege', label: 'Siege' },
+          ].map((art) => {
+            const a = r.serien.AEK, b = r.serien.Real;
+            // "Laeuft noch" heisst: die aktuelle Serie ist zugleich die
+            // laengste bisher — und laenger als eins, sonst waere jedes
+            // Einzelergebnis eine "Serie".
+            const laeuft = [
+              a.aktuell[art.id] > 1 && a.aktuell[art.id] === a.beste[art.id] ? getTeamDisplay('AEK') : null,
+              b.aktuell[art.id] > 1 && b.aktuell[art.id] === b.beste[art.id] ? getTeamDisplay('Real') : null,
+            ].filter(Boolean);
             return (
-              <div key={t} className="bg-bg-tertiary rounded-xl p-4">
-                <div className="flex items-center gap-2 mb-2">
-                  <TeamLogo team={t === 'AEK' ? 'aek' : 'real'} size="xs" />
-                  <span className="text-caption1 font-semibold text-text-secondary truncate">{getTeamDisplay(t)}</span>
-                </div>
-                {zeilen.map(([label, beste, aktuell]) => (
-                  <div key={label} className="flex items-baseline justify-between gap-2 py-0.5">
-                    <span className="text-caption2 text-text-tertiary truncate">{label}</span>
-                    <span className="num-tabular text-sm font-semibold text-text-primary">
-                      {beste}
-                      {aktuell > 1 && aktuell === beste && <span className="text-system-orange"> 🔥</span>}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              <Kraefteverhaeltnis
+                key={art.id}
+                label={art.label}
+                zusatz={laeuft.length ? `läuft gerade: ${laeuft.join(' und ')}` : 'am Stück, chronologisch'}
+                aek={a.beste[art.id]} real={b.beste[art.id]}
+                aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
             );
           })}
         </div>
         <p className="text-caption2 text-text-tertiary mt-2">
-          🔥 heißt: die Serie läuft gerade noch und ist zugleich die längste bisher.
+          Gezählt wird die längste Kette am Stück. Steht {'„läuft gerade"'} darunter,
+          ist die aktuelle Serie zugleich die längste bisher.
         </p>
       </Section>
     </div>

@@ -756,83 +756,11 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   }
 
   // Calculate longest winning streaks for both teams
-  const calculateWinningStreaks = () => {
-    if (!filteredMatches || filteredMatches.length === 0) {
-      return {
-        aek: { streak: 0, startDate: null, endDate: null },
-        real: { streak: 0, startDate: null, endDate: null }
-      };
-    }
+  // calculateWinningStreaks ist mit der Karte "Längste Siegesserien"
+  // weggefallen — die Serien stehen jetzt in den Einblicken, und dort werden
+  // sie eigenstaendig gerechnet (dazu die Serie ohne Gegentor und die
+  // ungeschlagene, die es hier nie gab).
 
-    const streaks = {
-      aek: { longest: 0, current: 0, start: null, end: null, currentStart: null },
-      real: { longest: 0, current: 0, start: null, end: null, currentStart: null }
-    };
-
-    // Sort matches by date to analyze chronologically
-    const sortedMatches = [...filteredMatches].sort((a, b) => new Date(a.date) - new Date(b.date));
-
-    sortedMatches.forEach((match) => {
-      const aekGoals = match.goalsa || 0;
-      const realGoals = match.goalsb || 0;
-      const matchDate = match.date;
-
-      if (aekGoals > realGoals) {
-        // AEK wins
-        streaks.aek.current++;
-        if (streaks.aek.current === 1) {
-          streaks.aek.currentStart = matchDate;
-        }
-        
-        if (streaks.aek.current > streaks.aek.longest) {
-          streaks.aek.longest = streaks.aek.current;
-          streaks.aek.start = streaks.aek.currentStart;
-          streaks.aek.end = matchDate;
-        }
-        
-        // Reset Real streak
-        streaks.real.current = 0;
-        streaks.real.currentStart = null;
-      } else if (realGoals > aekGoals) {
-        // Real wins
-        streaks.real.current++;
-        if (streaks.real.current === 1) {
-          streaks.real.currentStart = matchDate;
-        }
-        
-        if (streaks.real.current > streaks.real.longest) {
-          streaks.real.longest = streaks.real.current;
-          streaks.real.start = streaks.real.currentStart;
-          streaks.real.end = matchDate;
-        }
-        
-        // Reset AEK streak
-        streaks.aek.current = 0;
-        streaks.aek.currentStart = null;
-      } else {
-        // Draw (shouldn't happen in FIFA but just in case)
-        streaks.aek.current = 0;
-        streaks.real.current = 0;
-        streaks.aek.currentStart = null;
-        streaks.real.currentStart = null;
-      }
-    });
-
-    return {
-      aek: {
-        streak: streaks.aek.longest,
-        startDate: streaks.aek.start,
-        endDate: streaks.aek.end
-      },
-      real: {
-        streak: streaks.real.longest,
-        startDate: streaks.real.start,
-        endDate: streaks.real.end
-      }
-    };
-  };
-
-  const winningStreaks = calculateWinningStreaks();
 
   // Current streak: how many consecutive wins the most recent winner is on
   const getCurrentStreak = () => {
@@ -1064,33 +992,11 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             daneben — sie gehört inhaltlich zu den Sperren. Die Überschrift kam
             zudem in der Teams-Ansicht ein zweites Mal vor. */}
 
-        {/* Längste Siegesserien.
-            Standen als zwei Kacheln nebeneinander mit Wappen und Vereinsnamen.
-            Auf 375 px blieben je rund 96 px fuer den Namen — "Dynamo Dresden"
-            brauchte 100 und wurde abgeschnitten, laengere Vereinsnamen erst
-            recht. Als Kraefteverhaeltnis stellt sich die Frage nicht mehr: die
-            Farbe sagt, wer gemeint ist, so wie in dieser Ansicht inzwischen
-            ueberall. Die Zeitraeume stehen darunter an ihrer jeweiligen Seite.
-            Vorleseprogramme bekommen die Namen weiterhin. */}
-        <div className="modern-card p-4">
-          <div className="text-footnote font-semibold text-text-muted mb-1 inline-flex items-center gap-2">
-            <Icon name="zap" size={15} strokeWidth={2.2} className="text-system-orange" />
-            Längste Siegesserien
-          </div>
-          <Kraefteverhaeltnis
-            label="Siege in Folge" zusatz="im gewählten Zeitraum"
-            aek={winningStreaks.aek.streak} real={winningStreaks.real.streak}
-            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
-          <div className="flex justify-between gap-3 text-caption2 text-text-tertiary num-tabular mt-1">
-            {[winningStreaks.aek, winningStreaks.real].map((seite, i) => (
-              <span key={i} className={`min-w-0 truncate ${i ? 'text-right' : ''}`}>
-                {seite.startDate && seite.endDate
-                  ? `${new Date(seite.startDate).toLocaleDateString('de-DE')} – ${new Date(seite.endDate).toLocaleDateString('de-DE')}`
-                  : seite.streak === 0 ? 'keine Serie' : '—'}
-              </span>
-            ))}
-          </div>
-        </div>
+        {/* "Längste Siegesserien" stand hier — jetzt nur noch in den
+            Einblicken. Dort steht sie vollstaendiger: neben den Siegen auch
+            die laengste Serie ohne Gegentor und die laengste ungeschlagene,
+            und dazu, ob eine davon gerade noch laeuft. Zwei Orte fuer dieselbe
+            Zahl in EINEM Bereich waren einer zu viel. */}
 
         {/* "Besondere Statistiken" stand hier — zwei Kacheln, beide unbrauchbar:
 
