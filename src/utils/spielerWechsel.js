@@ -235,6 +235,90 @@ async function kaderNachziehen(name, nach, fifaVersion) {
   return { fehler: null };
 }
 
+/**
+ * Den Wechsel als Geld buchen: der Aufnehmende zahlt, der Abgebende bekommt.
+ *
+ * Vorgeschlagen wird der gespeicherte Marktwert. ACHTUNG BEI DER EINHEIT:
+ * players.value steht in Mio € (12.0 = zwölf Millionen), finances.balance und
+ * transactions.amount in ganzen Euro. Der Aufrufer übergibt deshalb bereits
+ * EURO — die Umrechnung passiert dort, wo der Vorschlag entsteht und sichtbar
+ * ist, nicht versteckt hier drin.
+ *
+ * "Ehemalige" ist kein Konto: geht jemand dorthin, bekommt nur die abgebende
+ * Seite Geld; kommt jemand von dort, zahlt nur die aufnehmende.
+ *
+ * Der Kontostand kann in dieser App nicht unter null fallen (dieselbe Regel
+ * wie im Transaktions-Formular). Wird deshalb weniger abgezogen als gebucht,
+ * steht das im Ergebnis als `gekappt` — sonst zeigte die Transaktion einen
+ * Betrag, den das Konto nie gesehen hat, und niemand erführe davon.
+ */
+export async function wechselBuchen({ name, von, nach, betragEuro, datum, fifaVersion }) {
+  const zeilen = buchungenFuer({ name, von, nach, betragEuro, datum, fifaVersion });
+  const buchungen = [];
+  const gekappt = [];
+  for (const zeile of zeilen) {
+    const { data, error } = await supabaseDb.insert('transactions', zeile);
+    if (error) return { buchungen, gekappt, fehler: error };
+    buchungen.push(data);
+
+    const { gekappt: k, fehler } = await kontoAendern(zeile.team, zeile.amount);
+    if (fehler) return { buchungen, gekappt, fehler };
+    if (k > 0) gekappt.push({ team: zeile.team, betrag: k });
+  }
+  return { buchungen, gekappt, fehler: null };
+}
+
+/**
+ * Welche Buchungen ein Wechsel ausloest — als reine Funktion.
+ *
+ * Bewusst getrennt vom Schreiben: die Entscheidung "wer zahlt, wer bekommt,
+ * mit welchem Vorzeichen" ist der Teil, der falsch sein kann, und nur so
+ * laesst er sich pruefen, ohne eine Datenbank zu brauchen. (Der Demo-Speicher
+ * taugt dafuer nicht: er liefert bei select konstante Daten, waehrend update
+ * nur simuliert wird — Schreiben und Lesen laufen dort auseinander.)
+ *
+ * `amount` ist vorzeichenbehaftet und wird auf den Kontostand ADDIERT, so wie
+ * ueberall sonst in dieser App: Kauf negativ, Verkauf positiv.
+ */
+export function buchungenFuer({ name, von, nach, betragEuro, datum, fifaVersion }) {
+  const betrag = Math.round(Number(betragEuro) || 0);
+  if (!betrag) return [];
+  const info = `${name} · ${von || 'Zugang'} → ${nach}`;
+  const zeile = (team, type, amount) => ({
+    date: datum, type, team, amount, info, match_id: null,
+    ...(fifaVersion ? { fifa_version: fifaVersion } : {}),
+  });
+  const zeilen = [];
+  // "Ehemalige" ist kein Konto — dorthin und von dort zahlt nur die Seite,
+  // die es wirklich gibt.
+  if (nach === 'AEK' || nach === 'Real') zeilen.push(zeile(nach, 'Spielerkauf', -betrag));
+  if (von === 'AEK' || von === 'Real')  zeilen.push(zeile(von, 'Spielerverkauf', betrag));
+  return zeilen;
+}
+
+/**
+ * Kontostand um `delta` verschieben. Gibt zurück, wie viel davon an der
+ * Nulllinie verloren ging.
+ */
+async function kontoAendern(team, delta) {
+  const { data, error } = await supabaseDb.select('finances', '*', { eq: { team } });
+  if (error) return { gekappt: 0, fehler: error };
+  const konto = (data && data[0]) || null;
+  const alt = Number(konto?.balance) || 0;
+  const roh = alt + delta;
+  const neu = Math.max(0, roh);
+  const gekappt = neu - roh;          // > 0 heisst: es wurde abgefangen
+
+  if (konto?.id != null) {
+    const { error: e } = await supabaseDb.update('finances', { balance: neu }, konto.id);
+    if (e) return { gekappt, fehler: e };
+  } else {
+    const { error: e } = await supabaseDb.insert('finances', { team, balance: neu, debt: 0 });
+    if (e) return { gekappt, fehler: e };
+  }
+  return { gekappt, fehler: null };
+}
+
 /** Einen falsch eingetragenen Wechsel wieder entfernen. */
 export async function wechselLoeschen(id) {
   const { error } = await supabaseDb.delete(TABELLE, id);

@@ -4,12 +4,14 @@ import Icon from './icons/Icon';
 import SpielerWappen from './SpielerWappen';
 import { getTeamDisplay } from '../constants/teams';
 import Kraefteverhaeltnis from './Kraefteverhaeltnis';
+import ZahlFeld from './ZahlFeld';
+import { dez, zahl } from '../utils/zahlen';
 import { toreJeSeite, sperrenJeSeite } from '../utils/spielerBilanz';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import { getCurrentFifaVersion } from '../utils/fifaVersionManager';
 import {
   SEITEN, ladeWechsel, wechselVon, abschnitte, kaderSpiele, seiteAmDatum,
-  wechselEintragen, wechselLoeschen, heute,
+  wechselEintragen, wechselLoeschen, wechselBuchen, heute,
 } from '../utils/spielerWechsel';
 
 /**
@@ -41,6 +43,12 @@ export default function SpielerWechselKarte({ player }) {
   const [datum, setDatum] = useState(heute());
   const [notiz, setNotiz] = useState('');
   const [speichert, setSpeichert] = useState(false);
+  // Geld: vorgeschlagen wird der gespeicherte Marktwert, umgerechnet in Euro.
+  // Sichtbar und aenderbar, weil players.value in Mio € steht und ein Konto
+  // hier fuenfstellig ist — eine stille Buchung ueber Millionen waere ein
+  // boeses Erwachen.
+  const [buchen, setBuchen] = useState(true);
+  const [betrag, setBetrag] = useState('');
 
   // Alles über alle Saisons: eine Laufbahn endet nicht an der Saisongrenze.
   // Die Torschützenlisten kommen mit, weil daraus die Tore JE SEITE entstehen.
@@ -96,11 +104,35 @@ export default function SpielerWechselKarte({ player }) {
       notiz: notiz.trim() || null,
       bisherigeWechsel: alleWechsel,
     });
-    setSpeichert(false);
-    if (fehler) { toast.error(fehler.message); return; }
+    if (fehler) { setSpeichert(false); toast.error(fehler.message); return; }
     toast.success(`${player.name} → ${getTeamDisplay(ziel) || ziel}`);
+
+    // Erst der Wechsel, dann das Geld: der Wechsel ist hier die Absicht, die
+    // Buchung die Folge. Scheitert sie, bleibt der Wechsel stehen — aber der
+    // Fehler wird genannt.
+    if (buchen && Number(betrag) > 0) {
+      const { gekappt, fehler: geldFehler } = await wechselBuchen({
+        name: player.name,
+        von: seiteAmTag,
+        nach: ziel,
+        betragEuro: zahl(betrag),
+        datum,
+        fifaVersion: player.fifa_version || getCurrentFifaVersion(),
+      });
+      if (geldFehler) toast.error(`Wechsel steht, Buchung fehlgeschlagen: ${geldFehler.message}`);
+      // Ein Konto kann in dieser App nicht unter null fallen. Wurde deshalb
+      // weniger abgezogen als gebucht, muss das gesagt werden — sonst zeigt
+      // die Transaktion einen Betrag, den das Konto nie gesehen hat.
+      for (const k of gekappt || []) {
+        toast(`${getTeamDisplay(k.team) || k.team}: ${dez(k.betrag, 0)} € konnten nicht abgezogen ` +
+              'werden, das Konto steht auf 0.', { duration: 7000 });
+      }
+      window.dispatchEvent(new CustomEvent('fusta-refresh'));
+    }
+
+    setSpeichert(false);
     setFormularOffen(false);
-    setZiel(''); setNotiz(''); setDatum(heute());
+    setZiel(''); setNotiz(''); setDatum(heute()); setBetrag('');
     holen();
   };
 
@@ -120,7 +152,12 @@ export default function SpielerWechselKarte({ player }) {
           Wo und seit wann
         </h4>
         <button
-          onClick={() => setFormularOffen((o) => !o)}
+          onClick={() => {
+            const auf = !formularOffen;
+            setFormularOffen(auf);
+            // Marktwert (Mio €) → Euro. Beim Oeffnen frisch vorschlagen.
+            if (auf) setBetrag(String(Math.round((Number(player.value) || 0) * 1_000_000)));
+          }}
           className="chip chip-sm chip-gray inline-flex items-center gap-1"
         >
           <Icon name={formularOffen ? 'x' : 'plus'} size={12} strokeWidth={2.4} />
@@ -178,6 +215,28 @@ export default function SpielerWechselKarte({ player }) {
                    placeholder="z. B. Tausch gegen Kanté"
                    className="form-input w-full mt-0.5" />
           </label>
+          {/* Geld. Der Vorschlag kommt aus dem gespeicherten Marktwert, steht
+              aber als Euro-Betrag da und laesst sich aendern — players.value
+              ist in Mio €, und aus 12,0 werden 12.000.000 €. */}
+          <div className="rounded-xl bg-bg-tertiary p-3 space-y-2">
+            <label className="flex items-center gap-2">
+              <input type="checkbox" checked={buchen} onChange={(e) => setBuchen(e.target.checked)} />
+              <span className="text-caption1 text-text-primary">Als Kauf und Verkauf buchen</span>
+            </label>
+            {buchen && (
+              <>
+                <ZahlFeld ganzzahl wert={betrag} onChange={setBetrag}
+                          inputMode="text" className="form-input w-full"
+                          placeholder="Betrag in Euro" />
+                <p className="text-caption2 text-text-tertiary">
+                  Vorschlag aus dem Marktwert: {dez(Number(player.value) || 0, 1)} Mio €.
+                  {ziel && ziel !== 'Ehemalige' && ' Die aufnehmende Seite zahlt, die abgebende bekommt.'}
+                  {ziel === 'Ehemalige' && ' Nur die abgebende Seite bekommt Geld.'}
+                </p>
+              </>
+            )}
+          </div>
+
           <button onClick={speichern} disabled={speichert || !ziel}
                   className="w-full py-2.5 rounded-xl bg-system-green text-white font-semibold text-sm disabled:opacity-50">
             {speichert ? 'Speichert…' : 'Wechsel festhalten'}
