@@ -380,7 +380,7 @@ export default function DeleteTab() {
             <button
               onClick={() => handleDeletePlayer(player)}
               disabled={loading}
-              className="btn-secondary btn-sm text-accent-red hover:bg-system-red/10 disabled:opacity-50"
+              className="btn-secondary btn-sm text-system-red hover:bg-system-red/10 disabled:opacity-50"
             >
               <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
@@ -471,7 +471,7 @@ export default function DeleteTab() {
                   <button
                     onClick={() => handleDeleteMatch(match)}
                     disabled={loading}
-                    className="btn-secondary btn-sm text-accent-red hover:bg-system-red/10 disabled:opacity-50"
+                    className="btn-secondary btn-sm text-system-red hover:bg-system-red/10 disabled:opacity-50"
                   >
                     <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
                     Einzeln löschen
@@ -530,7 +530,7 @@ export default function DeleteTab() {
             <button
               onClick={() => handleDeleteBan(ban)}
               disabled={loading}
-              className="btn-secondary btn-sm text-accent-red hover:bg-system-red/10 disabled:opacity-50"
+              className="btn-secondary btn-sm text-system-red hover:bg-system-red/10 disabled:opacity-50"
             >
               <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
@@ -589,7 +589,7 @@ export default function DeleteTab() {
             <button
               onClick={() => handleDeleteTransaction(transaction)}
               disabled={loading}
-              className="btn-secondary btn-sm text-accent-red hover:bg-system-red/10 disabled:opacity-50"
+              className="btn-secondary btn-sm text-system-red hover:bg-system-red/10 disabled:opacity-50"
             >
               <Icon name="trash" size={14} strokeWidth={2} className="inline-block mr-1 align-[-2px]" />
               Löschen
@@ -634,7 +634,7 @@ export default function DeleteTab() {
             onClick={() => handleSectionChange(section.id)}
             className={`p-3 rounded-lg text-sm font-medium transition-colors ${
               activeSection === section.id
-                ? 'bg-accent-red text-white'
+                ? 'bg-system-red text-white'
                 : 'bg-bg-tertiary text-text-secondary hover:text-text-primary hover:bg-bg-hover'
             }`}
           >
@@ -654,7 +654,7 @@ export default function DeleteTab() {
             placeholder={`${sections.find(s => s.id === activeSection)?.label.replace(' löschen', '')} durchsuchen...`}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="w-full pl-10 pr-4 py-2 border border-border-medium rounded-lg focus:ring-2 focus:ring-accent-red focus:border-transparent text-text-primary bg-bg-secondary"
+            className="w-full pl-10 pr-4 py-2 border border-border-medium rounded-lg focus:ring-2 focus:ring-system-red focus:border-transparent text-text-primary bg-bg-secondary"
           />
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-text-muted">
             <Icon name="search" size={16} strokeWidth={2} />

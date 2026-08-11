@@ -121,7 +121,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   if (error) {
     return (
       <div className="text-center py-8">
-        <div className="text-accent-red mb-4 flex justify-center">
+        <div className="text-system-red mb-4 flex justify-center">
           <Icon name="warning" size={28} strokeWidth={2} />
         </div>
         <p className="text-text-muted mb-4">Fehler beim Laden des Kaders</p>

@@ -138,7 +138,7 @@ export default function BansTab({ onNavigate, showHints = false }) { // eslint-d
   if (bansError && !bans) {
     return (
       <div className="text-center py-12 px-4">
-        <div className="text-accent-red mb-4 flex justify-center">
+        <div className="text-system-red mb-4 flex justify-center">
           <Icon name="warning" size={28} strokeWidth={2} />
         </div>
         <p className="text-text-muted mb-4">Fehler beim Laden der Sperren</p>

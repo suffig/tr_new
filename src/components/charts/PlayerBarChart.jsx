@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from '../../utils/d3';
-import { schriftfarbe, achsenfarbe } from './diagrammFarben';
+import { schriftfarbe, achsenfarbe, aekFarbe, realFarbe } from './diagrammFarben';
 
 /**
  * Interactive Bar Chart for player performance comparison
@@ -98,7 +98,7 @@ export default function PlayerBarChart({ data, height = 400, title = "Top Spiele
       .attr('width', xScale.bandwidth())
       .attr('y', chartHeight)
       .attr('height', 0)
-      .attr('fill', d => d.team === 'AEK' ? '#3b82f6' : '#ef4444')
+      .attr('fill', d => d.team === 'AEK' ? aekFarbe() : realFarbe())
       .attr('rx', 4)
       .style('cursor', 'pointer')
       .on('mouseover', function(event, d) {
@@ -161,7 +161,7 @@ export default function PlayerBarChart({ data, height = 400, title = "Top Spiele
   return (
     <div ref={containerRef} className="w-full">
       <h3 className="karten-titel mb-4">{title}</h3>
-      <div className="bg-bg-elevated dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+      <div className="bg-bg-elevated rounded-lg p-4 shadow-sm">
         <svg ref={svgRef}></svg>
         <div ref={tooltipRef}></div>
       </div>

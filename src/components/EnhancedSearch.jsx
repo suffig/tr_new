@@ -120,7 +120,7 @@ export default function EnhancedSearch({
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder={`${placeholder} (Strg+K für globale Suche)`}
-            className="w-full pl-10 pr-20 py-2 bg-bg-secondary border border-border-light rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent"
+            className="w-full pl-10 pr-20 py-2 bg-bg-secondary border border-border-light rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-fifa-green focus:border-transparent"
           />
           <div className="absolute inset-y-0 right-0 flex items-center gap-1 pr-3">
             <button
@@ -128,7 +128,7 @@ export default function EnhancedSearch({
                 const event = new CustomEvent('global-search-toggle');
                 window.dispatchEvent(event);
               }}
-              className="text-text-secondary hover:text-primary-green transition-colors p-1 rounded"
+              className="text-text-secondary hover:text-fifa-green transition-colors p-1 rounded"
               title="Globale Suche öffnen (Strg+K)"
             >
               <span aria-hidden="true"><Icon name="grid" size={14} strokeWidth={2.1} /></span>
@@ -159,7 +159,7 @@ export default function EnhancedSearch({
                 <select
                   value={activeFilters[filter.key] || ''}
                   onChange={(e) => handleFilterChange(filter.key, e.target.value)}
-                  className="px-3 py-1 bg-bg-secondary border border-border-light rounded text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-green"
+                  className="px-3 py-1 bg-bg-secondary border border-border-light rounded text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-fifa-green"
                 >
                   <option value="">Alle</option>
                   {filter.options.map((option) => (
@@ -180,7 +180,7 @@ export default function EnhancedSearch({
                 <select
                   value={sortBy}
                   onChange={(e) => setSortBy(e.target.value)}
-                  className="px-3 py-1 bg-bg-secondary border border-border-light rounded text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-green"
+                  className="px-3 py-1 bg-bg-secondary border border-border-light rounded text-sm text-text-primary focus:outline-none focus:ring-2 focus:ring-fifa-green"
                 >
                   <option value="">Standard</option>
                   {searchFields.map((field) => (
@@ -227,7 +227,7 @@ export default function EnhancedSearch({
             {hasActiveFilters && (
               <div className="flex items-center gap-2">
                 {query && (
-                  <span className="bg-primary-green bg-opacity-10 text-primary-green px-2 py-1 rounded text-xs">
+                  <span className="bg-fifa-green bg-opacity-10 text-fifa-green px-2 py-1 rounded text-xs">
                     &quot;{query}&quot;
                   </span>
                 )}

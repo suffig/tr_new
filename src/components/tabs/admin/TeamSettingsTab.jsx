@@ -179,7 +179,7 @@ export default function TeamSettingsTab() {
       {loading ? (
         <div className="modern-card">
           <div className="flex justify-center items-center p-8">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-green"></div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-fifa-green"></div>
             <span className="ml-2 text-text-muted">Lade Manager-Einstellungen...</span>
           </div>
         </div>
@@ -298,7 +298,7 @@ export default function TeamSettingsTab() {
             disabled={!hasChanges || loading}
             className={`px-4 py-2 text-sm rounded-lg transition-colors ${
               hasChanges && !loading
-                ? 'bg-primary-green text-white hover:bg-system-green' 
+                ? 'bg-fifa-green text-white hover:bg-system-green' 
                 : 'bg-border-strong text-text-tertiary cursor-not-allowed'
             }`}
           >

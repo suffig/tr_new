@@ -1033,7 +1033,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     orange, gemessener Kontrastabstand 0 — "18", "Shots noch
                     uebrig" und "0 getrunken" waren schlicht unsichtbar. Der
                     gruene Zweig daneben stand immer richtig auf /10. */}
-                <div className={`modern-card mb-6 border-2 ${isDone ? 'border-system-green/45 bg-system-green/10' : 'border-system-orange/45 bg-system-orange/10'}`}>
+                <div className={`modern-card mb-6 border ${isDone ? 'border-system-green/45 bg-system-green/10' : 'border-system-orange/45 bg-system-orange/10'}`}>
                   <div className="text-center mb-6">
                     {isDone ? (
                       <>
@@ -1130,13 +1130,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
                   {/* Per-person counts */}
                   <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-system-blue/15 border-2 border-system-blue/45 rounded-xl p-4 text-center">
+                    <div className="bg-system-blue/12 border border-system-blue/25 rounded-xl p-4 text-center">
                       <TeamLogo team="aek" size="sm" />
                       <div className="font-bold text-system-blue text-lg">{managers.aek.name}</div>
                       <div className="text-4xl font-black text-system-blue">{schnapsShotsData.alex}</div>
                       <div className="text-sm text-system-blue">Shots</div>
                     </div>
-                    <div className="bg-system-red/15 border-2 border-system-red/45 rounded-xl p-4 text-center">
+                    <div className="bg-system-red/12 border border-system-red/25 rounded-xl p-4 text-center">
                       <TeamLogo team="real" size="sm" />
                       <div className="font-bold text-system-red text-lg">{managers.real.name}</div>
                       <div className="text-4xl font-black text-system-red">{schnapsShotsData.philip}</div>
@@ -1435,7 +1435,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               hat, bei jedem Aufruf sichtbar. */}
 
           {/* Game Counter and Account Balances */}
-          <div className="modern-card mb-6 bg-system-purple border-2 border-system-purple/45">
+                    {/* Ruhige Karte statt vollflaechiger Farbe.
+              Hier lag der Text in derselben Farbe wie die Flaeche darunter —
+              gemessener Kontrastabstand 0, die Ueberschrift war unsichtbar.
+              Bei Gelb unter Orange waren es 55, ebenfalls zu wenig. Jetzt
+              traegt das farbige Icon den Akzent, wie ueberall sonst. */}
+          <div className="modern-card mb-6">
             <h4 className="karten-titel mb-4 text-system-purple inline-flex items-center gap-2">
               <Icon name="chart" size={17} strokeWidth={2.2} />Übersicht
             </h4>
@@ -1460,7 +1465,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               </div>
 
               {/* Alexander Balance */}
-              <div className="p-4 bg-system-blue/10 rounded-lg border-2 border-system-blue/45 text-center">
+              <div className="p-4 bg-system-blue/10 rounded-lg border border-system-blue/25 text-center">
                 <h5 className="font-bold text-system-blue mb-2 flex items-center justify-center gap-2">
                   {managers.aek.name}
                 </h5>
@@ -1471,7 +1476,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               </div>
 
               {/* Philip Balance */}
-              <div className="p-4 bg-system-green/10 rounded-lg border-2 border-system-green/45 text-center">
+              <div className="p-4 bg-system-green/10 rounded-lg border border-system-green/25 text-center">
                 <h5 className="font-bold text-system-green mb-2 flex items-center justify-center gap-2">
                   {managers.real.name}
                 </h5>
@@ -1484,7 +1489,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
           </div>
 
           {/* Main Action Buttons */}
-          <div className="modern-card mb-6 bg-system-yellow border-2 border-system-yellow/45">
+          <div className="modern-card mb-6">
             <h4 className="karten-titel mb-4 text-system-orange flex items-center gap-2">
               <Icon name="play" size={17} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Gewinn eintragen
             </h4>
@@ -1791,7 +1796,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
           {/* Current Round Games Display */}
           {bjTracking.currentRound.active && bjTracking.currentRound.games.length > 0 && (
-            <div className="modern-card mb-6 bg-system-yellow border-2 border-system-yellow/45">
+            <div className="modern-card mb-6">
               <h4 className="karten-titel mb-4 text-system-orange flex items-center gap-2">
                 Aktuelle Runde {bjTracking.currentRound.roundNumber} — Spiele
               </h4>

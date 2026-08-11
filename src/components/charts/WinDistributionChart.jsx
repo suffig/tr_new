@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from '../../utils/d3';
-import { flaechenfarbe, schriftfarbe, achsenfarbe } from './diagrammFarben';
+import { flaechenfarbe, schriftfarbe, achsenfarbe, aekFarbe, realFarbe } from './diagrammFarben';
 
 /**
  * Interactive Donut Chart for win distribution
@@ -36,7 +36,7 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
     // Create color scale
     const colorScale = d3.scaleOrdinal()
       .domain(data.map(d => d.label))
-      .range(['#3b82f6', '#ef4444', '#10b981']);
+      .range([aekFarbe(), realFarbe(), '#10b981']);
 
     // Create pie layout
     const pie = d3.pie()
@@ -215,7 +215,7 @@ export default function WinDistributionChart({ data, height = 350, title = "Sieg
   return (
     <div ref={containerRef} className="w-full">
       <h3 className="karten-titel mb-4 text-center">{title}</h3>
-      <div className="bg-bg-elevated dark:bg-gray-800 rounded-lg p-4 shadow-sm flex justify-center">
+      <div className="bg-bg-elevated rounded-lg p-4 shadow-sm flex justify-center">
         <svg ref={svgRef}></svg>
         <div ref={tooltipRef}></div>
       </div>

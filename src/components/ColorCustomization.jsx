@@ -145,7 +145,7 @@ export default function ColorCustomization() {
             type="text"
             value={value}
             onChange={(e) => handleColorChange(colorKey, e.target.value)}
-            className="w-full px-3 py-2 text-sm border border-border-medium rounded-lg bg-bg-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-green/50"
+            className="w-full px-3 py-2 text-sm border border-border-medium rounded-lg bg-bg-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-fifa-green/50"
             placeholder="#000000"
           />
           {description && (
@@ -176,7 +176,7 @@ export default function ColorCustomization() {
                 onClick={() => applyPreset(preset)}
                 className={`p-3 rounded-lg border-2 transition-all duration-300 ${
                   selectedPreset === preset.name
-                    ? 'border-primary-green bg-primary-green/10'
+                    ? 'border-fifa-green bg-fifa-green/10'
                     : 'border-border-medium hover:border-border-strong'
                 }`}
               >
@@ -260,7 +260,7 @@ export default function ColorCustomization() {
             disabled={!hasChanges}
             className={`flex-1 py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
               hasChanges
-                ? 'bg-primary-green hover:bg-primary-green-dark text-white'
+                ? 'bg-fifa-green hover:bg-system-green-dark text-white'
                 : 'bg-border-medium text-text-muted cursor-not-allowed'
             }`}
           >

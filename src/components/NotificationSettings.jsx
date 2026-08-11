@@ -144,7 +144,7 @@ export default function NotificationSettings() {
               className={`w-full py-3 px-4 rounded-lg font-medium transition-all duration-300 ${
                 status.permission === 'denied'
                   ? 'bg-border-medium text-text-muted cursor-not-allowed'
-                  : 'bg-primary-green hover:bg-primary-green-dark text-white'
+                  : 'bg-fifa-green hover:bg-system-green-dark text-white'
               }`}
             >
               {isLoading ? (
@@ -192,7 +192,7 @@ export default function NotificationSettings() {
                     onChange={(e) => handleSettingChange('matchReminders', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
+                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-fifa-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fifa-green"></div>
                 </label>
               </div>
 
@@ -205,7 +205,7 @@ export default function NotificationSettings() {
                   <select
                     value={settings.reminderTime}
                     onChange={(e) => handleSettingChange('reminderTime', parseInt(e.target.value))}
-                    className="w-full px-3 py-2 text-sm border border-border-medium rounded-lg bg-bg-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-primary-green/50"
+                    className="w-full px-3 py-2 text-sm border border-border-medium rounded-lg bg-bg-secondary text-text-primary focus:outline-none focus:ring-2 focus:ring-fifa-green/50"
                   >
                     <option value={5}>5 Minuten</option>
                     <option value={15}>15 Minuten</option>
@@ -233,7 +233,7 @@ export default function NotificationSettings() {
                     onChange={(e) => handleSettingChange('goals', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
+                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-fifa-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fifa-green"></div>
                 </label>
               </div>
 
@@ -254,7 +254,7 @@ export default function NotificationSettings() {
                     onChange={(e) => handleSettingChange('achievements', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
+                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-fifa-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fifa-green"></div>
                 </label>
               </div>
 
@@ -275,7 +275,7 @@ export default function NotificationSettings() {
                     onChange={(e) => handleSettingChange('events', e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-green"></div>
+                  <div className="w-11 h-6 bg-border-medium peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-fifa-green/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-bg-elevated after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-fifa-green"></div>
                 </label>
               </div>
             </div>

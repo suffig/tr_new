@@ -24,3 +24,15 @@ export const schriftfarbe = () => token('--text-primary', '#374151');
 
 /** Zurückhaltender Text: Achsen und Hilfsbeschriftungen. */
 export const achsenfarbe = () => token('--text-tertiary', '#9ca3af');
+
+/**
+ * Die beiden Seiten — dieselben Farben wie überall sonst in der App.
+ *
+ * Die Diagramme trugen ihr eigenes Blau (#3b82f6) und Rot (#ef4444), also
+ * andere Töne als --system-blue (#0A6CFF hell, #3D9BFF dunkel) und
+ * --system-red (#FF3B30). Wer vom Duell in die Diagramme wechselte, sah
+ * dieselben zwei Seiten in leicht anderen Farben — und im Dunkelmodus blieben
+ * die Diagramme beim hellen Blau, während der Rest der App aufhellte.
+ */
+export const aekFarbe = () => token('--system-blue', '#0A6CFF');
+export const realFarbe = () => token('--system-red', '#FF3B30');

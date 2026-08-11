@@ -235,7 +235,7 @@ export default function SearchTab({ onNavigate }) {
           <button
             key={item.id}
             onClick={() => handleResultClick(item, activeSearchType)}
-            className="w-full p-4 hover:bg-bg-secondary transition-colors text-left focus:outline-none focus:ring-2 focus:ring-primary-green focus:ring-inset"
+            className="w-full p-4 hover:bg-bg-secondary transition-colors text-left focus:outline-none focus:ring-2 focus:ring-fifa-green focus:ring-inset"
           >
             {activeSearchType === 'players' && (
               <div className="flex items-center justify-between">
@@ -245,11 +245,11 @@ export default function SearchTab({ onNavigate }) {
                     {item.position} • {item.team} • {item.value || 0}M €
                   </p>
                   {(item.goals || 0) > 0 && (
-                    <p className="text-xs text-primary-green">{item.goals || 0} Tore</p>
+                    <p className="text-xs text-fifa-green">{item.goals || 0} Tore</p>
                   )}
                 </div>
                 <div className="text-right ml-4">
-                  <div className="text-lg font-bold text-primary-green">
+                  <div className="text-lg font-bold text-fifa-green">
                     {item.value || 0}M €
                   </div>
                   <div className="text-xs text-text-muted">Zum Spieler →</div>
@@ -315,7 +315,7 @@ export default function SearchTab({ onNavigate }) {
                   )}
                 </div>
                 <div className="text-right ml-4">
-                  <div className="text-lg font-bold text-primary-green">
+                  <div className="text-lg font-bold text-fifa-green">
                     {(item.goalsa || 0) + (item.goalsb || 0)} Tore
                   </div>
                   <div className="text-xs text-text-muted">Zum Spiel →</div>
@@ -353,7 +353,7 @@ export default function SearchTab({ onNavigate }) {
                   )}
                 </div>
                 <div className="text-right ml-4">
-                  <div className="text-sm text-accent-red">
+                  <div className="text-sm text-system-red">
                     {item.duration || 1} Spiel{(item.duration || 1) !== 1 ? 'e' : ''}
                   </div>
                   <div className="text-xs text-text-muted">Zu Sperren →</div>
@@ -391,7 +391,7 @@ export default function SearchTab({ onNavigate }) {
             }}
             className={`search-nav-button flex items-center space-x-2 px-4 py-2 rounded-lg whitespace-nowrap transition-colors ${
               activeSearchType === type.id
-                ? 'bg-primary-green text-white'
+                ? 'bg-fifa-green text-white'
                 : 'bg-bg-secondary text-text-muted hover:bg-bg-tertiary'
             }`}
             title={type.label}

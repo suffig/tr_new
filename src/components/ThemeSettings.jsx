@@ -24,7 +24,7 @@ export default function ThemeSettings() {
                 onClick={() => setAutoTheme(true)}
                 className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center space-y-2 ${
                   autoMode
-                    ? 'border-primary-green bg-primary-green/10'
+                    ? 'border-fifa-green bg-fifa-green/10'
                     : 'border-border-medium hover:border-border-strong'
                 }`}
               >
@@ -40,7 +40,7 @@ export default function ThemeSettings() {
                 onClick={() => setManualTheme('light')}
                 className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center space-y-2 ${
                   !autoMode && theme === 'light'
-                    ? 'border-primary-green bg-primary-green/10'
+                    ? 'border-fifa-green bg-fifa-green/10'
                     : 'border-border-medium hover:border-border-strong'
                 }`}
               >
@@ -56,7 +56,7 @@ export default function ThemeSettings() {
                 onClick={() => setManualTheme('dark')}
                 className={`p-4 rounded-lg border-2 transition-all duration-300 flex flex-col items-center space-y-2 ${
                   !autoMode && theme === 'dark'
-                    ? 'border-primary-green bg-primary-green/10'
+                    ? 'border-fifa-green bg-fifa-green/10'
                     : 'border-border-medium hover:border-border-strong'
                 }`}
               >
@@ -101,7 +101,7 @@ export default function ThemeSettings() {
             </div>
             <button
               onClick={toggleTheme}
-              className="bg-primary-green hover:bg-primary-green-dark text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2"
+              className="bg-fifa-green hover:bg-system-green-dark text-white px-4 py-2 rounded-lg transition-all duration-300 flex items-center space-x-2"
             >
               <Icon name={theme === 'dark' ? 'sun' : 'moon'} size={16} strokeWidth={2.1} />
               <span className="text-sm font-medium">

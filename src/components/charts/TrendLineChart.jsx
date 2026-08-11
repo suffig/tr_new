@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from '../../utils/d3';
-import { flaechenfarbe, achsenfarbe } from './diagrammFarben';
+import { flaechenfarbe, achsenfarbe, aekFarbe, realFarbe } from './diagrammFarben';
 
 /**
  * Interactive Line Chart for showing performance trends over time
@@ -103,7 +103,7 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
     const pathAek = svg.append('path')
       .datum(data)
       .attr('fill', 'none')
-      .attr('stroke', '#3b82f6')
+      .attr('stroke', aekFarbe())
       .attr('stroke-width', 3)
       .attr('d', lineAek);
 
@@ -121,7 +121,7 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
     const pathReal = svg.append('path')
       .datum(data)
       .attr('fill', 'none')
-      .attr('stroke', '#ef4444')
+      .attr('stroke', realFarbe())
       .attr('stroke-width', 3)
       .attr('d', lineReal);
 
@@ -182,8 +182,8 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
         .attr('r', 5);
     };
 
-    addDataPoints(data, '#3b82f6', 'aek');
-    addDataPoints(data, '#ef4444', 'real');
+    addDataPoints(data, aekFarbe(), 'aek');
+    addDataPoints(data, realFarbe(), 'real');
 
     // Add legend
     const legend = svg.append('g')
@@ -194,7 +194,7 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
       .attr('x2', 20)
       .attr('y1', 0)
       .attr('y2', 0)
-      .attr('stroke', '#3b82f6')
+      .attr('stroke', aekFarbe())
       .attr('stroke-width', 3);
 
     legend.append('text')
@@ -209,7 +209,7 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
       .attr('x2', 20)
       .attr('y1', 20)
       .attr('y2', 20)
-      .attr('stroke', '#ef4444')
+      .attr('stroke', realFarbe())
       .attr('stroke-width', 3);
 
     legend.append('text')
@@ -224,7 +224,7 @@ export default function TrendLineChart({ data, height = 300, title = "Performanc
   return (
     <div ref={containerRef} className="w-full">
       <h3 className="karten-titel mb-4">{title}</h3>
-      <div className="bg-bg-elevated dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+      <div className="bg-bg-elevated rounded-lg p-4 shadow-sm">
         <svg ref={svgRef}></svg>
         <div ref={tooltipRef}></div>
       </div>

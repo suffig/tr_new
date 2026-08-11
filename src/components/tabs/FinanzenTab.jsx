@@ -200,7 +200,7 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
   if (financesError && !finances) {
     return (
       <div className="p-4 text-center py-12">
-        <div className="text-accent-red mb-4 flex justify-center">
+        <div className="text-system-red mb-4 flex justify-center">
           <Icon name="warning" size={28} strokeWidth={2} />
         </div>
         <p className="text-text-muted mb-4">Fehler beim Laden der Finanzen</p>

@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import * as d3 from '../../utils/d3';
-import { flaechenfarbe, achsenfarbe } from './diagrammFarben';
+import { flaechenfarbe, achsenfarbe, aekFarbe, realFarbe } from './diagrammFarben';
 
 /**
  * Interactive Area Chart for goal trends over time
@@ -49,12 +49,12 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
 
     gradientAek.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#3b82f6')
+      .attr('stop-color', aekFarbe())
       .attr('stop-opacity', 0.6);
 
     gradientAek.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#3b82f6')
+      .attr('stop-color', aekFarbe())
       .attr('stop-opacity', 0.1);
 
     const gradientReal = defs.append('linearGradient')
@@ -66,12 +66,12 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
 
     gradientReal.append('stop')
       .attr('offset', '0%')
-      .attr('stop-color', '#ef4444')
+      .attr('stop-color', realFarbe())
       .attr('stop-opacity', 0.6);
 
     gradientReal.append('stop')
       .attr('offset', '100%')
-      .attr('stop-color', '#ef4444')
+      .attr('stop-color', realFarbe())
       .attr('stop-opacity', 0.1);
 
     // Create scales
@@ -163,7 +163,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
     svg.append('path')
       .datum(data)
       .attr('fill', 'none')
-      .attr('stroke', '#3b82f6')
+      .attr('stroke', aekFarbe())
       .attr('stroke-width', 2)
       .attr('d', lineAek)
       .style('opacity', 0)
@@ -186,7 +186,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
     svg.append('path')
       .datum(data)
       .attr('fill', 'none')
-      .attr('stroke', '#ef4444')
+      .attr('stroke', realFarbe())
       .attr('stroke-width', 2)
       .attr('d', lineReal)
       .style('opacity', 0)
@@ -213,7 +213,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
           .attr('cx', xScale(d.label))
           .attr('cy', yScale(d.aek || 0))
           .attr('r', 5)
-          .attr('fill', '#3b82f6')
+          .attr('fill', aekFarbe())
           .attr('stroke', flaechenfarbe())
           .attr('stroke-width', 2);
 
@@ -222,7 +222,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
           .attr('cx', xScale(d.label))
           .attr('cy', yScale(d.real || 0))
           .attr('r', 5)
-          .attr('fill', '#ef4444')
+          .attr('fill', realFarbe())
           .attr('stroke', flaechenfarbe())
           .attr('stroke-width', 2);
         
@@ -281,7 +281,7 @@ export default function GoalTrendAreaChart({ data, height = 300, title = "Tor-Tr
   return (
     <div ref={containerRef} className="w-full">
       <h3 className="karten-titel mb-4">{title}</h3>
-      <div className="bg-bg-elevated dark:bg-gray-800 rounded-lg p-4 shadow-sm">
+      <div className="bg-bg-elevated rounded-lg p-4 shadow-sm">
         <svg ref={svgRef}></svg>
         <div ref={tooltipRef}></div>
       </div>

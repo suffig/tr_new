@@ -135,7 +135,7 @@ export default function GlobalSearch({ onNavigate, onClose, sofortOffen = false 
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Spieler, Spiele, Biere, Sperren – alle Saisons"
-                  className="w-full pl-10 pr-4 py-3 bg-bg-secondary border border-border-light rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-primary-green focus:border-transparent"
+                  className="w-full pl-10 pr-4 py-3 bg-bg-secondary border border-border-light rounded-lg text-text-primary placeholder-text-secondary focus:outline-none focus:ring-2 focus:ring-fifa-green focus:border-transparent"
                 />
               </div>
               
@@ -147,7 +147,7 @@ export default function GlobalSearch({ onNavigate, onClose, sofortOffen = false 
                     onClick={() => setActiveFilter(filter.id)}
                     className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm transition-all duration-200 ${
                       activeFilter === filter.id
-                        ? 'bg-primary-green text-white'
+                        ? 'bg-fifa-green text-white'
                         : 'bg-bg-secondary text-text-muted hover:bg-bg-tertiary hover:text-text-primary border border-border-light'
                     }`}
                   >
@@ -188,7 +188,7 @@ export default function GlobalSearch({ onNavigate, onClose, sofortOffen = false 
                       onClick={() => handleSelectResult(result)}
                       className={`w-full text-left p-3 rounded-lg transition-all duration-200 ${
                         index === selectedIndex
-                          ? 'bg-primary-green bg-opacity-10 border border-primary-green'
+                          ? 'bg-fifa-green bg-opacity-10 border border-fifa-green'
                           : 'hover:bg-bg-secondary'
                       }`}
                     >

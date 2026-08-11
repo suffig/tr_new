@@ -570,7 +570,7 @@
   }
   
   .form-input-enhanced:focus {
-    @apply outline-none border-primary-green shadow-lg;
+    @apply outline-none border-fifa-green shadow-lg;
     transform: translateY(-1px);
   }
   
@@ -598,12 +598,12 @@
   }
   
   .btn-enhanced {
-    @apply relative overflow-hidden bg-primary-green text-white font-medium py-3 px-6 rounded-lg transition-all duration-300;
+    @apply relative overflow-hidden bg-fifa-green text-white font-medium py-3 px-6 rounded-lg transition-all duration-300;
     transform: translateY(0);
   }
   
   .btn-enhanced:hover:not(.loading) {
-    @apply bg-primary-green-dark shadow-lg;
+    @apply bg-system-green-dark shadow-lg;
     transform: translateY(-2px);
   }
   
@@ -960,7 +960,7 @@
   }
   
   .activity-card {
-    @apply bg-bg-secondary border border-border-light rounded-lg p-4 transition-all duration-300 hover:shadow-md hover:border-primary-green hover:-translate-y-1;
+    @apply bg-bg-secondary border border-border-light rounded-lg p-4 transition-all duration-300 hover:shadow-md hover:border-fifa-green hover:-translate-y-1;
     position: relative;
   }
   

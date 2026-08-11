@@ -44,17 +44,17 @@ export default {
           red: 'var(--fifa-red)',
           green: 'var(--fifa-green)',
         },
-        // Legacy support (gradually migrate away from these)
-        primary: {
-          green: 'var(--fifa-green)',
-          'green-dark': 'var(--system-green)',
-          'green-light': 'var(--system-teal)',
-        },
-        accent: {
-          orange: 'var(--system-orange)',
-          red: 'var(--system-red)',
-          blue: 'var(--system-blue)',
-        },
+        // Die Gruppen `primary` und `accent` standen hier als "Legacy support
+        // (gradually migrate away from these)" — und wurden trotzdem weiter
+        // benutzt. Sie waren zweite Namen fuer Farben, die es schon gab:
+        // accent-red war system-red, accent-orange war system-orange,
+        // accent-blue war system-blue, primary-green war fifa-green. Zwei
+        // Namen fuer dieselbe Farbe heisst, dass dieselbe Sache an zwei
+        // Stellen unterschiedlich heisst — und `primary-green` log dazu noch,
+        // denn die Markenfarbe ist seit dem Logowechsel ein Orange.
+        //
+        // Alle 51 Verwendungen sind umgestellt, die Gruppen sind weg: so kann
+        // auch nichts Neues mehr darauf zeigen.
         // Enhanced semantic colors using CSS variables
         bg: {
           primary: 'var(--bg-primary)',

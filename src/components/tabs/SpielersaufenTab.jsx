@@ -533,7 +533,7 @@ export default function SpielersaufenTab() {
       {section === 'aufstellung' && (
         <div className="space-y-5">
           {subState && (
-            <div className="bg-system-yellow/10 border-2 border-system-yellow/45 rounded-2xl p-3 text-center">
+            <div className="bg-system-yellow/10 border border-system-yellow/25 rounded-2xl p-3 text-center">
               <p className="font-bold text-system-yellow text-sm inline-flex items-center gap-1.5"><Icon name="swap" size={14} strokeWidth={2.2} /> Einwechslung – wähle den eingewechselten Spieler:</p>
               <button onClick={() => setSubState(null)} className="text-xs text-system-yellow mt-1 underline">Abbrechen</button>
             </div>
@@ -1028,7 +1028,9 @@ export default function SpielersaufenTab() {
           ) : (
             <>
               {/* Header */}
-              <div className="bg-system-orange border-2 border-system-orange/45 rounded-2xl p-4 text-center">
+              {/* Ruhige Flaeche: hier stand oranger Text auf oranger Flaeche,
+                  gemessener Kontrastabstand 0. */}
+              <div className="modern-card p-4 text-center">
                 <div className="mb-1 flex justify-center text-system-yellow"><Icon name="trophy" size={34} strokeWidth={1.8} /></div>
                 <div className="font-black text-xl text-system-orange mb-1">Spielergebnis</div>
                 <div className="text-sm text-system-orange">

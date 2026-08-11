@@ -257,7 +257,7 @@ export default function MatchDayOverview({ matches }) {
                     {dayStats.topScorer.player && (
                       <div className="flex justify-between">
                         <span className="text-text-secondary">Top:</span>
-                        <span className="font-medium text-primary-green">
+                        <span className="font-medium text-fifa-green">
                           {dayStats.topScorer.player.split(' ').slice(-1)[0]} ({dayStats.topScorer.goals})
                         </span>
                       </div>
@@ -337,7 +337,7 @@ export default function MatchDayOverview({ matches }) {
             </div>
             
             <div className="modern-card text-center">
-              <div className="text-2xl font-bold text-primary-green">
+              <div className="text-2xl font-bold text-fifa-green">
                 {selectedDateStats.topScorer.player ? selectedDateStats.topScorer.goals : '0'}
               </div>
               <div className="text-sm text-text-secondary">Meiste Tore</div>
@@ -515,7 +515,7 @@ export default function MatchDayOverview({ matches }) {
                         </span>
                         <span className="font-medium text-text-primary">{player}</span>
                       </div>
-                      <span className="font-bold text-primary-green">{goals} Tor{goals !== 1 ? 'e' : ''}</span>
+                      <span className="font-bold text-fifa-green">{goals} Tor{goals !== 1 ? 'e' : ''}</span>
                     </div>
                   ))
                 }
