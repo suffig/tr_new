@@ -3,6 +3,8 @@ import toast from 'react-hot-toast';
 import Icon from './icons/Icon';
 import SpielerWappen from './SpielerWappen';
 import { getTeamDisplay } from '../constants/teams';
+import Kraefteverhaeltnis from './Kraefteverhaeltnis';
+import { toreJeSeite, sperrenJeSeite } from '../utils/spielerBilanz';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import { getCurrentFifaVersion } from '../utils/fifaVersionManager';
 import {
@@ -40,9 +42,12 @@ export default function SpielerWechselKarte({ player }) {
   const [notiz, setNotiz] = useState('');
   const [speichert, setSpeichert] = useState(false);
 
-  // Alle Spiele über alle Saisons: der Kader-Zeitraum kann eine Saisongrenze
-  // überschreiten, deshalb ohne Saisonfilter.
-  const { data: matches } = useSupabaseQuery('matches', 'id,date,fifa_version', { skipFifaFilter: true });
+  // Alles über alle Saisons: eine Laufbahn endet nicht an der Saisongrenze.
+  // Die Torschützenlisten kommen mit, weil daraus die Tore JE SEITE entstehen.
+  const { data: matches } = useSupabaseQuery(
+    'matches', 'id,date,fifa_version,goalslista,goalslistb', { skipFifaFilter: true });
+  const { data: bans } = useSupabaseQuery('bans', '*', { skipFifaFilter: true });
+  const { data: alleSpieler } = useSupabaseQuery('players', 'id,name', { skipFifaFilter: true });
 
   const holen = useCallback(async () => {
     setLaedt(true);
@@ -62,6 +67,10 @@ export default function SpielerWechselKarte({ player }) {
 
   const verlauf = useMemo(() => abschnitte(meine), [meine]);
   const spiele = useMemo(() => kaderSpiele(meine, matches || []), [meine, matches]);
+  const tore = useMemo(() => toreJeSeite(matches || [], player?.name), [matches, player?.name]);
+  const sperren = useMemo(
+    () => sperrenJeSeite(bans || [], alleSpieler || [], player?.name),
+    [bans, alleSpieler, player?.name]);
   // Die Seite AM GEWAEHLTEN TAG, nicht die von heute: wer einen Wechsel auf
   // ein zurueckliegendes Datum eintraegt, soll die Auswahl sehen, die dort
   // gilt. Vorher wurde immer die heutige Seite ausgeblendet — bei einer
@@ -176,42 +185,62 @@ export default function SpielerWechselKarte({ player }) {
         </div>
       )}
 
-      {/* Spiele im Kader. Bewusst so beschriftet — die App erfasst keine
-          Aufstellung, "Einsätze" wäre gelogen.
-
-          Der Stichtag steht daneben und nicht als Warnung darunter: gezählt
-          wird ab der ersten erfassten Zeile, alles davor liegt ausserhalb
-          dessen, worüber der Verlauf etwas sagt. Anders herum stünde bei allen
-          41 Spielern dieselbe Meldung über 903 nicht zuordenbare Spiele. */}
-      {spiele.ab && (
-        <div className="mt-3 pt-3 border-t border-border-light">
-          <div className="flex items-baseline justify-between gap-2 mb-1.5">
-            <span className="text-caption2 text-text-tertiary">Spiele im Kader</span>
-            <span className="text-caption2 text-text-tertiary num-tabular">seit {datumLang(spiele.ab)}</span>
-          </div>
-          <div className="flex gap-2">
-            {['AEK', 'Real'].map((s) => (
-              <div key={s} className="flex-1 min-w-0">
-                <div className={`text-callout font-bold num-tabular ${
-                  s === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>{spiele[s]}</div>
-                <div className="text-caption2 text-text-tertiary truncate">{getTeamDisplay(s) || s}</div>
-              </div>
-            ))}
-          </div>
-          {spiele.gesamt === 0 && spiele.Ehemalige === 0 && (
-            <p className="text-caption2 text-text-tertiary mt-2">
-              Seit dem Stichtag wurde noch kein Spiel erfasst.
-            </p>
+      {/* Was er bei welcher Seite gemacht hat.
+          Drei Größen mit drei verschiedenen Datenlagen — deshalb steht bei
+          jeder, worauf sie sich stützt. Tore und Sperren tragen ihre Seite
+          seit jeher in sich (getrennte Torschützenlisten, bans.team) und
+          gelten über alle Saisons. Spiele erst ab dem Stichtag, weil vorher
+          nicht festgehalten wurde, wer wann bei wem war. Ohne diesen Hinweis
+          sähe "Tore 12 : 3" neben "Spiele 0 : 0" nach einem Fehler aus. */}
+      <div className="mt-3 pt-3 border-t border-border-light">
+        <div className="text-caption2 text-text-tertiary mb-1">Bei welcher Seite</div>
+        <div className="divide-y divide-border-light">
+          <Kraefteverhaeltnis
+            klein label="Tore" zusatz="alle Saisons"
+            aek={tore.AEK.tore} real={tore.Real.tore}
+            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+          <Kraefteverhaeltnis
+            klein label="Spiele mit Tor" zusatz="alle Saisons"
+            aek={tore.AEK.spieleMitTor} real={tore.Real.spieleMitTor}
+            aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+          {(sperren.AEK.anzahl + sperren.Real.anzahl) > 0 && (
+            <Kraefteverhaeltnis
+              klein label="Sperren"
+              zusatz={`${sperren.AEK.spiele + sperren.Real.spiele} Spiele Ausfall · alle Saisons`}
+              aek={sperren.AEK.anzahl} real={sperren.Real.anzahl}
+              aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
           )}
-          {spiele.ohneZuordnung > 0 && (
-            <p className="text-caption2 text-system-orange mt-2">
-              {spiele.ohneZuordnung} {spiele.ohneZuordnung === 1 ? 'Spiel liegt' : 'Spiele liegen'} im
-              erfassten Zeitraum, lassen sich aber keiner Seite zuordnen — vermutlich ist ein Wechsel
-              vor die eigene Startzeile datiert.
-            </p>
+          {spiele.ab && (
+            <Kraefteverhaeltnis
+              klein label="Spiele im Kader" zusatz={`erst seit ${datumLang(spiele.ab)}`}
+              aek={spiele.AEK} real={spiele.Real}
+              aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
           )}
         </div>
-      )}
+
+        {tore.bestesSpiel && (
+          <p className="text-caption2 text-text-tertiary mt-2">
+            Bestes Spiel: {tore.bestesSpiel.anzahl}{' '}
+            {tore.bestesSpiel.anzahl === 1 ? 'Tor' : 'Tore'} für{' '}
+            {getTeamDisplay(tore.bestesSpiel.seite) || tore.bestesSpiel.seite}
+            {tore.bestesSpiel.datum ? ` am ${datumLang(tore.bestesSpiel.datum)}` : ''}.
+          </p>
+        )}
+        {spiele.ohneZuordnung > 0 && (
+          <p className="text-caption2 text-system-orange mt-2">
+            {spiele.ohneZuordnung} {spiele.ohneZuordnung === 1 ? 'Spiel liegt' : 'Spiele liegen'} im
+            erfassten Zeitraum, lassen sich aber keiner Seite zuordnen — vermutlich ist ein Wechsel
+            vor die eigene Startzeile datiert.
+          </p>
+        )}
+        {sperren.ohneSeite > 0 && (
+          <p className="text-caption2 text-text-tertiary mt-2">
+            {sperren.ohneSeite} {sperren.ohneSeite === 1 ? 'Sperre' : 'Sperren'} ohne
+            hinterlegte Seite.
+          </p>
+        )}
+      </div>
+
     </div>
   );
 }
