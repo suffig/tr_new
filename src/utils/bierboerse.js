@@ -394,12 +394,130 @@ export const KATEGORIE_KATALOG = [
   { id: 'wiederholung', label: 'Nochmal?', hilfe: 'Würdest du es wieder bestellen?', gruppe: 'Drumherum' },
 ];
 
-/** Nach Schlüssel nachschlagen. */
-export const kategorie = (id) => KATEGORIE_KATALOG.find((k) => k.id === id) || null;
-
 export const STANDARD_KATEGORIEN = KATEGORIE_KATALOG.filter((k) => k.standard).map((k) => k.id);
 
-/** Die Gruppen in der Reihenfolge, in der sie im Katalog vorkommen. */
+/* ---------------------------------------------------------------------------
+   Eigene Kategorien (db/28)
+
+   Die mitgelieferten oben bleiben im Code, die selbst angelegten kommen aus
+   der Tabelle. Der GESAMTKATALOG ist beides übereinandergelegt — und weil
+   fast jede Stelle in der App "gib mir die Kategorie zu diesem Schlüssel"
+   fragt, liegt die Zusammenführung an genau einer Stelle: hier.
+   --------------------------------------------------------------------------- */
+
+/**
+ * Die eigenen Kategorien, wie sie zuletzt geladen wurden.
+ *
+ * Ein Modul-Zwischenspeicher und keine Abfrage je Aufruf: `kategorie()` wird
+ * beim Zeichnen des Formulars und jeder Auswertung dutzendfach aufgerufen und
+ * muss synchron antworten. Gefüllt wird er von ladeKategorien().
+ */
+let eigeneKategorien = [];
+
+/** Eigene Kategorien aus der Datenbank holen und merken. */
+export async function ladeKategorien() {
+  try {
+    const { data, error } = await supabaseDb.select('bier_kategorien', '*', { skipFifaFilter: true });
+    if (error) throw error;
+    eigeneKategorien = (data || []).map((k) => ({
+      id: k.id,
+      label: k.label,
+      hilfe: k.hilfe || null,
+      gruppe: k.gruppe || 'Eigene',
+      aktiv: k.aktiv !== false,
+      sortierung: Number(k.sortierung) || 0,
+      eigen: true,
+    })).sort((a, b) => a.sortierung - b.sortierung || String(a.label).localeCompare(String(b.label)));
+    return eigeneKategorien;
+  } catch {
+    // Migration noch nicht eingespielt: die Bierbörse bleibt bedienbar, es
+    // gibt dann eben nur die mitgelieferten Kategorien.
+    eigeneKategorien = [];
+    return eigeneKategorien;
+  }
+}
+
+/** Mitgelieferte und eigene zusammen. Ausgeblendete sind NICHT dabei. */
+export function alleKategorien() {
+  return [...KATEGORIE_KATALOG, ...eigeneKategorien.filter((k) => k.aktiv)];
+}
+
+/** Auch die ausgeblendeten — für die Verwaltung und für alte Noten. */
+export function alleKategorienMitStillgelegten() {
+  return [...KATEGORIE_KATALOG, ...eigeneKategorien];
+}
+
+/**
+ * Nach Schlüssel nachschlagen.
+ *
+ * Sucht auch unter den AUSGEBLENDETEN. Eine stillgelegte Kategorie
+ * verschwindet aus dem Formular, ihre bereits vergebenen Noten stehen aber
+ * weiter in den Verkostungen — und die sollen in den Auswertungen ihren
+ * Namen behalten statt als roher Schlüssel dazustehen.
+ */
+export const kategorie = (id) =>
+  KATEGORIE_KATALOG.find((k) => k.id === id) ||
+  eigeneKategorien.find((k) => k.id === id) ||
+  null;
+
+/**
+ * Aus einer Bezeichnung einen Schlüssel bilden.
+ *
+ * Muss zur Prüfregel in db/28 passen: nur a-z und 0-9, 2 bis 32 Zeichen.
+ * Umlaute werden aufgelöst statt entfernt — sonst würde aus "Süffigkeit"
+ * "sffigkeit".
+ */
+export function schluesselAus(label) {
+  const roh = String(label || '')
+    .toLowerCase()
+    .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .normalize('NFKD').replace(/[̀-ͯ]/g, '')
+    .replace(/[^a-z0-9]/g, '');
+  return roh.slice(0, 32);
+}
+
+/** Ist dieser Schlüssel schon vergeben? Auch stillgelegte zählen. */
+export const schluesselFrei = (id) =>
+  !KATEGORIE_KATALOG.some((k) => k.id === id) && !eigeneKategorien.some((k) => k.id === id);
+
+/** Eine eigene Kategorie anlegen. */
+export async function legeKategorieAn({ label, hilfe = null, gruppe = 'Eigene' }) {
+  const sauber = String(label || '').trim();
+  if (!sauber) throw new Error('Die Kategorie braucht eine Bezeichnung.');
+  const id = schluesselAus(sauber);
+  if (id.length < 2) {
+    throw new Error('Aus dieser Bezeichnung lässt sich kein Schlüssel bilden — bitte Buchstaben verwenden.');
+  }
+  if (!schluesselFrei(id)) {
+    throw new Error(`„${sauber}" gibt es schon.`);
+  }
+  const sortierung = eigeneKategorien.reduce((m, k) => Math.max(m, k.sortierung), 0) + 1;
+  const { error } = await supabaseDb.insert('bier_kategorien', {
+    id, label: sauber, hilfe: hilfe?.trim() || null, gruppe, aktiv: true, sortierung,
+  });
+  if (error) throw error;
+  await ladeKategorien();
+  return id;
+}
+
+/**
+ * Eine eigene Kategorie ausblenden oder zurückholen.
+ *
+ * Kein Löschen: die vergebenen Noten stecken in jeder einzelnen
+ * Verkostungszeile und gehören zur Geschichte des Abends. Sie mitzulöschen
+ * wäre unwiderruflich, sie stehen zu lassen und die Kategorie zu entfernen
+ * hinterließe Noten ohne Namen.
+ */
+export async function setzeKategorieAktiv(id, aktiv) {
+  const { error } = await supabaseDb.update('bier_kategorien', { aktiv }, id);
+  if (error) throw error;
+  await ladeKategorien();
+}
+
+/** Die Gruppen in der Reihenfolge, in der sie vorkommen. */
+export const kategorieGruppen = () => [...new Set(alleKategorien().map((k) => k.gruppe))];
+
+/** Rueckwaertskompatibel — hiess frueher so und wird noch importiert. */
 export const KATEGORIE_GRUPPEN = [...new Set(KATEGORIE_KATALOG.map((k) => k.gruppe))];
 
 /**
@@ -410,6 +528,11 @@ export const KATEGORIE_GRUPPEN = [...new Set(KATEGORIE_KATALOG.map((k) => k.grup
  * gelaufen ist. Dann eben im einfachen Modus.
  */
 export async function ladeEinstellungen() {
+  // ZUERST die eigenen Kategorien holen. Unten wird die gespeicherte Auswahl
+  // durch kategorie() gefiltert — und was der Katalog nicht kennt, faellt
+  // dabei still raus. Ohne diese Zeile wuerde eine selbst angelegte Kategorie
+  // gespeichert und beim naechsten Laden kommentarlos verschwinden.
+  await ladeKategorien();
   try {
     const { data, error } = await supabaseDb.select('bierboerse_einstellungen', '*', { skipFifaFilter: true });
     if (error) throw error;

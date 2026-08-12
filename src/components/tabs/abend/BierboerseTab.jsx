@@ -13,7 +13,9 @@ import {
   wiederkauf, notenDrift,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
-  KATEGORIE_KATALOG, KATEGORIE_GRUPPEN, STANDARD_KATEGORIEN, kategorie,
+  KATEGORIE_KATALOG, STANDARD_KATEGORIEN, kategorie,
+  alleKategorien, alleKategorienMitStillgelegten, kategorieGruppen,
+  legeKategorieAn, setzeKategorieAktiv, schluesselAus, schluesselFrei,
   ladeEinstellungen, sichereEinstellungen, noteAusKategorien, notenVon,
   geschmacksDuell, gesamtBilanz, kategorienProfil, sortenVorliebe, preisLeistung,
   abendText, bierZwilling, antiRekorde, abendKennzahlen,
@@ -214,6 +216,52 @@ function EinstellungenFormular({ einstellungen, onSchliessen, onFertig }) {
   const [modus, setModus] = useState(einstellungen.modus);
   const [gewaehlt, setGewaehlt] = useState(einstellungen.kategorien);
   const [speichert, setSpeichert] = useState(false);
+  // Neu angelegte Kategorien liegen im Modul-Zwischenspeicher; dieser Zaehler
+  // stoesst das Neuzeichnen an, weil sich sonst nichts am Zustand aendert.
+  const [stand, setStand] = useState(0);
+  const [neuOffen, setNeuOffen] = useState(false);
+  const [neuLabel, setNeuLabel] = useState('');
+  const [neuHilfe, setNeuHilfe] = useState('');
+  const [legtAn, setLegtAn] = useState(false);
+
+  const katalog = useMemo(() => alleKategorien(), [stand]); // eslint-disable-line react-hooks/exhaustive-deps
+  const gruppen = useMemo(() => kategorieGruppen(), [stand]); // eslint-disable-line react-hooks/exhaustive-deps
+  const stillgelegte = useMemo(
+    () => alleKategorienMitStillgelegten().filter((k) => k.eigen && !k.aktiv),
+    [stand]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const neuAnlegen = async () => {
+    setLegtAn(true);
+    try {
+      const id = await legeKategorieAn({ label: neuLabel, hilfe: neuHilfe });
+      setStand((n) => n + 1);
+      // Direkt mit auswaehlen — wer eine Kategorie anlegt, will sie benutzen.
+      setGewaehlt((alt) => (alt.includes(id) ? alt : [...alt, id]));
+      setNeuLabel(''); setNeuHilfe(''); setNeuOffen(false);
+      toast.success('Kategorie angelegt.');
+    } catch (err) {
+      toast.error(err?.message || 'Konnte nicht angelegt werden.');
+    } finally {
+      setLegtAn(false);
+    }
+  };
+
+  const zurueckholen = async (id) => {
+    try {
+      await setzeKategorieAktiv(id, true);
+      setStand((n) => n + 1);
+      toast.success('Wieder da.');
+    } catch { toast.error('Ging nicht.'); }
+  };
+
+  const stilllegen = async (id) => {
+    try {
+      await setzeKategorieAktiv(id, false);
+      setStand((n) => n + 1);
+      setGewaehlt((alt) => alt.filter((x) => x !== id));
+      toast.success('Ausgeblendet. Vergebene Noten bleiben erhalten.');
+    } catch { toast.error('Ging nicht.'); }
+  };
 
   const umschalten = (id) => setGewaehlt((alt) =>
     alt.includes(id) ? alt.filter((x) => x !== id) : [...alt, id]);
@@ -223,7 +271,7 @@ function EinstellungenFormular({ einstellungen, onSchliessen, onFertig }) {
     try {
       // In der Reihenfolge des Katalogs sichern, nicht in der des Antippens —
       // sonst steht "Abgang" mal vor, mal hinter "Antrunk".
-      const sortiert = KATEGORIE_KATALOG.filter((k) => gewaehlt.includes(k.id)).map((k) => k.id);
+      const sortiert = katalog.filter((k) => gewaehlt.includes(k.id)).map((k) => k.id);
       await sichereEinstellungen({ modus, kategorien: sortiert });
       toast.success('Gespeichert.');
       onFertig();
@@ -259,30 +307,123 @@ function EinstellungenFormular({ einstellungen, onSchliessen, onFertig }) {
           <div className="flex items-baseline gap-2 mb-1.5">
             <span className="text-footnote text-text-secondary">Kategorien</span>
             <span className="ml-auto text-caption2 text-text-tertiary num-tabular">
-              {gewaehlt.length} von {KATEGORIE_KATALOG.length}
+              {gewaehlt.length} von {katalog.length}
             </span>
           </div>
           <div className="space-y-3">
-            {KATEGORIE_GRUPPEN.map((gruppe) => (
+            {gruppen.map((gruppe) => (
               <div key={gruppe}>
                 <div className="text-caption2 text-text-tertiary mb-1.5">{gruppe}</div>
                 <div className="flex flex-wrap gap-1.5">
-                  {KATEGORIE_KATALOG.filter((k) => k.gruppe === gruppe).map((k) => {
+                  {katalog.filter((k) => k.gruppe === gruppe).map((k) => {
                     const an = gewaehlt.includes(k.id);
+                    // Eigene bekommen ein × zum Ausblenden. Die
+                    // mitgelieferten nicht: die stehen im Code und liessen
+                    // sich hier gar nicht entfernen.
                     return (
-                      <button key={k.id} type="button" onClick={() => umschalten(k.id)}
-                              title={k.hilfe}
-                              className={`px-2.5 py-1.5 rounded-lg text-caption1 font-medium transition-colors ${
-                                an ? 'bg-system-yellow/15 text-system-yellow ring-1 ring-system-yellow/40'
-                                   : 'bg-bg-tertiary text-text-secondary'}`}>
-                        {k.label}
-                      </button>
+                      <span key={k.id}
+                            className={`inline-flex items-center rounded-lg text-caption1 font-medium transition-colors ${
+                              an ? 'bg-system-yellow/15 text-system-yellow ring-1 ring-system-yellow/40'
+                                 : 'bg-bg-tertiary text-text-secondary'}`}>
+                        <button type="button" onClick={() => umschalten(k.id)}
+                                title={k.hilfe || undefined}
+                                className={`px-2.5 py-1.5 ${k.eigen ? 'pr-1.5' : ''}`}>
+                          {k.label}
+                        </button>
+                        {k.eigen && (
+                          <button type="button" onClick={() => stilllegen(k.id)}
+                                  aria-label={`${k.label} ausblenden`}
+                                  title="Ausblenden — vergebene Noten bleiben"
+                                  className="pl-0.5 pr-2 py-1.5 text-text-tertiary hover:text-system-red">
+                            <Icon name="x" size={12} strokeWidth={2.6} />
+                          </button>
+                        )}
+                      </span>
                     );
                   })}
                 </div>
               </div>
             ))}
           </div>
+          {/* Eigene Kategorie anlegen (db/28).
+              Der Schluessel wird aus der Bezeichnung gebildet und ist danach
+              unveraenderlich — er steht als Schluessel in jeder vergebenen
+              Note. Deshalb steht er hier sichtbar dabei, statt still im
+              Hintergrund zu entstehen. */}
+          {neuOffen ? (
+            <div className="panel-gray rounded-xl p-3 mt-3 space-y-2">
+              <input
+                value={neuLabel}
+                onChange={(e) => setNeuLabel(e.target.value)}
+                placeholder="Bezeichnung, z. B. Süffigkeit"
+                className="form-input w-full"
+                autoFocus
+              />
+              <input
+                value={neuHilfe}
+                onChange={(e) => setNeuHilfe(e.target.value)}
+                placeholder="Kurzer Hinweis (freiwillig)"
+                className="form-input w-full"
+              />
+              {(() => {
+                const id = schluesselAus(neuLabel);
+                if (!neuLabel.trim()) return null;
+                if (id.length < 2) {
+                  return (
+                    <p className="text-caption2 text-system-red">
+                      Daraus lässt sich kein Schlüssel bilden — bitte Buchstaben verwenden.
+                    </p>
+                  );
+                }
+                if (!schluesselFrei(id)) {
+                  return <p className="text-caption2 text-system-red">Gibt es schon.</p>;
+                }
+                return (
+                  <p className="text-caption2 text-text-tertiary">
+                    Schlüssel: <span className="num-tabular">{id}</span> — steht später in jeder Note
+                    und lässt sich nicht mehr ändern.
+                  </p>
+                );
+              })()}
+              <div className="flex gap-2">
+                <button type="button" onClick={() => { setNeuOffen(false); setNeuLabel(''); setNeuHilfe(''); }}
+                        className="btn-secondary flex-1">
+                  Abbrechen
+                </button>
+                <button type="button" onClick={neuAnlegen}
+                        disabled={legtAn || !neuLabel.trim() || schluesselAus(neuLabel).length < 2
+                                  || !schluesselFrei(schluesselAus(neuLabel))}
+                        className="btn-primary flex-1 disabled:opacity-50">
+                  {legtAn ? 'Legt an…' : 'Anlegen'}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button type="button" onClick={() => setNeuOffen(true)}
+                    className="mt-3 w-full py-2 rounded-xl bg-bg-tertiary text-text-secondary text-footnote font-medium">
+              + Eigene Kategorie
+            </button>
+          )}
+
+          {/* Stillgelegte zurueckholen. Sie sind nicht geloescht — die
+              vergebenen Noten stehen weiter in den Verkostungen. */}
+          {stillgelegte.length > 0 && (
+            <div className="mt-3">
+              <div className="text-caption2 text-text-tertiary mb-1.5">Ausgeblendet</div>
+              <div className="flex flex-wrap gap-1.5">
+                {stillgelegte.map((k) => (
+                  <button key={k.id} type="button" onClick={() => zurueckholen(k.id)}
+                          className="px-2.5 py-1.5 rounded-lg text-caption1 bg-bg-tertiary text-text-tertiary line-through">
+                    {k.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-caption2 text-text-tertiary mt-1">
+                Antippen holt sie zurück. Die damals vergebenen Noten sind nie weg gewesen.
+              </p>
+            </div>
+          )}
+
           <button type="button" onClick={() => setGewaehlt(STANDARD_KATEGORIEN)}
                   className="mt-2 text-caption2 text-text-tertiary underline">
             Auf die drei Standardkategorien zurücksetzen
