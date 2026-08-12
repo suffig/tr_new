@@ -74,7 +74,7 @@ function Zeile({ icon, farbe, titel, wert, hinweis, onClick }) {
 }
 
 export default function StartTab({ onNavigate }) {
-  const { darfEintragen, name: ichHeisse } = useIchBin();
+  const { darfEintragen, name: ichHeisse, seite: meineSeite, bekannt } = useIchBin();
   const { data: matches, loading: mLoading } = useSupabaseQuery('matches', '*');
   const { data: finances, loading: fLoading } = useSupabaseQuery('finances', '*');
   // Hier stehen die Personen, nicht die Vereine: "Alexander führt mit 1 Sieg"
@@ -96,14 +96,64 @@ export default function StartTab({ onNavigate }) {
     // Neuestes Spiel zuerst — die Liste kommt nicht garantiert sortiert.
     const sortiert = [...liste].sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')));
     const tore = liste.reduce((n, m) => n + (m.goalsa || 0) + (m.goalsb || 0), 0);
+    const toreAek = liste.reduce((n, m) => n + (m.goalsa || 0), 0);
+    const toreReal = liste.reduce((n, m) => n + (m.goalsb || 0), 0);
     return {
       aek, real, remis, gesamt: liste.length, letztes: sortiert[0] || null,
-      tore,
+      tore, toreAek, toreReal,
       // Nur aus den Spielen dieser Saison — hier gibt es keine gezaehlten
       // Altsaisons, deren Tore fehlen koennten.
       schnitt: liste.length ? tore / liste.length : 0,
     };
   }, [matches]);
+
+  /**
+   * Torschützenkönig dieser Saison.
+   *
+   * Aus BEIDEN Torschützenlisten — in welcher ein Tor steht, sagt nur, für
+   * wen es fiel, nicht wer es geschossen hat. Eigentore zählen niemandem.
+   */
+  const koenig = useMemo(() => {
+    const zaehler = new Map();
+    for (const m of matches || []) {
+      for (const feld of ['goalslista', 'goalslistb']) {
+        let liste = m?.[feld];
+        if (typeof liste === 'string') { try { liste = JSON.parse(liste); } catch { liste = []; } }
+        for (const g of Array.isArray(liste) ? liste : []) {
+          const name = typeof g === 'object' && g !== null ? g.player : g;
+          const anzahl = typeof g === 'object' && g !== null ? (Number(g.count) || 1) : 1;
+          if (!name || String(name).startsWith('Eigentore_')) continue;
+          zaehler.set(name, (zaehler.get(name) || 0) + anzahl);
+        }
+      }
+    }
+    const sortiert = [...zaehler.entries()].sort((a, b) => b[1] - a[1]);
+    if (!sortiert.length) return null;
+    const [name, tore] = sortiert[0];
+    // Gleichstand ehrlich benennen, statt willkürlich einen zu küren.
+    const gleichauf = sortiert.filter(([, n]) => n === tore).length;
+    return { name, tore, gleichauf, verfolger: sortiert[1]?.[1] ?? 0 };
+  }, [matches]);
+
+  /**
+   * Der nächste Spieltag, den ihr euch im Profil gesetzt habt.
+   *
+   * Lag bisher nur dort und erinnerte erst am Tag selbst. Auf der Startseite
+   * ist er die einzige Angabe, die nach VORN zeigt — alles andere ist
+   * Rückschau.
+   */
+  const spieltag = useMemo(() => {
+    try {
+      const roh = localStorage.getItem('fusta_next_matchday');
+      if (!roh) return null;
+      const tag = new Date(roh + 'T00:00:00');
+      if (Number.isNaN(tag.getTime())) return null;
+      const heute = new Date(); heute.setHours(0, 0, 0, 0);
+      const tage = Math.round((tag - heute) / 86400000);
+      if (tage < 0) return null;   // vorbei — dann ist es keine Ankündigung mehr
+      return { datum: tag, tage };
+    } catch { return null; }
+  }, []);
 
   /**
    * Wer hat gerade einen Lauf?
@@ -210,7 +260,7 @@ export default function StartTab({ onNavigate }) {
   const realFin = (finances || []).find((f) => f.team === 'Real') || {};
   const rechnung = offeneRechnung(aekFin.debt, realFin.debt);
 
-  const { aek, real, remis, gesamt, letztes, tore, schnitt } = bilanz;
+  const { aek, real, remis, gesamt, letztes, toreAek, toreReal, schnitt } = bilanz;
 
   const anteilAek = gesamt > 0 ? (aek / (aek + real || 1)) * 100 : 50;
   const fuehrt = aek > real ? 'AEK' : real > aek ? 'Real' : null;
@@ -283,16 +333,33 @@ export default function StartTab({ onNavigate }) {
               <div className="absolute inset-y-0 left-1/2 w-px bg-bg-secondary/70" />
             </div>
 
+            {/* Aus DEINER Sicht, nicht neutral.
+                Die App weiss, wer angemeldet ist — "Du führst mit 1 Sieg"
+                liest sich anders als "Philip führt mit 1 Sieg", und Alexander
+                bekommt denselben Satz aus seiner Sicht. Solange die Sitzung
+                noch laedt (bekannt === false), bleibt es bei den Namen: lieber
+                neutral als jemanden falsch anzusprechen. */}
             <p className="mt-3 text-center text-footnote text-text-secondary">
               {fuehrt
-                ? <>
-                    <span className={fuehrt === 'AEK' ? 'text-system-blue font-semibold' : 'text-system-red font-semibold'}>
-                      {name(fuehrt)}
-                    </span>
-                    {' führt mit '}
-                    <span className="num-tabular font-semibold">{Math.abs(aek - real)}</span>
-                    {Math.abs(aek - real) === 1 ? ' Sieg' : ' Siegen'}
-                  </>
+                ? (bekannt && fuehrt === meineSeite ? (
+                    <>
+                      <span className={fuehrt === 'AEK' ? 'text-system-blue font-semibold' : 'text-system-red font-semibold'}>Du</span>
+                      {' führst mit '}
+                      <span className="num-tabular font-semibold">{Math.abs(aek - real)}</span>
+                      {Math.abs(aek - real) === 1 ? ' Sieg' : ' Siegen'}
+                    </>
+                  ) : (
+                    <>
+                      <span className={fuehrt === 'AEK' ? 'text-system-blue font-semibold' : 'text-system-red font-semibold'}>
+                        {name(fuehrt)}
+                      </span>
+                      {bekannt ? ' liegt ' : ' führt mit '}
+                      <span className="num-tabular font-semibold">{Math.abs(aek - real)}</span>
+                      {bekannt
+                        ? (Math.abs(aek - real) === 1 ? ' Sieg vor dir' : ' Siege vor dir')
+                        : (Math.abs(aek - real) === 1 ? ' Sieg' : ' Siegen')}
+                    </>
+                  ))
                 : 'Gleichstand — es steht auf Messers Schneide.'}
             </p>
 
@@ -302,7 +369,10 @@ export default function StartTab({ onNavigate }) {
             <div className="grid grid-cols-3 gap-2 mt-4">
               {[
                 ['Spiele', gesamt],
-                ['Tore', tore],
+                // Das Torverhaeltnis sagt ueber die Staerke mehr als die
+                // reine Siegzahl: 3:2 Siege bei 30:12 Toren ist eine andere
+                // Saison als 3:2 bei 14:13.
+                ['Torverhältnis', `${toreAek}:${toreReal}`],
                 ['Ø je Spiel', dez(schnitt, 1)],
               ].map(([label, wert]) => (
                 <div key={label} className="panel-gray rounded-xl p-2.5 text-center">
@@ -387,6 +457,22 @@ export default function StartTab({ onNavigate }) {
 
       {/* Was gerade ansteht. Jede Zeile führt dorthin, wo es weitergeht. */}
       <div className="modern-card divide-y divide-border-light">
+        {/* Die einzige Zeile, die nach VORN zeigt — deshalb ganz oben.
+            Das Datum kommt aus dem Profil; ohne gesetzten Termin fehlt die
+            Zeile ganz, statt "kein Spieltag" zu behaupten. */}
+        {spieltag && (
+          <Zeile
+            icon="calendar" farbe="bg-system-indigo/12 text-system-indigo"
+            titel="Nächster Spieltag"
+            wert={spieltag.tage === 0 ? 'Heute'
+              : spieltag.tage === 1 ? 'Morgen'
+              : `In ${spieltag.tage} Tagen`}
+            hinweis={spieltag.datum.toLocaleDateString('de-DE',
+              { weekday: 'long', day: 'numeric', month: 'long' })}
+            onClick={() => onNavigate?.('spielbetrieb')}
+          />
+        )}
+
         {letztes && (
           <Zeile
             icon="football" farbe="bg-system-green/12 text-system-green"
@@ -427,6 +513,25 @@ export default function StartTab({ onNavigate }) {
               ? `noch ${gesperrt[0].rest} ${gesperrt[0].rest === 1 ? 'Spiel' : 'Spiele'}`
               : `längste Sperre: noch ${gesperrt[0].rest} ${gesperrt[0].rest === 1 ? 'Spiel' : 'Spiele'}`}
             onClick={() => onNavigate?.('spielbetrieb')}
+          />
+        )}
+
+        {/* Torschützenkönig — eine der ersten Fragen, stand aber nur in der
+            Statistik. Bei Gleichstand wird niemand gekürt: "3 gleichauf" ist
+            die richtige Antwort, ein willkürlich gewählter Name nicht. */}
+        {koenig && koenig.tore > 0 && (
+          <Zeile
+            icon="star" farbe="bg-system-yellow/12 text-system-yellow"
+            titel="Torschützenkönig"
+            wert={koenig.gleichauf > 1
+              ? `${koenig.gleichauf} gleichauf mit ${koenig.tore}`
+              : `${koenig.name} · ${koenig.tore}`}
+            hinweis={koenig.gleichauf > 1
+              ? 'diese Saison'
+              : koenig.verfolger > 0
+                ? `${koenig.tore - koenig.verfolger} vor dem Zweiten`
+                : 'diese Saison'}
+            onClick={() => onNavigate?.('stats')}
           />
         )}
 
