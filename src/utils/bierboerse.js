@@ -992,3 +992,143 @@ export function gesamtBilanz(boersen, verkostungen, katalog) {
     },
   };
 }
+
+/* ===========================================================================
+   Nochmal kaufen?
+   =========================================================================== */
+
+/** Der Daumen einer Person zu einer Verkostung: true, false oder null. */
+export const wiederVon = (v, personKey) =>
+  v?.[personKey === 'aek' ? 'wieder_aek' : 'wieder_real'] ?? null;
+
+/**
+ * Wer würde was nochmal kaufen — und wo seid ihr euch einig?
+ *
+ * Gezählt wird nur, was auch beantwortet wurde. Ein nicht gesetzter Daumen
+ * ist kein "nein"; würde man ihn mitzählen, sänke jede Quote einfach dadurch,
+ * dass jemand das Feld übersprungen hat.
+ *
+ * `einig` sind die Biere, bei denen BEIDE ja gesagt haben — das ist die
+ * Einkaufsliste. `strittig` sind die mit genau einem Ja: die interessanteren,
+ * weil dort der Geschmack auseinandergeht.
+ */
+export function wiederkauf(verkostungen, katalog) {
+  const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+  const quote = { aek: { ja: 0, nein: 0 }, real: { ja: 0, nein: 0 } };
+  const einig = [];
+  const strittig = [];
+
+  for (const v of verkostungen || []) {
+    const a = wiederVon(v, 'aek');
+    const r = wiederVon(v, 'real');
+    if (a === true) quote.aek.ja += 1; else if (a === false) quote.aek.nein += 1;
+    if (r === true) quote.real.ja += 1; else if (r === false) quote.real.nein += 1;
+
+    // Uneinigkeit lässt sich nur feststellen, wenn beide geantwortet haben.
+    if (a == null || r == null) continue;
+    const bier = bierVon.get(v.bier_id) || null;
+    if (a && r) einig.push({ verkostung: v, bier });
+    else if (a !== r) strittig.push({ verkostung: v, bier, dafuer: a ? 'aek' : 'real' });
+  }
+
+  // Je Bier nur einmal. Dasselbe Bier kann an mehreren Abenden vorkommen —
+  // eine Einkaufsliste, die "Augustiner Helles" zweimal nennt, ist keine.
+  // Es gilt die JUENGSTE Verkostung: wenn ihr eure Meinung geaendert habt,
+  // zaehlt die letzte.
+  const jeBier = (liste) => {
+    const raus = new Map();
+    for (const e of liste) {
+      const vorhanden = raus.get(e.verkostung.bier_id);
+      if (!vorhanden || e.verkostung.id > vorhanden.verkostung.id) {
+        raus.set(e.verkostung.bier_id, e);
+      }
+    }
+    return [...raus.values()];
+  };
+
+  const anteil = (q) => (q.ja + q.nein ? q.ja / (q.ja + q.nein) : null);
+  return {
+    quote,
+    anteilAek: anteil(quote.aek),
+    anteilReal: anteil(quote.real),
+    einig: jeBier(einig),
+    strittig: jeBier(strittig),
+    beantwortet: quote.aek.ja + quote.aek.nein + quote.real.ja + quote.real.nein,
+  };
+}
+
+/* ===========================================================================
+   Notendrift über den Abend
+   =========================================================================== */
+
+/**
+ * Werden eure Noten im Lauf eines Abends milder oder strenger?
+ *
+ * Die Reihenfolge steht nirgends als Feld — sie steckt in der id, weil die
+ * Verkostungen in der Reihenfolge angelegt werden, in der ihr trinkt. Genau
+ * wie bei den Spielen eines Abends.
+ *
+ * Gemittelt wird über die POSITION, nicht über die Zeit: das erste Bier jedes
+ * Abends bildet Position 1, das zweite Position 2 und so weiter. Anders ginge
+ * es nicht — es gibt keine Uhrzeit je Verkostung.
+ *
+ * Zwei Vorbehalte, die das Ergebnis mitbestimmen und deshalb mitgeliefert
+ * werden:
+ *   - Späte Positionen kommen aus immer weniger Abenden. Position 9 kann aus
+ *     einem einzigen stammen, und dann ist sie kein Trend, sondern ein Bier.
+ *   - Ihr sucht euch die Reihenfolge selbst aus. Wer das Beste zum Schluss
+ *     aufhebt, erzeugt einen Anstieg, der nichts mit Milde zu tun hat.
+ */
+export function notenDrift(verkostungen, boersen, mindestensAbende = 2) {
+  const nachBoerse = new Map();
+  for (const v of verkostungen || []) {
+    if (!nachBoerse.has(v.boerse_id)) nachBoerse.set(v.boerse_id, []);
+    nachBoerse.get(v.boerse_id).push(v);
+  }
+
+  const summe = new Map();  // Position -> { noten: [], abende: Set }
+  for (const [boerseId, liste] of nachBoerse) {
+    const chronologisch = [...liste].sort((a, b) => a.id - b.id);
+    chronologisch.forEach((v, i) => {
+      const note = schnittNote(v);
+      if (note == null) return;
+      const pos = i + 1;
+      if (!summe.has(pos)) summe.set(pos, { noten: [], abende: new Set() });
+      const eintrag = summe.get(pos);
+      eintrag.noten.push(note);
+      eintrag.abende.add(boerseId);
+    });
+  }
+
+  const punkte = [...summe.entries()]
+    .map(([position, e]) => ({
+      position,
+      schnitt: mittel(e.noten),
+      anzahl: e.noten.length,
+      abende: e.abende.size,
+    }))
+    .filter((p) => p.abende >= mindestensAbende)
+    .sort((a, b) => a.position - b.position);
+
+  if (punkte.length < 2) {
+    return { punkte, richtung: null, unterschied: null, abende: nachBoerse.size };
+  }
+
+  // Erste gegen zweite Hälfte statt erster gegen letzter Punkt: ein einzelnes
+  // Ausreißerbier am Anfang oder Ende würde die Aussage sonst allein tragen.
+  const mitte = Math.floor(punkte.length / 2);
+  const frueh = mittel(punkte.slice(0, mitte).map((p) => p.schnitt));
+  const spaet = mittel(punkte.slice(punkte.length - mitte).map((p) => p.schnitt));
+  const unterschied = (spaet ?? 0) - (frueh ?? 0);
+
+  return {
+    punkte,
+    frueh,
+    spaet,
+    unterschied,
+    // Unter einem Viertelpunkt ist das Rauschen, keine Richtung.
+    richtung: Math.abs(unterschied) < 0.25 ? 'gleich' : (unterschied > 0 ? 'milder' : 'strenger'),
+    abende: nachBoerse.size,
+    boersen: (boersen || []).length,
+  };
+}

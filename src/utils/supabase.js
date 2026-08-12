@@ -293,17 +293,17 @@ const fallbackData = {
   // beides pruefen: die neue Aufschluesselung und die alten Eintraege, die nur
   // eine Gesamtnote haben und weiter mitzaehlen muessen.
   bier_verkostungen: [
-    { id: 1, boerse_id: 1, bier_id: 1, preis: 4.5, groesse_ml: 500, anzahl_aek: 2, anzahl_real: 1, note_aek: 8, note_real: 9, bezahlt_von: 'AEK',
+    { id: 1, boerse_id: 1, bier_id: 1, preis: 4.5, groesse_ml: 500, anzahl_aek: 2, anzahl_real: 1, note_aek: 8, note_real: 9, bezahlt_von: 'AEK', wieder_aek: true, wieder_real: true,
       noten_aek: { geschmack: 8, aussehen: 8, preisleistung: 8 },
       noten_real: { geschmack: 10, aussehen: 9, preisleistung: 8 }, notiz: 'Perfekt gezapft.' },
-    { id: 2, boerse_id: 1, bier_id: 2, preis: 3.8, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 2, note_aek: 7, note_real: 4, bezahlt_von: 'geteilt',
+    { id: 2, boerse_id: 1, bier_id: 2, preis: 3.8, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 2, note_aek: 7, note_real: 4, bezahlt_von: 'geteilt', wieder_aek: true, wieder_real: false,
       noten_aek: { geschmack: 8, aussehen: 7, preisleistung: 6 },
       noten_real: { geschmack: 3, aussehen: 6, preisleistung: 3 } },
-    { id: 3, boerse_id: 1, bier_id: 4, preis: 5.2, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 1, note_aek: 6, note_real: 7, bezahlt_von: null,
+    { id: 3, boerse_id: 1, bier_id: 4, preis: 5.2, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 1, note_aek: 6, note_real: 7, bezahlt_von: null, wieder_aek: false, wieder_real: true,
       noten_aek: { geschmack: 5, aussehen: 8, preisleistung: 5, abgang: 4 },
       noten_real: { geschmack: 7, aussehen: 8, preisleistung: 6, abgang: 7 } },
-    { id: 4, boerse_id: 2, bier_id: 1, preis: 2.4, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 2, note_aek: 9, note_real: 8, bezahlt_von: 'Real' },
-    { id: 5, boerse_id: 2, bier_id: 3, preis: 3.1, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 0, note_aek: 5, note_real: null, bezahlt_von: 'Real' }
+    { id: 4, boerse_id: 2, bier_id: 1, preis: 2.4, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 2, note_aek: 9, note_real: 8, bezahlt_von: 'Real', wieder_aek: true, wieder_real: true },
+    { id: 5, boerse_id: 2, bier_id: 3, preis: 3.1, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 0, note_aek: 5, note_real: null, bezahlt_von: 'Real', wieder_aek: false, wieder_real: null }
   ],
   // Eine Zeile, genau wie in der DB (id = 1 ist per Pruefregel erzwungen).
   bierboerse_einstellungen: [

@@ -10,6 +10,7 @@ import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
 import {
   PERSONEN, BIERARTEN, ladeBoersen, ladeKatalog, ladeVerkostungen,
+  wiederkauf, notenDrift,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
   KATEGORIE_KATALOG, KATEGORIE_GRUPPEN, STANDARD_KATEGORIEN, kategorie,
@@ -889,6 +890,8 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
   const sorten = useMemo(() => sortenVorliebe(verkostungen, katalog), [verkostungen, katalog]);
   const pl = useMemo(() => preisLeistung(verkostungen, katalog), [verkostungen, katalog]);
   const anti = useMemo(() => antiRekorde(verkostungen, boersen, katalog), [verkostungen, boersen, katalog]);
+  const wieder = useMemo(() => wiederkauf(verkostungen, katalog), [verkostungen, katalog]);
+  const drift = useMemo(() => notenDrift(verkostungen, boersen), [verkostungen, boersen]);
   // Vorbelegt mit den beiden juengsten Abenden — die will man am ehesten
   // vergleichen, und so steht die Karte sofort mit Inhalt da.
   const [vergleichA, setVergleichA] = useState(null);
@@ -1377,6 +1380,89 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
         </div>
       )}
 
+      {/* Nochmal kaufen — die Frage, die im Laden zaehlt.
+          Die Quote rechnet nur mit beantworteten Faellen: ein uebersprungenes
+          Feld ist kein "nein" und darf niemandem die Quote druecken. */}
+      {wieder.beantwortet > 0 && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-2.5">Nochmal kaufen</div>
+          <Kraefteverhaeltnis
+            label="Würden wieder" klein zusatz="Anteil der beantworteten Biere"
+            aek={Math.round((wieder.anteilAek ?? 0) * 100)}
+            real={Math.round((wieder.anteilReal ?? 0) * 100)}
+            anzeige={(n) => `${n} %`}
+            aekName={PERSONEN[0].name} realName={PERSONEN[1].name} />
+
+          {wieder.einig.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border-light">
+              <div className="text-caption2 text-text-tertiary mb-1.5">
+                Beide wieder — die Einkaufsliste
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {wieder.einig.slice(0, 8).map((e) => (
+                  <span key={e.verkostung.id} className="chip chip-sm chip-green">
+                    {e.bier?.name || 'Unbekannt'}
+                  </span>
+                ))}
+                {wieder.einig.length > 8 && (
+                  <span className="chip chip-sm chip-gray">+{wieder.einig.length - 8}</span>
+                )}
+              </div>
+            </div>
+          )}
+
+          {wieder.strittig.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border-light">
+              <div className="text-caption2 text-text-tertiary mb-1.5">Uneinig</div>
+              <div className="space-y-1">
+                {wieder.strittig.slice(0, 5).map((e) => (
+                  <div key={e.verkostung.id} className="flex items-center gap-2 text-caption1">
+                    <span className="text-text-primary truncate flex-1 min-w-0">
+                      {e.bier?.name || 'Unbekannt'}
+                    </span>
+                    <span className={`flex-shrink-0 font-medium ${
+                      e.dafuer === 'aek' ? PERSONEN[0].farbe : PERSONEN[1].farbe}`}>
+                      nur {e.dafuer === 'aek' ? PERSONEN[0].name : PERSONEN[1].name}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Notendrift — braucht mindestens zwei Abende je Position, sonst waere
+          eine "Position 9" ein einzelnes Bier und kein Trend. */}
+      {drift.punkte.length >= 2 && (
+        <div className="modern-card p-4">
+          <div className="flex items-baseline justify-between gap-2 mb-1">
+            <span className="text-footnote font-semibold text-text-muted">Im Lauf des Abends</span>
+            <span className="text-caption2 text-text-tertiary">{drift.abende} Abende</span>
+          </div>
+          <p className="text-callout text-text-primary mb-2.5">
+            {drift.richtung === 'gleich'
+              ? 'Eure Noten bleiben über den Abend stabil.'
+              : `Später am Abend bewertet ihr ${drift.richtung} — ${kommaEins(Math.abs(drift.unterschied))} Punkte.`}
+          </p>
+          <div className="flex items-end gap-1.5 h-24">
+            {drift.punkte.map((pt) => (
+              <div key={pt.position} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                <span className="text-caption2 text-text-tertiary num-tabular">{kommaEins(pt.schnitt)}</span>
+                <div className="w-full rounded-t bg-system-yellow/40"
+                     style={{ height: `${Math.max(6, (pt.schnitt / 10) * 100)}%` }} />
+                <span className="text-caption2 text-text-tertiary num-tabular">{pt.position}.</span>
+              </div>
+            ))}
+          </div>
+          <p className="text-caption2 text-text-tertiary mt-2">
+            Nach Position im Abend, nicht nach Uhrzeit — eine Uhrzeit je Bier
+            gibt es nicht. Und ihr sucht die Reihenfolge selbst aus: wer das
+            Beste zum Schluss aufhebt, erzeugt einen Anstieg ganz ohne Milde.
+          </p>
+        </div>
+      )}
+
       {/* Rekorde */}
       {rekorde.length > 0 && (
         <div className="modern-card p-4">
@@ -1514,6 +1600,10 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   const [gesamtReal, setGesamtReal] = useState(verkostung?.note_real ?? null);
   const [notiz, setNotiz] = useState(verkostung?.notiz || '');
   const [zahler, setZahler] = useState(verkostung?.bezahlt_von ?? null);
+  // Drei Zustaende, nicht zwei: null heisst "nicht beantwortet". Ein nicht
+  // gesetzter Daumen ist kein Daumen nach unten.
+  const [wiederAek, setWiederAek] = useState(verkostung?.wieder_aek ?? null);
+  const [wiederReal, setWiederReal] = useState(verkostung?.wieder_real ?? null);
   const [speichert, setSpeichert] = useState(false);
 
   // Der Modus kommt aus den Einstellungen, lässt sich hier aber je Bier
@@ -1595,6 +1685,8 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
         noten_real: modus === 'ausfuehrlich' ? notenReal : {},
         notiz: notiz.trim() || null,
         bezahlt_von: zahler,
+        wieder_aek: wiederAek,
+        wieder_real: wiederReal,
       };
       const { error } = verkostung
         ? await supabaseDb.update('bier_verkostungen', daten, verkostung.id)
@@ -1778,6 +1870,45 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
           </div>
           <p className="text-caption2 text-text-tertiary mt-1.5">
             {zahler ? 'Nochmal antippen, um es wieder offen zu lassen.' : 'Kann auch offen bleiben.'}
+          </p>
+        </div>
+
+        {/* Nochmal kaufen?
+            Neben der Note, nicht statt ihr: die Note sagt, wie gut es war,
+            der Daumen, ob es wieder in den Korb kommt. Wie beim Zahler
+            freiwillig — nichts angetippt heisst "nicht beantwortet" und
+            zaehlt in keiner Quote mit. */}
+        <div className="panel-gray rounded-xl p-3">
+          <div className="text-footnote font-semibold text-text-secondary mb-2">Nochmal kaufen?</div>
+          <div className="space-y-2">
+            {[
+              { key: 'aek', person: PERSONEN[0], wert: wiederAek, setzen: setWiederAek },
+              { key: 'real', person: PERSONEN[1], wert: wiederReal, setzen: setWiederReal },
+            ].map((zeile) => (
+              <div key={zeile.key} className="flex items-center gap-2">
+                <span className={`text-caption1 font-medium w-20 flex-shrink-0 truncate ${zeile.person.farbe}`}>
+                  {zeile.person.name}
+                </span>
+                <div className="flex gap-1.5 flex-1">
+                  {[
+                    { v: true, label: 'Ja', an: 'bg-system-green/20 text-text-primary ring-2 ring-system-green' },
+                    { v: false, label: 'Nein', an: 'bg-system-red/20 text-text-primary ring-2 ring-system-red' },
+                  ].map((o) => (
+                    <button key={String(o.v)} type="button"
+                            onClick={() => zeile.setzen(zeile.wert === o.v ? null : o.v)}
+                            className={`flex-1 py-1.5 rounded-lg text-caption1 font-semibold transition-colors ${
+                              zeile.wert === o.v ? o.an : 'bg-bg-tertiary text-text-secondary'}`}>
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="text-caption2 text-text-tertiary mt-1.5">
+            {wiederAek == null && wiederReal == null
+              ? 'Kann auch offen bleiben.'
+              : 'Nochmal antippen, um es wieder offen zu lassen.'}
           </p>
         </div>
 
