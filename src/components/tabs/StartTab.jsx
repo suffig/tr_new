@@ -63,6 +63,8 @@ export default function StartTab({ onNavigate }) {
   // Hier stehen die Personen, nicht die Vereine: "Alexander führt mit 1 Sieg"
   // ist die Frage, mit der man die App aufmacht — "AEK Athen führt" nicht.
   const { data: managers } = useSupabaseQuery('manager', '*');
+  const { data: bans } = useSupabaseQuery('bans', '*');
+  const { data: players } = useSupabaseQuery('players', 'id,name,team');
   const name = (team) => (team === 'AEK'
     ? managers?.find((m) => m.id === 1)?.name || 'Alexander'
     : managers?.find((m) => m.id === 2)?.name || 'Philip');
@@ -78,6 +80,46 @@ export default function StartTab({ onNavigate }) {
     const sortiert = [...liste].sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')));
     return { aek, real, remis, gesamt: liste.length, letztes: sortiert[0] || null };
   }, [matches]);
+
+  /**
+   * Die letzten Spiele, neueste rechts.
+   *
+   * Der Saisonstand beantwortet "wer führt", aber nicht "wie läuft es
+   * gerade" — und das sind zwei verschiedene Fragen. Wer 12:4 vorn liegt und
+   * die letzten vier verloren hat, sieht auf der Tabelle souverän aus und
+   * weiß trotzdem, dass es kippt.
+   */
+  const form = useMemo(() => {
+    const sortiert = [...(matches || [])]
+      .filter((m) => m?.date)
+      .sort((x, y) => String(x.date).localeCompare(String(y.date)));
+    return sortiert.slice(-5).map((m) => {
+      const a = m.goalsa || 0, b = m.goalsb || 0;
+      return { id: m.id, a, b, sieger: a > b ? 'AEK' : b > a ? 'Real' : null, datum: m.date };
+    });
+  }, [matches]);
+
+  /**
+   * Wer fehlt beim nächsten Mal?
+   *
+   * Die einzige Zahl hier, die vor dem Spielen etwas ändert: eine laufende
+   * Sperre entscheidet über die Aufstellung. Deshalb steht sie vorn und nicht
+   * drei Ansichten tief im Kader.
+   */
+  const gesperrt = useMemo(() => {
+    const nachId = new Map((players || []).map((p) => [p.id, p]));
+    return (bans || [])
+      .map((b) => ({
+        id: b.id,
+        rest: Math.max(0, (b.totalgames || 0) - (b.matchesserved || 0)),
+        // bans.team ist die Seite vom Tag der Sperre — die gilt, auch wenn der
+        // Spieler seither gewechselt ist.
+        team: b.team,
+        name: nachId.get(b.player_id)?.name || 'Unbekannt',
+      }))
+      .filter((b) => b.rest > 0)
+      .sort((x, y) => y.rest - x.rest);
+  }, [bans, players]);
 
   // Läuft gerade ein Abend? Die Ereignisse liegen lokal; "heute" endet erst
   // morgens um sechs, sonst wäre ein Abend um halb zwei schon Geschichte.
@@ -103,7 +145,7 @@ export default function StartTab({ onNavigate }) {
   const realFin = (finances || []).find((f) => f.team === 'Real') || {};
   const rechnung = offeneRechnung(aekFin.debt, realFin.debt);
 
-  const { aek, real, gesamt, letztes } = bilanz;
+  const { aek, real, remis, gesamt, letztes } = bilanz;
   const anteilAek = gesamt > 0 ? (aek / (aek + real || 1)) * 100 : 50;
   const fuehrt = aek > real ? 'AEK' : real > aek ? 'Real' : null;
 
@@ -146,6 +188,13 @@ export default function StartTab({ onNavigate }) {
               </div>
               <div className="text-center pb-1.5 flex-shrink-0">
                 <div className="text-caption2 text-text-tertiary">Siege</div>
+                {/* Ohne die Remis behauptete die Karte "12 Spiele" und zeigte
+                    darunter 5 : 4 — die drei fehlenden erklärte nichts. */}
+                {remis > 0 && (
+                  <div className="text-caption2 text-text-tertiary num-tabular mt-0.5 whitespace-nowrap">
+                    {remis} Remis
+                  </div>
+                )}
               </div>
               <div className="flex-1 min-w-0 text-right">
                 <div className="flex items-center justify-end gap-1.5 mb-1">
@@ -175,6 +224,36 @@ export default function StartTab({ onNavigate }) {
                   </>
                 : 'Gleichstand — es steht auf Messers Schneide.'}
             </p>
+
+            {form.length > 1 && (
+              <button onClick={() => onNavigate?.('spielbetrieb')}
+                      className="w-full mt-4 pt-3 border-t border-border-light text-left">
+                <div className="flex items-baseline justify-between mb-2">
+                  <span className="text-caption2 text-text-tertiary">
+                    {form.length === 5 ? 'Letzte fünf' : `Letzte ${form.length}`}
+                  </span>
+                  <span className="text-caption2 text-text-tertiary">neueste rechts</span>
+                </div>
+                <div className="flex gap-1.5">
+                  {form.map((f) => (
+                    <span key={f.id}
+                          className={`flex-1 min-w-0 h-9 rounded-lg flex items-center justify-center
+                                      text-caption2 font-bold num-tabular ${
+                            // Die Farbe liegt im Hintergrund, nicht in der
+                            // Schrift. Andersherum — blau auf Blaustich, rot
+                            // auf Rotstich — kam im Hellmodus auf 3,2:1 und
+                            // 2,5:1; die Kachel sagt ohnehin schon über die
+                            // Fläche, wer gewonnen hat, und der Text muss nur
+                            // die Zahl liefern. So sind es 13:1.
+                            f.sieger === 'AEK' ? 'bg-system-blue/20 text-text-primary'
+                            : f.sieger === 'Real' ? 'bg-system-red/20 text-text-primary'
+                            : 'bg-bg-tertiary text-text-secondary'}`}>
+                      {f.a}:{f.b}
+                    </span>
+                  ))}
+                </div>
+              </button>
+            )}
           </>
         )}
       </div>
@@ -187,6 +266,24 @@ export default function StartTab({ onNavigate }) {
             titel="Zuletzt gespielt"
             wert={`${letztesErgebnis}${letzterSieger ? ` · ${name(letzterSieger)}` : ' · Remis'}`}
             hinweis={seit(letztes.date)}
+            onClick={() => onNavigate?.('spielbetrieb')}
+          />
+        )}
+
+        {/* Nur wenn wirklich jemand fehlt. "Niemand gesperrt" ist der
+            Normalfall und braucht keine eigene Zeile — diese Seite soll
+            zeigen, was gerade anders ist. */}
+        {gesperrt.length > 0 && (
+          <Zeile
+            icon="ban" farbe="bg-system-red/12 text-system-red"
+            titel={gesperrt.length === 1 ? 'Gesperrt' : `${gesperrt.length} gesperrt`}
+            wert={gesperrt.length === 1
+              ? gesperrt[0].name
+              : gesperrt.slice(0, 2).map((g) => g.name).join(', ')
+                + (gesperrt.length > 2 ? ` +${gesperrt.length - 2}` : '')}
+            hinweis={gesperrt.length === 1
+              ? `noch ${gesperrt[0].rest} ${gesperrt[0].rest === 1 ? 'Spiel' : 'Spiele'}`
+              : `längste Sperre: noch ${gesperrt[0].rest} ${gesperrt[0].rest === 1 ? 'Spiel' : 'Spiele'}`}
             onClick={() => onNavigate?.('spielbetrieb')}
           />
         )}

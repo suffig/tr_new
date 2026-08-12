@@ -7,6 +7,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import VorsprungVerlauf from './stats/VorsprungVerlauf';
 import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 import { toreJeSeite } from '../../utils/spielerBilanz';
+import { ladeWechsel, wechselVon, kaderSpiele, abschnitte } from '../../utils/spielerWechsel';
 import MatchDayOverview from '../MatchDayOverview';
 import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
@@ -84,7 +85,9 @@ const STATS_VIEW_MAP = {
 };
 
 // Enhanced Statistics Calculator Class (ported from vanilla JS)
-class StatsCalculator {
+// Exportiert, damit die Rechnung pruefbar ist: hier entstehen die Zahlen, die
+// in der Statistik stehen — die gehoeren testbar und nicht nur ansehbar.
+export class StatsCalculator {
   constructor(matches, players, bans, spielerDesSpiels) {
     this.matches = matches || [];
     this.players = players || [];
@@ -214,7 +217,7 @@ class StatsCalculator {
    */
   countPlayerGoalsFromMatches(playerName, playerTeam) {
     return this.matches.reduce((summe, match) =>
-      summe + this.torschuetzenFuerSpieler(match, playerTeam)
+      summe + this.torschuetzenFuerSpieler(match, playerTeam, playerName)
         .filter((t) => t.player === playerName)
         .reduce((s, t) => s + t.count, 0), 0);
   }
@@ -251,7 +254,29 @@ class StatsCalculator {
    * Ronaldo in FC26 mit 60 Toren "ohne Zuordnung" auf — in einer Saison, in
    * der ausnahmslos jedes Spiel seine Schuetzen hat.
    */
-  torschuetzenFuerSpieler(match, team) {
+  torschuetzenFuerSpieler(match, team, playerName = null) {
+    // In BEIDEN Listen suchen, sobald ein Name da ist.
+    //
+    // Der naheliegende Weg waere, den Wechsel-Verlauf zu fragen, bei wem er am
+    // Spieltag stand — den gibt es ja jetzt. Das ist aber der falsche Zeuge:
+    // in welcher der beiden Listen ein Tor steht, IST bereits die Antwort auf
+    // "fuer wen". Widersprechen sich beide, gewinnt die Liste; sonst wuerde
+    // ein vergessener Wechsel-Eintrag Tore verschwinden lassen, die sauber
+    // erfasst sind. Ein Test mit widerspruechlichen Daten hat genau das
+    // gezeigt: 5 Tore fielen still weg.
+    //
+    // Die heutige Zugehoerigkeit ist als Zeuge noch schlechter — sie aendert
+    // sich beim Wechsel rueckwirkend fuer die ganze Vergangenheit. Wer von
+    // Alexander zu Philip geht, hat danach team === 'Real', und alles, was er
+    // vorher fuer Alexander geschossen hat, stuende in einer Liste, in der
+    // nicht mehr gesucht wird. Daher die "60 Tore ohne Zuordnung" im
+    // Statusbericht.
+    //
+    // Zu viel findet man dabei nicht: ein Name steht je Spiel nur in der Liste
+    // der Seite, fuer die er getroffen hat.
+    if (playerName) {
+      return [...this.torschuetzen(match, 'AEK'), ...this.torschuetzen(match, 'Real')];
+    }
     if (team === 'AEK' || team === 'Real') return this.torschuetzen(match, team);
     return [...this.torschuetzen(match, 'AEK'), ...this.torschuetzen(match, 'Real')];
   }
@@ -276,7 +301,7 @@ class StatsCalculator {
   countMatchesWithGoal(playerName, playerTeam) {
     if (!playerName || !playerTeam) return 0;
     return this.matches.filter((match) =>
-      this.torschuetzenFuerSpieler(match, playerTeam).some((t) => t.player === playerName)
+      this.torschuetzenFuerSpieler(match, playerTeam, playerName).some((t) => t.player === playerName)
     ).length;
   }
 
@@ -307,7 +332,7 @@ class StatsCalculator {
     if (!playerName || !playerTeam) return 0;
     let best = 0;
     for (const match of this.matches) {
-      const tore = this.torschuetzenFuerSpieler(match, playerTeam)
+      const tore = this.torschuetzenFuerSpieler(match, playerTeam, playerName)
         .filter((t) => t.player === playerName)
         .reduce((s, t) => s + t.count, 0);
       if (tore > best) best = tore;
@@ -671,6 +696,18 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const { data: players, loading: playersLoading } = useSupabaseQuery('players', '*', abfrageOptionen);
   const { data: sdsData, loading: sdsLoading } = useSupabaseQuery('spieler_des_spiels', '*', abfrageOptionen);
   const { data: bans, loading: bansLoading } = useSupabaseQuery('bans', '*', abfrageOptionen);
+
+  // Der Wechsel-Verlauf. Er haengt NICHT am Saison-Umfang: um zu wissen, bei
+  // wem jemand am Spieltag stand, braucht es die ganze Kette — auch die
+  // Wechsel aus einer anderen Saison als der gerade betrachteten.
+  const [wechsel, setWechsel] = useState([]);
+  useEffect(() => {
+    let abgemeldet = false;
+    ladeWechsel().then(({ wechsel: w, fehler }) => {
+      if (!abgemeldet && !fehler) setWechsel(w || []);
+    });
+    return () => { abgemeldet = true; };
+  }, []);
 
   // Welche Saisons stecken gerade in den Zahlen? Ohne das steht bei "Alle
   // Saisons" eine Summe ohne Herkunft.
@@ -1146,6 +1183,33 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                   <Kraefteverhaeltnis
                     klein label="Tore für wen" zusatz="aus den Torschützenlisten"
                     aek={j.AEK.tore} real={j.Real.tore}
+                    aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+                </div>
+              );
+            })()}
+
+            {/* Bei wem stand er dabei im Kader?
+                Das ist die Zahl, die der Wechsel-Verlauf ueberhaupt erst
+                moeglich macht — vorher wusste niemand, wer wann bei wem war.
+                Sie zaehlt deshalb erst ab dem Stichtag und nicht ab jeher.
+
+                Nur fuer Menschen, die wirklich gewechselt sind: wer immer bei
+                derselben Seite stand, bekaeme hier "alle Spiele : 0" — eine
+                geteilte Flaeche, die gar nichts teilt. */}
+            {(() => {
+              const meine = wechselVon(wechsel, player.name);
+              if (abschnitte(meine).length < 2) return null;
+              const k = kaderSpiele(meine, filteredMatches || []);
+              if (k.AEK + k.Real === 0) return null;
+              const seit = k.ab
+                ? new Date(k.ab).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' })
+                : null;
+              return (
+                <div className="mt-2 pt-2 border-t border-border-light">
+                  <Kraefteverhaeltnis
+                    klein label="Spiele im Kader"
+                    zusatz={seit ? `seit ${seit} erfasst` : undefined}
+                    aek={k.AEK} real={k.Real}
                     aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
                 </div>
               );
