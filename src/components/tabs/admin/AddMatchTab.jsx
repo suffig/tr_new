@@ -466,6 +466,18 @@ export default function AddMatchTab() {
   const frequentScorers = (team) => {
     const field = team === 'AEK' ? 'goalslista' : 'goalslistb';
     const already = new Set((formData[field] || []).map((s) => s.player));
+
+    // Nur wer HEUTE in diesem Kader steht.
+    //
+    // Die Vorschlaege kommen aus den Torschuetzenlisten der letzten zehn
+    // Spiele — und die reichen ueber Wechsel hinweg. Wer waehrend seiner Zeit
+    // bei Philip fuer Real getroffen hat, wurde deshalb weiter unter Real
+    // vorgeschlagen, obwohl er laengst bei Alexander spielt. Ein Fehltipp
+    // reicht dann, und derselbe Mensch steht als Torschuetze fuer BEIDE
+    // Mannschaften im selben Spiel — was nicht sein kann und die Zuordnung
+    // "Tore je Seite" verfaelscht.
+    const imKader = new Set(getTeamPlayers(team).map((p) => p.name));
+
     const tally = {};
     for (const m of (recentMatches || []).slice(0, 10)) {
       let list = m[field];
@@ -474,6 +486,7 @@ export default function AddMatchTab() {
         const name = typeof g === 'object' && g !== null ? g.player : g;
         const cnt = typeof g === 'object' && g !== null ? (g.count || 1) : 1;
         if (!name || String(name).startsWith('Eigentore_') || already.has(name)) continue;
+        if (!imKader.has(name)) continue;
         tally[name] = (tally[name] || 0) + cnt;
       }
     }
@@ -483,6 +496,22 @@ export default function AddMatchTab() {
   // Add goal to a specific player
   const addPlayerGoal = (team, playerName) => {
     const fieldName = team === 'AEK' ? 'goalslista' : 'goalslistb';
+
+    // Niemand trifft in einem Spiel fuer beide Mannschaften.
+    //
+    // Der zweite Riegel neben den gefilterten Vorschlaegen: hier kommen ALLE
+    // Wege an — Schnellknopf, Auswahlliste, ein wiederhergestellter Entwurf.
+    // Waere das erlaubt, bekaeme derselbe Mensch fuer dasselbe Spiel Tore auf
+    // beiden Seiten gutgeschrieben, und toreFuerSeite() zoege sie sich
+    // gegenseitig ab. Ein Eigentor ist der einzige Fall, in dem ein Tor fuer
+    // die andere Seite zaehlt — und das steht als "Eigentore_…" in der Liste,
+    // nicht unter seinem Namen.
+    const gegenFeld = team === 'AEK' ? 'goalslistb' : 'goalslista';
+    if ((formData[gegenFeld] || []).some((s) => s.player === playerName)) {
+      toast.error(`${playerName} steht schon bei ${getTeamDisplay(team === 'AEK' ? 'Real' : 'AEK')}. `
+        + 'Für beide Mannschaften geht nicht.');
+      return;
+    }
     
     updateFormData({
       [fieldName]: formData[fieldName].map(scorer => 
