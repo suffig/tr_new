@@ -4,6 +4,7 @@ import Icon from '../../icons/Icon';
 import { supabaseDb } from '../../../utils/supabase';
 import { getTeamDisplay } from '../../../constants/teams';
 
+import { useIchBin } from '../../../hooks/useIchBin';
 /** Ganze Euro deutsch: "2.000 €" statt "2000 €". */
 const euroGanz = (n) => `${Math.round(Number(n) || 0).toLocaleString('de-DE')} €`;
 
@@ -25,6 +26,7 @@ export function offeneRechnung(aekSchuld, realSchuld) {
 }
 
 export default function OffeneRechnung({ aekFinances, realFinances, onChange }) {
+  const { darfEintragen } = useIchBin();
   const [laeuft, setLaeuft] = useState(false);
   const r = offeneRechnung(aekFinances?.debt, realFinances?.debt);
 
@@ -103,13 +105,17 @@ export default function OffeneRechnung({ aekFinances, realFinances, onChange }) 
         </div>
       </div>
 
-      <button
-        onClick={begleichen}
-        disabled={laeuft}
-        className="btn-secondary w-full mt-3 disabled:opacity-50"
-      >
-        {laeuft ? 'Wird gespeichert…' : 'Als bezahlt markieren'}
-      </button>
+      {/* Die SCHULD sieht jeder — wer wem was zahlt, geht beide an. Sie
+          als beglichen zu buchen ist dagegen eine Aenderung an den Konten. */}
+      {darfEintragen && (
+        <button
+          onClick={begleichen}
+          disabled={laeuft}
+          className="btn-secondary w-full mt-3 disabled:opacity-50"
+        >
+          {laeuft ? 'Wird gespeichert…' : 'Als bezahlt markieren'}
+        </button>
+      )}
     </div>
   );
 }

@@ -8,15 +8,13 @@ import PlayerDetailModal from '../PlayerDetailModal';
 import TeamLogo from '../TeamLogo';
 import { POSITIONS } from '../../utils/errorHandling';
 import { getTeamDisplay } from '../../constants/teams';
-import { ADMIN_EMAIL } from '../../constants/navigation';
-import { useAuth } from '../../hooks/useAuth';
+import { useIchBin } from '../../hooks/useIchBin';
 import { toreFuerSeite } from '../../utils/spielerBilanz';
 import toast from 'react-hot-toast';
 
 export default function KaderTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
-  const { user } = useAuth();
-  // Player mutations are admin-only — same rule as the admin area and the "+" FAB.
-  const isAdmin = user?.email === ADMIN_EMAIL;
+  // Eine Quelle fuer "wer bin ich und was darf ich" — siehe useIchBin.
+  const { darfEintragen: isAdmin } = useIchBin();
   // Ein Team ist sichtbar, nicht drei zugeklappte Karten. Das Akkordeon
   // zeigte im Normalfall NICHTS — man musste erst aufklappen, um einen Kader
   // zu sehen, und konnte immer nur einen offen haben.

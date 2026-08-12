@@ -12,6 +12,7 @@ import { getTeamDisplay } from '../../../constants/teams';
 import { saisonAbschluss, verwerfeEntwurf, OFFEN_SCHULDEN, OFFEN_ENTWURF } from '../../../utils/saisonAbschluss';
 import { legeSaisonAn, naechsteVersionsId, pruefeVersionsId } from '../../../utils/saisonAnlegen';
 import { ladeOffenenDraft } from '../../../utils/saisonDraft';
+import { useIchBin } from '../../../hooks/useIchBin';
 
 const mio = (n) => `${((Number(n) || 0) / 1_000_000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Mio €`;
 const euro = (n) => `${(Number(n) || 0).toLocaleString('de-DE')} €`;
@@ -35,6 +36,7 @@ const SCHRITTE = [
  * ersten beiden Schritte offensichtlich schon erledigt.
  */
 export default function Saisonwechsel() {
+  const { darfEintragen } = useIchBin();
   const version = getCurrentFifaVersion();
   const { data: matches } = useSupabaseQuery('matches', '*', { skipFifaFilter: true });
   const { data: players, refetch: playersNeu } = useSupabaseQuery('players', '*', { skipFifaFilter: true });
@@ -69,6 +71,26 @@ export default function Saisonwechsel() {
   const aktualisieren = useCallback(() => { playersNeu(); finanzenNeu(); }, [playersNeu, finanzenNeu]);
 
   if (pruefe || !schritt) return <LoadingSpinner message="Prüfe Saison…" />;
+
+  // Nach allen Haken, nicht davor: ein Ausstieg oberhalb wuerde die Zahl der
+  // aufgerufenen Hooks je nach Nutzer aendern, und React zaehlt sie mit.
+  //
+  // Der Saisonwechsel schliesst eine Saison ab, legt eine neue an und
+  // draftet die Kader neu — das ist die weitreichendste Aktion der App und
+  // laesst sich nicht mit einem Knopfdruck zuruecknehmen. Hier hilft kein
+  // Ausblenden einzelner Knoepfe, die ganze Ansicht ist der Vorgang.
+  if (!darfEintragen) {
+    return (
+      <div className="modern-card p-8 text-center">
+        <Icon name="lock" size={30} strokeWidth={1.8} className="text-text-tertiary mx-auto mb-2" />
+        <p className="text-text-primary font-semibold">Saisonwechsel führt Philip durch</p>
+        <p className="text-footnote text-text-tertiary mt-1">
+          Dabei wird die laufende Saison abgeschlossen und der Kader neu
+          verteilt — das passiert nur einmal im Jahr und an einer Stelle.
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

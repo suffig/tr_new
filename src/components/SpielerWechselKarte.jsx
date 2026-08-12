@@ -13,6 +13,7 @@ import {
   SEITEN, ladeWechsel, wechselVon, abschnitte, kaderSpiele, seiteAmDatum,
   wechselEintragen, wechselLoeschen, wechselBuchen, heute,
 } from '../utils/spielerWechsel';
+import { useIchBin } from '../hooks/useIchBin';
 
 /**
  * Wo ein Spieler wann war — und wie man einen Wechsel festhält.
@@ -36,6 +37,7 @@ const datumLang = (d) => {
 };
 
 export default function SpielerWechselKarte({ player }) {
+  const { darfEintragen } = useIchBin();
   const [alleWechsel, setAlleWechsel] = useState(null);
   const [laedt, setLaedt] = useState(true);
   const [formularOffen, setFormularOffen] = useState(false);
@@ -151,18 +153,23 @@ export default function SpielerWechselKarte({ player }) {
           <Icon name="swap" size={16} strokeWidth={2.2} />
           Wo und seit wann
         </h4>
-        <button
-          onClick={() => {
-            const auf = !formularOffen;
-            setFormularOffen(auf);
-            // Marktwert (Mio €) → Euro. Beim Oeffnen frisch vorschlagen.
-            if (auf) setBetrag(String(Math.round((Number(player.value) || 0) * 1_000_000)));
-          }}
-          className="chip chip-sm chip-gray inline-flex items-center gap-1"
-        >
-          <Icon name={formularOffen ? 'x' : 'plus'} size={12} strokeWidth={2.4} />
-          {formularOffen ? 'Abbrechen' : 'Wechsel'}
-        </button>
+        {/* Ein Wechsel verschiebt Geld zwischen den beiden Konten — das
+            gehoert nicht in jede Hand. Der VERLAUF darunter bleibt fuer
+            beide sichtbar, nur das Eintragen nicht. */}
+        {darfEintragen && (
+          <button
+            onClick={() => {
+              const auf = !formularOffen;
+              setFormularOffen(auf);
+              // Marktwert (Mio €) → Euro. Beim Oeffnen frisch vorschlagen.
+              if (auf) setBetrag(String(Math.round((Number(player.value) || 0) * 1_000_000)));
+            }}
+            className="chip chip-sm chip-gray inline-flex items-center gap-1"
+          >
+            <Icon name={formularOffen ? 'x' : 'plus'} size={12} strokeWidth={2.4} />
+            {formularOffen ? 'Abbrechen' : 'Wechsel'}
+          </button>
+        )}
       </div>
 
       {verlauf.length === 0 ? (
@@ -181,7 +188,7 @@ export default function SpielerWechselKarte({ player }) {
                 {datumLang(a.von)}{a.bis ? ` – ${datumLang(a.bis)}` : ''}
               </span>
               {!a.start && (
-                <button onClick={() => entfernen(a.id, a.seite)}
+                <button onClick={() => entfernen(a.id, a.seite)} hidden={!darfEintragen}
                         aria-label="Wechsel entfernen"
                         className="text-text-tertiary hover:text-system-red flex-shrink-0">
                   <Icon name="trash" size={13} strokeWidth={2.2} />

@@ -4,10 +4,12 @@ import { useTheme } from '../contexts/ThemeContext';
 import { getAvailableSeasons, switchToSeason, SEASONS } from '../utils/seasonManager.js';
 import { isPushSupported, getPushEnabled, enablePush, disablePush } from '../utils/notifications.js';
 import Icon from './icons/Icon';
-import { getVisibleTabs, istAdmin } from '../constants/navigation';
+import { getVisibleTabs } from '../constants/navigation';
+import { useIchBin } from '../hooks/useIchBin';
 
 export default function UserProfile({ onClose, onNavigate }) {
   const { user } = useAuth();
+  const { istAdmin, name: ichHeisse } = useIchBin();
   const { isDark, setManualTheme } = useTheme();
   const [seasons, setSeasons] = useState([]);
   useEffect(() => { setSeasons(getAvailableSeasons()); }, []);
@@ -62,7 +64,18 @@ export default function UserProfile({ onClose, onNavigate }) {
               <Icon name="user" size={26} strokeWidth={2} />
             </div>
             <div className="min-w-0">
-              <div className="font-bold text-text-primary truncate">{email}</div>
+              {/* Hier stand die E-MAIL an der Stelle des Namens. Die App kennt
+                  die richtigen Namen laengst — sie stehen in `manager`, und
+                  Startseite wie Duell holen sie sich von dort. Nur dieses
+                  Menue, das einzige, wo "wer bin ich" die eigentliche Frage
+                  ist, zeigte "philip-melchert@live.de". */}
+              <div className="flex items-center gap-2 min-w-0">
+                <span className="font-bold text-text-primary truncate">{ichHeisse}</span>
+                {istAdmin && (
+                  <span className="chip chip-sm chip-blue flex-shrink-0">Admin</span>
+                )}
+              </div>
+              <div className="text-xs text-text-muted truncate">{email}</div>
               <div className="text-xs text-text-muted">Mitglied seit {memberSince}</div>
             </div>
           </div>
@@ -160,7 +173,7 @@ export default function UserProfile({ onClose, onNavigate }) {
               <QuickAction icon="trophy" label="Teams" onClick={() => go('teams')} />
               <QuickAction icon="beer" label="Alkohol" onClick={() => go('alcohol')} />
               <QuickAction icon="mic" label="Saufen" onClick={() => go('spielersaufen')} />
-              {istAdmin(user) && (
+              {istAdmin && (
                 <QuickAction icon="settings" label="Verwaltung" onClick={() => go('admin')} />
               )}
             </div>

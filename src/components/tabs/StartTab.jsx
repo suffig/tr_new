@@ -7,7 +7,7 @@ import { offeneRechnung } from './finanzen/OffeneRechnung';
 import { ladeLokal, bierStand, schnapsStand, logischesDatum } from '../../utils/abende';
 import { dez } from '../../utils/zahlen';
 import { ladeWechsel } from '../../utils/spielerWechsel';
-import { ADMIN_EMAIL } from '../../constants/navigation';
+import { useIchBin } from '../../hooks/useIchBin';
 
 /**
  * Gerade jetzt.
@@ -22,6 +22,20 @@ import { ADMIN_EMAIL } from '../../constants/navigation';
  */
 
 const euroGanz = (n) => `${Math.round(Number(n) || 0).toLocaleString('de-DE')} €`;
+
+/**
+ * Tageszeit fuer die Begruessung.
+ *
+ * Die Grenzen richten sich danach, wann man die App aufmacht, nicht nach
+ * einer Norm: gespielt wird abends, und "Guten Abend" soll schon dastehen,
+ * wenn der erste Anpfiff faellt — nicht erst um 22 Uhr.
+ */
+function tageszeit(stunde = new Date().getHours()) {
+  if (stunde < 5) return 'Gute Nacht';
+  if (stunde < 11) return 'Guten Morgen';
+  if (stunde < 17) return 'Hallo';
+  return 'Guten Abend';
+}
 
 /** Wie lange ist das her? */
 function seit(datum) {
@@ -59,7 +73,8 @@ function Zeile({ icon, farbe, titel, wert, hinweis, onClick }) {
   );
 }
 
-export default function StartTab({ onNavigate, user }) {
+export default function StartTab({ onNavigate }) {
+  const { darfEintragen, name: ichHeisse } = useIchBin();
   const { data: matches, loading: mLoading } = useSupabaseQuery('matches', '*');
   const { data: finances, loading: fLoading } = useSupabaseQuery('finances', '*');
   // Hier stehen die Personen, nicht die Vereine: "Alexander führt mit 1 Sieg"
@@ -196,7 +211,7 @@ export default function StartTab({ onNavigate, user }) {
   const rechnung = offeneRechnung(aekFin.debt, realFin.debt);
 
   const { aek, real, remis, gesamt, letztes, tore, schnitt } = bilanz;
-  const istAdmin = user?.email === ADMIN_EMAIL;
+
   const anteilAek = gesamt > 0 ? (aek / (aek + real || 1)) * 100 : 50;
   const fuehrt = aek > real ? 'AEK' : real > aek ? 'Real' : null;
 
@@ -210,6 +225,9 @@ export default function StartTab({ onNavigate, user }) {
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom space-y-4">
+      <h1 className="text-title2 font-bold text-text-primary px-0.5">
+        {tageszeit()}, {ichHeisse}
+      </h1>
       {/* Der Stand als geteilte Fläche — dieselbe Sprache wie im Duell,
           nur größer: hier ist es die eine Aussage der Seite. */}
       <div className="modern-card p-5">
@@ -340,8 +358,8 @@ export default function StartTab({ onNavigate, user }) {
           Weg zum selben Ort. Was hier fehlte, war der Weg zum Formular:
           ein Spiel einzutragen hiess Verwaltung aufmachen, Getränke hiessen
           Abend und dann Alkohol. */}
-      <div className={`grid gap-2 ${istAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
-        {istAdmin && (
+      <div className={`grid gap-2 ${darfEintragen ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {darfEintragen && (
           <button onClick={() => onNavigate?.('admin')}
                   className="modern-card p-3 flex items-center gap-2.5 text-left active:bg-bg-tertiary/50 transition-colors">
             <span className="w-9 h-9 rounded-xl bg-system-green/12 text-system-green flex items-center justify-center flex-shrink-0">
