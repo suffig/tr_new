@@ -999,6 +999,15 @@ textarea.form-input {
 .bg-system-orange\/12 { background-color: color-mix(in srgb, var(--system-orange) 12%, transparent); }
 .bg-system-orange\/15 { background-color: color-mix(in srgb, var(--system-orange) 15%, transparent); }
 .bg-system-orange\/70 { background-color: color-mix(in srgb, var(--system-orange) 70%, transparent); }
+/* Die 70%-Stufen der Balkenfarben aus MASSE (spielerStatistik.js).
+   Orange war da, Blau und Rot nicht — und weil Tailwind fuer Farben aus
+   CSS-Variablen keine /NN-Stufen baut, blieben die Balken bei
+   "Auszeichnungen" und "Sperren" schlicht durchsichtig, waehrend die bei
+   "Tore" farbig waren. Nichts warnt davor; es faellt nur auf, wenn man
+   die drei Ansichten nebeneinander sieht. */
+.bg-system-blue\/70 { background-color: color-mix(in srgb, var(--system-blue) 70%, transparent); }
+.bg-system-red\/70 { background-color: color-mix(in srgb, var(--system-red) 70%, transparent); }
+.bg-system-yellow\/70 { background-color: color-mix(in srgb, var(--system-yellow) 70%, transparent); }
 .bg-system-purple\/10 { background-color: color-mix(in srgb, var(--system-purple) 10%, transparent); }
 .bg-system-purple\/15 { background-color: color-mix(in srgb, var(--system-purple) 15%, transparent); }
 .bg-system-red\/10 { background-color: color-mix(in srgb, var(--system-red) 10%, transparent); }

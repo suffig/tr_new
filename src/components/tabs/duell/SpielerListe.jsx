@@ -223,6 +223,7 @@ export default function SpielerListe({ players, loading }) {
           spieler={alle.find((x) => x.key === gewaehlt.key) || gewaehlt}
           sds={sds}
           sperren={sperren}
+          mass={aktuellesMass}
           onSchliessen={() => setGewaehlt(null)}
         />
       )}

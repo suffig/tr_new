@@ -17,7 +17,7 @@ import { istLegacySaison } from '../../../utils/legacySaison';
  * und deren `will-change: opacity` erzeugt einen Stapelkontext, aus dem ein
  * z-index allein nicht herauskommt.
  */
-export default function SpielerVerlauf({ spieler, onSchliessen }) {
+export default function SpielerVerlauf({ spieler, onSchliessen, mass }) {
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
     document.addEventListener('keydown', esc);
@@ -46,8 +46,15 @@ export default function SpielerVerlauf({ spieler, onSchliessen }) {
   const gesamtSds = zeilen.reduce((s, z) => s + (z.sds || 0), 0);
   const gesamtSperren = zeilen.reduce((s, z) => s + (z.sperren || 0), 0);
   const gesamtSperrSpiele = zeilen.reduce((s, z) => s + (z.sperrSpiele || 0), 0);
-  const beste = Math.max(...zeilen.map((z) => z.goals), 1);
-  const besteSaison = zeilen.reduce((a, b) => (b.goals > (a?.goals ?? -1) ? b : a), null);
+  // Zahl und Balken je Saison folgen dem Mass, das in der Liste gewaehlt
+  // wurde. Vorher zeigten sie IMMER die Tore — wer auf "Sperren" sortiert
+  // hatte und dann jemanden aufmachte, bekam wieder Tore vorgesetzt und
+  // musste die Sperren aus der Kleinschrift darunter zusammensuchen.
+  const feld = mass?.feld || 'goals';
+  const wert = (z) => z[feld] || 0;
+  const beste = Math.max(...zeilen.map(wert), 1);
+  const gesamtMass = zeilen.reduce((s, z) => s + wert(z), 0);
+  const besteSaison = zeilen.reduce((a, b) => (wert(b) > (a ? wert(a) : -1) ? b : a), null);
   // Vereinsnamen je Saison aufloesen, nicht ueber die laufende Saison: FC25
   // hiess Real Madrid, FC26 heisst Schalke — sonst steht im Kopf ein anderer
   // Verein als in der Zeile darunter.
@@ -110,7 +117,12 @@ export default function SpielerVerlauf({ spieler, onSchliessen }) {
 
           {/* Saison für Saison */}
           <div>
-            <div className="text-footnote font-semibold text-text-muted mb-2">Saison für Saison</div>
+            <div className="flex items-baseline justify-between gap-2 mb-2">
+              <span className="text-footnote font-semibold text-text-muted">Saison für Saison</span>
+              <span className="text-caption2 text-text-tertiary">
+                {mass?.label || 'Tore'} · {gesamtMass} insgesamt
+              </span>
+            </div>
             <div className="divide-y divide-border-light">
               {zeilen.map((z) => (
                 <div key={z.version} className="py-2.5">
@@ -123,12 +135,12 @@ export default function SpielerVerlauf({ spieler, onSchliessen }) {
                       {z.team ? getTeamDisplay(z.team, z.version) : '—'}
                     </span>
                     <span className="stat-display text-[15px] num-tabular text-text-primary w-8 text-right flex-shrink-0">
-                      {z.goals}
+                      {wert(z)}
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1.5">
-                    <div className="h-full bg-system-orange/70"
-                         style={{ width: `${(z.goals / beste) * 100}%` }} />
+                    <div className={`h-full ${mass?.balken || 'bg-system-orange/70'}`}
+                         style={{ width: `${(wert(z) / beste) * 100}%` }} />
                   </div>
                   <div className="flex flex-wrap gap-x-3 text-caption2 text-text-tertiary mt-1">
                     {z.value > 0 && <span className="num-tabular">Marktwert {z.value} Mio</span>}
