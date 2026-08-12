@@ -4,7 +4,7 @@ import ZahlFeld from '../ZahlFeld';
 import { zahl, alsText, dez } from '../../utils/zahlen';
 import { useSupabaseQuery, useSupabaseMutation } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
-import PlayerDetailModal from '../PlayerDetailModal';
+import SpielerVerlauf from './duell/SpielerVerlauf';
 import TeamLogo from '../TeamLogo';
 import { POSITIONS } from '../../utils/errorHandling';
 import { getTeamDisplay } from '../../constants/teams';
@@ -345,12 +345,16 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
           zeigt. */}
 
       {/* New Feature Modals */}
-      {/* Player Detail Modal with FIFA Stats */}
+      {/* Dieselbe Detailansicht wie im Duell.
+          Vorher gab es zwei: PlayerDetailModal (Stammdaten + Wechsel) hier,
+          SpielerVerlauf (Laufbahn ueber alle Saisons) dort — zwei Wege zu
+          demselben Menschen, die Verschiedenes zeigten. Jetzt eine, die
+          beides kann: mit `player` kommen Stammdaten und Wechsel dazu, ohne
+          bleibt es bei der Laufbahn. */}
       {showPlayerDetail && selectedPlayer && (
-        <PlayerDetailModal
+        <SpielerVerlauf
           player={selectedPlayer}
-          isOpen={showPlayerDetail}
-          onClose={handleClosePlayerDetail}
+          onSchliessen={handleClosePlayerDetail}
         />
       )}
       

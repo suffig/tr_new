@@ -1,9 +1,14 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from '../../icons/Icon';
 import SpielerWappen from '../../SpielerWappen';
+import SpielerWechselKarte from '../../SpielerWechselKarte';
 import { getTeamDisplay } from '../../../constants/teams';
 import { istLegacySaison } from '../../../utils/legacySaison';
+import { useSupabaseQuery } from '../../../hooks/useSupabase';
+import { spielerStatistik, MASSE } from '../../../utils/spielerStatistik';
+import { nameKey } from '../../../utils/playerIdentity';
+import { dez } from '../../../utils/zahlen';
 
 /**
  * Ein Spieler über alle Saisons hinweg.
@@ -17,7 +22,62 @@ import { istLegacySaison } from '../../../utils/legacySaison';
  * und deren `will-change: opacity` erzeugt einen Stapelkontext, aus dem ein
  * z-index allein nicht herauskommt.
  */
-export default function SpielerVerlauf({ spieler, onSchliessen, mass }) {
+export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliessen, mass }) {
+  // Der Umschalter gehoert IN die Ansicht.
+  //
+  // Vorher kam das Mass nur von aussen — im Kader gab es die Liste mit dem
+  // Umschalter gar nicht, dort waeren Auszeichnungen und Sperren also nie
+  // erreichbar gewesen. Startwert ist, was der Aufrufer gerade betrachtet.
+  const [massId, setMassId] = useState(mass?.id || 'tore');
+  const aktuellesMass = MASSE.find((m) => m.id === massId) || MASSE[0];
+
+  // Die Laufbahn selbst besorgen, wenn sie nicht mitgegeben wurde.
+  //
+  // So laesst sich die Ansicht ueberall oeffnen, wo eine Spielerzeile
+  // vorliegt — der Kader laedt nur die LAUFENDE Saison und koennte die
+  // Laufbahn sonst gar nicht zeigen. Immer ueber alle Saisons.
+  const brauchtDaten = !uebergeben;
+  const opt = { skipFifaFilter: true };
+  const { data: alleSpieler } = useSupabaseQuery('players', '*', opt);
+  const { data: alleSds } = useSupabaseQuery('spieler_des_spiels', '*', opt);
+  const { data: alleSperren } = useSupabaseQuery('bans', '*', opt);
+
+  const selbstGebaut = useMemo(() => {
+    if (!brauchtDaten || !player?.name || !alleSpieler) return null;
+    // Ein Objekt, keine drei Argumente — die Signatur ist
+    // spielerStatistik({ players, sds, bans }). Falsch aufgerufen liefert sie
+    // stillschweigend eine leere Liste, und die Ansicht faellt auf den
+    // Ersatz mit nur einer Saison zurueck, ohne dass irgendwo ein Fehler
+    // auftaucht. Genau so ist es mir hier passiert.
+    const liste = spielerStatistik({ players: alleSpieler, sds: alleSds || [], bans: alleSperren || [] });
+    const k = nameKey(player.name);
+    return liste.find((x) => x.key === k)
+      || liste.find((x) => (x.spellings || []).some((n) => nameKey(n) === k))
+      || null;
+  }, [brauchtDaten, player?.name, alleSpieler, alleSds, alleSperren]);
+
+  // Ersatz aus der Spielerzeile, falls die Laufbahn (noch) nicht steht.
+  //
+  // `if (!spieler) return null` weiter unten heisst: kein Fenster. Aus dem
+  // Kader waere das ein Tipp ins Leere — waehrend die Abfragen laufen, und
+  // dauerhaft, wenn der Name in spielerStatistik unter einer anderen
+  // Schreibweise steckt. Lieber die eine Saison zeigen, die man sicher hat.
+  const ersatz = useMemo(() => {
+    if (!player?.name) return null;
+    return {
+      key: nameKey(player.name),
+      name: player.name,
+      currentTeam: player.team,
+      spellings: [player.name],
+      seasons: [{
+        id: player.id, version: player.fifa_version || '—', team: player.team,
+        goals: Number(player.goals) || 0, value: Number(player.value) || 0,
+        sds: 0, sperren: 0, sperrSpiele: 0, sperrArten: {},
+      }],
+    };
+  }, [player]);
+
+  const spieler = uebergeben || selbstGebaut || ersatz;
   useEffect(() => {
     const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
     document.addEventListener('keydown', esc);
@@ -50,7 +110,7 @@ export default function SpielerVerlauf({ spieler, onSchliessen, mass }) {
   // wurde. Vorher zeigten sie IMMER die Tore — wer auf "Sperren" sortiert
   // hatte und dann jemanden aufmachte, bekam wieder Tore vorgesetzt und
   // musste die Sperren aus der Kleinschrift darunter zusammensuchen.
-  const feld = mass?.feld || 'goals';
+  const feld = aktuellesMass.feld;
   const wert = (z) => z[feld] || 0;
   const beste = Math.max(...zeilen.map(wert), 1);
   const gesamtMass = zeilen.reduce((s, z) => s + wert(z), 0);
@@ -87,20 +147,48 @@ export default function SpielerVerlauf({ spieler, onSchliessen, mass }) {
         </div>
 
         <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))] space-y-4">
-          {/* Kennzahlen */}
+          {/* Kennzahlen — zugleich der Umschalter.
+              Die drei Zahlen standen ohnehin schon nebeneinander; sie
+              anklickbar zu machen erspart eine zweite Bedienleiste fuer
+              dieselbe Entscheidung. Die gewaehlte ist hervorgehoben. */}
           <div className="grid grid-cols-3 gap-2">
-            {[
-              ['Tore', gesamtTore, 'football', 'text-system-orange'],
-              ['Auszeichnungen', gesamtSds, 'star', 'text-system-blue'],
-              ['Sperren', gesamtSperren, 'ban', 'text-system-red'],
-            ].map(([label, wert, icon, farbe]) => (
-              <div key={label} className="panel-gray rounded-xl p-3 text-center">
-                <Icon name={icon} size={15} strokeWidth={2.2} className={`${farbe} mx-auto mb-1`} />
-                <div className="stat-display text-lg num-tabular text-text-primary">{wert}</div>
-                <div className="text-caption2 text-text-tertiary leading-tight">{label}</div>
-              </div>
-            ))}
+            {MASSE.map((m) => {
+              const zahl = m.id === 'tore' ? gesamtTore : m.id === 'sds' ? gesamtSds : gesamtSperren;
+              const an = m.id === massId;
+              return (
+                <button key={m.id} type="button" onClick={() => setMassId(m.id)}
+                        aria-pressed={an}
+                        className={`rounded-xl p-3 text-center transition-colors ${
+                          an ? 'bg-bg-elevated ring-2 ring-current ' + m.farbe : 'panel-gray'}`}>
+                  <Icon name={m.icon} size={15} strokeWidth={2.2} className={`${m.farbe} mx-auto mb-1`} />
+                  <div className="stat-display text-lg num-tabular text-text-primary">{zahl}</div>
+                  <div className="text-caption2 text-text-tertiary leading-tight">{m.label}</div>
+                </button>
+              );
+            })}
           </div>
+
+          {/* Stammdaten und Wechsel-Verlauf — nur wenn die Ansicht aus dem
+              Kader kommt und damit eine konkrete Spielerzeile kennt. Aus dem
+              Duell heraus gibt es die nicht, dort ist der Mensch ueber alle
+              Saisons gemeint und nicht eine bestimmte Zeile. */}
+          {player && (
+            <>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  ['Position', player.position || '—'],
+                  ['Marktwert', Number(player.value) > 0 ? `${dez(Number(player.value), 1)} Mio` : '—'],
+                  ['Team', getTeamDisplay(player.team) || player.team || '—'],
+                ].map(([label, wertText]) => (
+                  <div key={label} className="panel-gray rounded-xl p-2.5">
+                    <div className="text-caption2 text-text-tertiary">{label}</div>
+                    <div className="text-footnote font-semibold text-text-primary truncate">{wertText}</div>
+                  </div>
+                ))}
+              </div>
+              <SpielerWechselKarte player={player} />
+            </>
+          )}
 
           {gesamtSperrSpiele > 0 && (
             <p className="text-caption1 text-text-secondary">
@@ -111,7 +199,9 @@ export default function SpielerVerlauf({ spieler, onSchliessen, mass }) {
           {besteSaison && zeilen.length > 1 && (
             <p className="text-caption1 text-text-secondary">
               Stärkste Saison: <span className="font-semibold text-text-primary">{besteSaison.version}</span>
-              {' '}mit {besteSaison.goals} {besteSaison.goals === 1 ? 'Tor' : 'Toren'}.
+              {/* sortLabel ist die gebeugte Form ("Toren"), label die nackte
+                  ("Tore") — kleingeschrieben ergab das "mit 12 tore". */}
+              {' '}mit {wert(besteSaison)} {aktuellesMass.sortLabel}.
             </p>
           )}
 
@@ -120,7 +210,7 @@ export default function SpielerVerlauf({ spieler, onSchliessen, mass }) {
             <div className="flex items-baseline justify-between gap-2 mb-2">
               <span className="text-footnote font-semibold text-text-muted">Saison für Saison</span>
               <span className="text-caption2 text-text-tertiary">
-                {mass?.label || 'Tore'} · {gesamtMass} insgesamt
+                {aktuellesMass.label} · {gesamtMass} insgesamt
               </span>
             </div>
             <div className="divide-y divide-border-light">
@@ -139,7 +229,7 @@ export default function SpielerVerlauf({ spieler, onSchliessen, mass }) {
                     </span>
                   </div>
                   <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1.5">
-                    <div className={`h-full ${mass?.balken || 'bg-system-orange/70'}`}
+                    <div className={`h-full ${aktuellesMass.balken}`}
                          style={{ width: `${(wert(z) / beste) * 100}%` }} />
                   </div>
                   <div className="flex flex-wrap gap-x-3 text-caption2 text-text-tertiary mt-1">
