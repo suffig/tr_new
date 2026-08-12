@@ -9,7 +9,7 @@ import { useIchBin } from '../hooks/useIchBin';
 
 export default function UserProfile({ onClose, onNavigate }) {
   const { user } = useAuth();
-  const { istAdmin, name: ichHeisse } = useIchBin();
+  const { istAdmin, name: ichHeisse, bekannt } = useIchBin();
   const { isDark, setManualTheme } = useTheme();
   const [seasons, setSeasons] = useState([]);
   useEffect(() => { setSeasons(getAvailableSeasons()); }, []);
@@ -70,13 +70,21 @@ export default function UserProfile({ onClose, onNavigate }) {
                   Menue, das einzige, wo "wer bin ich" die eigentliche Frage
                   ist, zeigte "philip-melchert@live.de". */}
               <div className="flex items-center gap-2 min-w-0">
-                <span className="font-bold text-text-primary truncate">{ichHeisse}</span>
+                <span className="font-bold text-text-primary truncate">
+                  {ichHeisse || 'Wird geladen…'}
+                </span>
                 {istAdmin && (
                   <span className="chip chip-sm chip-blue flex-shrink-0">Admin</span>
                 )}
               </div>
-              <div className="text-xs text-text-muted truncate">{email}</div>
-              <div className="text-xs text-text-muted">Mitglied seit {memberSince}</div>
+              {/* Erst zeigen, wenn es etwas zu zeigen gibt — "—" sah aus wie
+                  eine Angabe, die fehlt, war aber nur der Ladezustand. */}
+              {bekannt && (
+                <>
+                  <div className="text-xs text-text-muted truncate">{email}</div>
+                  <div className="text-xs text-text-muted">Mitglied seit {memberSince}</div>
+                </>
+              )}
             </div>
           </div>
 

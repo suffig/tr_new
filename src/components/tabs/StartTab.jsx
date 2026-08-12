@@ -225,9 +225,13 @@ export default function StartTab({ onNavigate }) {
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom space-y-4">
-      <h1 className="text-title2 font-bold text-text-primary px-0.5">
-        {tageszeit()}, {ichHeisse}
-      </h1>
+      {/* Erst wenn feststeht, WER da ist. Ohne diese Bedingung stand hier
+          waehrend des Ladens "Guten Abend, Alexander" — auch vor Philip. */}
+      {ichHeisse && (
+        <h1 className="text-title2 font-bold text-text-primary px-0.5">
+          {tageszeit()}, {ichHeisse}
+        </h1>
+      )}
       {/* Der Stand als geteilte Fläche — dieselbe Sprache wie im Duell,
           nur größer: hier ist es die eine Aussage der Seite. */}
       <div className="modern-card p-5">

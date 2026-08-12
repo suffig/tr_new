@@ -33,24 +33,41 @@ import { ADMIN_EMAIL } from '../constants/navigation';
  * "Philip" und an der anderen die E-Mail steht.
  */
 export function useIchBin() {
-  const { user } = useAuth();
+  const { user, loading } = useAuth();
   const { data: managers } = useSupabaseQuery('manager', '*');
 
   return useMemo(() => {
-    const istAdmin = !!user?.email && user.email === ADMIN_EMAIL;
+    // Solange die Sitzung nicht geladen ist, ist NIEMAND bekannt. Vorher
+    // stand hier `istAdmin ? 'Philip' : 'Alexander'` — und weil ein noch
+    // nicht geladener Nutzer kein Admin ist, hiess Philip in diesem Fenster
+    // "Alexander". Ein unbekannter Mensch ist aber nicht der andere von
+    // beiden, sondern unbekannt.
+    const bekannt = !loading && !!user?.email;
+
+    // Gross-/Kleinschreibung und Leerzeichen ausgleichen: die Adresse kommt
+    // aus der Anmeldung und muss nicht zeichengleich mit der Konstanten
+    // sein. "Philip-Melchert@live.de" ist derselbe Mensch.
+    const gleich = (a, b) =>
+      String(a || '').trim().toLowerCase() === String(b || '').trim().toLowerCase();
+    const istAdmin = bekannt && gleich(user.email, ADMIN_EMAIL);
+
     const id = istAdmin ? 2 : 1;
     const ausDb = managers?.find((m) => m.id === id)?.name;
+
     return {
       user,
+      bekannt,
       istAdmin,
       darfEintragen: istAdmin,
-      // Der Abend gehört beiden.
-      darfAbend: !!user,
-      name: ausDb || (istAdmin ? 'Philip' : 'Alexander'),
+      // Der Abend gehört beiden — aber erst, wenn wir wissen, wer da ist.
+      darfAbend: bekannt,
+      // null statt eines geratenen Namens. Wer das anzeigt, blendet die
+      // Begruessung so lange aus, statt den falschen Namen zu nennen.
+      name: bekannt ? (ausDb || (istAdmin ? 'Philip' : 'Alexander')) : null,
       seite: istAdmin ? 'Real' : 'AEK',
       email: user?.email || null,
     };
-  }, [user, managers]);
+  }, [user, loading, managers]);
 }
 
 export default useIchBin;
