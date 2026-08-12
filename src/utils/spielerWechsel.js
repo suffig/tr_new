@@ -319,6 +319,54 @@ async function kontoAendern(team, delta) {
   return { gekappt, fehler: null };
 }
 
+/**
+ * Die Zuordnungen eines abgeschlossenen Drafts als Wechsel mitschreiben.
+ *
+ * Ohne das reisst der Verlauf an jeder Saisongrenze ab: der Draft legt je
+ * Saison NEUE Spielerzeilen an, und wer dabei die Seite wechselt, taucht in
+ * spieler_wechsel nirgends auf. Die Laufbahn saehe dann so aus, als waere
+ * niemand je gewechselt.
+ *
+ * Wer bleibt, wo er war, bekommt KEINE Zeile — das waere kein Wechsel. Wer
+ * neu dazukommt und noch gar keinen Verlauf hat, bekommt eine Startzeile
+ * (`von` bleibt null).
+ *
+ * KEIN GELD: der Draft verrechnet die Budgets bereits selbst (restBudget).
+ * Hier noch einmal zu buchen hiesse, denselben Betrag zweimal zu bewegen.
+ *
+ * @returns {{ neu: number, uebersprungen: number, fehler: Error|null }}
+ */
+export async function wechselAusDraft({ zuordnungen, fifaVersion, datum = heute() }) {
+  const { wechsel, fehler } = await ladeWechsel();
+  if (fehler) return { neu: 0, uebersprungen: 0, fehler };
+
+  let neu = 0, uebersprungen = 0;
+  for (const z of zuordnungen || []) {
+    if (!z?.name || !SEITEN.includes(z.team)) { uebersprungen += 1; continue; }
+    const meine = wechselVon(wechsel, z.name);
+    // Wer schon dort ist, wechselt nicht.
+    if (seiteAmDatum(meine, datum) === z.team) { uebersprungen += 1; continue; }
+
+    const { fehler: e } = await wechselEintragen({
+      name: z.name,
+      spielerId: z.spielerId ?? null,
+      nach: z.team,
+      datum,
+      fifaVersion,
+      notiz: `Draft ${fifaVersion}`,
+      bisherigeWechsel: wechsel,
+    });
+    if (e) { uebersprungen += 1; continue; }   // z. B. Rueckdatierung
+    // Den frisch geschriebenen Eintrag mitfuehren, damit der naechste Spieler
+    // denselben Stand sieht — sonst wuerde ein Mensch, der zweimal in der
+    // Liste steht, zweimal eingetragen.
+    wechsel.push({ person_key: nameKey(z.name), datum, von: null, nach: z.team });
+    wechsel.sort((a, b) => String(a.datum).localeCompare(String(b.datum)));
+    neu += 1;
+  }
+  return { neu, uebersprungen, fehler: null };
+}
+
 /** Einen falsch eingetragenen Wechsel wieder entfernen. */
 export async function wechselLoeschen(id) {
   const { error } = await supabaseDb.delete(TABELLE, id);

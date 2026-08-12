@@ -6,6 +6,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import VorsprungVerlauf from './stats/VorsprungVerlauf';
 import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
+import { toreJeSeite } from '../../utils/spielerBilanz';
 import MatchDayOverview from '../MatchDayOverview';
 import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
@@ -1129,6 +1130,26 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
                 </div>
               ))}
             </div>
+
+            {/* Fuer wen hat er getroffen?
+                Nur wenn er fuer BEIDE Seiten getroffen hat — sonst ist die
+                Aufteilung dieselbe Zahl wie oben, nur breiter. Genau bei den
+                Wechslern ist sie dafuer die interessantere: die Gesamtzahl
+                verraet nicht, dass sieben davon fuer die andere Seite fielen.
+                Die Quelle sind die Torschuetzenlisten der Spiele, nicht
+                players.team — deshalb stimmt es auch nach einem Wechsel. */}
+            {(() => {
+              const j = toreJeSeite(filteredMatches || [], player.name);
+              if (j.AEK.tore === 0 || j.Real.tore === 0) return null;
+              return (
+                <div className="mt-2 pt-2 border-t border-border-light">
+                  <Kraefteverhaeltnis
+                    klein label="Tore für wen" zusatz="aus den Torschützenlisten"
+                    aek={j.AEK.tore} real={j.Real.tore}
+                    aekName={getTeamDisplay('AEK')} realName={getTeamDisplay('Real')} />
+                </div>
+              );
+            })()}
 
             {(player.sdsCount > 0 || player.totalBans > 0 || player.ohneZuordnung > 0) && (
               <div className="flex flex-wrap gap-1.5 mt-2 pt-2 border-t border-border-light">

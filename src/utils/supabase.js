@@ -117,9 +117,41 @@ const fallbackData = {
     { id: 1, player_id: 1, team: 'AEK', type: 'Gelb-Rote Karte', totalgames: 1, matchesserved: 0, reason: 'Gelb-Rot', fifa_version: 'FC25' },
     { id: 2, player_id: 4, team: 'Real', type: 'Unsportlichkeit', totalgames: 2, matchesserved: 0, reason: 'Unsportlichkeit', fifa_version: 'FC25' }
   ],
+  // Spielerwechsel. Ohne diese Zeilen zeigt der Demo-Modus die Transferliste
+  // und die Laufbahn auf der Spielerkarte nur leer — die Funktionen liessen
+  // sich dann ohne echte Datenbank nie ansehen.
+  //
+  // Max Mueller ist der interessante Fall: Startzeile bei AEK, spaeter zu
+  // Real und wieder zurueck. Genau daran zeigt sich, wofuer der Verlauf da
+  // ist, und dass seine Tore bei der Seite bleiben, fuer die sie fielen.
+  spieler_wechsel: [
+    { id: 1, person_key: 'maxmuller', name: 'Max Müller', spieler_id: 1,
+      von: null, nach: 'AEK', datum: '2024-01-01', fifa_version: 'FC25',
+      transaktion_id: null, notiz: 'Stand bei Einführung der Wechsel-Erfassung' },
+    // Die Daten liegen bewusst NACH seinen AEK-Toren (10.01. und 15.01.) und
+    // um das Spiel vom 20.01. herum: sonst erzaehlte der Demo-Bestand etwas
+    // Widerspruechliches — Tor fuer AEK an einem Tag, an dem er laut Verlauf
+    // bei Real stand. So passen Torschuetzenlisten und Verlauf zusammen.
+    { id: 2, person_key: 'maxmuller', name: 'Max Müller', spieler_id: 1,
+      von: 'AEK', nach: 'Real', datum: '2024-01-19', fifa_version: 'FC25',
+      transaktion_id: 20, notiz: 'Spielerkauf · 4.000 €' },
+    { id: 3, person_key: 'maxmuller', name: 'Max Müller', spieler_id: 1,
+      von: 'Real', nach: 'AEK', datum: '2024-01-21', fifa_version: 'FC25',
+      transaktion_id: null, notiz: 'Tausch gegen Klein' },
+    { id: 4, person_key: 'leonwagner', name: 'Leon Wagner', spieler_id: 3,
+      von: null, nach: 'AEK', datum: '2024-01-01', fifa_version: 'FC25',
+      transaktion_id: null, notiz: 'Stand bei Einführung der Wechsel-Erfassung' },
+    { id: 5, person_key: 'janbecker', name: 'Jan Becker', spieler_id: 4,
+      von: null, nach: 'Real', datum: '2024-01-01', fifa_version: 'FC25',
+      transaktion_id: null, notiz: 'Stand bei Einführung der Wechsel-Erfassung' },
+    { id: 6, person_key: 'paulklein', name: 'Paul Klein', spieler_id: 5,
+      von: 'Real', nach: 'Ehemalige', datum: '2024-01-21', fifa_version: 'FC25',
+      transaktion_id: null, notiz: 'Tausch gegen Müller' },
+  ],
   transactions: [
     { id: 1, amount: 5000, info: 'Siegprämie', team: 'AEK', date: '2024-01-15', type: 'Preisgeld', match_id: 1, fifa_version: 'FC25' },
     { id: 2, amount: -2000, info: 'Kartenstrafe', team: 'Real', date: '2024-01-10', type: 'Strafe', match_id: 2, fifa_version: 'FC25' },
+    { id: 20, amount: -4000, info: 'Max Müller · AEK → Real', team: 'Real', date: '2024-01-19', type: 'Spielerkauf', match_id: null, fifa_version: 'FC25' },
     { id: 3, amount: 3000, info: 'Sponsoring', team: 'Real', date: '2024-01-08', type: 'Sonstiges', match_id: null, fifa_version: 'FC25' },
     { id: 4, amount: 1000, info: 'Spieler des Spiels Bonus', team: 'AEK', date: '2024-01-15', type: 'SdS Bonus', match_id: 1, fifa_version: 'FC25' },
     { id: 5, amount: -500, info: 'Gelb-Rot Strafe', team: 'AEK', date: '2024-01-10', type: 'Strafe', match_id: 2, fifa_version: 'FC25' },

@@ -10,6 +10,7 @@
  *      echt. Vorher lässt sich jeder Zug zurücknehmen.
  */
 import { supabaseDb } from './supabase';
+import { wechselAusDraft } from './spielerWechsel';
 
 export const TEAMS = ['AEK', 'Real'];
 export const PERSON = { AEK: 'Alexander', Real: 'Philip' };
@@ -187,6 +188,25 @@ export async function schliesseAb(session, picks) {
         team, balance: betrag, debt: 0, fifa_version: session.fifa_version,
       });
     }
+  }
+
+  // Die Zuordnungen als Wechsel festhalten.
+  //
+  // Ohne das reisst der Verlauf an jeder Saisongrenze ab: der Draft legt neue
+  // Spielerzeilen an, und wer dabei die Seite wechselt, stuende in
+  // spieler_wechsel nirgends. In try, weil der Draft an dieser Stelle bereits
+  // durch ist — ein Fehler beim Verlauf darf ihn nicht offen lassen.
+  try {
+    await wechselAusDraft({
+      zuordnungen: picks.map((p) => ({
+        name: p.spieler_name,
+        team: p.team,
+        spielerId: p.player_id ?? angelegt.find((a) => a.name === p.spieler_name)?.id ?? null,
+      })),
+      fifaVersion: session.fifa_version,
+    });
+  } catch (e) {
+    console.warn('Draft abgeschlossen, Wechsel nicht festgehalten:', e);
   }
 
   const { error } = await supabaseDb.update('draft_sessions', {
