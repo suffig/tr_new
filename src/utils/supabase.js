@@ -28,6 +28,43 @@ let authSession = null;
 // derselbe Mensch ueber mehrere Saisons eine eigene Spielerzeile hat.
 const fallbackData = {
   matches: [
+    // Drei Partien an EINEM Abend (12.08.) — Spiel 6, 7 und 8.
+    //
+    // Bis hierhin hatte jeder Abend in den Testdaten genau ein Spiel. Damit
+    // war die Nummerierung innerhalb eines Abends nie ausgeloest: jede
+    // Gruppe hatte ein Element, alles hiess "Match #1", und dass die Nummern
+    // rueckwaerts liefen, konnte man gar nicht sehen. Mehrere Partien an
+    // einem Abend sind aber der Normalfall.
+    {
+      id: 8,
+      date: '2026-08-12',
+      teama: 'AEK',
+      teamb: 'Real',
+      goalsa: 3,
+      goalsb: 1,
+      goalslista: [{ player: 'Max Müller', player_id: 1, count: 2 }, { player: 'Leon Wagner', player_id: 3, count: 1 }],
+      goalslistb: [{ player: 'Jan Becker', player_id: 4, count: 1 }],
+      yellowa: 0, reda: 0, yellowb: 2, redb: 0,
+      manofthematch: 'Max Müller',
+      manofthematch_player_id: 1,
+      prizeaek: 5000, prizereal: 0,
+      fifa_version: 'FC26'
+    },
+    {
+      id: 7,
+      date: '2026-08-12',
+      teama: 'AEK',
+      teamb: 'Real',
+      goalsa: 2,
+      goalsb: 0,
+      goalslista: [{ player: 'Leon Wagner', player_id: 3, count: 1 }, { player: 'Max Müller', player_id: 1, count: 1 }],
+      goalslistb: [],
+      yellowa: 1, reda: 0, yellowb: 0, redb: 0,
+      manofthematch: 'Leon Wagner',
+      manofthematch_player_id: 3,
+      prizeaek: 5000, prizereal: 0,
+      fifa_version: 'FC26'
+    },
     // Zweiter Sieg in Folge fuer Alexander.
     //
     // Ohne dieses Spiel wechselten sich die Ergebnisse in den Testdaten
@@ -162,9 +199,9 @@ const fallbackData = {
     }
   ],
   players: [
-    { id: 1, name: 'Max Müller', team: 'AEK', position: 'ST', goals: 5, value: 15.5, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
+    { id: 1, name: 'Max Müller', team: 'AEK', position: 'ST', goals: 8, value: 15.5, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
     { id: 2, name: 'Tom Schmidt', team: 'AEK', position: 'TH', goals: 0, value: 8.2, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
-    { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 3, value: 12.0, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
+    { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 5, value: 12.0, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
     { id: 4, name: 'Jan Becker', team: 'Real', position: 'ST', goals: 7, value: 18.3, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
     // Sein Wechsel nach "Ehemalige" steht in spieler_wechsel — dann muss die
     // Spielerzeile das auch sagen. Stand hier 'Real', war das genau der

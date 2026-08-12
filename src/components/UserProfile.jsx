@@ -8,7 +8,7 @@ import { getVisibleTabs } from '../constants/navigation';
 import { useIchBin } from '../hooks/useIchBin';
 
 export default function UserProfile({ onClose, onNavigate }) {
-  const { user } = useAuth();
+  const { user, signOut } = useAuth();
   const { istAdmin, name: ichHeisse, bekannt } = useIchBin();
   const { isDark, setManualTheme } = useTheme();
   const [seasons, setSeasons] = useState([]);
@@ -165,27 +165,46 @@ export default function UserProfile({ onClose, onNavigate }) {
             </div>
           </div>
 
-          {/* Quick actions */}
-          <div>
-            <div className="section-label">Schnellzugriff</div>
-            {/* Die sechs Unteransichten der beiden Sammel-Bereiche. Statistik,
-                Duell und Finanzen stehen hier bewusst nicht mehr — die sind
-                seit der Neuordnung mit einem Tipp in der unteren Leiste.
-                Die Verwaltung kam dazu, als die Startansicht ihren Platz in
-                der Leiste bekam: sie ist eine Einstellung, und Einstellungen
-                liegen in dieser App im Profil. */}
-            <div className="grid grid-cols-3 gap-2">
-              <QuickAction icon="football" label="Spiele" onClick={() => go('matches')} />
-              <QuickAction icon="users" label="Kader" onClick={() => go('squad')} />
-              <QuickAction icon="ban" label="Sperren" onClick={() => go('bans')} />
-              <QuickAction icon="trophy" label="Teams" onClick={() => go('teams')} />
-              <QuickAction icon="beer" label="Alkohol" onClick={() => go('alcohol')} />
-              <QuickAction icon="mic" label="Saufen" onClick={() => go('spielersaufen')} />
-              {istAdmin && (
-                <QuickAction icon="settings" label="Verwaltung" onClick={() => go('admin')} />
-              )}
+          {/* Der Schnellzugriff stand hier als Raster aus sechs Kacheln:
+              Spiele, Kader, Sperren, Teams, Alkohol, Saufen. Alle sechs sind
+              ueber die untere Leiste in ein bis zwei Tipps erreichbar, und
+              seit es die Startseite gibt, fuehrt auch die schon dorthin. Ein
+              zweiter Weg zum selben Ort macht das Menue nur laenger.
+
+              Die Verwaltung bleibt — sie ist der einzige Zugang, seit sie
+              nicht mehr in der Leiste steht. */}
+          {istAdmin && (
+            <div>
+              <div className="section-label">Verwaltung</div>
+              <div className="modern-card p-0 overflow-hidden">
+                <button onClick={() => go('admin')}
+                        className="w-full flex items-center gap-3 p-3 text-left active:bg-bg-tertiary/50 transition-colors">
+                  <span className="w-9 h-9 rounded-xl bg-system-blue/12 text-system-blue flex items-center justify-center flex-shrink-0">
+                    <Icon name="settings" size={18} strokeWidth={2.1} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block font-medium text-text-primary">Verwaltung</span>
+                    <span className="block text-xs text-text-muted">
+                      Spiele, Spieler, Sperren und Buchungen eintragen
+                    </span>
+                  </span>
+                  <Icon name="chevronRight" size={16} strokeWidth={2.4} className="text-text-tertiary flex-shrink-0" />
+                </button>
+              </div>
             </div>
-          </div>
+          )}
+
+          {/* Abmelden.
+              Es lag bisher AUSSCHLIESSLICH im Verwaltungsbereich — und den
+              erreicht seit der Rechtevergabe nur noch Philip. Alexander
+              konnte sich damit gar nicht mehr abmelden. Unten und dezent,
+              weil man es selten braucht, aber es muss da sein. */}
+          <button
+            onClick={async () => { try { await signOut(); } catch { /* Sitzung ist so oder so weg */ } onClose(); }}
+            className="w-full modern-card p-3 text-center text-system-red font-medium active:bg-bg-tertiary/50 transition-colors"
+          >
+            Abmelden
+          </button>
 
           {/* Quellenangabe, um die footylogos.com bittet ("Credit
               FootyLogos.com as the source"). Die Wappen liegen als SVG in
@@ -217,17 +236,6 @@ function SettingRow({ icon, iconClass, title, subtitle, children }) {
   );
 }
 
-function QuickAction({ icon, label, onClick }) {
-  return (
-    <button
-      onClick={onClick}
-      className="flex flex-col items-center justify-center gap-1.5 py-3 px-1 rounded-xl bg-bg-secondary border border-border-light hover:bg-bg-tertiary transition-colors press-scale"
-    >
-      <span className="text-text-secondary"><Icon name={icon} size={20} strokeWidth={2} /></span>
-      <span className="text-[11px] font-medium text-text-primary leading-none max-w-full truncate">{label}</span>
-    </button>
-  );
-}
 
 function AppleSwitch({ checked, onChange }) {
   return (

@@ -254,13 +254,28 @@ export default function MatchesTab({ onNavigate, user }) {
       groups[dateKey].push(match);
     });
     
-    // Sort dates descending and return as array
+    // Die ANZEIGE ist neuestes zuerst, die NUMMER zaehlt vorwaerts.
+    //
+    // Vorher war die Nummer der Index in der absteigend sortierten Liste —
+    // das erste Spiel des Abends hiess damit "Match #5" und das letzte
+    // "Match #1", also genau andersherum als man am Tisch zaehlt. Die
+    // Teilen-Funktion sortierte schon aufsteigend (a.id - b.id): der geteilte
+    // Text nummerierte richtig, die Liste daneben falsch.
+    //
+    // Deshalb steht die Nummer jetzt NICHT mehr am Listenplatz, sondern kommt
+    // aus der Eingabereihenfolge. Wer die Anzeige spaeter umsortiert, dreht
+    // damit nicht mehr aus Versehen die Nummern mit.
     return Object.keys(groups)
       .sort((a, b) => new Date(b) - new Date(a))
-      .map(date => ({
-        date,
-        matches: groups[date].sort((a, b) => b.id - a.id) // Sort matches by ID descending
-      }));
+      .map(date => {
+        const chronologisch = [...groups[date]].sort((a, b) => a.id - b.id);
+        const nummerVon = new Map(chronologisch.map((m, i) => [m.id, i + 1]));
+        return {
+          date,
+          matches: [...chronologisch].reverse(), // Anzeige: neuestes zuerst
+          nummerVon,
+        };
+      });
   };
 
 
@@ -482,7 +497,7 @@ export default function MatchesTab({ onNavigate, user }) {
                     const aekGoals = match.goalsa || 0;
                     const realGoals = match.goalsb || 0;
                     const winner = aekGoals > realGoals ? 'aek' : realGoals > aekGoals ? 'real' : 'draw';
-                    const matchNumber = matchIndex + 1;
+                    const matchNumber = dateGroup.nummerVon.get(match.id) ?? (matchIndex + 1);
                     const totalGoals = aekGoals + realGoals;
 
                     const parseGoals = (raw) => {
