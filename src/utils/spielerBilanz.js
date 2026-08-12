@@ -94,3 +94,44 @@ export function sperrenJeSeite(bans, players, name) {
   }
   return erg;
 }
+
+/**
+ * Wie viele der Tore eines Spielers gehören DIESER Seite?
+ *
+ * players.goals ist eine Laufsumme auf der Spielerzeile — und die Zeile
+ * wechselt beim Transfer die Seite mit. Wer mitten in der Saison von
+ * Alexander zu Philip geht, nimmt seine komplette bisherige Ausbeute mit:
+ * Alexanders Summe verliert Tore, die für ihn gefallen sind, Philips gewinnt
+ * welche, die er nie hatte.
+ *
+ * Deshalb wird hier nur abgezogen, was NACHWEISLICH woanders hingehört —
+ * die Tore, die laut Torschützenliste für die andere Seite fielen. Alles
+ * andere bleibt stehen:
+ *
+ *   - Für Spieler ohne Wechsel ändert sich damit gar nichts.
+ *   - Die importierten Altsaisons haben nur Gesamtzahlen und keine
+ *     Einzelspiele. Dort ist die Liste leer, es wird nichts abgezogen, und
+ *     die überlieferte Zahl bleibt unangetastet.
+ *   - Auch die 135 Spiele ohne Torschützenliste (siehe db/22) verlieren
+ *     nichts: was nicht in einer Liste steht, kann nicht der anderen Seite
+ *     zugeordnet werden.
+ *
+ * Nie kleiner als 0 — wenn die Listen mehr Tore für die andere Seite führen
+ * als die Spalte insgesamt kennt, ist das ein Datenfehler und keine negative
+ * Torzahl.
+ */
+export function toreFuerSeite(matches, player) {
+  const gesamt = Number(player?.goals) || 0;
+  const seite = player?.team;
+  // "Ehemalige" haben keine Gegenseite, von der abzuziehen waere.
+  if (seite !== 'AEK' && seite !== 'Real') {
+    return { tore: gesamt, fuerAndere: 0, andere: null };
+  }
+  const andere = seite === 'AEK' ? 'Real' : 'AEK';
+  const jeSeite = toreJeSeite(matches, player.name);
+  return {
+    tore: Math.max(0, gesamt - jeSeite[andere].tore),
+    fuerAndere: jeSeite[andere].tore,
+    andere,
+  };
+}

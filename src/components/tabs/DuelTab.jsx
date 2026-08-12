@@ -130,6 +130,18 @@ function gesamtBilanz(ausSpielen) {
   return g;
 }
 
+/**
+ * Tore je Spiel — geteilt durch die Spiele der Saisons, deren Tore bekannt
+ * sind. Sonst teilte man 6707 Tore durch 902 Spiele, obwohl aus FC15/FC16
+ * keine Tore ueberliefert sind.
+ */
+function toreJeSpiel(g) {
+  const spieleMitToren = g.erfasst + Object.values(LEGACY_SAISONS)
+    .filter((i) => i.bilanz?.AEK?.tore != null)
+    .reduce((s, i) => s + (i.bilanz.spiele || 0), 0);
+  return spieleMitToren ? (g.aekG + g.realG) / spieleMitToren : 0;
+}
+
 /** Haeufigste Endstaende — "wie geht ein Spiel zwischen euch typischerweise aus". */
 function haeufigsteErgebnisse(matches, grenze = 6) {
   const zaehler = new Map();
@@ -443,13 +455,28 @@ function WrappedView({ d, aekName, realName }) {
     at('FUSTA · Rückblick', cx, 214, 34, '#8A93A0', '600');
 
     // Scoreboard
+    //
+    // g statt d: der BILDSCHIRM rechnet mit gesamtBilanz(), also samt der
+    // sieben Altsaisons, die nur als gezaehlte Bilanz vorliegen. Das Bild
+    // nahm dagegen nur `d` — die Saisons mit Einzelspielen. Auf demselben
+    // Schirm stand damit "950 Spiele", und das Bild zum Teilen sagte "142".
+    //
+    // Der Torschuetzenkoenig unten kommt aus den Spielerzeilen und deckt
+    // ebenfalls alle Saisons ab; mit `d` passte er zu keiner Zahl darueber.
+    const g = gesamtBilanz(d);
     const lx = 285, rx = W - 285;
     at(aekName, lx, 360, 42, '#3D9BFF', '700');
     at(realName, rx, 360, 42, '#FF453A', '700');
-    at(String(d.aekW), lx, 510, 150, '#3D9BFF', '800');
-    at(String(d.realW), rx, 510, 150, '#FF453A', '800');
+    at(String(g.aekW), lx, 510, 150, '#3D9BFF', '800');
+    at(String(g.realW), rx, 510, 150, '#FF453A', '800');
     at(':', cx, 505, 100, '#5A6472', '700');
-    at(`${d.total} Spiele · ${d.draws} Remis`, cx, 585, 34, '#8A93A0', '600');
+    at(`${g.total} Spiele · ${g.draws} Remis`, cx, 585, 34, '#8A93A0', '600');
+    // Woher die Zahlen kommen. Höchster Sieg, Preisgeld und Serie lassen sich
+    // nur aus erfassten Einzelspielen bilden — ohne diesen Hinweis behauptet
+    // das Bild, alles beziehe sich auf denselben Satz Spiele.
+    if (g.gezaehlt > 0) {
+      at(`${g.erfasst} erfasst · ${g.gezaehlt} gezählt`, cx, 630, 26, '#5A6472', '600');
+    }
 
     // Stat rows
     let y = 720;
@@ -461,8 +488,11 @@ function WrappedView({ d, aekName, realName }) {
       at(value, W - 90, y, 40, valueColor, '700', 'right');
       y += rowH;
     };
-    row('Torverhältnis', `${d.aekG} : ${d.realG}`);
-    row('Ø Tore / Spiel', ((d.aekG + d.realG) / d.total).toFixed(1));
+    // Mit Tausenderpunkt wie auf dem Bildschirm — dort steht '2.079'.
+    row('Torverhältnis', `${g.aekG.toLocaleString('de-DE')} : ${g.realG.toLocaleString('de-DE')}`);
+    // Nicht durch g.total teilen: aus FC15/FC16 sind keine Tore ueberliefert,
+    // ihre Spiele zaehlen aber mit. Dieselbe Rechnung wie auf dem Bildschirm.
+    row('Ø Tore / Spiel', toreJeSpiel(g).toFixed(1).replace('.', ','));
     if (d.biggest.margin >= 0) {
       row('Höchster Sieg', `${d.biggest.score}  ${d.biggest.winner === 'AEK' ? aekName : realName}`,
         d.biggest.winner === 'AEK' ? '#3D9BFF' : '#FF453A');
@@ -473,6 +503,7 @@ function WrappedView({ d, aekName, realName }) {
       pd === 0 ? '#8A93A0' : pd > 0 ? '#3D9BFF' : '#FF453A');
     if (d.streak) row('Aktuelle Serie', `${d.streak.len}× ${d.streak.who === 'AEK' ? aekName : realName}`,
       d.streak.who === 'AEK' ? '#3D9BFF' : '#FF453A');
+
 
     // Footer
     at(new Date().toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }), 90, H - 70, 30, '#5A6472', '600', 'left');
@@ -667,16 +698,9 @@ export default function DuelTab() {
   // Fortschrittsbalken.
   const besondereMomente = achievements.filter((a) => a.unlocked && a.context);
 
-  // Schnitt aus den Saisons, deren Tore ueberliefert sind — nicht aus allen
-  // Spielen: sonst teilte man 6707 Tore durch 902 Spiele, obwohl aus FC15/FC16
-  // keine Tore bekannt sind.
-  const spieleMitToren = gesamt.erfasst + Object.values(LEGACY_SAISONS)
-    .filter((i) => i.bilanz?.AEK?.tore != null)
-    .reduce((s, i) => s + (i.bilanz.spiele || 0), 0);
   // Deutsches Komma: zwei Karten weiter steht "Ø 4,3 pro Spiel" — dieselbe
   // Art Zahl darf nicht einmal mit Punkt und einmal mit Komma dastehen.
-  const toreProSpiel = dez(spieleMitToren
-    ? (gesamt.aekG + gesamt.realG) / spieleMitToren : 0, 1);
+  const toreProSpiel = dez(toreJeSpiel(gesamt), 1);
   const fmtEuro = (n) => `${(n / 1).toLocaleString('de-DE')} €`;
   const fmtDate = (s) => s ? new Date(s).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: '2-digit' }) : '';
 

@@ -18,6 +18,32 @@ let authSession = null;
 // Sample data for fallback mode (enhanced with proper schema including fifa_version)
 const fallbackData = {
   matches: [
+    // Ein Spiel WAEHREND Max Muellers Real-Zeit (19.01.-21.01.).
+    //
+    // Ohne so einen Fall gab es in den Testdaten keinen einzigen Menschen,
+    // der fuer beide Seiten getroffen hat — und damit war die ganze
+    // Zuordnung "welches Tor gehoert welcher Seite" im Demo-Modus nicht zu
+    // sehen. Der 19.01. ist zugleich sein Wechseltag: der zaehlt der NEUEN
+    // Seite, er spielt an dem Abend also fuer Real.
+    {
+      id: 5,
+      date: '2024-01-19',
+      teama: 'AEK',
+      teamb: 'Real',
+      goalsa: 1,
+      goalsb: 2,
+      goalslista: [{ player: 'Leon Wagner', player_id: 3, count: 1 }],
+      goalslistb: [{ player: 'Max Müller', player_id: 1, count: 2 }],
+      yellowa: 0,
+      reda: 0,
+      yellowb: 0,
+      redb: 0,
+      manofthematch: 'Max Müller',
+      manofthematch_player_id: 1,
+      prizeaek: 0,
+      prizereal: 5000,
+      fifa_version: 'FC25'
+    },
     { 
       id: 1, 
       date: '2024-01-15', 
@@ -102,7 +128,7 @@ const fallbackData = {
   players: [
     { id: 1, name: 'Max Müller', team: 'AEK', position: 'ST', goals: 5, value: 15.5, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
     { id: 2, name: 'Tom Schmidt', team: 'AEK', position: 'TH', goals: 0, value: 8.2, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
-    { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 1, value: 12.0, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
+    { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 2, value: 12.0, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
     { id: 4, name: 'Jan Becker', team: 'Real', position: 'ST', goals: 7, value: 18.3, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
     { id: 5, name: 'Paul Klein', team: 'Real', position: 'TH', goals: 0, value: 9.1, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
     { id: 6, name: 'Ben Richter', team: 'Real', position: 'ZM', goals: 2, value: 14.7, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },

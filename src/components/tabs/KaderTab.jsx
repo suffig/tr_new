@@ -1,5 +1,5 @@
 ﻿import Icon from '../icons/Icon';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import ZahlFeld from '../ZahlFeld';
 import { zahl, alsText, dez } from '../../utils/zahlen';
 import { useSupabaseQuery, useSupabaseMutation } from '../../hooks/useSupabase';
@@ -10,6 +10,7 @@ import { POSITIONS } from '../../utils/errorHandling';
 import { getTeamDisplay } from '../../constants/teams';
 import { ADMIN_EMAIL } from '../../constants/navigation';
 import { useAuth } from '../../hooks/useAuth';
+import { toreFuerSeite } from '../../utils/spielerBilanz';
 import toast from 'react-hot-toast';
 
 export default function KaderTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
@@ -29,6 +30,24 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   const [sortierung, setSortierung] = useState('aufstellung');
   
   const { data: players, loading, error, refetch } = useSupabaseQuery('players', '*');
+  // Die Torschuetzenlisten — sie sagen als einzige, FUER WEN ein Tor fiel.
+  // Gleicher Saison-Umfang wie die Spieler, sonst rechnete man die Listen
+  // einer Saison gegen die Torspalte einer anderen.
+  const { data: matches } = useSupabaseQuery('matches', 'id,date,goalslista,goalslistb');
+
+  // Einmal je Spieler ausrechnen, nicht je Vergleich.
+  //
+  // toreFuerSeite() liest fuer jeden Aufruf alle Torschuetzenlisten durch.
+  // Direkt im Sortier-Vergleicher aufgerufen sind das bei 903 Spielen und 25
+  // Spielern gemessene 151 ms — bei jedem Rendern, also auch bei jedem
+  // Tastendruck im Bearbeiten-Feld. Als Map einmal berechnet: rund 36 ms,
+  // und nur wenn sich Spieler oder Spiele aendern.
+  const toreJeSpieler = useMemo(() => {
+    const m = new Map();
+    for (const p of players || []) m.set(p.id, toreFuerSeite(matches, p));
+    return m;
+  }, [players, matches]);
+  const toreVon = (p) => toreJeSpieler.get(p?.id) || { tore: p?.goals || 0, fuerAndere: 0, andere: null };
   const { update } = useSupabaseMutation('players');
   
   const POSITION_ORDER = {
@@ -58,7 +77,9 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
     const vergleich = {
       aufstellung: (a, b) => (POSITION_ORDER[a.position] ?? 99) - (POSITION_ORDER[b.position] ?? 99),
       wert: (a, b) => (Number(b.value) || 0) - (Number(a.value) || 0),
-      tore: (a, b) => (b.goals || 0) - (a.goals || 0),
+      // Nach der ANGEZEIGTEN Zahl sortieren, nicht nach der Rohspalte —
+      // sonst steht ein Wechsler weiter oben, als seine Zahl hergibt.
+      tore: (a, b) => toreVon(b).tore - toreVon(a).tore,
       name: (a, b) => String(a.name).localeCompare(String(b.name), 'de'),
     }[sortierung] || (() => 0);
     // Kopie sortieren: .sort() arbeitet in place und wuerde sonst die Liste
@@ -173,7 +194,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
 
       {(() => {
         const team = teams.find((t) => t.name === aktivesTeam) || teams[0];
-        const tore = team.players.reduce((sum, p) => sum + (p.goals || 0), 0);
+        const tore = team.players.reduce((sum, p) => sum + toreVon(p).tore, 0);
         return (
           <>
             {/* Teamauswahl statt drei Akkordeon-Karten. Die Karten zeigten im
@@ -252,11 +273,31 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
                           <span className={getPositionBadgeClass(player.position)}>
                             {player.position}
                           </span>
-                          {player.goals > 0 && (
-                            <span className="text-caption2 text-system-yellow font-medium num-tabular">
-                              {player.goals} {player.goals === 1 ? 'Tor' : 'Tore'}
-                            </span>
-                          )}
+                          {(() => {
+                            // Nur die Tore fuer DIESE Seite. Stand hier
+                            // player.goals, zeigte ein Wechsler mitten in der
+                            // Saison auch das, was er noch beim anderen
+                            // geschossen hat.
+                            const t = toreVon(player);
+                            if (t.tore === 0 && t.fuerAndere === 0) return null;
+                            return (
+                              <>
+                                {t.tore > 0 && (
+                                  <span className="text-caption2 text-system-yellow font-medium num-tabular">
+                                    {t.tore} {t.tore === 1 ? 'Tor' : 'Tore'}
+                                  </span>
+                                )}
+                                {/* Sonst wirkt die kleinere Zahl wie ein
+                                    Fehler — man erinnert sich ja an die
+                                    Gesamtausbeute. */}
+                                {t.fuerAndere > 0 && (
+                                  <span className="text-caption2 text-text-tertiary num-tabular">
+                                    +{t.fuerAndere} für {getTeamDisplay(t.andere)}
+                                  </span>
+                                )}
+                              </>
+                            );
+                          })()}
                           {player.staerke && (
                             <span className="text-caption2 text-text-tertiary num-tabular">
                               Stärke {player.staerke}

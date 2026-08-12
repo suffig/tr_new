@@ -827,10 +827,14 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         // faelschlich als Niederlage eingefaerbt.
         <span
           key={i}
+          // Die Farbe liegt in der Flaeche, nicht in der Schrift. Gruen auf
+          // Gruenstich und Rot auf Rotstich kamen im Hellmodus auf 3,7:1 und
+          // 2,9:1 — bei 12px zu wenig. Welches Ergebnis es war, sagt die
+          // Flaeche ohnehin schon; der Buchstabe muss nur lesbar sein.
           className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center ${
-            r === 'W' ? 'bg-system-green/20 text-system-green'
+            r === 'W' ? 'bg-system-green/20 text-text-primary'
               : r === 'D' ? 'bg-bg-tertiary text-text-secondary'
-              : 'bg-system-red/20 text-system-red'
+              : 'bg-system-red/20 text-text-primary'
           }`}
         >
           {r === 'W' ? 'S' : r === 'D' ? 'U' : 'N'}
