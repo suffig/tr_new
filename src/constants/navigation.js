@@ -52,6 +52,9 @@ export const LEGACY_TAB_MAP = {
   // Englische Schreibweise aus der globalen Suche — zeigte schon vor dem Umbau
   // auf einen Tab, den es nie gab, und landete deshalb im Default.
   finances: { tab: 'finanzen', view: null },
+  // Ohne diese Zeile landete ein Sprung auf "transfers" im Default-Zweig und
+  // damit auf der zuletzt benutzten Unteransicht — also irgendwo.
+  transfers: { tab: 'spielbetrieb', view: 'transfers' },
 };
 
 /** Loest einen (moeglicherweise alten) Tab-Namen auf. */

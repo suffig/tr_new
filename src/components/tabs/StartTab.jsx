@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import LoadingSpinner from '../LoadingSpinner';
@@ -6,6 +6,8 @@ import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { offeneRechnung } from './finanzen/OffeneRechnung';
 import { ladeLokal, bierStand, schnapsStand, logischesDatum } from '../../utils/abende';
 import { dez } from '../../utils/zahlen';
+import { ladeWechsel } from '../../utils/spielerWechsel';
+import { ADMIN_EMAIL } from '../../constants/navigation';
 
 /**
  * Gerade jetzt.
@@ -57,7 +59,7 @@ function Zeile({ icon, farbe, titel, wert, hinweis, onClick }) {
   );
 }
 
-export default function StartTab({ onNavigate }) {
+export default function StartTab({ onNavigate, user }) {
   const { data: matches, loading: mLoading } = useSupabaseQuery('matches', '*');
   const { data: finances, loading: fLoading } = useSupabaseQuery('finances', '*');
   // Hier stehen die Personen, nicht die Vereine: "Alexander führt mit 1 Sieg"
@@ -78,8 +80,56 @@ export default function StartTab({ onNavigate }) {
     }
     // Neuestes Spiel zuerst — die Liste kommt nicht garantiert sortiert.
     const sortiert = [...liste].sort((x, y) => String(y.date || '').localeCompare(String(x.date || '')));
-    return { aek, real, remis, gesamt: liste.length, letztes: sortiert[0] || null };
+    const tore = liste.reduce((n, m) => n + (m.goalsa || 0) + (m.goalsb || 0), 0);
+    return {
+      aek, real, remis, gesamt: liste.length, letztes: sortiert[0] || null,
+      tore,
+      // Nur aus den Spielen dieser Saison — hier gibt es keine gezaehlten
+      // Altsaisons, deren Tore fehlen koennten.
+      schnitt: liste.length ? tore / liste.length : 0,
+    };
   }, [matches]);
+
+  /**
+   * Wer hat gerade einen Lauf?
+   *
+   * Die Formkurve zeigt die letzten fuenf, aber nicht, ob daraus eine Serie
+   * geworden ist — fuenf Kacheln muss man erst lesen. Ein Remis beendet die
+   * Serie, es ist ja kein Sieg.
+   */
+  const serie = useMemo(() => {
+    const neueste = [...(matches || [])]
+      .filter((m) => m?.date)
+      .sort((x, y) => String(y.date).localeCompare(String(x.date)));
+    let wer = null, laenge = 0;
+    for (const m of neueste) {
+      const a = m.goalsa || 0, b = m.goalsb || 0;
+      if (a === b) break;
+      const sieger = a > b ? 'AEK' : 'Real';
+      if (wer === null) { wer = sieger; laenge = 1; }
+      else if (sieger === wer) laenge += 1;
+      else break;
+    }
+    return laenge >= 2 ? { wer, laenge } : null;
+  }, [matches]);
+
+  /**
+   * Der juengste Wechsel.
+   *
+   * Die Startzeilen (von = null) sind der Stand bei Einfuehrung der Erfassung
+   * und kein Vorgang — sonst meldete die Seite am ersten Tag 41 "Wechsel".
+   */
+  const [letzterWechsel, setLetzterWechsel] = useState(null);
+  useEffect(() => {
+    let abgemeldet = false;
+    ladeWechsel().then(({ wechsel, fehler }) => {
+      if (abgemeldet || fehler) return;
+      const echte = (wechsel || []).filter((w) => w.von != null);
+      echte.sort((a, b) => String(b.datum).localeCompare(String(a.datum)) || (b.id - a.id));
+      setLetzterWechsel(echte[0] || null);
+    });
+    return () => { abgemeldet = true; };
+  }, []);
 
   /**
    * Die letzten Spiele, neueste rechts.
@@ -145,7 +195,8 @@ export default function StartTab({ onNavigate }) {
   const realFin = (finances || []).find((f) => f.team === 'Real') || {};
   const rechnung = offeneRechnung(aekFin.debt, realFin.debt);
 
-  const { aek, real, remis, gesamt, letztes } = bilanz;
+  const { aek, real, remis, gesamt, letztes, tore, schnitt } = bilanz;
+  const istAdmin = user?.email === ADMIN_EMAIL;
   const anteilAek = gesamt > 0 ? (aek / (aek + real || 1)) * 100 : 50;
   const fuehrt = aek > real ? 'AEK' : real > aek ? 'Real' : null;
 
@@ -174,9 +225,7 @@ export default function StartTab({ onNavigate }) {
           </div>
         ) : (
           <>
-            <div className="text-caption2 text-text-tertiary text-center mb-3">
-              {gesamt} {gesamt === 1 ? 'Spiel' : 'Spiele'} in dieser Saison
-            </div>
+            <div className="text-caption2 text-text-tertiary text-center mb-3">Diese Saison</div>
             <div className="flex items-end gap-3">
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1.5 mb-1">
@@ -225,6 +274,22 @@ export default function StartTab({ onNavigate }) {
                 : 'Gleichstand — es steht auf Messers Schneide.'}
             </p>
 
+            {/* Die drei Zahlen, die man sonst in der Statistik nachschlagen
+                muesste. Der Schnitt kommt aus denselben Spielen wie die Tore,
+                hier gibt es keine gezaehlten Altsaisons ohne Torangabe. */}
+            <div className="grid grid-cols-3 gap-2 mt-4">
+              {[
+                ['Spiele', gesamt],
+                ['Tore', tore],
+                ['Ø je Spiel', dez(schnitt, 1)],
+              ].map(([label, wert]) => (
+                <div key={label} className="panel-gray rounded-xl p-2.5 text-center">
+                  <div className="stat-display text-[17px] num-tabular text-text-primary">{wert}</div>
+                  <div className="text-caption2 text-text-tertiary truncate">{label}</div>
+                </div>
+              ))}
+            </div>
+
             {form.length > 1 && (
               <button onClick={() => onNavigate?.('spielbetrieb')}
                       className="w-full mt-4 pt-3 border-t border-border-light text-left">
@@ -252,10 +317,50 @@ export default function StartTab({ onNavigate }) {
                     </span>
                   ))}
                 </div>
+                {/* Erst ab zwei — bei einer "Serie" von einem Spiel waere das
+                    nur das letzte Ergebnis in Worten. */}
+                {serie && (
+                  <div className="mt-2 text-caption2 text-text-secondary">
+                    <span className={serie.wer === 'AEK'
+                      ? 'text-system-blue font-semibold' : 'text-system-red font-semibold'}>
+                      {name(serie.wer)}
+                    </span>
+                    {` hat die letzten ${serie.laenge} gewonnen`}
+                  </div>
+                )}
               </button>
             )}
           </>
         )}
+      </div>
+
+      {/* Schnellaktionen — bewusst nur das EINTRAGEN.
+          Die sechs Bereiche sind über die untere Leiste schon einen Tipp
+          entfernt; ein Knopf, der auch nur dorthin führt, waere ein zweiter
+          Weg zum selben Ort. Was hier fehlte, war der Weg zum Formular:
+          ein Spiel einzutragen hiess Verwaltung aufmachen, Getränke hiessen
+          Abend und dann Alkohol. */}
+      <div className={`grid gap-2 ${istAdmin ? 'grid-cols-2' : 'grid-cols-1'}`}>
+        {istAdmin && (
+          <button onClick={() => onNavigate?.('admin')}
+                  className="modern-card p-3 flex items-center gap-2.5 text-left active:bg-bg-tertiary/50 transition-colors">
+            <span className="w-9 h-9 rounded-xl bg-system-green/12 text-system-green flex items-center justify-center flex-shrink-0">
+              <Icon name="plus" size={18} strokeWidth={2.4} />
+            </span>
+            <span className="text-footnote font-semibold text-text-primary leading-tight">
+              Spiel<br />eintragen
+            </span>
+          </button>
+        )}
+        <button onClick={() => onNavigate?.('alcohol')}
+                className="modern-card p-3 flex items-center gap-2.5 text-left active:bg-bg-tertiary/50 transition-colors">
+          <span className="w-9 h-9 rounded-xl bg-system-yellow/12 text-system-yellow flex items-center justify-center flex-shrink-0">
+            <Icon name="beer" size={18} strokeWidth={2.1} />
+          </span>
+          <span className="text-footnote font-semibold text-text-primary leading-tight">
+            Getränk<br />eintragen
+          </span>
+        </button>
       </div>
 
       {/* Was gerade ansteht. Jede Zeile führt dorthin, wo es weitergeht. */}
@@ -267,6 +372,21 @@ export default function StartTab({ onNavigate }) {
             wert={`${letztesErgebnis}${letzterSieger ? ` · ${name(letzterSieger)}` : ' · Remis'}`}
             hinweis={seit(letztes.date)}
             onClick={() => onNavigate?.('spielbetrieb')}
+          />
+        )}
+
+        {letzterWechsel && (
+          <Zeile
+            icon="swap" farbe="bg-system-purple/12 text-system-purple"
+            titel="Zuletzt gewechselt"
+            wert={letzterWechsel.name}
+            hinweis={`${letzterWechsel.von === 'AEK' || letzterWechsel.von === 'Real'
+              ? name(letzterWechsel.von) : letzterWechsel.von}`
+              + ' → '
+              + `${letzterWechsel.nach === 'AEK' || letzterWechsel.nach === 'Real'
+              ? name(letzterWechsel.nach) : letzterWechsel.nach}`
+              + `${seit(letzterWechsel.datum) ? ` · ${seit(letzterWechsel.datum)}` : ''}`}
+            onClick={() => onNavigate?.('transfers')}
           />
         )}
 

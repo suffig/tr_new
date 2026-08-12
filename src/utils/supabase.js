@@ -16,8 +16,44 @@ let usingFallback = false;
 let authSession = null;
 
 // Sample data for fallback mode (enhanced with proper schema including fifa_version)
+//
+// SAISON: Die laufende Saison hier muss die sein, die die App fuer aktuell
+// haelt (getCurrentFifaVersion() -> FC26). Stand hier FC25, lieferte JEDE
+// Abfrage mit Saisonfilter still eine leere Liste — die Startseite sagte
+// "Noch kein Spiel erfasst" und "0 € : 0 €", obwohl Spiele und Finanzen
+// direkt daneben im selben Objekt standen. Nur die Ansichten mit
+// skipFifaFilter (Duell) zeigten etwas, was den Widerspruch verdeckte.
+//
+// Die FC24-Zeilen bleiben FC24: sie bilden absichtlich den Fall ab, dass
+// derselbe Mensch ueber mehrere Saisons eine eigene Spielerzeile hat.
 const fallbackData = {
   matches: [
+    // Zweiter Sieg in Folge fuer Alexander.
+    //
+    // Ohne dieses Spiel wechselten sich die Ergebnisse in den Testdaten
+    // lueckenlos ab — es gab also nie eine Serie, und die Serienanzeige der
+    // Startseite war nicht ausloesbar. Max Mueller ist seit heute wieder bei
+    // Alexander (Wechsel am selben Tag zaehlt der neuen Seite), trifft hier
+    // also fuer AEK.
+    {
+      id: 6,
+      date: '2026-08-12',
+      teama: 'AEK',
+      teamb: 'Real',
+      goalsa: 2,
+      goalsb: 1,
+      goalslista: [{ player: 'Max Müller', player_id: 1, count: 1 }, { player: 'Leon Wagner', player_id: 3, count: 1 }],
+      goalslistb: [{ player: 'Ben Richter', player_id: 6, count: 1 }],
+      yellowa: 0,
+      reda: 0,
+      yellowb: 1,
+      redb: 0,
+      manofthematch: 'Leon Wagner',
+      manofthematch_player_id: 3,
+      prizeaek: 5000,
+      prizereal: 0,
+      fifa_version: 'FC26'
+    },
     // Ein Spiel WAEHREND Max Muellers Real-Zeit (19.01.-21.01.).
     //
     // Ohne so einen Fall gab es in den Testdaten keinen einzigen Menschen,
@@ -27,7 +63,7 @@ const fallbackData = {
     // Seite, er spielt an dem Abend also fuer Real.
     {
       id: 5,
-      date: '2024-01-19',
+      date: '2026-08-10',
       teama: 'AEK',
       teamb: 'Real',
       goalsa: 1,
@@ -42,11 +78,11 @@ const fallbackData = {
       manofthematch_player_id: 1,
       prizeaek: 0,
       prizereal: 5000,
-      fifa_version: 'FC25'
+      fifa_version: 'FC26'
     },
     { 
       id: 1, 
-      date: '2024-01-15', 
+      date: '2026-08-06', 
       teama: 'AEK', 
       teamb: 'Real', 
       goalsa: 2, 
@@ -61,11 +97,11 @@ const fallbackData = {
       manofthematch_player_id: 1,
       prizeaek: 5000,
       prizereal: 3000,
-      fifa_version: 'FC25'
+      fifa_version: 'FC26'
     },
     { 
       id: 2, 
-      date: '2024-01-10', 
+      date: '2026-08-01', 
       teama: 'AEK', 
       teamb: 'Real', 
       goalsa: 1, 
@@ -80,11 +116,11 @@ const fallbackData = {
       manofthematch_player_id: 4,
       prizeaek: 2000,
       prizereal: 5000,
-      fifa_version: 'FC25'
+      fifa_version: 'FC26'
     },
     { 
       id: 3, 
-      date: '2024-01-05', 
+      date: '2026-07-27', 
       teama: 'AEK', 
       teamb: 'Real', 
       goalsa: 0, 
@@ -99,7 +135,7 @@ const fallbackData = {
       manofthematch_player_id: null,
       prizeaek: 2500,
       prizereal: 2500,
-      fifa_version: 'FC25'
+      fifa_version: 'FC26'
     },
     // Ein Spiel MIT Toren, aber OHNE Torschuetzenliste. Genau dieser Fall
     // steckt laut Statusbericht in fast der Haelfte der echten Spiele — ohne
@@ -107,7 +143,7 @@ const fallbackData = {
     // spielerbezogenen Zahlen dort ins Leere zaehlen.
     {
       id: 4,
-      date: '2024-01-20',
+      date: '2026-08-11',
       teama: 'AEK',
       teamb: 'Real',
       goalsa: 3,
@@ -122,26 +158,29 @@ const fallbackData = {
       manofthematch_player_id: null,
       prizeaek: 6000,
       prizereal: 1000,
-      fifa_version: 'FC25'
+      fifa_version: 'FC26'
     }
   ],
   players: [
-    { id: 1, name: 'Max Müller', team: 'AEK', position: 'ST', goals: 5, value: 15.5, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
-    { id: 2, name: 'Tom Schmidt', team: 'AEK', position: 'TH', goals: 0, value: 8.2, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
-    { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 2, value: 12.0, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
-    { id: 4, name: 'Jan Becker', team: 'Real', position: 'ST', goals: 7, value: 18.3, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
-    { id: 5, name: 'Paul Klein', team: 'Real', position: 'TH', goals: 0, value: 9.1, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
-    { id: 6, name: 'Ben Richter', team: 'Real', position: 'ZM', goals: 2, value: 14.7, created_at: '2024-01-01T10:00:00Z', fifa_version: 'FC25' },
+    { id: 1, name: 'Max Müller', team: 'AEK', position: 'ST', goals: 5, value: 15.5, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
+    { id: 2, name: 'Tom Schmidt', team: 'AEK', position: 'TH', goals: 0, value: 8.2, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
+    { id: 3, name: 'Leon Wagner', team: 'AEK', position: 'IV', goals: 3, value: 12.0, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
+    { id: 4, name: 'Jan Becker', team: 'Real', position: 'ST', goals: 7, value: 18.3, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
+    // Sein Wechsel nach "Ehemalige" steht in spieler_wechsel — dann muss die
+    // Spielerzeile das auch sagen. Stand hier 'Real', war das genau der
+    // Widerspruch, den db/26 als Fehler meldet (Kader sagt X, Verlauf sagt Y).
+    { id: 5, name: 'Paul Klein', team: 'Ehemalige', position: 'TH', goals: 0, value: 9.1, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
+    { id: 6, name: 'Ben Richter', team: 'Real', position: 'ZM', goals: 2, value: 14.7, created_at: '2026-07-23T10:00:00Z', fifa_version: 'FC26' },
     // Ein Ehemaliger und ein Spieler ueber zwei Saisons: seit dem Import der
     // Altsaisons sind das die haeufigsten Faelle in den echten Daten, waren
     // hier aber gar nicht vertreten — Darstellungsfehler bei beiden fielen
     // deshalb im Demo-Modus nicht auf.
-    { id: 7, name: 'Kai Vogel', team: 'Ehemalige', position: 'LF', goals: 9, value: 0, created_at: '2023-01-01T10:00:00Z', fifa_version: 'FC24' },
-    { id: 8, name: 'Max Müller', team: 'Real', position: 'ST', goals: 12, value: 11.0, created_at: '2023-01-01T10:00:00Z', fifa_version: 'FC24' }
+    { id: 7, name: 'Kai Vogel', team: 'Ehemalige', position: 'LF', goals: 9, value: 0, created_at: '2025-07-23T10:00:00Z', fifa_version: 'FC24' },
+    { id: 8, name: 'Max Müller', team: 'Real', position: 'ST', goals: 12, value: 11.0, created_at: '2025-07-23T10:00:00Z', fifa_version: 'FC24' }
   ],
   bans: [
-    { id: 1, player_id: 1, team: 'AEK', type: 'Gelb-Rote Karte', totalgames: 1, matchesserved: 0, reason: 'Gelb-Rot', fifa_version: 'FC25' },
-    { id: 2, player_id: 4, team: 'Real', type: 'Unsportlichkeit', totalgames: 2, matchesserved: 0, reason: 'Unsportlichkeit', fifa_version: 'FC25' }
+    { id: 1, player_id: 1, team: 'AEK', type: 'Gelb-Rote Karte', totalgames: 1, matchesserved: 0, reason: 'Gelb-Rot', fifa_version: 'FC26' },
+    { id: 2, player_id: 4, team: 'Real', type: 'Unsportlichkeit', totalgames: 2, matchesserved: 0, reason: 'Unsportlichkeit', fifa_version: 'FC26' }
   ],
   // Spielerwechsel. Ohne diese Zeilen zeigt der Demo-Modus die Transferliste
   // und die Laufbahn auf der Spielerkarte nur leer — die Funktionen liessen
@@ -152,41 +191,41 @@ const fallbackData = {
   // ist, und dass seine Tore bei der Seite bleiben, fuer die sie fielen.
   spieler_wechsel: [
     { id: 1, person_key: 'maxmuller', name: 'Max Müller', spieler_id: 1,
-      von: null, nach: 'AEK', datum: '2024-01-01', fifa_version: 'FC25',
+      von: null, nach: 'AEK', datum: '2026-07-23', fifa_version: 'FC26',
       transaktion_id: null, notiz: 'Stand bei Einführung der Wechsel-Erfassung' },
     // Die Daten liegen bewusst NACH seinen AEK-Toren (10.01. und 15.01.) und
     // um das Spiel vom 20.01. herum: sonst erzaehlte der Demo-Bestand etwas
     // Widerspruechliches — Tor fuer AEK an einem Tag, an dem er laut Verlauf
     // bei Real stand. So passen Torschuetzenlisten und Verlauf zusammen.
     { id: 2, person_key: 'maxmuller', name: 'Max Müller', spieler_id: 1,
-      von: 'AEK', nach: 'Real', datum: '2024-01-19', fifa_version: 'FC25',
+      von: 'AEK', nach: 'Real', datum: '2026-08-10', fifa_version: 'FC26',
       transaktion_id: 20, notiz: 'Spielerkauf · 4.000 €' },
     { id: 3, person_key: 'maxmuller', name: 'Max Müller', spieler_id: 1,
-      von: 'Real', nach: 'AEK', datum: '2024-01-21', fifa_version: 'FC25',
+      von: 'Real', nach: 'AEK', datum: '2026-08-12', fifa_version: 'FC26',
       transaktion_id: null, notiz: 'Tausch gegen Klein' },
     { id: 4, person_key: 'leonwagner', name: 'Leon Wagner', spieler_id: 3,
-      von: null, nach: 'AEK', datum: '2024-01-01', fifa_version: 'FC25',
+      von: null, nach: 'AEK', datum: '2026-07-23', fifa_version: 'FC26',
       transaktion_id: null, notiz: 'Stand bei Einführung der Wechsel-Erfassung' },
     { id: 5, person_key: 'janbecker', name: 'Jan Becker', spieler_id: 4,
-      von: null, nach: 'Real', datum: '2024-01-01', fifa_version: 'FC25',
+      von: null, nach: 'Real', datum: '2026-07-23', fifa_version: 'FC26',
       transaktion_id: null, notiz: 'Stand bei Einführung der Wechsel-Erfassung' },
     { id: 6, person_key: 'paulklein', name: 'Paul Klein', spieler_id: 5,
-      von: 'Real', nach: 'Ehemalige', datum: '2024-01-21', fifa_version: 'FC25',
+      von: 'Real', nach: 'Ehemalige', datum: '2026-08-12', fifa_version: 'FC26',
       transaktion_id: null, notiz: 'Tausch gegen Müller' },
   ],
   transactions: [
-    { id: 1, amount: 5000, info: 'Siegprämie', team: 'AEK', date: '2024-01-15', type: 'Preisgeld', match_id: 1, fifa_version: 'FC25' },
-    { id: 2, amount: -2000, info: 'Kartenstrafe', team: 'Real', date: '2024-01-10', type: 'Strafe', match_id: 2, fifa_version: 'FC25' },
-    { id: 20, amount: -4000, info: 'Max Müller · AEK → Real', team: 'Real', date: '2024-01-19', type: 'Spielerkauf', match_id: null, fifa_version: 'FC25' },
-    { id: 3, amount: 3000, info: 'Sponsoring', team: 'Real', date: '2024-01-08', type: 'Sonstiges', match_id: null, fifa_version: 'FC25' },
-    { id: 4, amount: 1000, info: 'Spieler des Spiels Bonus', team: 'AEK', date: '2024-01-15', type: 'SdS Bonus', match_id: 1, fifa_version: 'FC25' },
-    { id: 5, amount: -500, info: 'Gelb-Rot Strafe', team: 'AEK', date: '2024-01-10', type: 'Strafe', match_id: 2, fifa_version: 'FC25' },
-    { id: 6, amount: 2500, info: 'Unentschieden Prämie', team: 'AEK', date: '2024-01-05', type: 'Preisgeld', match_id: 3, fifa_version: 'FC25' },
-    { id: 7, amount: 2500, info: 'Unentschieden Prämie', team: 'Real', date: '2024-01-05', type: 'Preisgeld', match_id: 3, fifa_version: 'FC25' }
+    { id: 1, amount: 5000, info: 'Siegprämie', team: 'AEK', date: '2026-08-06', type: 'Preisgeld', match_id: 1, fifa_version: 'FC26' },
+    { id: 2, amount: -2000, info: 'Kartenstrafe', team: 'Real', date: '2026-08-01', type: 'Strafe', match_id: 2, fifa_version: 'FC26' },
+    { id: 20, amount: -4000, info: 'Max Müller · AEK → Real', team: 'Real', date: '2026-08-10', type: 'Spielerkauf', match_id: null, fifa_version: 'FC26' },
+    { id: 3, amount: 3000, info: 'Sponsoring', team: 'Real', date: '2026-07-30', type: 'Sonstiges', match_id: null, fifa_version: 'FC26' },
+    { id: 4, amount: 1000, info: 'Spieler des Spiels Bonus', team: 'AEK', date: '2026-08-06', type: 'SdS Bonus', match_id: 1, fifa_version: 'FC26' },
+    { id: 5, amount: -500, info: 'Gelb-Rot Strafe', team: 'AEK', date: '2026-08-01', type: 'Strafe', match_id: 2, fifa_version: 'FC26' },
+    { id: 6, amount: 2500, info: 'Unentschieden Prämie', team: 'AEK', date: '2026-07-27', type: 'Preisgeld', match_id: 3, fifa_version: 'FC26' },
+    { id: 7, amount: 2500, info: 'Unentschieden Prämie', team: 'Real', date: '2026-07-27', type: 'Preisgeld', match_id: 3, fifa_version: 'FC26' }
   ],
   finances: [
-    { id: 1, team: 'AEK', balance: 25000, debt: 0, fifa_version: 'FC25' },
-    { id: 2, team: 'Real', balance: 18000, debt: 2000, fifa_version: 'FC25' }
+    { id: 1, team: 'AEK', balance: 25000, debt: 0, fifa_version: 'FC26' },
+    { id: 2, team: 'Real', balance: 18000, debt: 2000, fifa_version: 'FC26' }
   ],
   spieler_des_spiels: [
     // Die Tabelle haelt inzwischen ueber tausend Auszeichnungen aus neun
@@ -194,8 +233,8 @@ const fallbackData = {
     // Demo-Modus deshalb gar nicht pruefen.
     // Zusammen hoechstens so viele wie es Spiele gibt (FC25 hat drei) —
     // sonst zeigt die Quote "Spieler des Spiels je Spiel" ueber 100 %.
-    { id: 1, name: 'Jan Becker', team: 'Real', count: 2, fifa_version: 'FC25' },
-    { id: 2, name: 'Max Müller', team: 'AEK', count: 1, fifa_version: 'FC25' },
+    { id: 1, name: 'Jan Becker', team: 'Real', count: 2, fifa_version: 'FC26' },
+    { id: 2, name: 'Max Müller', team: 'AEK', count: 1, fifa_version: 'FC26' },
     { id: 3, name: 'Max Müller', team: 'Real', count: 6, fifa_version: 'FC24' },
     { id: 4, name: 'Kai Vogel', team: 'Ehemalige', count: 2, fifa_version: 'FC24' }
   ],

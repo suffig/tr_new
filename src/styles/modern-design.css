@@ -1011,6 +1011,12 @@ textarea.form-input {
 .bg-system-yellow\/12 { background-color: color-mix(in srgb, var(--system-yellow) 12%, transparent); }
 .bg-system-yellow\/15 { background-color: color-mix(in srgb, var(--system-yellow) 15%, transparent); }
 .bg-system-yellow\/20 { background-color: color-mix(in srgb, var(--system-yellow) 20%, transparent); }
+/* Lila fehlte als einzige Farbe die 12%-Stufe — sie wurde bis zur
+   Wechsel-Zeile auf der Startseite nirgends gebraucht. Tailwind baut fuer
+   Farben aus CSS-Variablen keine /NN-Stufen, deshalb stehen sie hier von
+   Hand; ohne diese Zeile bleibt die Flaeche einfach durchsichtig, ohne dass
+   irgendetwas warnt. */
+.bg-system-purple\/12 { background-color: color-mix(in srgb, var(--system-purple) 12%, transparent); }
 .bg-text-tertiary\/15 { background-color: color-mix(in srgb, var(--text-tertiary) 15%, transparent); }
 .bg-text-tertiary\/40 { background-color: color-mix(in srgb, var(--text-tertiary) 40%, transparent); }
 .bg-text-tertiary\/50 { background-color: color-mix(in srgb, var(--text-tertiary) 50%, transparent); }
