@@ -9,6 +9,7 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import SeasonView from './SeasonView';
 import RecordsView from './RecordsView';
 import SpielerListe from './duell/SpielerListe';
+import HallOfFame from './duell/HallOfFame';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 import { aggregatePlayers } from '../../utils/playerIdentity';
@@ -692,6 +693,7 @@ export default function DuelTab() {
     { id: 'uebersicht', label: 'Übersicht', iconName: 'zap' },
     { id: 'rekorde', label: 'Rekorde', iconName: 'trophy' },
     { id: 'torschuetzen', label: 'Spieler', iconName: 'users' },
+    { id: 'ruhmeshalle', label: 'Titel', iconName: 'trophy' },
     { id: 'rueckblick', label: 'Rückblick', iconName: 'calendar' },
   ];
   // Nur das, was tatsaechlich passiert ist — nicht Erreichbares mit
@@ -712,6 +714,9 @@ export default function DuelTab() {
         <RecordsView matches={matches} players={players} aekName={aekName} realName={realName} />
       ) : view === 'torschuetzen' ? (
         <SpielerListe players={players} loading={!players} />
+      ) : view === 'ruhmeshalle' ? (
+        <HallOfFame players={players} matches={matches} bans={sperrenAlle}
+                    sds={sdsAlle} loading={!players} />
       ) : view === 'rueckblick' ? (
         <WrappedView d={d} aekName={aekName} realName={realName} />
       ) : (
