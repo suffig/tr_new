@@ -693,7 +693,7 @@ export default function DuelTab() {
     { id: 'uebersicht', label: 'Übersicht', iconName: 'zap' },
     { id: 'rekorde', label: 'Rekorde', iconName: 'trophy' },
     { id: 'torschuetzen', label: 'Spieler', iconName: 'users' },
-    { id: 'ruhmeshalle', label: 'Titel', iconName: 'trophy' },
+    { id: 'ruhmeshalle', label: 'Hall of Fame', iconName: 'trophy' },
     { id: 'rueckblick', label: 'Rückblick', iconName: 'calendar' },
   ];
   // Nur das, was tatsaechlich passiert ist — nicht Erreichbares mit

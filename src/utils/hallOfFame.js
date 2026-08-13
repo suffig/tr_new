@@ -45,14 +45,25 @@ function schuetzen(roh) {
  * Gleichstand einer gekürt, der nur zufällig zuerst in der Liste stand.
  */
 function bester(zaehler, mindestens = 1) {
-  let spitze = null;
-  for (const [name, wert] of zaehler) {
-    if (wert < mindestens) continue;
-    if (!spitze || wert > spitze.wert) spitze = { name, wert };
+  // Die VOLLE Rangliste, nicht nur die Spitze: der Titel zeigt den Sieger,
+  // das Antippen die ganze Kategorie. Beides aus derselben Rechnung — sonst
+  // koennten Kachel und Liste auseinanderlaufen.
+  const liste = [...zaehler.entries()]
+    .filter(([, wert]) => wert >= mindestens)
+    .map(([name, wert]) => ({ name, wert }))
+    .sort((a, b) => b.wert - a.wert || String(a.name).localeCompare(String(b.name), 'de'));
+  if (!liste.length) return null;
+
+  const spitze = liste[0];
+  const gleichauf = liste.filter((x) => x.wert === spitze.wert).length;
+
+  // Platzziffern mit Sprung bei Gleichstand: zwei Erste, dann Platz 3.
+  let platz = 0, letzter = null;
+  for (const [i, x] of liste.entries()) {
+    if (x.wert !== letzter) { platz = i + 1; letzter = x.wert; }
+    x.platz = platz;
   }
-  if (!spitze) return null;
-  const gleichauf = [...zaehler.values()].filter((w) => w === spitze.wert).length;
-  return { ...spitze, gleichauf };
+  return { ...spitze, gleichauf, liste };
 }
 
 /**
@@ -95,6 +106,7 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b = bester(z);
     if (b) titel.push({
       id: 'torschuetzenkoenig', titel: 'Torschützenkönig', icon: 'football',
+      rangliste: b.liste, einheit: (n) => `${n} ${n === 1 ? 'Tor' : 'Tore'}`,
       farbe: 'text-system-orange', name: b.name,
       wert: `${b.wert} ${b.wert === 1 ? 'Tor' : 'Tore'}`,
       gleichauf: b.gleichauf,
@@ -111,6 +123,7 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b = bester(z);
     if (b) titel.push({
       id: 'sds', titel: 'Spieler des Spiels', icon: 'star',
+      rangliste: b.liste, einheit: (n) => `${n}×`,
       farbe: 'text-system-blue', name: b.name,
       wert: `${b.wert}×`, gleichauf: b.gleichauf,
     });
@@ -132,6 +145,8 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b = bester(anzahl);
     if (b) titel.push({
       id: 'verletzungen', titel: 'Lazarett', icon: 'ban',
+      rangliste: b.liste.map((x) => ({ ...x, zusatz: `${dauer.get(x.name) || 0} Spiele` })),
+      einheit: (n) => `${n}× verletzt`,
       farbe: 'text-system-orange', name: b.name,
       wert: `${b.wert}× verletzt`,
       zusatz: `${dauer.get(b.name) || 0} ${(dauer.get(b.name) || 0) === 1 ? 'Spiel' : 'Spiele'} verpasst`,
@@ -153,6 +168,7 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b = bester(z);
     if (b) titel.push({
       id: 'grobian', titel: 'Grobian', icon: 'ban',
+      rangliste: b.liste, einheit: (n) => `${n} ${n === 1 ? 'Sperre' : 'Sperren'}`,
       farbe: 'text-system-red', name: b.name,
       wert: `${b.wert} ${b.wert === 1 ? 'Sperre' : 'Sperren'}`,
       zusatz: 'wegen Rot oder Gelb-Rot', gleichauf: b.gleichauf,
@@ -168,6 +184,7 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b = bester(z);
     if (b) titel.push({
       id: 'teuerster', titel: 'Teuerster Spieler', icon: 'euro',
+      rangliste: b.liste, einheit: (n) => `${String(n).replace('.', ',')} Mio €`,
       farbe: 'text-system-teal', name: b.name,
       wert: `${String(b.wert).replace('.', ',')} Mio €`, gleichauf: b.gleichauf,
     });
@@ -192,6 +209,7 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b = bester(z);
     if (b) titel.push({
       id: 'aufsteiger', titel: 'Aufsteiger', icon: 'trendingUp',
+      rangliste: b.liste, einheit: (n) => `+${n} ${n === 1 ? 'Tor' : 'Tore'}`,
       farbe: 'text-system-green', name: b.name,
       wert: `+${b.wert} ${b.wert === 1 ? 'Tor' : 'Tore'}`,
       zusatz: `gegenüber ${vorsaison}`, gleichauf: b.gleichauf,
@@ -219,6 +237,7 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b = bester(z, 2);   // eine einzelne Saison ist keine Serie
     if (b) titel.push({
       id: 'eiserner', titel: 'Eiserner', icon: 'calendar',
+      rangliste: b.liste, einheit: (n) => `${n} Saisons`,
       farbe: 'text-system-purple', name: b.name,
       wert: `${b.wert} Saisons am Stück`, gleichauf: b.gleichauf,
     });
@@ -241,6 +260,7 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b1 = bester(besteEinzel, 2);   // ein einzelnes Tor ist kein Rekord
     if (b1) titel.push({
       id: 'packer', titel: 'Meiste Tore in einem Spiel', icon: 'zap',
+      rangliste: b1.liste, einheit: (n) => `${n} Tore`,
       farbe: 'text-system-yellow', name: b1.name,
       wert: `${b1.wert} Tore`, gleichauf: b1.gleichauf,
     });
@@ -255,6 +275,8 @@ export function titelDerSaison({ version, players, matches, bans, sds, vorsaison
     const b2 = bester(schnitt);
     if (b2) titel.push({
       id: 'schnitt', titel: 'Bester Schnitt', icon: 'trendingUp',
+      rangliste: b2.liste.map((x) => ({ ...x, zusatz: `${trefferspiele.get(x.name)} Spiele` })),
+      einheit: (n) => `${String(n).replace('.', ',')} je Spiel`,
       farbe: 'text-system-green', name: b2.name,
       wert: `${String(b2.wert).replace('.', ',')} Tore je Spiel`,
       zusatz: `aus ${trefferspiele.get(b2.name)} Spielen mit Tor`,

@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import Icon from '../../icons/Icon';
 import SpielerWappen from '../../SpielerWappen';
 import LoadingSpinner from '../../LoadingSpinner';
-import { getTeamDisplay } from '../../../constants/teams';
 import { istLegacySaison } from '../../../utils/legacySaison';
 import { saisonsMitTiteln, titelDerSaison } from '../../../utils/hallOfFame';
 
@@ -25,6 +25,7 @@ import { saisonsMitTiteln, titelDerSaison } from '../../../utils/hallOfFame';
 export default function HallOfFame({ players, matches, bans, sds, loading }) {
   const saisons = useMemo(() => saisonsMitTiteln(players), [players]);
   const [gewaehlt, setGewaehlt] = useState(null);
+  const [offen, setOffen] = useState(null);   // Titel, dessen Rangliste zu sehen ist
   const version = gewaehlt && saisons.includes(gewaehlt) ? gewaehlt : saisons[0];
 
   const vorsaison = useMemo(() => {
@@ -102,7 +103,8 @@ export default function HallOfFame({ players, matches, bans, sds, loading }) {
       ) : (
         <div className="space-y-2">
           {ergebnis.titel.map((t) => (
-            <div key={t.id} className="modern-card p-3.5 flex items-center gap-3">
+            <button key={t.id} type="button" onClick={() => setOffen(t)}
+                    className="w-full modern-card p-3.5 flex items-center gap-3 text-left active:bg-bg-tertiary/50 transition-colors">
               <span className={`w-10 h-10 rounded-xl bg-bg-tertiary flex items-center justify-center flex-shrink-0 ${t.farbe}`}>
                 <Icon name={t.icon} size={19} strokeWidth={2.1} />
               </span>
@@ -123,14 +125,22 @@ export default function HallOfFame({ players, matches, bans, sds, loading }) {
                   </div>
                 )}
               </div>
-              {teamVon.get(t.name) && (
-                <span className="text-caption2 text-text-tertiary flex-shrink-0 max-w-[5.5rem] truncate">
-                  {getTeamDisplay(teamVon.get(t.name), version)}
-                </span>
-              )}
-            </div>
+              {/* Statt des abgeschnittenen Vereinsnamens ein Pfeil: das Wappen
+                  neben dem Namen sagt die Mannschaft schon, und "Dynamo
+                  Dres…" sagt nichts. Der Pfeil sagt dafuer, dass hier mehr
+                  dahintersteckt. */}
+              <span className="text-caption2 text-text-tertiary flex-shrink-0 flex items-center gap-1">
+                {t.rangliste?.length > 1 && `${t.rangliste.length}`}
+                <Icon name="chevronRight" size={15} strokeWidth={2.4} />
+              </span>
+            </button>
           ))}
         </div>
+      )}
+
+      {offen && (
+        <Rangliste titel={offen} version={version} teamVon={teamVon}
+                   onSchliessen={() => setOffen(null)} />
       )}
 
       {istLegacySaison(version) && (
@@ -141,5 +151,80 @@ export default function HallOfFame({ players, matches, bans, sds, loading }) {
         </p>
       )}
     </div>
+  );
+}
+
+/**
+ * Die ganze Kategorie, nicht nur der Sieger.
+ *
+ * Die Liste kommt aus derselben Rechnung wie die Kachel — sonst koennten
+ * beide auseinanderlaufen. Platzziffern springen bei Gleichstand (zwei
+ * Erste, dann Platz 3), weil zwei geteilte Erste keinen Zweiten haben.
+ */
+function Rangliste({ titel, version, teamVon, onSchliessen }) {
+  useEffect(() => {
+    const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
+    document.addEventListener('keydown', esc);
+    const vorher = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', esc); document.body.style.overflow = vorher; };
+  }, [onSchliessen]);
+
+  const liste = titel.rangliste || [];
+  const hoechster = liste[0]?.wert || 1;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+         onClick={onSchliessen} role="dialog" aria-modal="true" aria-label={titel.titel}>
+      <div className="bg-bg-secondary w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[88dvh] overflow-y-auto"
+           onClick={(e) => e.stopPropagation()}>
+        <div className="sticky top-0 bg-bg-secondary px-4 py-3 border-b border-border-light flex items-center gap-2.5 z-10">
+          <span className={`w-9 h-9 rounded-xl bg-bg-tertiary flex items-center justify-center flex-shrink-0 ${titel.farbe}`}>
+            <Icon name={titel.icon} size={18} strokeWidth={2.1} />
+          </span>
+          <div className="min-w-0 flex-1">
+            <h3 className="karten-titel truncate">{titel.titel}</h3>
+            <p className="text-caption2 text-text-tertiary truncate">
+              {version} · {liste.length} {liste.length === 1 ? 'Spieler' : 'Spieler'}
+            </p>
+          </div>
+          <button onClick={onSchliessen}
+                  className="w-8 h-8 rounded-full bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
+                  aria-label="Schließen">
+            <Icon name="x" size={16} strokeWidth={2.4} />
+          </button>
+        </div>
+
+        <div className="p-4 pb-[calc(1rem+env(safe-area-inset-bottom,0px))]">
+          <div className="divide-y divide-border-light">
+            {liste.map((x) => (
+              <div key={x.name} className="py-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className={`w-6 text-center text-footnote font-bold num-tabular flex-shrink-0 ${
+                    x.platz === 1 ? 'text-system-yellow'
+                    : x.platz === 2 ? 'text-text-secondary'
+                    : x.platz === 3 ? 'text-system-orange' : 'text-text-tertiary'}`}>
+                    {x.platz}
+                  </span>
+                  <SpielerWappen team={teamVon.get(x.name)} version={version} size="xs" />
+                  <span className="text-callout text-text-primary truncate min-w-0 flex-1">{x.name}</span>
+                  <span className="text-footnote font-semibold num-tabular text-text-primary flex-shrink-0">
+                    {titel.einheit ? titel.einheit(x.wert) : x.wert}
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1.5">
+                  <div className="h-full bg-system-yellow/70"
+                       style={{ width: `${Math.max(3, (x.wert / hoechster) * 100)}%` }} />
+                </div>
+                {x.zusatz && (
+                  <div className="text-caption2 text-text-tertiary mt-0.5">{x.zusatz}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>,
+    document.body
   );
 }
