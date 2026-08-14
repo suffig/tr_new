@@ -37,6 +37,8 @@ export default function AddTransactionTab() {
   const [loading, setLoading] = useState(false);
   // Fuer die Namensvorschlaege im Spielerfeld.
   const { data: spieler } = useSupabaseQuery('players', 'id,name,team');
+  // Fuer die Vorschau der offenen Rechnung beim Echtgeld-Ausgleich.
+  const { data: finanzen } = useSupabaseQuery('finances', 'team,debt');
 
   const handleInputChange = (field, value) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -171,6 +173,28 @@ export default function AddTransactionTab() {
   };
 
   const isFormValid = formData.team && formData.type && formData.amount && formData.date;
+
+  // Echtgeld bucht auf die SCHULD, nicht auf den Kontostand — das braucht
+  // eigene Worte, siehe unten beim Betragsfeld.
+  const istEchtgeld = formData.type === 'Echtgeld-Ausgleich';
+
+  // Was danach dasteht, bevor man speichert.
+  //
+  // Die Rechnung ist dieselbe wie in updateFinances (debt + amount) — bewusst
+  // nachgebildet und nicht geraten: eine Vorschau, die etwas anderes sagt als
+  // die Buchung, waere schlimmer als keine.
+  const vorschau = (() => {
+    if (!istEchtgeld || !formData.team) return null;
+    const betrag = zahl(formData.amount);
+    if (!Number.isFinite(betrag) || betrag === 0) return null;
+    const zeile = (finanzen || []).find((f) => f.team === formData.team);
+    if (!zeile) return null;
+    const neu = (zeile.debt || 0) + betrag;
+    const name = getTeamDisplay(formData.team) || formData.team;
+    return neu <= 0
+      ? `${name} schuldet danach nichts mehr.`
+      : `${name} schuldet danach ${neu.toLocaleString('de-DE')} €.`;
+  })();
 
   return (
     <div className="p-4 pb-20">
@@ -352,12 +376,36 @@ export default function AddTransactionTab() {
                           : 'bg-system-green/12 text-system-green'
                       }`}
                     >
-                      {zahl(formData.amount) < 0 ? '− Ausgabe' : '+ Einnahme'}
+                      {istEchtgeld
+                        ? (zahl(formData.amount) < 0 ? '− Beglichen' : '+ Neue Schuld')
+                        : (zahl(formData.amount) < 0 ? '− Ausgabe' : '+ Einnahme')}
                     </button>
                   </div>
-                  <p className="text-xs text-text-muted mt-1">
-                    Negative Werte für Ausgaben, positive für Einnahmen
-                  </p>
+                  {/* Beim Echtgeld-Ausgleich geht es NICHT um Einnahme und
+                      Ausgabe, sondern um Schuld hoch oder runter — die Buchung
+                      landet in finances.debt, nicht im Kontostand.
+                      Mit den alten Beschriftungen waehlte man "+ Einnahme",
+                      weil man ja Geld bekommt, und erhoehte damit die eigene
+                      Schuld. Das Wort "Ausgleich" im Typnamen legte zusaetzlich
+                      nahe, dass ein positiver Betrag etwas begleicht. */}
+                  {istEchtgeld ? (
+                    <div className="mt-1.5 panel-gray rounded-lg p-2.5">
+                      <p className="text-xs text-text-secondary">
+                        Positiv = <span className="font-semibold">neue Schuld</span>,
+                        negativ = <span className="font-semibold">beglichen</span>.
+                        Diese Buchung ändert die offene Rechnung, nicht den Kontostand.
+                      </p>
+                      {vorschau && (
+                        <p className="text-xs text-text-primary mt-1 num-tabular">
+                          {vorschau}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-text-muted mt-1">
+                      Negative Werte für Ausgaben, positive für Einnahmen
+                    </p>
+                  )}
                 </div>
 
                 {/* Description */}
