@@ -462,15 +462,15 @@ export default function TeamTrackerTab() {
   const [openTier, setOpenTier] = useState(5);
   const [filtersOpen, setFiltersOpen] = useState(false);
 
-  // Beim Wechsel zwischen den Personen die Suche leeren und das Feld
-  // aktivieren — so kann direkt das naechste Team getippt werden.
-  useEffect(() => {
-    setSearch('');
-    if (person === 'stats') return;
-    // Nach dem Rendern fokussieren, sonst greift der Fokus ins Leere.
-    const t = setTimeout(() => searchRef.current?.focus(), 0);
-    return () => clearTimeout(t);
-  }, [person]);
+  // Beim Wechsel zwischen den Personen nur die Suche leeren — NICHT
+  // fokussieren.
+  //
+  // Vorher sprang der Fokus ins Suchfeld, und am Handy fuhr damit sofort die
+  // Tastatur hoch: sie verdeckt die halbe Liste, bevor man ueberhaupt etwas
+  // sucht. Das war sinnvoll, als der Team-Bereich zum Eintragen gedacht war —
+  // inzwischen laeuft fast alles ueber das Duell, und hier wird eher
+  // nachgeschaut als getippt. Wer suchen will, tippt ins Feld.
+  useEffect(() => { setSearch(''); }, [person]);
 
 
   const isStats = person === 'stats';
@@ -795,7 +795,7 @@ export default function TeamTrackerTab() {
             <div className="relative flex-1">
               <span className="absolute left-3 top-1/2 -translate-y-1/2 text-text-tertiary pointer-events-none"><Icon name="search" size={18} strokeWidth={2} /></span>
               <input ref={searchRef} type="text" value={search} onChange={(e) => setSearch(e.target.value)}
-                placeholder="Team suchen…" autoFocus autoComplete="off"
+                placeholder="Team suchen…" autoComplete="off"
                 className="w-full pl-11 pr-9 py-3 bg-bg-secondary border border-border-light rounded-xl text-sm text-text-primary placeholder-text-tertiary focus:outline-none" />
               {search && (
                 <button type="button" onClick={() => { setSearch(''); searchRef.current?.focus(); }}

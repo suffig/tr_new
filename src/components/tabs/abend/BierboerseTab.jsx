@@ -887,6 +887,10 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
 function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
   const [suche, setSuche] = useState('');
   const [art, setArt] = useState('alle');
+  const [brauerei, setBrauerei] = useState('alle');
+  // 'note' ist die bisherige Reihenfolge (Bestenliste). 'brauerei' gruppiert
+  // stattdessen — sinnvoll, wenn man wissen will, was man von wem schon hatte.
+  const [sortierung, setSortierung] = useState('note');
 
   const funde = useMemo(() => bierFundstuecke(verkostungen, katalog), [verkostungen, katalog]);
   const sorten = useMemo(() => sortenVerteilung(verkostungen, katalog), [verkostungen, katalog]);
@@ -894,11 +898,39 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
   const liste = useMemo(() => {
     const alle = katalogBestenListe(verkostungen, katalog);
     const s = suche.trim().toLowerCase();
-    return alle.filter((e) =>
+    // Den Rang aus der Bestenliste festhalten, BEVOR umsortiert wird.
+    //
+    // Die Zahl links war der Listenplatz (i + 1). Nach Note stimmt das
+    // zufaellig mit dem Rang ueberein — nach Brauerei sortiert waere sie eine
+    // fortlaufende Nummer ohne Bedeutung, und der gelb hervorgehobene "Erste"
+    // waere nur die alphabetisch erste Brauerei.
+    const mitRang = alle.map((e, i) => ({ ...e, rang: i + 1 }));
+    const gefiltert = mitRang.filter((e) =>
       (art === 'alle' || e.bier.art === art) &&
+      (brauerei === 'alle' || (e.bier.brauerei || '') === brauerei) &&
       (!s || e.bier.name.toLowerCase().includes(s) ||
         String(e.bier.brauerei || '').toLowerCase().includes(s)));
-  }, [katalog, verkostungen, suche, art]);
+
+    // Nach Brauerei sortieren heisst: Brauerei zuerst, innerhalb davon der
+    // Name. Sonst stuenden die Biere einer Brauerei zwar beieinander, aber in
+    // zufaelliger Reihenfolge. Biere OHNE Brauerei ans Ende, nicht an den
+    // Anfang — sonst begruesst die Liste einen mit dem Unbekannten.
+    if (sortierung === 'brauerei') {
+      return [...gefiltert].sort((x, y) => {
+        const bx = x.bier.brauerei || '';
+        const by = y.bier.brauerei || '';
+        if (!bx !== !by) return bx ? -1 : 1;
+        return String(bx).localeCompare(String(by), 'de')
+          || String(x.bier.name).localeCompare(String(y.bier.name), 'de');
+      });
+    }
+    return gefiltert;
+  }, [katalog, verkostungen, suche, art, brauerei, sortierung]);
+
+  const brauereien = useMemo(
+    () => [...new Set(katalog.map((b) => b.brauerei).filter(Boolean))]
+      .sort((a, b) => String(a).localeCompare(String(b), 'de')),
+    [katalog]);
 
   const arten = useMemo(
     () => [...new Set(katalog.map((b) => b.art).filter(Boolean))].sort(),
@@ -913,12 +945,31 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
         <input type="search" value={suche} onChange={(e) => setSuche(e.target.value)}
                placeholder="Bier oder Brauerei suchen…" className="form-input w-full pl-9" />
       </div>
-      {arten.length > 0 && (
-        <select value={art} onChange={(e) => setArt(e.target.value)} className="form-input w-full text-sm">
-          <option value="alle">Alle Sorten</option>
-          {arten.map((a) => <option key={a} value={a}>{a}</option>)}
-        </select>
-      )}
+      <div className="grid grid-cols-2 gap-2">
+        {arten.length > 0 && (
+          <select value={art} onChange={(e) => setArt(e.target.value)} className="form-input w-full text-sm">
+            <option value="alle">Alle Sorten</option>
+            {arten.map((a) => <option key={a} value={a}>{a}</option>)}
+          </select>
+        )}
+        {brauereien.length > 0 && (
+          <select value={brauerei} onChange={(e) => setBrauerei(e.target.value)} className="form-input w-full text-sm">
+            <option value="alle">Alle Brauereien</option>
+            {brauereien.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+        )}
+      </div>
+
+      <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl">
+        {[['note', 'Nach Note'], ['brauerei', 'Nach Brauerei']].map(([id, label]) => (
+          <button key={id} type="button" onClick={() => setSortierung(id)}
+                  aria-pressed={sortierung === id}
+                  className={`flex-1 py-1.5 rounded-lg text-footnote font-semibold transition-colors ${
+                    sortierung === id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+            {label}
+          </button>
+        ))}
+      </div>
 
       <div className="flex items-baseline justify-between px-1">
         <span className="text-caption1 text-text-secondary">{liste.length} Biere</span>
@@ -929,7 +980,7 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
         <div className="modern-card p-8 text-center text-text-muted">Noch nichts im Katalog.</div>
       ) : (
         <div className="modern-card divide-y divide-border-light">
-          {liste.map((e, i) => (
+          {liste.map((e) => (
             /* Gestapelt statt alles in einer Zeile: Krüge, Note und Rang
                fressen auf 375px so viel Breite, dass für den Text keine 100px
                blieben — da wurde schon der Biername abgeschnitten. Jetzt
@@ -938,7 +989,7 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
             <button key={e.bier_id} type="button" onClick={() => onBier(e.bier)}
                     className="w-full flex items-start gap-2.5 px-3 py-2.5 text-left">
               <span className={`w-5 text-center text-sm font-bold flex-shrink-0 mt-0.5 ${
-                i === 0 ? 'text-system-yellow' : 'text-text-tertiary'}`}>{i + 1}</span>
+                e.rang === 1 ? 'text-system-yellow' : 'text-text-tertiary'}`}>{e.rang}</span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline gap-2">
                   <span className="text-sm text-text-primary truncate">{e.bier.name}</span>
@@ -1729,6 +1780,16 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   const vorhandenes = verkostung ? katalog.find((b) => b.id === verkostung.bier_id) : null;
   const [name, setName] = useState(vorhandenes?.name || '');
   const [brauerei, setBrauerei] = useState(vorhandenes?.brauerei || '');
+  // Was schon im Katalog steht, plus die mitgelieferten Sorten. Alphabetisch,
+  // damit man beim Tippen weiss, wo man landet.
+  const bekannteBrauereien = useMemo(
+    () => [...new Set((katalog || []).map((b) => b.brauerei).filter(Boolean))]
+      .sort((a, b) => String(a).localeCompare(String(b), 'de')),
+    [katalog]);
+  const bekannteArten = useMemo(
+    () => [...new Set([...BIERARTEN, ...(katalog || []).map((b) => b.art).filter(Boolean)])]
+      .sort((a, b) => String(a).localeCompare(String(b), 'de')),
+    [katalog]);
   const [art, setArt] = useState(vorhandenes?.art || '');
   const [alkohol, setAlkohol] = useState(alsText(vorhandenes?.alkohol));
   const [preis, setPreis] = useState(alsText(verkostung?.preis));
@@ -1866,17 +1927,26 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
           </div>
         )}
         <div className="grid grid-cols-2 gap-2">
-          <label className="block">
-            <span className="text-footnote text-text-secondary">Brauerei</span>
-            <input value={brauerei} onChange={(e) => setBrauerei(e.target.value)} className="form-input w-full mt-1" />
-          </label>
-          <label className="block">
-            <span className="text-footnote text-text-secondary">Sorte</span>
-            <select value={art} onChange={(e) => setArt(e.target.value)} className="form-input w-full mt-1">
-              <option value="">—</option>
-              {BIERARTEN.map((a) => <option key={a} value={a}>{a}</option>)}
-            </select>
-          </label>
+          {/* Brauerei und Sorte als AUSWAHL, die sich selbst erweitert.
+              Die Liste kommt aus dem Katalog: was einmal eingetragen wurde,
+              steht beim naechsten Mal zur Auswahl. Deshalb braucht es keine
+              zweite Tabelle und keine Pflege — und keine drei Schreibweisen
+              derselben Brauerei, weil man sie ab dem zweiten Mal auswaehlt
+              statt sie erneut zu tippen. */}
+          <AuswahlMitNeu
+            label="Brauerei"
+            wert={brauerei}
+            onChange={setBrauerei}
+            vorhandene={bekannteBrauereien}
+            platzhalter="z. B. Augustiner"
+          />
+          <AuswahlMitNeu
+            label="Sorte"
+            wert={art}
+            onChange={setArt}
+            vorhandene={bekannteArten}
+            platzhalter="z. B. Kellerbier"
+          />
           <label className="block">
             <span className="text-footnote text-text-secondary">Alkohol %</span>
             <ZahlFeld wert={alkohol} onChange={setAlkohol}
@@ -2305,5 +2375,45 @@ function Modal({ titel, onSchliessen, children }) {
       </div>
     </div>,
     document.body
+  );
+}
+
+/**
+ * Auswahl aus dem Bekannten — oder etwas Neues eintippen.
+ *
+ * Eine reine Liste liesse nichts Neues zu, ein reines Textfeld erzeugt drei
+ * Schreibweisen derselben Brauerei. Deshalb beides: die Liste zeigt, was es
+ * schon gibt, „+ Neu" macht daraus ein Textfeld.
+ *
+ * Ein Wert, der (noch) nicht in der Liste steht — etwa beim Bearbeiten eines
+ * alten Eintrags —, oeffnet das Feld von selbst. Sonst waere er beim
+ * Speichern still verschwunden, weil die Auswahl ihn nicht kennt.
+ */
+function AuswahlMitNeu({ label, wert, onChange, vorhandene, platzhalter }) {
+  const kenntWert = !wert || vorhandene.includes(wert);
+  const [frei, setFrei] = useState(!kenntWert);
+
+  return (
+    <label className="block">
+      <span className="text-footnote text-text-secondary flex items-center gap-1.5">
+        {label}
+        <button type="button"
+                onClick={() => { setFrei((f) => !f); if (!frei) onChange(''); }}
+                className="text-caption2 text-system-blue">
+          {frei ? 'Liste' : '+ Neu'}
+        </button>
+      </span>
+      {frei ? (
+        <input value={wert} onChange={(e) => onChange(e.target.value)}
+               placeholder={platzhalter} autoComplete="off"
+               className="form-input w-full mt-1" />
+      ) : (
+        <select value={wert} onChange={(e) => onChange(e.target.value)}
+                className="form-input w-full mt-1">
+          <option value="">—</option>
+          {vorhandene.map((x) => <option key={x} value={x}>{x}</option>)}
+        </select>
+      )}
+    </label>
   );
 }
