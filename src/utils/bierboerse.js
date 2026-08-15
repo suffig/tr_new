@@ -22,6 +22,18 @@ export const BIERARTEN = [
   'IPA', 'Pale Ale', 'Stout', 'Porter', 'Sauerbier', 'Radler', 'Alkoholfrei', 'Sonstiges',
 ];
 
+/**
+ * Gaengige Herkunftslaender als Vorauswahl.
+ *
+ * Nur ein Startpunkt: alles, was ihr selbst eintragt, steht danach ohnehin in
+ * der Liste, weil sie aus dem Katalog ergaenzt wird.
+ */
+export const HERKUNFT = [
+  'Deutschland', 'Belgien', 'Tschechien', 'Österreich', 'Niederlande',
+  'Irland', 'England', 'Schottland', 'Dänemark', 'Polen', 'Italien',
+  'Spanien', 'USA', 'Mexiko', 'Japan',
+];
+
 /** Bierbörsen, neueste zuerst. */
 export async function ladeBoersen() {
   const { data, error } = await supabaseDb.select('bierboersen', '*', {
@@ -1253,5 +1265,63 @@ export function notenDrift(verkostungen, boersen, mindestensAbende = 2) {
     richtung: Math.abs(unterschied) < 0.25 ? 'gleich' : (unterschied > 0 ? 'milder' : 'strenger'),
     abende: nachBoerse.size,
     boersen: (boersen || []).length,
+  };
+}
+
+/* ===========================================================================
+   Brauereien
+   =========================================================================== */
+
+/**
+ * Was ihr von welcher Brauerei getrunken und wie ihr es bewertet habt.
+ *
+ * Die Angaben lagen längst im Katalog — ausgewertet wurde bisher nur die
+ * Sorte. Dabei ist „von wem" beim Einkauf die nützlichere Frage: eine Sorte
+ * sagt, was ihr mögt, eine Brauerei sagt, wo ihr es bekommt.
+ *
+ * `mindestens` filtert Zufallstreffer: bei EINEM Bier ist der Schnitt der
+ * Brauerei die Note dieses einen Bieres und keine Aussage über die Brauerei.
+ * Die Liste enthält sie trotzdem — nur die Bestenliste nicht.
+ */
+export function brauereiStatistik(verkostungen, katalog, mindestens = 2) {
+  const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+  const nach = new Map();
+
+  for (const v of verkostungen || []) {
+    const bier = bierVon.get(v.bier_id);
+    const name = bier?.brauerei;
+    if (!name) continue;
+    if (!nach.has(name)) {
+      nach.set(name, { brauerei: name, biere: new Set(), glaeser: 0, ausgaben: 0, noten: [] });
+    }
+    const e = nach.get(name);
+    e.biere.add(v.bier_id);
+    const glaeser = (v.anzahl_aek || 0) + (v.anzahl_real || 0);
+    e.glaeser += glaeser;
+    // Preis ist der Preis EINES Glases — mal der Anzahl, sonst zählt eine
+    // Runde für sechs so viel wie ein einzelnes Glas.
+    e.ausgaben += (Number(v.preis) || 0) * glaeser;
+    const n = schnittNote(v);
+    if (n != null) e.noten.push(n);
+  }
+
+  const liste = [...nach.values()].map((e) => ({
+    brauerei: e.brauerei,
+    biere: e.biere.size,
+    glaeser: e.glaeser,
+    ausgaben: e.ausgaben,
+    schnitt: e.noten.length ? mittel(e.noten) : null,
+    bewertet: e.noten.length,
+  }));
+
+  return {
+    // Nach Gläsern: „wovon habt ihr am meisten getrunken".
+    liste: [...liste].sort((a, b) => b.glaeser - a.glaeser
+      || String(a.brauerei).localeCompare(String(b.brauerei), 'de')),
+    // Nach Note, aber erst ab genug Bewertungen.
+    beste: [...liste]
+      .filter((x) => x.schnitt != null && x.bewertet >= mindestens)
+      .sort((a, b) => b.schnitt - a.schnitt),
+    mindestens,
   };
 }

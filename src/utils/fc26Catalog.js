@@ -52,9 +52,23 @@ export function getCatalog() {
 }
 
 // Best-effort DB upsert for a single catalog team (by unique name)
+/**
+ * Ein Team in die Datenbank schreiben.
+ *
+ * Gibt zurueck, OB es geklappt hat. Vorher stand hier ein stummes
+ * `catch { /* offline / demo *\/ }` — die Aenderung landete dann nur im
+ * localStorage, waehrend die App "gespeichert" meldete. Beim naechsten Geraet
+ * oder nach dem Leeren des Browsers waere sie weg gewesen, ohne dass irgendwo
+ * ein Hinweis darauf stand.
+ *
+ * Der Fehler wird NICHT geworfen: die lokale Aenderung ist bereits gemacht und
+ * soll auch bestehen bleiben, wenn ihr gerade offline seid. Nur sagen muss man
+ * es.
+ */
 async function dbUpsertTeam(team) {
   try {
     const res = await supabaseDb.select('fc26_team_catalog', '*', { eq: { name: team.name }, skipFifaFilter: true });
+    if (res?.error) throw res.error;
     const existing = (res?.data || [])[0];
     const payload = {
       name: team.name,
@@ -62,17 +76,28 @@ async function dbUpsertTeam(team) {
       is_women: !!team.women,
       is_national: !!team.national,
     };
-    if (existing) await supabaseDb.update('fc26_team_catalog', payload, existing.id);
-    else await supabaseDb.insert('fc26_team_catalog', payload);
-  } catch { /* offline / demo */ }
+    const { error } = existing
+      ? await supabaseDb.update('fc26_team_catalog', payload, existing.id)
+      : await supabaseDb.insert('fc26_team_catalog', payload);
+    if (error) throw error;
+    return { ok: true, fehler: null };
+  } catch (fehler) {
+    return { ok: false, fehler };
+  }
 }
 
+/**
+ * Sterne setzen. Lokal sofort, in der Datenbank asynchron.
+ *
+ * Gibt das Ergebnis der Datenbankbuchung zurueck, damit der Aufrufer nicht
+ * "gespeichert" meldet, wenn nur der localStorage beschrieben wurde.
+ */
 export function setRating(name, rating) {
   const o = loadOverrides();
   o.edits[name] = rating;
   saveOverrides(o);
   const t = getCatalog().find((x) => x.name === name);
-  if (t) dbUpsertTeam(t);
+  return t ? dbUpsertTeam(t) : Promise.resolve({ ok: false, fehler: new Error('Team nicht im Katalog') });
 }
 
 export function addTeam({ name, rating = null, women = false, national = false }) {

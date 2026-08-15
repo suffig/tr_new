@@ -1008,6 +1008,7 @@ textarea.form-input {
 .bg-system-blue\/70 { background-color: color-mix(in srgb, var(--system-blue) 70%, transparent); }
 .bg-system-red\/70 { background-color: color-mix(in srgb, var(--system-red) 70%, transparent); }
 .bg-system-yellow\/70 { background-color: color-mix(in srgb, var(--system-yellow) 70%, transparent); }
+.bg-system-teal\/70 { background-color: color-mix(in srgb, var(--system-teal) 70%, transparent); }
 .bg-system-purple\/10 { background-color: color-mix(in srgb, var(--system-purple) 10%, transparent); }
 .bg-system-purple\/15 { background-color: color-mix(in srgb, var(--system-purple) 15%, transparent); }
 .bg-system-red\/10 { background-color: color-mix(in srgb, var(--system-red) 10%, transparent); }

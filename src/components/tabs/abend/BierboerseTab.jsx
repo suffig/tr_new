@@ -9,8 +9,8 @@ import ZahlFeld from '../../ZahlFeld';
 import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
 import {
-  PERSONEN, BIERARTEN, ladeBoersen, ladeKatalog, ladeVerkostungen,
-  wiederkauf, notenDrift,
+  PERSONEN, BIERARTEN, HERKUNFT, ladeBoersen, ladeKatalog, ladeVerkostungen,
+  wiederkauf, notenDrift, brauereiStatistik,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
   KATEGORIE_KATALOG, STANDARD_KATEGORIEN, kategorie,
@@ -1084,6 +1084,7 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
   const anti = useMemo(() => antiRekorde(verkostungen, boersen, katalog), [verkostungen, boersen, katalog]);
   const wieder = useMemo(() => wiederkauf(verkostungen, katalog), [verkostungen, katalog]);
   const drift = useMemo(() => notenDrift(verkostungen, boersen), [verkostungen, boersen]);
+  const brauereien = useMemo(() => brauereiStatistik(verkostungen, katalog), [verkostungen, katalog]);
   // Vorbelegt mit den beiden juengsten Abenden — die will man am ehesten
   // vergleichen, und so steht die Karte sofort mit Inhalt da.
   const [vergleichA, setVergleichA] = useState(null);
@@ -1572,6 +1573,66 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
         </div>
       )}
 
+      {/* Brauereien — die Angabe lag laengst im Katalog, ausgewertet wurde nur
+          die Sorte. Beim Einkauf ist "von wem" aber die nuetzlichere Frage:
+          eine Sorte sagt, was ihr moegt, eine Brauerei sagt, wo ihr es
+          bekommt. */}
+      {brauereien.liste.length > 0 && (
+        <div className="modern-card p-4">
+          <div className="flex items-baseline justify-between gap-2 mb-2.5">
+            <span className="text-footnote font-semibold text-text-muted">Brauereien</span>
+            <span className="text-caption2 text-text-tertiary">
+              {brauereien.liste.length} {brauereien.liste.length === 1 ? 'Brauerei' : 'Brauereien'}
+            </span>
+          </div>
+
+          <div className="space-y-1.5">
+            {brauereien.liste.slice(0, 6).map((x) => {
+              const meiste = brauereien.liste[0].glaeser || 1;
+              return (
+                <div key={x.brauerei}>
+                  <div className="flex items-baseline gap-2 text-caption1">
+                    <span className="text-text-primary truncate flex-1 min-w-0">{x.brauerei}</span>
+                    <span className="num-tabular text-text-secondary flex-shrink-0">
+                      {x.glaeser} {x.glaeser === 1 ? 'Glas' : 'Gläser'}
+                    </span>
+                    {x.schnitt != null && (
+                      <span className="num-tabular font-semibold text-text-primary w-8 text-right flex-shrink-0">
+                        {kommaEins(x.schnitt)}
+                      </span>
+                    )}
+                  </div>
+                  <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1">
+                    <div className="h-full bg-system-teal/70"
+                         style={{ width: `${Math.max(4, (x.glaeser / meiste) * 100)}%` }} />
+                  </div>
+                  <div className="text-caption2 text-text-tertiary mt-0.5">
+                    {x.biere} {x.biere === 1 ? 'Bier' : 'Biere'} · {euro(x.ausgaben)}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Die beste Brauerei — erst ab genug Bewertungen. Bei EINEM Bier
+              waere der "Schnitt der Brauerei" die Note dieses einen Bieres. */}
+          {brauereien.beste.length > 0 && (
+            <div className="mt-3 pt-3 border-t border-border-light">
+              <div className="text-caption2 text-text-tertiary mb-1">
+                Bester Schnitt (ab {brauereien.mindestens} Bewertungen)
+              </div>
+              <div className="text-callout text-text-primary">
+                <span className="font-semibold">{brauereien.beste[0].brauerei}</span>
+                {' '}mit {kommaEins(brauereien.beste[0].schnitt)}
+                <span className="text-text-tertiary">
+                  {' '}aus {brauereien.beste[0].bewertet} Bewertungen
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Nochmal kaufen — die Frage, die im Laden zaehlt.
           Die Quote rechnet nur mit beantworteten Faellen: ein uebersprungenes
           Feld ist kein "nein" und darf niemandem die Quote druecken. */}
@@ -1780,8 +1841,15 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   const vorhandenes = verkostung ? katalog.find((b) => b.id === verkostung.bier_id) : null;
   const [name, setName] = useState(vorhandenes?.name || '');
   const [brauerei, setBrauerei] = useState(vorhandenes?.brauerei || '');
+  // Das Land stand in der Tabelle und wurde in der Bierkarte sogar angezeigt —
+  // nur gefragt hat nie jemand danach. Die Spalte war damit tot.
+  const [land, setLand] = useState(vorhandenes?.land || '');
   // Was schon im Katalog steht, plus die mitgelieferten Sorten. Alphabetisch,
   // damit man beim Tippen weiss, wo man landet.
+  const bekannteLaender = useMemo(
+    () => [...new Set([...HERKUNFT, ...(katalog || []).map((b) => b.land).filter(Boolean)])]
+      .sort((a, b) => String(a).localeCompare(String(b), 'de')),
+    [katalog]);
   const bekannteBrauereien = useMemo(
     () => [...new Set((katalog || []).map((b) => b.brauerei).filter(Boolean))]
       .sort((a, b) => String(a).localeCompare(String(b), 'de')),
@@ -1828,7 +1896,7 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   }, [name, katalog, vorhandenes]);
 
   const uebernehmen = (b) => {
-    setName(b.name); setBrauerei(b.brauerei || ''); setArt(b.art || '');
+    setName(b.name); setBrauerei(b.brauerei || ''); setArt(b.art || ''); setLand(b.land || '');
     setAlkohol(alsText(b.alkohol));
     // Preis und Größe von der letzten Verkostung desselben Biers. Meist ist es
     // dieselbe Kneipe und dieselbe Flasche — und wenn nicht, steht die Zahl
@@ -1860,7 +1928,7 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
     if (p != null && (p < 0 || p > 1000)) { toast.error('Preis zwischen 0 und 1000 € angeben.'); return; }
     setSpeichert(true);
     try {
-      const bier = await findeOderLegeBierAn({ name, brauerei, art, alkohol: a });
+      const bier = await findeOderLegeBierAn({ name, brauerei, art, alkohol: a, land });
       const daten = {
         boerse_id: boerse.id,
         bier_id: bier.id,
@@ -1946,6 +2014,13 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
             onChange={setArt}
             vorhandene={bekannteArten}
             platzhalter="z. B. Kellerbier"
+          />
+          <AuswahlMitNeu
+            label="Land"
+            wert={land}
+            onChange={setLand}
+            vorhandene={bekannteLaender}
+            platzhalter="z. B. Belgien"
           />
           <label className="block">
             <span className="text-footnote text-text-secondary">Alkohol %</span>

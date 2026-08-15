@@ -480,10 +480,17 @@ export default function TeamTrackerTab() {
 
   // Aus dem State, damit eine Sterne-Korrektur im Duell sofort ueberall greift.
   const [catalog, setCatalog] = useState(getCatalog);
-  const teamRatingAendern = (name, rating) => {
-    setRating(name, rating);          // localStorage + Datenbank
+  const teamRatingAendern = async (name, rating) => {
+    // Lokal ist es sofort gesetzt — die Anzeige darf nicht auf die Datenbank
+    // warten. Die Meldung dagegen schon: "gespeichert" zu sagen, waehrend nur
+    // der localStorage beschrieben wurde, waere eine Falschaussage, die man
+    // erst auf dem naechsten Geraet bemerkt.
+    const ergebnis = setRating(name, rating);
     setCatalog(getCatalog());
-    toast.success(`${name}: ${fmtRating(rating)}★ gespeichert`);
+    const { ok } = await ergebnis;
+    if (ok) toast.success(`${name}: ${fmtRating(rating)}★ gespeichert`);
+    else toast.error(`${name}: ${fmtRating(rating)}★ nur auf diesem Gerät — `
+      + 'die Datenbank hat die Änderung nicht angenommen.', { duration: 6000 });
   };
   const teamByName = useMemo(() => {
     const m = new Map();
