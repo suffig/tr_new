@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build && node scripts/pruefe-farbstufen.mjs",
+    "build": "vite build && node scripts/pruefe-farbstufen.mjs && node scripts/pruefe-kontrast.mjs",
     "build:schnell": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 10",
     "preview": "vite preview",

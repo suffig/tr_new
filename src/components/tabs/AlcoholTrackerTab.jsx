@@ -29,7 +29,7 @@ const TRINKER = [
   { key: 'philip', team: 'real', farbe: 'text-system-red', knopf: 'bg-system-red/15 text-system-red' },
 ];
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
-import { dataManager } from '../../../dataManager.js';
+import { ladeManager } from '../../utils/manager';
 import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 
 export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
@@ -57,7 +57,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // Load manager data from database
   const loadManagersFromDatabase = useCallback(async () => {
     try {
-      const result = await dataManager.getManagers();
+      const result = await ladeManager();
       
       if (result && result.data && Array.isArray(result.data) && result.data.length >= 2) {
         // Convert database format to component format

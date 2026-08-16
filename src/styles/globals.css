@@ -20,9 +20,14 @@
 
   --text-primary: #0E1613;
   --text-secondary: #38453F;
-  --text-tertiary: rgba(56, 69, 63, 0.62);
+  /* 0.75 statt 0.62: gegen --bg-primary ergibt das 4,63:1 und damit lesbaren
+     Text auch bei Sonne auf dem Handy. Mit 0.62 waren es 3,34:1 — zu wenig
+     für die kleinen Beschriftungen, in denen dieser Token fast überall
+     steckt. Die Abstufung bleibt: --text-secondary liegt bei 9,23:1.
+     Nachrechnen: scripts/pruefe-kontrast.mjs */
+  --text-tertiary: rgba(56, 69, 63, 0.75);
   --text-quaternary: rgba(56, 69, 63, 0.32);
-  --text-muted: rgba(56, 69, 63, 0.62);
+  --text-muted: rgba(56, 69, 63, 0.75);
 
   /* Brand */
   --brand: #FF6B4A;
@@ -127,7 +132,9 @@
 
   --text-primary: #F2F6F4;
   --text-secondary: rgba(225, 238, 232, 0.62);
-  --text-tertiary: rgba(225, 238, 232, 0.34);
+  /* Der Dunkelmodus war der schlechtere Fall: 0.34 ergab 2,77:1 und damit
+     nicht einmal die Schwelle für große Schrift. 0.50 ergibt 4,64:1. */
+  --text-tertiary: rgba(225, 238, 232, 0.50);
   --text-quaternary: rgba(225, 238, 232, 0.18);
   --text-muted: rgba(225, 238, 232, 0.62);
 

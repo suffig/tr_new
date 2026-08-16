@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import ZahlFeld from '../../ZahlFeld';
 import { zahl } from '../../../utils/zahlen';
-import { dataManager } from '../../../../dataManager.js';
+import { ladeManager, legeManagerAn, aendereManager } from '../../../utils/manager';
 import ThemeSettings from '../../ThemeSettings';
 import ColorCustomization from '../../ColorCustomization';
 import NotificationSettings from '../../NotificationSettings';
@@ -25,7 +25,7 @@ export default function TeamSettingsTab() {
     try {
       setLoading(true);
       console.log('🔄 [AdminTab] Loading managers from database...');
-      const result = await dataManager.getManagers();
+      const result = await ladeManager();
       console.log('📊 [AdminTab] Manager data result:', result);
       
       if (result && result.data && Array.isArray(result.data) && result.data.length >= 2) {
@@ -63,12 +63,12 @@ export default function TeamSettingsTab() {
       
       // Create AEK manager (id=1)
       const aekData = { name: 'Alexander', gewicht: 110, age: 30 };
-      const aekResult = await dataManager.insertManager(aekData);
+      const aekResult = await legeManagerAn(aekData);
       console.log('✅ [AdminTab] AEK manager created:', aekResult);
       
       // Create Real manager (id=2)  
       const realData = { name: 'Philip', gewicht: 105, age: 30 };
-      const realResult = await dataManager.insertManager(realData);
+      const realResult = await legeManagerAn(realData);
       console.log('✅ [AdminTab] Real manager created:', realResult);
       
       // Set defaults in state
@@ -118,11 +118,11 @@ export default function TeamSettingsTab() {
       console.log('💾 [TeamSettings] Real Data:', realData);
       
       // Update AEK manager (id=1)
-      const aekResult = await dataManager.updateManager(1, aekData);
+      const aekResult = await aendereManager(1, aekData);
       console.log('💾 [TeamSettings] AEK Update Result:', aekResult);
       
       // Update Real manager (id=2)
-      const realResult = await dataManager.updateManager(2, realData);
+      const realResult = await aendereManager(2, realData);
       console.log('💾 [TeamSettings] Real Update Result:', realResult);
       
       setHasChanges(false);
