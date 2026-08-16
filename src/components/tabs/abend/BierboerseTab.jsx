@@ -18,7 +18,7 @@ import {
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
   KATEGORIE_KATALOG, STANDARD_KATEGORIEN, kategorie,
-  alleKategorien, alleKategorienMitStillgelegten, kategorieGruppen,
+  waehlbareKategorien, alleKategorienMitStillgelegten, kategorieGruppen,
   legeKategorieAn, setzeKategorieAktiv, schluesselAus, schluesselFrei,
   ladeEinstellungen, sichereEinstellungen, noteAusKategorien, notenVon,
   geschmacksDuell, gesamtBilanz, kategorienProfil, sortenVorliebe, preisLeistung,
@@ -228,7 +228,9 @@ function EinstellungenFormular({ einstellungen, bierKatalog, verkostungen, onDat
   const [neuHilfe, setNeuHilfe] = useState('');
   const [legtAn, setLegtAn] = useState(false);
 
-  const katalog = useMemo(() => alleKategorien(), [stand]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Abgeloeste Kategorien nur zeigen, wenn sie schon gewaehlt sind — sonst
+  // verlieren sie beim naechsten Speichern lautlos ihre Noten.
+  const katalog = useMemo(() => waehlbareKategorien(gewaehlt), [stand, gewaehlt]); // eslint-disable-line react-hooks/exhaustive-deps
   const gruppen = useMemo(() => kategorieGruppen(), [stand]); // eslint-disable-line react-hooks/exhaustive-deps
   const stillgelegte = useMemo(
     () => alleKategorienMitStillgelegten().filter((k) => k.eigen && !k.aktiv),
@@ -456,6 +458,23 @@ export default function BierboerseTab() {
   const [laden, setLaden] = useState(true);
   const [fehler, setFehler] = useState(null);
   const [offen, setOffen] = useState(null);        // id der geöffneten Börse
+
+  /**
+   * Der laufende Abend steht oben.
+   *
+   * Sonst nach Datum, neueste zuerst. Ein Abend, der HEUTE stattfindet, wird
+   * aber vorgezogen — an dem Tag ist er der einzige, den man anfassen will,
+   * und er soll nicht erst gesucht werden. Das Datum entscheidet, nicht die
+   * id: Abende werden nicht zwingend in der Reihenfolge eingetragen, in der
+   * sie stattfinden.
+   */
+  const sortierteBoersen = useMemo(() => {
+    const heute = new Date().toISOString().slice(0, 10);
+    const istHeute = (x) => String(x.datum || '').slice(0, 10) === heute;
+    return [...(boersen || [])].sort((a, b) =>
+      (istHeute(b) - istHeute(a))
+      || String(b.datum || '').localeCompare(String(a.datum || '')));
+  }, [boersen]);
   const [formular, setFormular] = useState(null);  // 'boerse' | 'bier' | {bearbeiten}
   const [ansicht, setAnsicht] = useState('boersen'); // boersen | katalog | bilanz
   const [bierOffen, setBierOffen] = useState(null);   // Bier-Detailansicht
@@ -469,6 +488,15 @@ export default function BierboerseTab() {
         ladeBoersen(), ladeKatalog(), ladeVerkostungen(), ladeEinstellungen(),
       ]);
       setBoersen(b); setKatalog(k); setVerkostungen(v); setEinstellungen(e);
+      // DEN LAUFENDEN ABEND GLEICH AUFKLAPPEN.
+      // Waehrend eines Abends traegt man mehrfach ein — dann soll die Boerse
+      // von heute nicht zugeklappt zwischen den alten stehen. Nur beim ERSTEN
+      // Laden setzen: wer danach selbst zuklappt, soll das behalten duerfen.
+      setOffen((bisher) => {
+        if (bisher != null) return bisher;
+        const heute = new Date().toISOString().slice(0, 10);
+        return (b || []).find((x) => String(x.datum || '').slice(0, 10) === heute)?.id ?? null;
+      });
     } catch (e) {
       setFehler(e?.message || 'Die Bierbörsen konnten nicht geladen werden.');
     } finally {
@@ -543,7 +571,7 @@ export default function BierboerseTab() {
                 Lege eine an, dann könnt ihr Biere eintragen und bewerten.
               </p>
             </div>
-          ) : boersen.map((b) => (
+          ) : sortierteBoersen.map((b) => (
             <BoersenKarte
               key={b.id}
               boerse={b}

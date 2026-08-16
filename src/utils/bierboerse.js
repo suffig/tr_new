@@ -442,7 +442,17 @@ export const KATEGORIE_KATALOG = [
   { id: 'temperatur', label: 'Temperatur', hilfe: 'Richtig kalt ausgeschenkt?', gruppe: 'Drumherum' },
   { id: 'zapfung', label: 'Zapfung', hilfe: 'Sauber gezapft oder hingerotzt', gruppe: 'Drumherum' },
   { id: 'etikett', label: 'Etikett', hilfe: 'Flasche, Aufmachung, Name', gruppe: 'Drumherum' },
-  { id: 'wiederholung', label: 'Nochmal?', hilfe: 'Würdest du es wieder bestellen?', gruppe: 'Drumherum' },
+  // ABGELÖST von der Ja/Nein-Frage „Nochmal kaufen?" unten im Formular.
+  // Beide fragen dasselbe, nur einmal als Note von 0 bis 10 und einmal als
+  // Ja/Nein — und zwei Antworten auf dieselbe Frage können sich widersprechen.
+  // Die Ja/Nein-Variante gewinnt: sie ist schneller, und die Auswertung
+  // („50 % würden wieder") braucht eine klare Antwort, keine 6,5.
+  //
+  // Die Kategorie wird NICHT gelöscht: wer sie schon benutzt hat, hat Noten
+  // darunter stehen, und die sollen weiter zu sehen sein. Sie taucht nur
+  // nicht mehr in der Auswahl auf — siehe waehlbareKategorien().
+  { id: 'wiederholung', label: 'Nochmal?', hilfe: 'Würdest du es wieder bestellen?',
+    gruppe: 'Drumherum', abgeloest: 'die Ja/Nein-Frage „Nochmal kaufen?"' },
 ];
 
 export const STANDARD_KATEGORIEN = KATEGORIE_KATALOG.filter((k) => k.standard).map((k) => k.id);
@@ -496,6 +506,18 @@ export function alleKategorien() {
 /** Auch die ausgeblendeten — für die Verwaltung und für alte Noten. */
 export function alleKategorienMitStillgelegten() {
   return [...KATEGORIE_KATALOG, ...eigeneKategorien];
+}
+
+/**
+ * Was in der Auswahl stehen darf.
+ *
+ * Abgelöste Kategorien fallen raus — ausser sie sind bereits gewählt. Wer
+ * „Nochmal?" seit Monaten benutzt, soll sie nicht beim nächsten Öffnen der
+ * Einstellungen verlieren; ihm wird nur nicht mehr angeboten, sie neu
+ * dazuzunehmen. Ausgetragen wird sie erst, wenn er das selbst tut.
+ */
+export function waehlbareKategorien(gewaehlt = []) {
+  return alleKategorien().filter((k) => !k.abgeloest || gewaehlt.includes(k.id));
 }
 
 /**
