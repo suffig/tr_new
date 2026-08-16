@@ -914,6 +914,15 @@ textarea.form-input {
 .border-system-indigo\/35 { border-color: color-mix(in srgb, var(--system-indigo) 35%, transparent); }
 .border-system-indigo\/45 { border-color: color-mix(in srgb, var(--system-indigo) 45%, transparent); }
 
+/* Nachgereichte Stufen. Ohne sie sind die Flächen NICHT falsch gefärbt,
+   sondern durchsichtig — der Fortschrittsbalken im Saisonwechsel und der
+   Balken in der Bierbörse waren schlicht unsichtbar.
+   `node scripts/pruefe-farbstufen.mjs` findet solche Lücken nach dem Build. */
+.bg-system-green\/40 { background-color: color-mix(in srgb, var(--system-green) 40%, transparent); }
+.bg-system-yellow\/40 { background-color: color-mix(in srgb, var(--system-yellow) 40%, transparent); }
+.ring-system-yellow\/40 { --tw-ring-color: color-mix(in srgb, var(--system-yellow) 40%, transparent); }
+.hover\:bg-system-yellow\/25:hover { background-color: color-mix(in srgb, var(--system-yellow) 25%, transparent); }
+
 .dark .bg-system-blue\/10 { background-color: color-mix(in srgb, var(--system-blue) 18%, transparent); }
 .dark .bg-system-blue\/15 { background-color: color-mix(in srgb, var(--system-blue) 24%, transparent); }
 .dark .bg-system-blue\/25 { background-color: color-mix(in srgb, var(--system-blue) 34%, transparent); }

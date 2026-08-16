@@ -5,7 +5,8 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "vite build && node scripts/pruefe-farbstufen.mjs",
+    "build:schnell": "vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 10",
     "preview": "vite preview",
     "wappen": "node scripts/wappen-holen.mjs"
