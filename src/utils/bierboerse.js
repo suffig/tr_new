@@ -69,24 +69,55 @@ export async function ladeVerkostungen(boerseId = null) {
  * genauso verglichen, damit "Augustiner Helles" nicht zweimal entsteht, nur
  * weil jemand es anders gross geschrieben hat.
  */
-export async function findeOderLegeBierAn({ name, brauerei = null, art = null, alkohol = null, land = null }) {
+export async function findeOderLegeBierAn({ name, brauerei = null, art = null, alkohol = null, land = null, bierId = null }) {
   const sauber = String(name || '').trim();
   if (!sauber) throw new Error('Das Bier braucht einen Namen.');
 
   const katalog = await ladeKatalog();
-  const treffer = katalog.find(
-    (b) => b.name.trim().toLowerCase() === sauber.toLowerCase() &&
-           String(b.brauerei || '').trim().toLowerCase() === String(brauerei || '').trim().toLowerCase()
-  );
-  if (treffer) return treffer;
-
-  const { data, error } = await supabaseDb.insert('bier_katalog', {
+  const felder = {
     name: sauber,
     brauerei: brauerei?.trim() || null,
     art: art || null,
     alkohol: alkohol == null || alkohol === '' ? null : Number(alkohol),
     land: land?.trim() || null,
-  });
+  };
+
+  // Wird eine BESTEHENDE Verkostung bearbeitet, ist das Bier bekannt — dann
+  // wird genau diese Zeile geaendert.
+  //
+  // Vorher lief auch der Bearbeiten-Fall ueber die Suche unten, und die hat
+  // zwei Dinge still falsch gemacht:
+  //   - Sorte, Land oder Alkohol geaendert: der Treffer wurde gefunden und
+  //     UNVERAENDERT zurueckgegeben. Die Aenderung fiel weg, ohne Meldung.
+  //   - Brauerei geaendert: der Treffer griff nicht mehr (sie ist Teil des
+  //     Suchschluessels), und es entstand ein ZWEITES Bier gleichen Namens.
+  if (bierId != null) {
+    const { error } = await supabaseDb.update('bier_katalog', felder, bierId);
+    if (error) throw error;
+    return { id: bierId, ...felder };
+  }
+
+  const treffer = katalog.find(
+    (b) => b.name.trim().toLowerCase() === sauber.toLowerCase() &&
+           String(b.brauerei || '').trim().toLowerCase() === String(brauerei || '').trim().toLowerCase()
+  );
+  if (treffer) {
+    // Leere Felder auffuellen, ohne vorhandene zu ueberschreiben: wer ein Bier
+    // zum zweiten Mal eintraegt und diesmal das Land angibt, soll es behalten
+    // duerfen — aber eine bestehende Angabe nicht versehentlich ersetzen.
+    const ergaenzung = {};
+    for (const feld of ['brauerei', 'art', 'land', 'alkohol']) {
+      if (!treffer[feld] && felder[feld] != null) ergaenzung[feld] = felder[feld];
+    }
+    if (Object.keys(ergaenzung).length) {
+      const { error } = await supabaseDb.update('bier_katalog', ergaenzung, treffer.id);
+      if (error) throw error;
+      return { ...treffer, ...ergaenzung };
+    }
+    return treffer;
+  }
+
+  const { data, error } = await supabaseDb.insert('bier_katalog', felder);
   if (error) throw error;
   return data;
 }
@@ -545,6 +576,7 @@ export async function ladeEinstellungen() {
   // dabei still raus. Ohne diese Zeile wuerde eine selbst angelegte Kategorie
   // gespeichert und beim naechsten Laden kommentarlos verschwinden.
   await ladeKategorien();
+  await ladeEigeneListen();
   try {
     const { data, error } = await supabaseDb.select('bierboerse_einstellungen', '*', { skipFifaFilter: true });
     if (error) throw error;
@@ -1460,6 +1492,70 @@ export function preisJe100ml(verkostungen, katalog) {
 /* ===========================================================================
    Listen pflegen
    =========================================================================== */
+
+/* ---------------------------------------------------------------------------
+   Eigene Listeneinträge (db/29)
+
+   Brauereien, Sorten und Länder existieren nur, solange ein Bier sie trägt.
+   Wer einen Wert auf Vorrat anlegen will, braucht deshalb einen Ort dafür —
+   das ist die jsonb-Spalte `eigene_listen` auf der Einstellungszeile.
+   --------------------------------------------------------------------------- */
+
+let eigeneListen = { brauerei: [], art: [], land: [] };
+
+/** Die eigenen Listen aus der Datenbank holen und merken. */
+export async function ladeEigeneListen() {
+  try {
+    const { data, error } = await supabaseDb.select('bierboerse_einstellungen', '*', { skipFifaFilter: true });
+    if (error) throw error;
+    let roh = (data || [])[0]?.eigene_listen;
+    if (typeof roh === 'string') { try { roh = JSON.parse(roh); } catch { roh = null; } }
+    eigeneListen = {
+      brauerei: Array.isArray(roh?.brauerei) ? roh.brauerei : [],
+      art: Array.isArray(roh?.art) ? roh.art : [],
+      land: Array.isArray(roh?.land) ? roh.land : [],
+    };
+  } catch {
+    // Migration noch nicht eingespielt: die Auswahl kommt dann eben nur aus
+    // dem Katalog, alles andere bleibt bedienbar.
+    eigeneListen = { brauerei: [], art: [], land: [] };
+  }
+  return eigeneListen;
+}
+
+/** Die gemerkten eigenen Werte eines Feldes. */
+export const eigeneWerte = (feld) => eigeneListen[feld] || [];
+
+/** Einen Wert auf Vorrat anlegen. */
+export async function legeListenwertAn(feld, wert) {
+  const sauber = String(wert || '').trim();
+  if (!sauber) throw new Error('Der Eintrag darf nicht leer sein.');
+  const vorhanden = (eigeneListen[feld] || []).some(
+    (x) => String(x).toLowerCase() === sauber.toLowerCase());
+  if (vorhanden) throw new Error(`„${sauber}" steht schon in der Liste.`);
+
+  const neu = { ...eigeneListen, [feld]: [...(eigeneListen[feld] || []), sauber] };
+  const { error } = await supabaseDb.update('bierboerse_einstellungen', { eigene_listen: neu }, 1);
+  if (error) throw error;
+  eigeneListen = neu;
+}
+
+/**
+ * Einen eigenen Wert wieder entfernen.
+ *
+ * Das betrifft NUR den Vorrat. Biere, die den Wert tragen, behalten ihn —
+ * dafür gibt es entferneFeldWert(), und das ist ein anderer Vorgang mit
+ * anderen Folgen.
+ */
+export async function entferneListenwert(feld, wert) {
+  const neu = {
+    ...eigeneListen,
+    [feld]: (eigeneListen[feld] || []).filter((x) => x !== wert),
+  };
+  const { error } = await supabaseDb.update('bierboerse_einstellungen', { eigene_listen: neu }, 1);
+  if (error) throw error;
+  eigeneListen = neu;
+}
 
 /** Die Felder, die sich als Liste pflegen lassen — Text in jeder Bierzeile. */
 export const PFLEGE_FELDER = [

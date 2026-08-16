@@ -10,7 +10,7 @@ import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
 import ListenPflege from './ListenPflege';
 import {
-  PERSONEN, BIERARTEN, HERKUNFT, ladeBoersen, ladeKatalog, ladeVerkostungen,
+  PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, ladeBoersen, ladeKatalog, ladeVerkostungen,
   wiederkauf, notenDrift, brauereiStatistik,
   herkunftVerteilung, alkoholVerlauf, preisJe100ml,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
@@ -1954,15 +1954,15 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   // Was schon im Katalog steht, plus die mitgelieferten Sorten. Alphabetisch,
   // damit man beim Tippen weiss, wo man landet.
   const bekannteLaender = useMemo(
-    () => [...new Set([...HERKUNFT, ...(katalog || []).map((b) => b.land).filter(Boolean)])]
+    () => [...new Set([...HERKUNFT, ...eigeneWerte('land'), ...(katalog || []).map((b) => b.land).filter(Boolean)])]
       .sort((a, b) => String(a).localeCompare(String(b), 'de')),
     [katalog]);
   const bekannteBrauereien = useMemo(
-    () => [...new Set((katalog || []).map((b) => b.brauerei).filter(Boolean))]
+    () => [...new Set([...eigeneWerte('brauerei'), ...(katalog || []).map((b) => b.brauerei).filter(Boolean)])]
       .sort((a, b) => String(a).localeCompare(String(b), 'de')),
     [katalog]);
   const bekannteArten = useMemo(
-    () => [...new Set([...BIERARTEN, ...(katalog || []).map((b) => b.art).filter(Boolean)])]
+    () => [...new Set([...BIERARTEN, ...eigeneWerte('art'), ...(katalog || []).map((b) => b.art).filter(Boolean)])]
       .sort((a, b) => String(a).localeCompare(String(b), 'de')),
     [katalog]);
   const [art, setArt] = useState(vorhandenes?.art || '');
@@ -2069,7 +2069,11 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
     if (p != null && (p < 0 || p > 1000)) { toast.error('Preis zwischen 0 und 1000 € angeben.'); return; }
     setSpeichert(true);
     try {
-      const bier = await findeOderLegeBierAn({ name, brauerei, art, alkohol: a, land });
+      // bierId beim Bearbeiten mitgeben: sonst wird die Aenderung an Sorte,
+      // Land oder Alkohol still verworfen, und eine geaenderte Brauerei legt
+      // ein zweites Bier gleichen Namens an.
+      const bier = await findeOderLegeBierAn({
+        name, brauerei, art, alkohol: a, land, bierId: verkostung?.bier_id ?? null });
       const daten = {
         boerse_id: boerse.id,
         bier_id: bier.id,

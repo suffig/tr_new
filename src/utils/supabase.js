@@ -321,7 +321,9 @@ const fallbackData = {
   ],
   // Eine Zeile, genau wie in der DB (id = 1 ist per Pruefregel erzwungen).
   bierboerse_einstellungen: [
-    { id: 1, modus: 'einfach', kategorien: ['geschmack', 'aussehen', 'preisleistung', 'katerfaktor'] }
+    { id: 1, modus: 'einfach', kategorien: ['geschmack', 'aussehen', 'preisleistung', 'katerfaktor'],
+      // db/29: Werte auf Vorrat, an denen noch kein Bier haengt.
+      eigene_listen: { brauerei: ['Weihenstephan'], art: [], land: [] } }
   ]
 };
 let fallbackSession = null;

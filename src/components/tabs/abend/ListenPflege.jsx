@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import Icon from '../../icons/Icon';
 import {
   PFLEGE_FELDER, feldWerte, benenneFeldUm, entferneFeldWert,
-  aendereBier, loescheBier,
+  aendereBier, loescheBier, eigeneWerte, legeListenwertAn, entferneListenwert,
 } from '../../../utils/bierboerse';
 
 /**
@@ -16,17 +16,37 @@ import {
  * heißt: das Feld bei allen leeren. Beides steht mit der Anzahl dabei, damit
  * niemand aus Versehen zwölf Biere anfasst.
  *
- * HINZUFÜGEN GIBT ES HIER BEWUSST NICHT
- * Eine Brauerei ohne Bier existiert nirgends und wäre beim nächsten Laden
- * wieder weg. Neue Werte entstehen beim Eintragen über „+ Neu" — dort, wo sie
- * auch gebraucht werden.
+ * HINZUFÜGEN BRAUCHT EINEN EIGENEN ORT
+ * Eine Brauerei ohne Bier existiert nirgends — sie wäre beim nächsten Laden
+ * wieder weg. Angelegte Werte liegen deshalb in `bierboerse_einstellungen.
+ * eigene_listen` (db/29) und werden über die Werte aus dem Katalog gelegt.
+ * Sobald ein Bier den Wert trägt, kommt er ohnehin von dort; der Vorrat ist
+ * nur die Brücke bis dahin.
+ *
+ * Bei einem Vorratswert gibt es kein „Umbenennen": es hängt kein Bier daran,
+ * der Vorgang hätte keine Wirkung. Und sein „Entfernen" ist harmlos — im
+ * Gegensatz zum Entfernen eines benutzten Werts, das Daten leert.
  */
 export default function ListenPflege({ katalog, verkostungen, onGeaendert }) {
   const [offen, setOffen] = useState(false);
   const [feld, setFeld] = useState('brauerei');
   const [arbeitet, setArbeitet] = useState(false);
 
-  const werte = useMemo(() => feldWerte(katalog, feld), [katalog, feld]);
+  // Zaehler, damit ein neu angelegter Vorratswert sofort erscheint — er liegt
+  // im Modul-Zwischenspeicher, am Zustand aendert sich sonst nichts.
+  const [stand, setStand] = useState(0);
+
+  const werte = useMemo(() => {
+    const ausKatalog = feldWerte(katalog, feld);
+    if (feld === 'bier') return ausKatalog;
+    // Vorratswerte, an denen noch kein Bier haengt, gehoeren mit in die Liste
+    // — sonst legt man sie an und sie sind sofort wieder unsichtbar.
+    const schonDa = new Set(ausKatalog.map((x) => x.wert));
+    const nurVorrat = eigeneWerte(feld)
+      .filter((w) => !schonDa.has(w))
+      .map((w) => ({ wert: w, anzahl: 0, biere: [], nurVorrat: true }));
+    return [...ausKatalog, ...nurVorrat];
+  }, [katalog, feld, stand]); // eslint-disable-line react-hooks/exhaustive-deps
   const aktuell = PFLEGE_FELDER.find((f) => f.id === feld) || PFLEGE_FELDER[0];
 
   const umbenennen = async (alt, anzahl) => {
@@ -58,6 +78,30 @@ export default function ListenPflege({ katalog, verkostungen, onGeaendert }) {
       const { geleert } = await entferneFeldWert(feld, wert, katalog);
       toast.success(`Bei ${geleert} ${geleert === 1 ? 'Bier' : 'Bieren'} entfernt.`);
       onGeaendert?.();
+    } catch (err) {
+      toast.error(err?.message || 'Ging nicht.');
+    } finally { setArbeitet(false); }
+  };
+
+  const anlegen = async () => {
+    const wert = window.prompt(`Neue ${aktuell.einzahl} anlegen:`);
+    if (wert == null || !wert.trim()) return;
+    setArbeitet(true);
+    try {
+      await legeListenwertAn(feld, wert);
+      setStand((n) => n + 1);
+      toast.success(`„${wert.trim()}" angelegt.`);
+    } catch (err) {
+      toast.error(err?.message || 'Ging nicht.');
+    } finally { setArbeitet(false); }
+  };
+
+  const vorratEntfernen = async (wert) => {
+    setArbeitet(true);
+    try {
+      await entferneListenwert(feld, wert);
+      setStand((n) => n + 1);
+      toast.success('Aus der Liste genommen.');
     } catch (err) {
       toast.error(err?.message || 'Ging nicht.');
     } finally { setArbeitet(false); }
@@ -166,14 +210,21 @@ export default function ListenPflege({ katalog, verkostungen, onGeaendert }) {
               <div className="min-w-0 flex-1">
                 <div className="text-caption1 text-text-primary truncate">{w.wert}</div>
                 <div className="text-caption2 text-text-tertiary">
-                  {w.anzahl} {w.anzahl === 1 ? 'Bier' : 'Biere'}
+                  {w.nurVorrat ? 'noch kein Bier' : `${w.anzahl} ${w.anzahl === 1 ? 'Bier' : 'Biere'}`}
                 </div>
               </div>
-              <button type="button" onClick={() => umbenennen(w.wert, w.anzahl)} disabled={arbeitet}
-                      className="chip chip-sm chip-gray flex-shrink-0">
-                Umbenennen
-              </button>
-              <button type="button" onClick={() => entfernen(w.wert, w.anzahl)} disabled={arbeitet}
+              {/* An einem Vorratswert haengt kein Bier — umbenennen waere ein
+                  Vorgang ohne Wirkung, und Entfernen ist hier harmlos statt
+                  Datenverlust. Deshalb nur der eine Knopf. */}
+              {!w.nurVorrat && (
+                <button type="button" onClick={() => umbenennen(w.wert, w.anzahl)} disabled={arbeitet}
+                        className="chip chip-sm chip-gray flex-shrink-0">
+                  Umbenennen
+                </button>
+              )}
+              <button type="button"
+                      onClick={() => (w.nurVorrat ? vorratEntfernen(w.wert) : entfernen(w.wert, w.anzahl))}
+                      disabled={arbeitet}
                       aria-label={`${w.wert} entfernen`}
                       className="text-text-tertiary hover:text-system-red flex-shrink-0 px-1">
                 <Icon name="x" size={14} strokeWidth={2.4} />
@@ -183,11 +234,19 @@ export default function ListenPflege({ katalog, verkostungen, onGeaendert }) {
         </div>
       )}
 
+      {feld !== 'bier' && (
+        <button type="button" onClick={anlegen} disabled={arbeitet}
+                className="w-full py-1.5 rounded-lg bg-bg-tertiary text-text-secondary text-caption1 font-semibold">
+          + {aktuell.einzahl} anlegen
+        </button>
+      )}
+
       <p className="text-caption2 text-text-tertiary">
         {feld === 'bier'
           ? 'Getrunkene Biere lassen sich nicht löschen — sie hängen an den Verkostungen.'
           : `Umbenennen ändert alle betroffenen Biere; ein vorhandener Name führt beide `
-            + `zusammen. Neue ${aktuell.label} entstehen beim Eintragen über „+ Neu".`}
+            + `zusammen. Angelegte Einträge stehen sofort zur Auswahl, auch bevor ein `
+            + `Bier sie trägt.`}
       </p>
     </div>
   );
