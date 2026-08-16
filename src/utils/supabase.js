@@ -280,14 +280,14 @@ const fallbackData = {
   // Runde ohne Zahler, und eine Bewertung, bei der die beiden drei Punkte
   // auseinanderliegen.
   bier_katalog: [
-    { id: 1, name: 'Augustiner Helles', brauerei: 'Augustiner', art: 'Helles', alkohol: 5.2, land: null },
-    { id: 2, name: 'Tannenzäpfle', brauerei: 'Rothaus', art: 'Pils', alkohol: 5.1, land: null },
-    { id: 3, name: 'Schneider Weisse', brauerei: 'Schneider', art: 'Weizen', alkohol: 5.4, land: null },
-    { id: 4, name: 'Salvator', brauerei: 'Paulaner', art: 'Doppelbock', alkohol: 7.9, land: null },
+    { id: 1, name: 'Augustiner Helles', brauerei: 'Augustiner', art: 'Helles', alkohol: 5.2, land: 'Deutschland' },
+    { id: 2, name: 'Tannenzäpfle', brauerei: 'Rothaus', art: 'Pils', alkohol: 5.1, land: 'Deutschland' },
+    { id: 3, name: 'Schneider Weisse', brauerei: 'Schneider', art: 'Weizen', alkohol: 5.4, land: 'Deutschland' },
+    { id: 4, name: 'Salvator', brauerei: 'Paulaner', art: 'Doppelbock', alkohol: 7.9, land: 'Deutschland' },
     // Zwei Biere DERSELBEN Brauerei mit weit auseinanderliegenden Noten —
     // sonst faellt "nach Note" zufaellig mit "nach Brauerei" zusammen und die
     // Sortierung ist gar nicht zu pruefen.
-    { id: 5, name: 'Zwickl', brauerei: 'Augustiner', art: 'Kellerbier', alkohol: 5.0, land: null }
+    { id: 5, name: 'Zwickl', brauerei: 'Augustiner', art: 'Kellerbier', alkohol: 5.0, land: 'Belgien' }
   ],
   bierboersen: [
     { id: 1, name: 'Bierbörse Dortmund', ort: 'Dortmund', datum: '2026-06-14' },

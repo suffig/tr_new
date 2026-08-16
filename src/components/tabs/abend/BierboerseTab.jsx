@@ -11,6 +11,7 @@ import { supabaseDb } from '../../../utils/supabase';
 import {
   PERSONEN, BIERARTEN, HERKUNFT, ladeBoersen, ladeKatalog, ladeVerkostungen,
   wiederkauf, notenDrift, brauereiStatistik,
+  herkunftVerteilung, alkoholVerlauf, preisJe100ml,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
   ZAHLER, rechnung, bierVerlauf, bierFundstuecke, sortenVerteilung,
   KATEGORIE_KATALOG, STANDARD_KATEGORIEN, kategorie,
@@ -1085,6 +1086,9 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
   const wieder = useMemo(() => wiederkauf(verkostungen, katalog), [verkostungen, katalog]);
   const drift = useMemo(() => notenDrift(verkostungen, boersen), [verkostungen, boersen]);
   const brauereien = useMemo(() => brauereiStatistik(verkostungen, katalog), [verkostungen, katalog]);
+  const herkunft = useMemo(() => herkunftVerteilung(verkostungen, katalog), [verkostungen, katalog]);
+  const staerke = useMemo(() => alkoholVerlauf(verkostungen, katalog), [verkostungen, katalog]);
+  const je100 = useMemo(() => preisJe100ml(verkostungen, katalog), [verkostungen, katalog]);
   // Vorbelegt mit den beiden juengsten Abenden — die will man am ehesten
   // vergleichen, und so steht die Karte sofort mit Inhalt da.
   const [vergleichA, setVergleichA] = useState(null);
@@ -1573,6 +1577,103 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
         </div>
       )}
 
+      {/* Herkunft — das Land wird erfasst und war nie ausgewertet.
+          Gezaehlt werden GLAESER, nicht Sorten: fuenf deutsche Biere einmal
+          probiert sagen etwas anderes als ein belgisches, von dem ihr zehn
+          getrunken habt. */}
+      {herkunft.liste.length > 0 && (
+        <div className="modern-card p-4">
+          <div className="flex items-baseline justify-between gap-2 mb-2.5">
+            <span className="text-footnote font-semibold text-text-muted">Herkunft</span>
+            <span className="text-caption2 text-text-tertiary">{herkunft.gesamt} Gläser</span>
+          </div>
+          <div className="space-y-1.5">
+            {herkunft.liste.slice(0, 6).map((x) => (
+              <div key={x.land}>
+                <div className="flex items-baseline gap-2 text-caption1">
+                  <span className="text-text-primary truncate flex-1 min-w-0">{x.land}</span>
+                  <span className="num-tabular text-text-secondary flex-shrink-0">
+                    {x.glaeser} · {Math.round(x.anteil * 100)} %
+                  </span>
+                </div>
+                <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1">
+                  <div className="h-full bg-system-indigo/70"
+                       style={{ width: `${Math.max(3, x.anteil * 100)}%` }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          {/* Ohne Angabe nicht verschweigen: sonst summierte sich die
+              Verteilung nicht auf das, was ihr getrunken habt. */}
+          {herkunft.ohneAngabe > 0 && (
+            <p className="text-caption2 text-text-tertiary mt-2">
+              {herkunft.ohneAngabe} {herkunft.ohneAngabe === 1 ? 'Glas' : 'Gläser'} ohne Landangabe.
+            </p>
+          )}
+        </div>
+      )}
+
+      {/* Wird es im Lauf des Abends staerker? Wie die Notendrift nach
+          POSITION, und nach Glaesern gewichtet — ein Doppelbock, von dem
+          einer nippt, verschoebe den Schnitt sonst wie drei geteilte Halbe. */}
+      {staerke.punkte.length >= 2 && (
+        <div className="modern-card p-4">
+          <div className="text-footnote font-semibold text-text-muted mb-1">Stärke im Lauf des Abends</div>
+          <p className="text-callout text-text-primary mb-2.5">
+            {staerke.richtung === 'gleich'
+              ? 'Ihr bleibt über den Abend bei ähnlicher Stärke.'
+              : `Später am Abend wird es ${staerke.richtung} — ${kommaEins(Math.abs(staerke.unterschied))} Prozentpunkte.`}
+          </p>
+          <div className="flex items-end gap-1.5 h-20">
+            {staerke.punkte.map((pt) => (
+              <div key={pt.position} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                <span className="text-caption2 text-text-tertiary num-tabular">{kommaEins(pt.schnitt)}</span>
+                <div className="w-full rounded-t bg-system-purple/70"
+                     style={{ height: `${Math.max(6, (pt.schnitt / 12) * 100)}%` }} />
+                <span className="text-caption2 text-text-tertiary num-tabular">{pt.position}.</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Preis je 100 ml — der ehrliche Vergleich zwischen 0,33 und 0,5.
+          4,00 € fuer eine Halbe ist guenstiger als 3,20 € fuer eine 0,33,
+          und genau das sieht man am Glaspreis nicht. */}
+      {je100.liste.length > 1 && (
+        <div className="modern-card p-4">
+          <div className="flex items-baseline justify-between gap-2 mb-2.5">
+            <span className="text-footnote font-semibold text-text-muted">Preis je 100 ml</span>
+            <span className="text-caption2 text-text-tertiary">{je100.liste.length} Biere</span>
+          </div>
+          <div className="space-y-1.5">
+            {je100.liste.slice(0, 6).map((x) => {
+              const hoechst = je100.teuerstes?.je100 || 1;
+              return (
+                <div key={x.bier.id}>
+                  <div className="flex items-baseline gap-2 text-caption1">
+                    <span className="text-text-primary truncate flex-1 min-w-0">{x.bier.name}</span>
+                    <span className="num-tabular text-text-secondary flex-shrink-0">
+                      {euro(x.preis)} / {x.ml} ml
+                    </span>
+                    <span className="num-tabular font-semibold text-text-primary w-14 text-right flex-shrink-0">
+                      {euro(x.je100)}
+                    </span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1">
+                    <div className="h-full bg-system-green/70"
+                         style={{ width: `${Math.max(4, (x.je100 / hoechst) * 100)}%` }} />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+          <p className="text-caption2 text-text-tertiary mt-2">
+            Bei mehrfach getrunkenen Bieren gilt der jüngste Preis.
+          </p>
+        </div>
+      )}
+
       {/* Brauereien — die Angabe lag laengst im Katalog, ausgewertet wurde nur
           die Sorte. Beim Einkauf ist "von wem" aber die nuetzlichere Frage:
           eine Sorte sagt, was ihr moegt, eine Brauerei sagt, wo ihr es
@@ -1891,9 +1992,43 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   // Vorschläge aus dem Katalog, damit dasselbe Bier nicht zweimal entsteht.
   const vorschlaege = useMemo(() => {
     const s = name.trim().toLowerCase();
-    if (s.length < 2 || vorhandenes) return [];
-    return katalog.filter((b) => b.name.toLowerCase().includes(s)).slice(0, 5);
-  }, [name, katalog, vorhandenes]);
+    // Ab dem ERSTEN Buchstaben. Zwei waren fuer "Ale" oder "IPA" eine Huerde,
+    // die nichts einspart.
+    if (!s || vorhandenes) return [];
+    // Ist eine Brauerei gewaehlt, nur deren Biere: bei vielen Eintraegen ist
+    // "Brauerei zuerst" der schnellere Weg als tippen — und wer Augustiner
+    // gewaehlt hat, meint kein Rothaus.
+    const b = brauerei.trim().toLowerCase();
+    return katalog
+      .filter((x) => x.name.toLowerCase().includes(s))
+      .filter((x) => !b || String(x.brauerei || '').toLowerCase() === b)
+      .slice(0, 5);
+  }, [name, katalog, vorhandenes, brauerei]);
+
+  /**
+   * Die zuletzt getrunkenen Biere — ohne einen Buchstaben zu tippen.
+   *
+   * An einem Abend trinkt man oft dasselbe nochmal, und die Vorschlaege
+   * erscheinen erst beim Tippen. Neueste zuerst, jedes Bier nur einmal, und
+   * was in DIESER Boerse schon steht, faellt raus: es waere ein Vorschlag,
+   * der beim Speichern an der Eindeutigkeit scheitert (boerse_id + bier_id).
+   */
+  const zuletzt = useMemo(() => {
+    if (vorhandenes) return [];
+    const schonDrin = new Set(
+      (verkostungen || []).filter((v) => v.boerse_id === boerse?.id).map((v) => v.bier_id));
+    const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+    const raus = [], gesehen = new Set();
+    for (const v of [...(verkostungen || [])].sort((a, b) => (b.id || 0) - (a.id || 0))) {
+      if (schonDrin.has(v.bier_id) || gesehen.has(v.bier_id)) continue;
+      const b = bierVon.get(v.bier_id);
+      if (!b) continue;
+      gesehen.add(v.bier_id);
+      raus.push(b);
+      if (raus.length >= 5) break;
+    }
+    return raus;
+  }, [verkostungen, katalog, boerse?.id, vorhandenes]);
 
   const uebernehmen = (b) => {
     setName(b.name); setBrauerei(b.brauerei || ''); setArt(b.art || ''); setLand(b.land || '');
@@ -1979,6 +2114,23 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   return (
     <Modal titel={verkostung ? 'Bier ändern' : 'Bier eintragen'} onSchliessen={onSchliessen}>
       <form onSubmit={speichern} className="space-y-3">
+        {/* Zuletzt getrunken — ein Tipp statt tippen.
+            Steht ueber dem Namensfeld, weil es der schnellere Weg ist: wer
+            hier faendig wird, muss das Feld gar nicht erst anfassen. */}
+        {zuletzt.length > 0 && (
+          <div>
+            <div className="text-caption2 text-text-tertiary mb-1.5">Zuletzt getrunken</div>
+            <div className="flex flex-wrap gap-1.5">
+              {zuletzt.map((b) => (
+                <button key={b.id} type="button" onClick={() => uebernehmen(b)}
+                        className="chip chip-sm chip-gray max-w-full truncate">
+                  {b.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
         <label className="block">
           <span className="text-footnote text-text-secondary">Bier *</span>
           <input value={name} onChange={(e) => setName(e.target.value)} className="form-input w-full mt-1"

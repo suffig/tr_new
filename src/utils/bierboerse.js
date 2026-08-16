@@ -1325,3 +1325,134 @@ export function brauereiStatistik(verkostungen, katalog, mindestens = 2) {
     mindestens,
   };
 }
+
+/* ===========================================================================
+   Herkunft, Stärke und Preis je 100 ml
+   =========================================================================== */
+
+/**
+ * Woher eure Biere kommen.
+ *
+ * Das Land wird seit db-Anfang erfasst und war nie ausgewertet. Gezählt
+ * werden GLÄSER, nicht Sorten: fünf deutsche Biere einmal probiert sagen etwas
+ * anderes als ein belgisches, von dem ihr zehn getrunken habt.
+ *
+ * Biere ohne Landangabe kommen als eigene Zeile — verschweigen wäre schlimmer,
+ * denn dann summierte sich die Verteilung nicht auf das, was ihr getrunken
+ * habt.
+ */
+export function herkunftVerteilung(verkostungen, katalog) {
+  const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+  const z = new Map();
+  let ohneAngabe = 0, gesamt = 0;
+
+  for (const v of verkostungen || []) {
+    const glaeser = (v.anzahl_aek || 0) + (v.anzahl_real || 0);
+    if (!glaeser) continue;
+    gesamt += glaeser;
+    const land = bierVon.get(v.bier_id)?.land;
+    if (!land) { ohneAngabe += glaeser; continue; }
+    z.set(land, (z.get(land) || 0) + glaeser);
+  }
+
+  return {
+    liste: [...z.entries()]
+      .map(([land, glaeser]) => ({ land, glaeser, anteil: gesamt ? glaeser / gesamt : 0 }))
+      .sort((a, b) => b.glaeser - a.glaeser || String(a.land).localeCompare(String(b.land), 'de')),
+    ohneAngabe, gesamt,
+  };
+}
+
+/**
+ * Wird es im Lauf des Abends stärker?
+ *
+ * Nach POSITION im Abend, wie bei der Notendrift — eine Uhrzeit je Bier gibt
+ * es nicht. Gewichtet nach Gläsern: ein Doppelbock, von dem einer nippt,
+ * verschiebt den Schnitt sonst so stark wie drei geteilte Halbe.
+ *
+ * Positionen aus weniger als zwei Abenden fallen raus: eine „Position 8" aus
+ * einem einzigen Abend ist kein Trend, sondern ein Bier.
+ */
+export function alkoholVerlauf(verkostungen, katalog, mindestensAbende = 2) {
+  // Der Alkoholgehalt haengt am BIER, nicht an der Verkostung — die Zeile
+  // kennt nur Preis, Groesse, Anzahl und Noten.
+  const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+  const nachBoerse = new Map();
+  for (const v of verkostungen || []) {
+    if (!nachBoerse.has(v.boerse_id)) nachBoerse.set(v.boerse_id, []);
+    nachBoerse.get(v.boerse_id).push(v);
+  }
+
+  const summe = new Map();
+  for (const [boerseId, liste] of nachBoerse) {
+    [...liste].sort((a, b) => a.id - b.id).forEach((v, i) => {
+      const prozent = Number(bierVon.get(v.bier_id)?.alkohol);
+      if (!Number.isFinite(prozent)) return;
+      const glaeser = (v.anzahl_aek || 0) + (v.anzahl_real || 0);
+      if (!glaeser) return;
+      const pos = i + 1;
+      if (!summe.has(pos)) summe.set(pos, { gewicht: 0, produkt: 0, abende: new Set() });
+      const e = summe.get(pos);
+      e.gewicht += glaeser;
+      e.produkt += prozent * glaeser;
+      e.abende.add(boerseId);
+    });
+  }
+
+  const punkte = [...summe.entries()]
+    .map(([position, e]) => ({
+      position,
+      schnitt: e.gewicht ? Math.round((e.produkt / e.gewicht) * 10) / 10 : null,
+      abende: e.abende.size,
+    }))
+    .filter((p) => p.schnitt != null && p.abende >= mindestensAbende)
+    .sort((a, b) => a.position - b.position);
+
+  if (punkte.length < 2) return { punkte, richtung: null, unterschied: null };
+
+  const mitte = Math.floor(punkte.length / 2);
+  const frueh = mittel(punkte.slice(0, mitte).map((p) => p.schnitt));
+  const spaet = mittel(punkte.slice(punkte.length - mitte).map((p) => p.schnitt));
+  const unterschied = (spaet ?? 0) - (frueh ?? 0);
+  return {
+    punkte, frueh, spaet, unterschied,
+    // Unter 0,3 Prozentpunkten ist das Rauschen, keine Richtung.
+    richtung: Math.abs(unterschied) < 0.3 ? 'gleich' : (unterschied > 0 ? 'stärker' : 'leichter'),
+  };
+}
+
+/**
+ * Preis je 100 ml — der ehrliche Vergleich zwischen 0,33 und 0,5.
+ *
+ * Der reine Glaspreis taeuscht: 4,00 € fuer eine Halbe ist guenstiger als
+ * 3,20 € fuer eine 0,33. Bisher wurde das nur fuer ganze Abende gerechnet
+ * ("guenstigster Liter"), nie je Bier.
+ *
+ * Nur Verkostungen mit Preis UND Groesse — ohne beides gibt es keinen
+ * Vergleich, und ein geschaetzter waere schlimmer als keiner.
+ */
+export function preisJe100ml(verkostungen, katalog) {
+  const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+  const z = new Map();
+
+  for (const v of verkostungen || []) {
+    const preis = Number(v.preis), ml = Number(v.groesse_ml);
+    if (!Number.isFinite(preis) || !Number.isFinite(ml) || ml <= 0 || preis <= 0) continue;
+    const bier = bierVon.get(v.bier_id);
+    if (!bier) continue;
+    const je100 = (preis / ml) * 100;
+    // Mehrfach getrunken: der juengste Preis gilt — Preise aendern sich.
+    const alt = z.get(bier.id);
+    if (!alt || (v.id || 0) > alt.stand) {
+      z.set(bier.id, { bier, je100, preis, ml, stand: v.id || 0 });
+    }
+  }
+
+  const liste = [...z.values()]
+    .map(({ bier, je100, preis, ml }) => ({
+      bier, je100: Math.round(je100 * 100) / 100, preis, ml,
+    }))
+    .sort((a, b) => a.je100 - b.je100);
+
+  return { liste, guenstigstes: liste[0] || null, teuerstes: liste[liste.length - 1] || null };
+}
