@@ -10,7 +10,7 @@ import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
 import ListenPflege from './ListenPflege';
 import {
-  PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, ladeBoersen, ladeKatalog, ladeVerkostungen,
+  PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, bestandNachFeld, ladeBoersen, ladeKatalog, ladeVerkostungen,
   wiederkauf, notenDrift, brauereiStatistik,
   herkunftVerteilung, alkoholVerlauf, preisJe100ml,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
@@ -895,6 +895,7 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
   const [suche, setSuche] = useState('');
   const [art, setArt] = useState('alle');
   const [brauerei, setBrauerei] = useState('alle');
+  const [land, setLand] = useState('alle');
   // 'note' ist die bisherige Reihenfolge (Bestenliste). 'brauerei' gruppiert
   // stattdessen — sinnvoll, wenn man wissen will, was man von wem schon hatte.
   const [sortierung, setSortierung] = useState('note');
@@ -915,6 +916,7 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
     const gefiltert = mitRang.filter((e) =>
       (art === 'alle' || e.bier.art === art) &&
       (brauerei === 'alle' || (e.bier.brauerei || '') === brauerei) &&
+      (land === 'alle' || (e.bier.land || '') === land) &&
       (!s || e.bier.name.toLowerCase().includes(s) ||
         String(e.bier.brauerei || '').toLowerCase().includes(s)));
 
@@ -932,7 +934,7 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
       });
     }
     return gefiltert;
-  }, [katalog, verkostungen, suche, art, brauerei, sortierung]);
+  }, [katalog, verkostungen, suche, art, brauerei, land, sortierung]);
 
   const brauereien = useMemo(
     () => [...new Set(katalog.map((b) => b.brauerei).filter(Boolean))]
@@ -941,6 +943,11 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
 
   const arten = useMemo(
     () => [...new Set(katalog.map((b) => b.art).filter(Boolean))].sort(),
+    [katalog]
+  );
+
+  const laender = useMemo(
+    () => [...new Set(katalog.map((b) => b.land).filter(Boolean))].sort(),
     [katalog]
   );
 
@@ -963,6 +970,16 @@ function KatalogAnsicht({ katalog, verkostungen, boersen, onBier }) {
           <select value={brauerei} onChange={(e) => setBrauerei(e.target.value)} className="form-input w-full text-sm">
             <option value="alle">Alle Brauereien</option>
             {brauereien.map((b) => <option key={b} value={b}>{b}</option>)}
+          </select>
+        )}
+        {/* Nur zeigen, wenn wirklich mehrere Laender vorkommen. Bei einer
+            reinen Deutschland-Sammlung waere das ein Filter, der nichts
+            filtert. */}
+        {laender.length > 1 && (
+          <select value={land} onChange={(e) => setLand(e.target.value)}
+                  className="form-input w-full text-sm col-span-2">
+            <option value="alle">Alle Länder</option>
+            {laender.map((l) => <option key={l} value={l}>{l}</option>)}
           </select>
         )}
       </div>
@@ -1618,6 +1635,8 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
           )}
         </div>
       )}
+
+      <Bestandskarte katalog={katalog} verkostungen={verkostungen} />
 
       {/* Wird es im Lauf des Abends staerker? Wie die Notendrift nach
           POSITION, und nach Glaesern gewichtet — ein Doppelbock, von dem
@@ -2652,5 +2671,96 @@ function AuswahlMitNeu({ label, wert, onChange, vorhandene, platzhalter }) {
         </select>
       )}
     </label>
+  );
+}
+
+/**
+ * Bestand — jede Sorte, jedes Land, jede Brauerei, die es gibt.
+ *
+ * DIE ANDEREN KARTEN BEANTWORTEN EINE ANDERE FRAGE
+ * "Sortenvorliebe" und "Herkunft" laufen über die Verkostungen und zeigen,
+ * was ihr getrunken habt. Wer in der Verwaltung eine Sorte anlegt, sucht sie
+ * dort vergeblich — und das sieht aus, als sei das Anlegen nicht angekommen.
+ * Diese Karte zeigt den BESTAND: alles Bekannte, auch das noch nicht
+ * Getrunkene, klar als solches ausgewiesen.
+ *
+ * Kein erfundener Nullwert: was nie im Glas war, bekommt keine Note und
+ * keinen Balken, sondern steht als "noch nicht getrunken" da.
+ */
+function Bestandskarte({ katalog, verkostungen }) {
+  const [feld, setFeld] = useState('art');
+  const reiter = [
+    { id: 'art', label: 'Sorten', einzahl: 'Sorte' },
+    { id: 'land', label: 'Länder', einzahl: 'Land' },
+    { id: 'brauerei', label: 'Brauereien', einzahl: 'Brauerei' },
+  ];
+  const aktuell = reiter.find((r) => r.id === feld);
+
+  const liste = useMemo(
+    () => bestandNachFeld(feld, katalog, verkostungen, eigeneWerte(feld)),
+    [feld, katalog, verkostungen]
+  );
+  const hoechster = liste[0]?.glaeser || 1;
+  const offen = liste.filter((e) => !e.getrunken);
+
+  if (!liste.length) return null;
+
+  return (
+    <div className="modern-card p-4">
+      <div className="flex items-baseline justify-between gap-2 mb-2.5">
+        <span className="text-footnote font-semibold text-text-muted">Bestand</span>
+        <span className="text-caption2 text-text-tertiary">
+          {liste.length} {liste.length === 1 ? aktuell.einzahl : aktuell.label}
+        </span>
+      </div>
+
+      <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl mb-2.5">
+        {reiter.map((r) => (
+          <button key={r.id} type="button" onClick={() => setFeld(r.id)}
+                  aria-pressed={feld === r.id}
+                  className={`flex-1 py-1.5 rounded-lg text-caption2 font-semibold transition-colors ${
+                    feld === r.id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+            {r.label}
+          </button>
+        ))}
+      </div>
+
+      <div className="space-y-1.5 max-h-72 overflow-y-auto">
+        {liste.map((e) => (
+          <div key={e.wert}>
+            <div className="flex items-baseline gap-2 text-caption1">
+              <span className={`truncate flex-1 min-w-0 ${
+                e.getrunken ? 'text-text-primary' : 'text-text-tertiary'}`}>
+                {e.wert}
+              </span>
+              <span className="num-tabular text-text-secondary flex-shrink-0 text-caption2">
+                {e.getrunken
+                  ? `${e.glaeser} ${e.glaeser === 1 ? 'Glas' : 'Gläser'}`
+                    + ` · ${e.biere} ${e.biere === 1 ? 'Bier' : 'Biere'}`
+                    + (e.schnitt != null ? ` · ${note(e.schnitt)}` : '')
+                  : e.biere > 0
+                    ? `${e.biere} ${e.biere === 1 ? 'Bier' : 'Biere'} · noch nicht getrunken`
+                    : 'noch kein Bier'}
+              </span>
+            </div>
+            {/* Balken nur, wo etwas getrunken wurde. Ein Nullbalken sähe aus
+                wie ein sehr kleiner Wert, nicht wie "gar keiner". */}
+            {e.getrunken && (
+              <div className="h-1.5 rounded-full bg-bg-tertiary overflow-hidden mt-1">
+                <div className="h-full bg-system-teal/70"
+                     style={{ width: `${Math.max(3, (e.glaeser / hoechster) * 100)}%` }} />
+              </div>
+            )}
+          </div>
+        ))}
+      </div>
+
+      {offen.length > 0 && (
+        <p className="text-caption2 text-text-tertiary mt-2">
+          {offen.length} {offen.length === 1 ? `${aktuell.einzahl} wartet` : `${aktuell.label} warten`} noch
+          — angelegt, aber noch nicht im Glas gewesen.
+        </p>
+      )}
+    </div>
   );
 }

@@ -154,7 +154,13 @@ export function boersenStatistik(verkostungen, katalog) {
   }
 
   return {
-    biere: liste.length,
+    // VERSCHIEDENE Biere, nicht Verkostungszeilen. Wer dasselbe Bier an zwei
+    // Abenden trinkt, hat nicht zwei Biere getrunken — die Beschriftung sagt
+    // "Biere", also muss die Zahl das auch meinen. Vorher zaehlte hier
+    // liste.length und damit die Zeilen.
+    biere: new Set(liste.map((v) => v.bier_id).filter((id) => id != null)).size,
+    // Die Zeilenzahl bleibt verfuegbar — die Bilanz zeigt beides.
+    verkostungen: liste.length,
     glaeser: gesamtGlaeser,
     ausgaben,
     liter: ml / 1000,
@@ -386,15 +392,17 @@ export function sortenVerteilung(verkostungen, katalog) {
   const zaehler = new Map();
   for (const v of verkostungen || []) {
     const art = nachId.get(v.bier_id)?.art || 'Ohne Sorte';
-    const e = zaehler.get(art) || { art, glaeser: 0, biere: 0, noten: [] };
+    const e = zaehler.get(art) || { art, glaeser: 0, biere: new Set(), noten: [] };
     e.glaeser += (v.anzahl_aek || 0) + (v.anzahl_real || 0);
-    e.biere += 1;
+    // Verschiedene Biere, nicht Verkostungszeilen — wie in boersenStatistik.
+    if (v.bier_id != null) e.biere.add(v.bier_id);
     const n = schnittNote(v);
     if (n != null) e.noten.push(n);
     zaehler.set(art, e);
   }
   return [...zaehler.values()]
-    .map((e) => ({ ...e, schnitt: e.noten.length ? e.noten.reduce((s, n) => s + n, 0) / e.noten.length : null }))
+    .map((e) => ({ ...e, biere: e.biere.size,
+                   schnitt: e.noten.length ? e.noten.reduce((s, n) => s + n, 0) / e.noten.length : null }))
     .sort((a, b) => b.glaeser - a.glaeser);
 }
 
@@ -1789,4 +1797,80 @@ export async function fuehreBiereZusammen(behaltenId, aufgebenId, verkostungen =
   if (error) throw error;
 
   return { umgehaengt: betroffen.length, ergaenzt: Object.keys(ergaenzung) };
+}
+
+/**
+ * Vollständige Übersicht über ein Listenfeld — Sorten, Länder, Brauereien.
+ *
+ * WARUM ES DAS ZUSÄTZLICH ZU sortenVorliebe/herkunftVerteilung GIBT
+ * Jene beiden werten aus, was GETRUNKEN wurde: sie laufen über die
+ * Verkostungen und kennen deshalb nur, was auch im Glas war. Wer in der
+ * Verwaltung „Export" anlegt, sucht es danach in der Bilanz vergeblich — und
+ * das sieht aus, als sei das Anlegen nicht angekommen.
+ *
+ * Diese Funktion kennt drei Quellen und hält sie auseinander:
+ *   1. Werte aus Verkostungen  → mit Gläsern, Ausgaben, Schnitt
+ *   2. Werte an Bieren im Katalog, die noch nie getrunken wurden
+ *   3. Werte, die nur auf Vorrat angelegt sind (eigene_listen)
+ *
+ * Die Zahlen bleiben dabei ehrlich: ein nie getrunkener Wert bekommt keine
+ * erfundene Null-Note, sondern `schnitt: null` und `getrunken: false`. Die
+ * Anzeige kann das dann als „noch nicht getrunken" ausweisen, statt eine
+ * Auswertung vorzutäuschen, die es nicht gibt.
+ */
+export function bestandNachFeld(feld, katalog, verkostungen, vorrat = []) {
+  const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+  const nach = new Map();
+
+  const eintrag = (wert) => {
+    if (!nach.has(wert)) {
+      nach.set(wert, { wert, biere: new Set(), glaeser: 0, ausgaben: 0, noten: [], verkostungen: 0 });
+    }
+    return nach.get(wert);
+  };
+
+  // 1. + Zahlen aus den Verkostungen
+  for (const v of verkostungen || []) {
+    const wert = bierVon.get(v.bier_id)?.[feld];
+    if (!wert) continue;
+    const e = eintrag(wert);
+    e.biere.add(v.bier_id);
+    e.verkostungen += 1;
+    const glaeser = (v.anzahl_aek || 0) + (v.anzahl_real || 0);
+    e.glaeser += glaeser;
+    e.ausgaben += (Number(v.preis) || 0) * glaeser;
+    const n = schnittNote(v);
+    if (n != null) e.noten.push(n);
+  }
+
+  // 2. Biere im Katalog, die den Wert tragen — auch nie getrunkene. Sonst
+  //    fehlte ein Bier, das jemand angelegt, aber noch nicht probiert hat.
+  for (const b of katalog || []) {
+    const wert = b?.[feld];
+    if (!wert) continue;
+    eintrag(wert).biere.add(b.id);
+  }
+
+  // 3. Reiner Vorrat: angelegt, aber noch an keinem Bier.
+  for (const wert of vorrat || []) {
+    if (wert) eintrag(wert);
+  }
+
+  return [...nach.values()]
+    .map((e) => ({
+      wert: e.wert,
+      biere: e.biere.size,
+      glaeser: e.glaeser,
+      ausgaben: e.ausgaben,
+      verkostungen: e.verkostungen,
+      schnitt: e.noten.length ? mittel(e.noten) : null,
+      bewertet: e.noten.length,
+      getrunken: e.glaeser > 0,
+    }))
+    // Getrunkenes zuerst und darin nach Gläsern; der Rest alphabetisch
+    // hinterher, damit die Liste nicht mit lauter Nullen anfängt.
+    .sort((a, b) =>
+      (b.getrunken - a.getrunken)
+      || (b.glaeser - a.glaeser)
+      || String(a.wert).localeCompare(String(b.wert), 'de'));
 }
