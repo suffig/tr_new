@@ -8,6 +8,7 @@ import LoadingSpinner from '../../LoadingSpinner';
 import ZahlFeld from '../../ZahlFeld';
 import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
+import ListenPflege from './ListenPflege';
 import {
   PERSONEN, BIERARTEN, HERKUNFT, ladeBoersen, ladeKatalog, ladeVerkostungen,
   wiederkauf, notenDrift, brauereiStatistik,
@@ -213,7 +214,7 @@ function BewertungsBlock({ modus, kategorien, noten, onNoten, gesamt, auswahl, o
  * bleiben aber erhalten und zählen in der Bilanz weiter mit. Man kann sie
  * also gefahrlos ausprobieren.
  */
-function EinstellungenFormular({ einstellungen, onSchliessen, onFertig }) {
+function EinstellungenFormular({ einstellungen, bierKatalog, verkostungen, onDatenGeaendert, onSchliessen, onFertig }) {
   const [modus, setModus] = useState(einstellungen.modus);
   const [gewaehlt, setGewaehlt] = useState(einstellungen.kategorien);
   const [speichert, setSpeichert] = useState(false);
@@ -436,6 +437,8 @@ function EinstellungenFormular({ einstellungen, onSchliessen, onFertig }) {
           Noten bleiben gespeichert und zählen in der Bilanz weiter.
         </p>
 
+        <ListenPflege katalog={bierKatalog} verkostungen={verkostungen} onGeaendert={onDatenGeaendert} />
+
         <button onClick={speichern} disabled={speichert} className="btn-primary w-full">
           {speichert ? 'Speichert…' : 'Sichern'}
         </button>
@@ -570,6 +573,9 @@ export default function BierboerseTab() {
       {formular?.art === 'einstellungen' && (
         <EinstellungenFormular
           einstellungen={einstellungen}
+          bierKatalog={katalog}
+          verkostungen={verkostungen}
+          onDatenGeaendert={laden4}
           onSchliessen={() => setFormular(null)}
           onFertig={() => { setFormular(null); laden4(); }}
         />

@@ -1456,3 +1456,110 @@ export function preisJe100ml(verkostungen, katalog) {
 
   return { liste, guenstigstes: liste[0] || null, teuerstes: liste[liste.length - 1] || null };
 }
+
+/* ===========================================================================
+   Listen pflegen
+   =========================================================================== */
+
+/** Die Felder, die sich als Liste pflegen lassen — Text in jeder Bierzeile. */
+export const PFLEGE_FELDER = [
+  { id: 'brauerei', label: 'Brauereien', einzahl: 'Brauerei' },
+  { id: 'art', label: 'Sorten', einzahl: 'Sorte' },
+  { id: 'land', label: 'Länder', einzahl: 'Land' },
+];
+
+/**
+ * Welche Werte kommen wie oft vor?
+ *
+ * Die Zahl ist wichtig, bevor man etwas anfasst: „Augustiner (12 Biere)"
+ * umzubenennen ist etwas anderes als „Augustiner Bräu (1 Bier)" — und meist
+ * ist genau das der Tippfehler, den man zusammenführen will.
+ */
+export function feldWerte(katalog, feld) {
+  const z = new Map();
+  for (const b of katalog || []) {
+    const w = b?.[feld];
+    if (!w) continue;
+    if (!z.has(w)) z.set(w, []);
+    z.get(w).push(b);
+  }
+  return [...z.entries()]
+    .map(([wert, biere]) => ({ wert, anzahl: biere.length, biere }))
+    .sort((a, b) => b.anzahl - a.anzahl || String(a.wert).localeCompare(String(b.wert), 'de'));
+}
+
+/**
+ * Einen Wert umbenennen — in ALLEN Bierzeilen, die ihn tragen.
+ *
+ * Ist der neue Name schon vergeben, ist das kein Fehler, sondern ein
+ * ZUSAMMENFÜHREN: „Augustiner Bräu" auf „Augustiner" zu setzen ist genau der
+ * Vorgang, der drei Schreibweisen auf eine bringt. Deshalb keine Warnung —
+ * die Anzahl daneben sagt vorher, wie viele Biere betroffen sind.
+ */
+export async function benenneFeldUm(feld, alt, neu, katalog) {
+  const sauber = String(neu || '').trim();
+  if (!sauber) throw new Error('Der neue Name darf nicht leer sein.');
+  if (sauber === alt) return { geaendert: 0 };
+
+  const betroffen = (katalog || []).filter((b) => b?.[feld] === alt);
+  let geaendert = 0;
+  for (const b of betroffen) {
+    const { error } = await supabaseDb.update('bier_katalog', { [feld]: sauber }, b.id);
+    if (error) throw error;
+    geaendert += 1;
+  }
+  return { geaendert };
+}
+
+/**
+ * Einen Wert aus allen Bierzeilen entfernen.
+ *
+ * Das ist Datenverlust, kein Aufräumen: die Biere bleiben, nur ihre Brauerei
+ * (oder Sorte, oder Land) ist danach leer. Der Aufrufer muss das so sagen und
+ * nachfragen — hier wird nur ausgeführt.
+ */
+export async function entferneFeldWert(feld, wert, katalog) {
+  const betroffen = (katalog || []).filter((b) => b?.[feld] === wert);
+  let geleert = 0;
+  for (const b of betroffen) {
+    const { error } = await supabaseDb.update('bier_katalog', { [feld]: null }, b.id);
+    if (error) throw error;
+    geleert += 1;
+  }
+  return { geleert };
+}
+
+/** Ein Bier ändern — Name, Brauerei, Sorte, Land, Alkohol. */
+export async function aendereBier(id, daten) {
+  const sauber = {};
+  for (const feld of ['name', 'brauerei', 'art', 'land']) {
+    if (feld in daten) sauber[feld] = String(daten[feld] || '').trim() || null;
+  }
+  if ('alkohol' in daten) {
+    const a = daten.alkohol;
+    sauber.alkohol = a == null || a === '' ? null : Number(a);
+  }
+  if (!sauber.name && 'name' in sauber) throw new Error('Das Bier braucht einen Namen.');
+  const { error } = await supabaseDb.update('bier_katalog', sauber, id);
+  if (error) throw error;
+}
+
+/**
+ * Ein Bier löschen — nur, wenn es nie getrunken wurde.
+ *
+ * bier_verkostungen.bier_id verweist mit `on delete restrict` auf den Katalog.
+ * Ein Bier mit Verkostungen kann die Datenbank gar nicht löschen, und das ist
+ * richtig: sonst verlöre eine Verkostung ihr Bier. Wir prüfen es vorher
+ * selbst, damit statt einer Fremdschlüsselmeldung ein verständlicher Satz
+ * herauskommt.
+ */
+export async function loescheBier(id, verkostungen) {
+  const anzahl = (verkostungen || []).filter((v) => v.bier_id === id).length;
+  if (anzahl > 0) {
+    throw new Error(
+      `Dieses Bier steht in ${anzahl} ${anzahl === 1 ? 'Verkostung' : 'Verkostungen'} — `
+      + 'es lässt sich nicht löschen, ohne die Abende zu beschädigen.');
+  }
+  const { error } = await supabaseDb.delete('bier_katalog', id);
+  if (error) throw error;
+}
