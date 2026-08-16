@@ -602,6 +602,24 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
   const beste = useMemo(() => bestenListe(verkostungen, katalog), [verkostungen, katalog]);
   const kasse = useMemo(() => rechnung(verkostungen), [verkostungen]);
 
+  // Reihenfolge der Bierliste. 'note' zeigt die Bestenliste, 'reihe' die
+  // Eingabereihenfolge — beides gab es vorher, aber als zwei getrennte
+  // Listen derselben Biere.
+  const [bierSort, setBierSort] = useState('note');
+
+  /**
+   * Die Biere dieser Boerse, in der gewaehlten Reihenfolge.
+   *
+   * `bestenListe` liefert die Verkostungen samt Bier und Gesamtnote und ist
+   * bereits nach Note sortiert. Fuer die Eingabereihenfolge wird dieselbe
+   * Liste nach id sortiert — nicht die rohen Verkostungen genommen, sonst
+   * fehlten Bier und Note, die die Zeile anzeigt.
+   */
+  const sortierteBiere = useMemo(() => {
+    if (bierSort === 'note') return beste;
+    return [...beste].sort((a, b) => (a.id || 0) - (b.id || 0));
+  }, [beste, bierSort]);
+
   // Boerse loeschen. Die Verkostungen haengen per ON DELETE CASCADE daran und
   // gehen mit — deshalb steht die Zahl in der Rueckfrage, sonst loescht man
   // ahnungslos einen ganzen Abend.
@@ -781,79 +799,122 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
             </div>
           )}
 
-          {/* Bestenliste */}
-          {beste.length > 0 && (
-            <div>
-              <div className="text-footnote font-semibold text-text-muted mb-2">Bestenliste</div>
-              <div className="space-y-1.5">
-                {beste.map((v, i) => (
-                  <button key={v.id} type="button" onClick={() => v.bier && onBier(v.bier)}
-                          className="w-full flex items-start gap-2.5 text-left">
-                    <span className={`w-5 text-center text-sm font-bold flex-shrink-0 mt-0.5 ${
-                      i === 0 ? 'text-system-yellow' : i === 1 ? 'text-text-secondary'
-                      : i === 2 ? 'text-system-orange' : 'text-text-tertiary'}`}>{i + 1}</span>
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-sm text-text-primary truncate">{v.bier?.name}</span>
-                        <span className="ml-auto num-tabular text-sm font-bold text-text-primary flex-shrink-0">
-                          {note(v.note)}
-                        </span>
-                      </div>
-                      <div className="text-caption2 text-text-tertiary">
-                        {[v.bier?.brauerei, v.bier?.art,
-                          v.bier?.alkohol ? prozent(v.bier.alkohol) : null,
-                          v.groesse_ml ? `${v.groesse_ml} ml` : null,
-                          v.preis != null ? euro(v.preis) : null].filter(Boolean).join(' · ')}
-                      </div>
-                      <div className="mt-1"><Kruege note={v.note} /></div>
-                    </div>
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Alle Biere dieser Börse, änderbar */}
+          {/* EINE Liste statt zweier.
+              Vorher standen dieselben Biere zweimal da: als "Bestenliste"
+              mit Brauerei und Preis, und darunter als "Alle Biere" mit
+              Glaesern und Zahler. Wer wissen wollte, was ein Bier gekostet
+              hat UND wer es bezahlt hat, musste zwischen zwei Listen
+              springen und beide Male denselben Namen suchen. */}
           {verkostungen.length > 0 && (
             <div>
-              <div className="text-footnote font-semibold text-text-muted mb-2">Alle Biere</div>
-              <div className="divide-y divide-border-light">
-                {verkostungen.map((v) => {
-                  const bier = katalog.find((b) => b.id === v.bier_id);
+              <div className="flex items-center justify-between gap-2 mb-2">
+                <span className="text-footnote font-semibold text-text-muted">
+                  {verkostungen.length} {verkostungen.length === 1 ? 'Bier' : 'Biere'}
+                </span>
+                {/* Die Reihenfolge war vorher fest: die eine Liste nach Note,
+                    die andere nach Eingabe. Jetzt entscheidet man es. */}
+                {verkostungen.length > 1 && (
+                  <div className="flex gap-1 p-0.5 bg-bg-tertiary rounded-lg">
+                    {[['note', 'Nach Note'], ['reihe', 'Der Reihe nach']].map(([id, label]) => (
+                      <button key={id} type="button" onClick={() => setBierSort(id)}
+                              aria-pressed={bierSort === id}
+                              className={`px-2 py-1 rounded-md text-caption2 font-semibold transition-colors ${
+                                bierSort === id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {sortierteBiere.map((v, i) => {
+                  const bier = v.bier;
                   const zahler = ZAHLER.find((z) => z.id === v.bezahlt_von);
+                  const glaeser = (v.anzahl_aek || 0) + (v.anzahl_real || 0);
+                  // Was die Runde gekostet hat, nicht was ein Glas kostet —
+                  // das ist die Zahl, um die es beim Zahler geht.
+                  const rundenSumme = v.preis != null ? Number(v.preis) * glaeser : null;
                   return (
-                    <div key={v.id} className="flex items-center gap-2 py-2">
-                      <button type="button" onClick={() => bier && onBier(bier)} disabled={!bier}
-                              className="min-w-0 flex-1 text-left disabled:cursor-default">
-                        <div className="text-sm text-text-primary truncate">{bier?.name || '—'}</div>
-                        <div className="text-caption2 text-text-tertiary">
-                          {PERSONEN.map((p) => {
-                            const anzahl = p.key === 'aek' ? v.anzahl_aek : v.anzahl_real;
-                            const note = p.key === 'aek' ? v.note_aek : v.note_real;
-                            return (
-                              <span key={p.key} className="mr-2">
-                                <span className={p.farbe}>{p.name[0]}</span>
-                                {' '}{anzahl}× {note != null ? `· ${note}` : ''}
-                              </span>
-                            );
-                          })}
-                          {zahler && (
-                            <span className={zahler.farbe}>
-                              {zahler.id === 'geteilt' ? 'geteilt' : `zahlt ${zahler.label}`}
+                    <div key={v.id} className="panel-gray rounded-xl p-2.5">
+                      <div className="flex items-start gap-2.5">
+                        {/* Platzziffer nur farbig, wenn nach Note sortiert
+                            ist. In Eingabereihenfolge waere eine gelbe "1"
+                            der erste Eintrag und nicht der beste. */}
+                        <span className={`w-5 text-center text-sm font-bold flex-shrink-0 mt-0.5 num-tabular ${
+                          bierSort !== 'note' ? 'text-text-tertiary'
+                          : i === 0 ? 'text-system-yellow' : i === 1 ? 'text-text-secondary'
+                          : i === 2 ? 'text-system-orange' : 'text-text-tertiary'}`}>
+                          {i + 1}
+                        </span>
+
+                        <button type="button" onClick={() => bier && onBier(bier)} disabled={!bier}
+                                className="min-w-0 flex-1 text-left disabled:cursor-default">
+                          <div className="flex items-baseline gap-2">
+                            <span className="text-sm text-text-primary truncate">{bier?.name || '—'}</span>
+                            <span className="ml-auto num-tabular text-sm font-bold text-text-primary flex-shrink-0">
+                              {note(v.note)}
                             </span>
-                          )}
+                          </div>
+                          <div className="text-caption2 text-text-tertiary truncate">
+                            {[bier?.brauerei, bier?.art,
+                              bier?.alkohol ? prozent(bier.alkohol) : null,
+                              v.groesse_ml ? `${v.groesse_ml} ml` : null,
+                              v.preis != null ? `${euro(v.preis)} je Glas` : null]
+                              .filter(Boolean).join(' · ') || 'keine Angaben'}
+                          </div>
+                          <div className="mt-1"><Kruege note={v.note} /></div>
+                        </button>
+
+                        <div className="flex flex-col gap-1 flex-shrink-0">
+                          <button onClick={() => onBearbeiten(v)}
+                                  className="w-8 h-8 rounded-lg bg-bg-tertiary text-text-secondary flex items-center justify-center"
+                                  aria-label={`${bier?.name || 'Eintrag'} bearbeiten`}>
+                            <Icon name="edit" size={15} strokeWidth={2.2} />
+                          </button>
+                          <button onClick={() => loeschen(v)}
+                                  className="w-8 h-8 rounded-lg bg-system-red/10 text-system-red flex items-center justify-center"
+                                  aria-label={`${bier?.name || 'Eintrag'} entfernen`}>
+                            <Icon name="trash" size={15} strokeWidth={2.2} />
+                          </button>
                         </div>
-                      </button>
-                      <button onClick={() => onBearbeiten(v)}
-                              className="w-8 h-8 rounded-lg bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
-                              aria-label="Bearbeiten">
-                        <Icon name="edit" size={15} strokeWidth={2.2} />
-                      </button>
-                      <button onClick={() => loeschen(v)}
-                              className="w-8 h-8 rounded-lg bg-system-red/10 text-system-red flex items-center justify-center flex-shrink-0"
-                              aria-label="Entfernen">
-                        <Icon name="trash" size={15} strokeWidth={2.2} />
-                      </button>
+                      </div>
+
+                      {/* Wer hat wie viel getrunken, und wer hat bezahlt —
+                          in EINER Zeile unter dem Bier statt in einer
+                          zweiten Liste weiter unten. */}
+                      <div className="flex items-center gap-1.5 flex-wrap mt-1.5 pl-7">
+                        {PERSONEN.map((p) => {
+                          const anzahl = (p.key === 'aek' ? v.anzahl_aek : v.anzahl_real) || 0;
+                          const eigene = p.key === 'aek' ? v.note_aek : v.note_real;
+                          // Wer nichts getrunken und nichts bewertet hat,
+                          // bekommt kein Chip — ein "0x" ist keine Angabe.
+                          if (!anzahl && eigene == null) return null;
+                          return (
+                            <span key={p.key}
+                                  className={`chip chip-sm ${p.key === 'aek' ? 'chip-blue' : 'chip-red'}`}>
+                              {p.name} {anzahl}×{eigene != null ? ` · ${note(eigene)}` : ''}
+                            </span>
+                          );
+                        })}
+
+                        {/* Der Zahler mit dem Betrag der Runde. Vorher stand
+                            hier nur "zahlt Philip" — die Zahl, um die es
+                            geht, musste man sich selbst ausrechnen. */}
+                        {zahler ? (
+                          <span className={`chip chip-sm chip-gray ml-auto ${zahler.farbe}`}>
+                            {zahler.id === 'geteilt' ? 'geteilt' : `${zahler.label} zahlt`}
+                            {rundenSumme != null ? ` ${euro(rundenSumme)}` : ''}
+                          </span>
+                        ) : (
+                          // "Kein Zahler" heisst: faellt aus der Rechnung
+                          // raus. Das gehoert ans Bier, nicht nur in die
+                          // Fussnote unter der Rechnung.
+                          <span className="chip chip-sm chip-gray ml-auto">
+                            kein Zahler{rundenSumme != null ? ` · ${euro(rundenSumme)}` : ''}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   );
                 })}
