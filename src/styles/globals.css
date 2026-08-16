@@ -134,7 +134,12 @@
   --text-secondary: rgba(225, 238, 232, 0.62);
   /* Der Dunkelmodus war der schlechtere Fall: 0.34 ergab 2,77:1 und damit
      nicht einmal die Schwelle für große Schrift. 0.50 ergibt 4,64:1. */
-  --text-tertiary: rgba(225, 238, 232, 0.50);
+  /* 0.50 ergab auf --bg-tertiary 4,20:1 und lag unter dem Lesbarkeitsmass.
+     Gegen den Seitengrund bestand der Wert — Beschriftungen sitzen aber
+     meist auf Kacheln, und die sind heller. 0.55 ist die kleinste Stufe,
+     die 4,5:1 erreicht (4,76:1); mehr wuerde den Abstand zu
+     --text-secondary einebnen. */
+  --text-tertiary: rgba(225, 238, 232, 0.55);
   --text-quaternary: rgba(225, 238, 232, 0.18);
   --text-muted: rgba(225, 238, 232, 0.62);
 

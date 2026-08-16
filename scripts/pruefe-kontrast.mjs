@@ -55,16 +55,29 @@ const SCHWELLE = 4.5;
 
 let fehler = 0;
 for (const [thema, block] of Object.entries(bloecke)) {
-  const bg = holeFarbe(block, 'bg-primary');
-  if (!bg) { console.error(`--bg-primary fehlt im Block "${thema}".`); process.exit(2); }
-  console.log(`\n${thema.toUpperCase()} — Hintergrund rgb(${bg.rgb.join(', ')})`);
+  // NICHT NUR GEGEN DEN SEITENGRUND.
+  // Beschriftungen stehen selten auf bg-primary — sie sitzen auf Karten und
+  // grauen Kacheln, und die sind heller oder dunkler. Nur gegen bg-primary
+  // zu messen bestand die Pruefung, waehrend derselbe Text auf einer Kachel
+  // darunter liegen konnte. Gemessen wird deshalb gegen JEDEN Flaechenton,
+  // und es zaehlt der schlechteste Wert.
+  const gruende = ['bg-primary', 'bg-secondary', 'bg-tertiary', 'bg-elevated']
+    .map((n) => [n, holeFarbe(block, n)])
+    .filter(([, f]) => f);
+  if (!gruende.length) { console.error(`Kein Flaechenton im Block "${thema}".`); process.exit(2); }
+  console.log(`\n${thema.toUpperCase()} — ${gruende.length} Flächentöne`);
   for (const name of GEPRUEFT) {
     const fg = holeFarbe(block, name);
     if (!fg) { console.log(`  --${name}: nicht in diesem Block (erbt)`); continue; }
-    const v = kontrast(fg, bg);
-    const ok = v >= SCHWELLE;
+    let schlecht = null;
+    for (const [gname, bg] of gruende) {
+      const v = kontrast(fg, bg);
+      if (!schlecht || v < schlecht.v) schlecht = { v, gname };
+    }
+    const ok = schlecht.v >= SCHWELLE;
     if (!ok) fehler++;
-    console.log(`  --${name}: ${v.toFixed(2)}:1 ${ok ? '✓' : `✗ unter ${SCHWELLE}`}`);
+    console.log(`  --${name}: ${schlecht.v.toFixed(2)}:1 auf --${schlecht.gname}`
+      + ` ${ok ? '✓' : `✗ unter ${SCHWELLE}`}`);
   }
 }
 
