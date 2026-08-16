@@ -4,6 +4,7 @@ import Icon from '../../icons/Icon';
 import {
   PFLEGE_FELDER, feldWerte, benenneFeldUm, entferneFeldWert,
   aendereBier, loescheBier, eigeneWerte, legeListenwertAn, entferneListenwert,
+  doppelteBiere, fuehreBiereZusammen,
 } from '../../../utils/bierboerse';
 
 /**
@@ -120,6 +121,43 @@ export default function ListenPflege({ katalog, verkostungen, onGeaendert }) {
     } finally { setArbeitet(false); }
   };
 
+  // Kandidaten für Doppel. Nur im Reiter „Biere" berechnet — die Suche
+  // vergleicht jedes Bier mit jedem, das muss nicht bei jedem Reiterwechsel
+  // laufen.
+  const doppel = useMemo(
+    () => (feld === 'bier' ? doppelteBiere(katalog, verkostungen) : []),
+    [feld, katalog, verkostungen]
+  );
+
+  const zusammenfuehren = async (paar, behalten, aufgeben) => {
+    const sicher = window.confirm(
+      `„${aufgeben.name}" in „${behalten.name}" zusammenführen?\n\n`
+      + `${paar.anzahlA + paar.anzahlB} Verkostungen hängen danach an „${behalten.name}", `
+      + `„${aufgeben.name}" wird gelöscht.\n\n`
+      + 'Leere Angaben werden dabei aus dem anderen Bier ergänzt.');
+    if (!sicher) return;
+    setArbeitet(true);
+    try {
+      const { umgehaengt, ergaenzt } = await fuehreBiereZusammen(
+        behalten.id, aufgeben.id, verkostungen, katalog);
+      // „0 Verkostungen umgehängt" liest sich wie ein Fehlschlag, obwohl es
+      // der Normalfall ist, wenn das aufgegebene Bier nie getrunken wurde.
+      const NAME = { brauerei: 'Brauerei', art: 'Sorte', land: 'Land', alkohol: 'Alkohol' };
+      const felder = ergaenzt.map((f) => NAME[f] || f);
+      const aufzaehlung = felder.length > 1
+        ? `${felder.slice(0, -1).join(', ')} und ${felder.at(-1)}`
+        : felder[0];
+      toast.success(
+        (umgehaengt > 0
+          ? `Zusammengeführt — ${umgehaengt} ${umgehaengt === 1 ? 'Verkostung' : 'Verkostungen'} umgehängt`
+          : 'Zusammengeführt')
+        + (felder.length ? `, ${aufzaehlung} ergänzt.` : '.'));
+      onGeaendert?.();
+    } catch (err) {
+      toast.error(err?.message || 'Ging nicht.', { duration: 6000 });
+    } finally { setArbeitet(false); }
+  };
+
   const bierLoeschen = async (b) => {
     if (!window.confirm(`„${b.name}" aus dem Katalog löschen?`)) return;
     setArbeitet(true);
@@ -162,6 +200,56 @@ export default function ListenPflege({ katalog, verkostungen, onGeaendert }) {
           </button>
         ))}
       </div>
+
+      {/* Doppel zuerst: wer hier aufräumt, will das meist erledigen, bevor
+          er in der langen Liste weitersucht. Steht nur da, wenn es welche
+          gibt — sonst wäre es eine leere Überschrift. */}
+      {feld === 'bier' && doppel.length > 0 && (
+        <div className="rounded-lg bg-system-yellow/10 ring-1 ring-system-yellow/25 p-2.5 space-y-2">
+          <div className="text-caption1 font-semibold text-text-primary">
+            {doppel.length} {doppel.length === 1 ? 'möglicher Doppeleintrag' : 'mögliche Doppeleinträge'}
+          </div>
+          {doppel.slice(0, 6).map((p) => (
+            <div key={`${p.a.id}-${p.b.id}`} className="text-caption2 space-y-1.5">
+              <div className="flex items-baseline gap-1.5 flex-wrap">
+                <span className="text-text-primary font-medium">{p.a.name}</span>
+                <span className="text-text-tertiary">
+                  ({p.anzahlA}×{p.a.brauerei ? ` · ${p.a.brauerei}` : ''})
+                </span>
+                <span className="text-text-tertiary">↔</span>
+                <span className="text-text-primary font-medium">{p.b.name}</span>
+                <span className="text-text-tertiary">
+                  ({p.anzahlB}×{p.b.brauerei ? ` · ${p.b.brauerei}` : ''})
+                </span>
+              </div>
+              {/* Verschiedene Brauereien nicht verschweigen: dann ist die
+                  Wahrscheinlichkeit hoeher, dass es zwei echte Biere sind. */}
+              {!p.brauereiPasst && (
+                <div className="text-system-orange">
+                  Verschiedene Brauereien — vor dem Zusammenführen prüfen.
+                </div>
+              )}
+              <div className="flex gap-1.5">
+                <button type="button" disabled={arbeitet}
+                        onClick={() => zusammenfuehren(p, p.a, p.b)}
+                        className="chip chip-sm chip-gray">
+                  &bdquo;{p.a.name}&ldquo; behalten
+                </button>
+                <button type="button" disabled={arbeitet}
+                        onClick={() => zusammenfuehren(p, p.b, p.a)}
+                        className="chip chip-sm chip-gray">
+                  &bdquo;{p.b.name}&ldquo; behalten
+                </button>
+              </div>
+            </div>
+          ))}
+          {doppel.length > 6 && (
+            <p className="text-caption2 text-text-tertiary">
+              … und {doppel.length - 6} weitere. Nach dem Zusammenführen rücken sie nach.
+            </p>
+          )}
+        </div>
+      )}
 
       {feld === 'bier' ? (
         <div className="max-h-64 overflow-y-auto divide-y divide-border-light">

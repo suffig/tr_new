@@ -920,6 +920,7 @@ textarea.form-input {
    `node scripts/pruefe-farbstufen.mjs` findet solche Lücken nach dem Build. */
 .bg-system-green\/40 { background-color: color-mix(in srgb, var(--system-green) 40%, transparent); }
 .bg-system-yellow\/40 { background-color: color-mix(in srgb, var(--system-yellow) 40%, transparent); }
+.ring-system-yellow\/25 { --tw-ring-color: color-mix(in srgb, var(--system-yellow) 25%, transparent); }
 .ring-system-yellow\/40 { --tw-ring-color: color-mix(in srgb, var(--system-yellow) 40%, transparent); }
 .hover\:bg-system-yellow\/25:hover { background-color: color-mix(in srgb, var(--system-yellow) 25%, transparent); }
 

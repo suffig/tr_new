@@ -1659,3 +1659,134 @@ export async function loescheBier(id, verkostungen) {
   const { error } = await supabaseDb.delete('bier_katalog', id);
   if (error) throw error;
 }
+
+/* ==========================================================================
+   DOPPELTE BIERE FINDEN UND ZUSAMMENFÜHREN
+   ========================================================================== */
+
+/**
+ * Wie sehr gleichen sich zwei Namen? 0 = gar nicht, 1 = gleich.
+ *
+ * Levenshtein statt „fängt gleich an": „Augustiner Helles" und „Augustiner
+ * Hell" unterscheiden sich am ENDE, „Paulaner" und „Paulander" in der Mitte.
+ * Ein Präfixvergleich fände nur den ersten Fall.
+ */
+function aehnlichkeit(a, b) {
+  if (a === b) return 1;
+  if (!a.length || !b.length) return 0;
+  // Eine Zeile reicht: wir brauchen nur den Abstand, nicht den Weg dorthin.
+  let vorher = Array.from({ length: b.length + 1 }, (_, i) => i);
+  for (let i = 1; i <= a.length; i++) {
+    const jetzt = [i];
+    for (let j = 1; j <= b.length; j++) {
+      jetzt[j] = Math.min(
+        vorher[j] + 1,                                        // löschen
+        jetzt[j - 1] + 1,                                     // einfügen
+        vorher[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)       // ersetzen
+      );
+    }
+    vorher = jetzt;
+  }
+  return 1 - vorher[b.length] / Math.max(a.length, b.length);
+}
+
+/** Für den Vergleich: Groß/klein, Umlaute, Satzzeichen und Leerraum egal. */
+const vergleichsform = (s) => String(s || '').toLowerCase()
+  .replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+  .replace(/[^a-z0-9]/g, '');
+
+/**
+ * Bierpaare, die vermutlich dasselbe Bier meinen.
+ *
+ * WARUM ES DIE DOPPEL ÜBERHAUPT GIBT
+ * Bis heute legte das Formular ein zweites Bier gleichen Namens an, sobald
+ * man an einer bestehenden Verkostung die Brauerei änderte — der Katalog
+ * wurde über Name + Brauerei gesucht, und mit der neuen Brauerei griff der
+ * Treffer nicht mehr. Das ist behoben; die bereits entstandenen Doppel räumt
+ * diese Ansicht auf.
+ *
+ * VORSCHLAG, KEINE AUTOMATIK
+ * „Augustiner Helles" und „Augustiner Edelstoff" sind ähnlich und trotzdem
+ * verschiedene Biere. Zusammengeführt wird deshalb nur, was jemand bestätigt.
+ *
+ * ZUR SCHWELLE 0,82
+ * An echten Biernamen durchgerechnet. Erkannt werden u. a. „Augustiner
+ * Helles"/„Augustiner Hell" (0,875), „Tannenzäpfle"/„Tannenzaepfle" (1,0),
+ * „Paulaner Salvator"/„Paulaner Salvador" (0,938). In Ruhe gelassen werden
+ * „Augustiner Helles"/„Augustiner Dunkel" (0,688), „Weihenstephan
+ * Hefe"/„Weihenstephan Kristall" (0,619), „Rothaus Pils"/„Rothaus Märzen"
+ * (0,500). Zwischen dem höchsten Fehltreffer und dem niedrigsten echten
+ * Treffer liegt Luft — die Schwelle steht nicht auf der Kippe.
+ */
+export function doppelteBiere(katalog, verkostungen = [], schwelle = 0.82) {
+  const liste = katalog || [];
+  const anzahlVon = (id) => verkostungen.filter((v) => v.bier_id === id).length;
+  const paare = [];
+
+  for (let i = 0; i < liste.length; i++) {
+    for (let j = i + 1; j < liste.length; j++) {
+      const a = liste[i], b = liste[j];
+      const na = vergleichsform(a.name), nb = vergleichsform(b.name);
+      if (!na || !nb) continue;
+
+      const namensNaehe = aehnlichkeit(na, nb);
+      if (namensNaehe < schwelle) continue;
+
+      // Verschiedene Brauereien sind ein Gegenargument, aber keins, das
+      // ausschliesst: genau das falsch eingetragene Brauereifeld hat die
+      // Doppel ja erzeugt. Eine leere Brauerei sagt gar nichts.
+      const ba = vergleichsform(a.brauerei), bb = vergleichsform(b.brauerei);
+      const brauereiPasst = !ba || !bb || ba === bb;
+
+      paare.push({
+        a, b, naehe: namensNaehe, brauereiPasst,
+        gleicherName: na === nb,
+        anzahlA: anzahlVon(a.id), anzahlB: anzahlVon(b.id),
+      });
+    }
+  }
+  // Sicherste Treffer zuerst: gleicher Name und passende Brauerei.
+  return paare.sort((x, y) =>
+    (y.gleicherName - x.gleicherName) || (y.brauereiPasst - x.brauereiPasst) || (y.naehe - x.naehe));
+}
+
+/**
+ * Zwei Biere zu einem machen.
+ *
+ * Reihenfolge ist wichtig: erst zeigen die Verkostungen auf das bleibende
+ * Bier, DANN wird das andere gelöscht. Andersherum verweigert die Datenbank
+ * das Löschen (`on delete restrict`) — oder schlimmer, die Verkostungen
+ * hingen an einer verschwundenen Zeile.
+ *
+ * Leere Felder des bleibenden Biers werden aus dem aufgegebenen gefüllt:
+ * wenn eins von beiden das Land kennt, soll es nicht verlorengehen.
+ */
+export async function fuehreBiereZusammen(behaltenId, aufgebenId, verkostungen = [], katalog = []) {
+  if (behaltenId === aufgebenId) throw new Error('Das ist dasselbe Bier.');
+
+  const behalten = katalog.find((b) => b.id === behaltenId);
+  const aufgeben = katalog.find((b) => b.id === aufgebenId);
+  if (!behalten || !aufgeben) throw new Error('Eines der beiden Biere gibt es nicht mehr.');
+
+  const ergaenzung = {};
+  for (const feld of ['brauerei', 'art', 'land', 'alkohol']) {
+    if ((behalten[feld] == null || behalten[feld] === '') && aufgeben[feld] != null && aufgeben[feld] !== '') {
+      ergaenzung[feld] = aufgeben[feld];
+    }
+  }
+  if (Object.keys(ergaenzung).length) {
+    const { error } = await supabaseDb.update('bier_katalog', ergaenzung, behaltenId);
+    if (error) throw error;
+  }
+
+  const betroffen = (verkostungen || []).filter((v) => v.bier_id === aufgebenId);
+  for (const v of betroffen) {
+    const { error } = await supabaseDb.update('bier_verkostungen', { bier_id: behaltenId }, v.id);
+    if (error) throw error;   // abbrechen statt halb umhängen
+  }
+
+  const { error } = await supabaseDb.delete('bier_katalog', aufgebenId);
+  if (error) throw error;
+
+  return { umgehaengt: betroffen.length, ergaenzt: Object.keys(ergaenzung) };
+}
