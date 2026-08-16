@@ -8,6 +8,7 @@ import { ladeLokal, bierStand, schnapsStand, logischesDatum } from '../../utils/
 import { dez } from '../../utils/zahlen';
 import { ladeWechsel } from '../../utils/spielerWechsel';
 import { useIchBin } from '../../hooks/useIchBin';
+import { chronologisch, aktuelleSerie, laengsteSerien, bemerkenswerteLaeufe } from '../../utils/serien';
 
 /**
  * Gerade jetzt.
@@ -162,21 +163,39 @@ export default function StartTab({ onNavigate }) {
    * geworden ist — fuenf Kacheln muss man erst lesen. Ein Remis beendet die
    * Serie, es ist ja kein Sieg.
    */
+  /**
+   * Die laufende Siegesserie. Erst ab zwei — bei einer "Serie" von einem
+   * Spiel waere das nur das letzte Ergebnis in Worten.
+   */
   const serie = useMemo(() => {
-    const neueste = [...(matches || [])]
-      .filter((m) => m?.date)
-      .sort((x, y) => String(y.date).localeCompare(String(x.date)));
-    let wer = null, laenge = 0;
-    for (const m of neueste) {
-      const a = m.goalsa || 0, b = m.goalsb || 0;
-      if (a === b) break;
-      const sieger = a > b ? 'AEK' : 'Real';
-      if (wer === null) { wer = sieger; laenge = 1; }
-      else if (sieger === wer) laenge += 1;
-      else break;
-    }
-    return laenge >= 2 ? { wer, laenge } : null;
+    const s = aktuelleSerie((matches || []).filter((m) => m?.date));
+    return s && s.art === 'sieg' && s.laenge >= 2 ? { wer: s.seite, laenge: s.laenge } : null;
   }, [matches]);
+
+  /**
+   * Laeufe, die gerade laufen — ohne Gegentor, Torlaune, Remisserie.
+   *
+   * Getrennt von `serie`, weil das zwei verschiedene Dinge sind: die
+   * Siegesserie steht immer da (sie beantwortet "wie laeuft es"), die
+   * uebrigen Laeufe nur, wenn es sie gibt. Ein Bereich, der meistens leer
+   * ist, darf keine Ueberschrift haben, die immer da steht.
+   */
+  const laeufe = useMemo(() => {
+    const alle = bemerkenswerteLaeufe((matches || []).filter((m) => m?.date));
+    // Die Siegesserie steht schon eine Zeile darueber — nicht doppelt.
+    return alle.filter((l) => l.art !== 'siegesserie');
+  }, [matches]);
+
+  /**
+   * Der Rekord zum Vergleich: wenn gerade drei am Stueck laufen, ist die
+   * interessante Frage, ob es je mehr waren. Nur gezeigt, wenn die laufende
+   * Serie an den Rekord heranreicht — sonst ist es eine Zahl ohne Anlass.
+   */
+  const rekord = useMemo(() => {
+    if (!serie) return null;
+    const best = laengsteSerien((matches || []).filter((m) => m?.date))[serie.wer];
+    return best && best.laenge > serie.laenge && serie.laenge >= best.laenge - 1 ? best : null;
+  }, [matches, serie]);
 
   /**
    * Der juengste Wechsel.
@@ -205,9 +224,11 @@ export default function StartTab({ onNavigate }) {
    * weiß trotzdem, dass es kippt.
    */
   const form = useMemo(() => {
-    const sortiert = [...(matches || [])]
-      .filter((m) => m?.date)
-      .sort((x, y) => String(x.date).localeCompare(String(y.date)));
+    // chronologisch() statt nur nach Datum: an einem Abend werden mehrere
+    // Spiele gespielt, und die kommen absteigend nach id aus der Datenbank.
+    // Nach Datum allein sortiert bleibt diese Reihenfolge stehen — die
+    // Kette zeigte die Spiele eines Abends dann rueckwaerts.
+    const sortiert = chronologisch((matches || []).filter((m) => m?.date));
     return sortiert.slice(-5).map((m) => {
       const a = m.goalsa || 0, b = m.goalsb || 0;
       return { id: m.id, a, b, sieger: a > b ? 'AEK' : b > a ? 'Real' : null, datum: m.date };
@@ -418,6 +439,28 @@ export default function StartTab({ onNavigate }) {
                       {name(serie.wer)}
                     </span>
                     {` hat die letzten ${serie.laenge} gewonnen`}
+                    {/* Der Rekord nur, wenn die laufende Serie ihn fast
+                        erreicht — sonst ist es eine Zahl ohne Anlass. */}
+                    {rekord && (
+                      <span className="text-text-tertiary">
+                        {` · Bestwert ${rekord.laenge}`}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {/* Laeufe stehen nur da, wenn es sie gibt. Ein "0 Spiele ohne
+                    Gegentor" waere keine Information, sondern eine Zeile. */}
+                {laeufe.length > 0 && (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    {laeufe.map((l) => (
+                      <span key={`${l.art}-${l.seite}`}
+                            className={`chip chip-sm ${
+                              l.seite === 'AEK' ? 'chip-blue'
+                              : l.seite === 'Real' ? 'chip-red' : 'chip-gray'}`}>
+                        {l.seite ? `${name(l.seite)}: ` : ''}{l.text}
+                      </span>
+                    ))}
                   </div>
                 )}
               </button>
