@@ -674,22 +674,39 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
 
   return (
     <div className="modern-card overflow-hidden">
-      <button onClick={onToggle} className="w-full p-4 text-left">
+      {/* Kopf: KEIN einzelner grosser Knopf mehr.
+          Vorher war die ganze Kopfzeile ein <button>. Ein zweiter Knopf darin
+          waere ungueltiges HTML (verschachtelte Buttons) — und genau den
+          braucht es hier: das Eintragen eines Biers lag nur ganz unten im
+          aufgeklappten Bereich, also hinter dem Aufklappen UND dem Scrollen
+          an allen Bieren vorbei. Auf einem langen Abend ist das der weiteste
+          Weg zur haeufigsten Handlung. */}
+      <div className="w-full p-4">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-system-yellow/12 text-system-yellow flex items-center justify-center flex-shrink-0">
             <Icon name="beer" size={20} strokeWidth={2} />
           </div>
-          <div className="min-w-0 flex-1">
+          <button onClick={onToggle} className="min-w-0 flex-1 text-left">
             <div className="text-callout font-semibold text-text-primary truncate">{boerse.name}</div>
             <div className="text-caption1 text-text-secondary truncate">
               {datum(boerse.datum)}{boerse.ort ? ` · ${boerse.ort}` : ''}
             </div>
-          </div>
-          <Icon name={offen ? 'chevronUp' : 'chevronDown'} size={18} strokeWidth={2.4}
-                className="text-text-tertiary flex-shrink-0 mt-1" />
+          </button>
+          {/* Das Plus steht auch bei ZUGEKLAPPTER Karte da: dann traegt man
+              ein Bier ein, ohne den Abend erst aufklappen zu muessen. */}
+          <button onClick={onNeuesBier}
+                  className="w-9 h-9 rounded-xl bg-system-yellow/12 text-system-yellow flex items-center justify-center flex-shrink-0"
+                  aria-label={`Bier bei ${boerse.name} eintragen`} title="Bier eintragen">
+            <Icon name="plus" size={18} strokeWidth={2.8} />
+          </button>
+          <button onClick={onToggle} className="flex-shrink-0 mt-1 text-text-tertiary"
+                  aria-label={offen ? 'Zuklappen' : 'Aufklappen'} aria-expanded={offen}>
+            <Icon name={offen ? 'chevronUp' : 'chevronDown'} size={18} strokeWidth={2.4} />
+          </button>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 mt-3">
+        <button onClick={onToggle} className="grid grid-cols-4 gap-2 mt-3 w-full"
+                aria-label={offen ? 'Zuklappen' : 'Aufklappen'}>
           {[
             ['Biere', stat.biere],
             ['Gläser', stat.glaeser],
@@ -701,8 +718,8 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
               <div className="text-caption2 text-text-tertiary">{label}</div>
             </div>
           ))}
-        </div>
-      </button>
+        </button>
+      </div>
 
       {offen && (
         <div className="px-4 pb-4 space-y-3 border-t border-border-light pt-3">
