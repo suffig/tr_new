@@ -135,3 +135,44 @@ export function toreFuerSeite(matches, player) {
     andere,
   };
 }
+
+/**
+ * Die letzten Spiele eines Spielers — die Formkurve.
+ *
+ * WELCHE SPIELE ZAEHLEN
+ * Nur die, in denen der Spieler in einer der beiden Torschuetzenlisten
+ * steht. Eine Aufstellung gibt es nicht, also ist ein Spiel ohne Tor von ihm
+ * nicht von einem Spiel zu unterscheiden, an dem er gar nicht teilgenommen
+ * hat. Eine Null zu zeichnen, wo vielleicht "nicht dabei" richtig waere,
+ * waere eine erfundene Angabe — deshalb erscheinen nur Spiele MIT Toren.
+ *
+ * Das macht die Kurve zu einer Torkurve, nicht zu einer Einsatzkurve. Die
+ * Beschriftung muss das sagen, sonst liest man sie falsch.
+ *
+ * Neueste zuerst im Rueckgabewert umgedreht: gezeichnet wird von links (alt)
+ * nach rechts (neu), wie man eine Zeitachse liest.
+ */
+export function formkurve(matches, name, anzahl = 8) {
+  if (!name) return [];
+  const k = nameKey(name);
+  const treffer = [];
+
+  for (const m of matches || []) {
+    // schuetzen() benutzen statt die Liste selbst zu lesen: sie faengt drei
+    // Formen ab, die in den Daten wirklich vorkommen — Array von Objekten,
+    // ein JSON-STRING statt eines Arrays, und blosse Namen ohne Anzahl.
+    // Direkt auf g.player zuzugreifen haette die letzten beiden verschluckt.
+    const zaehle = (roh) => schuetzen(roh)
+      .filter((g) => nameKey(g.name) === k)
+      .reduce((sum, g) => sum + g.anzahl, 0);
+    const tore = zaehle(m.goalslista) + zaehle(m.goalslistb);
+    if (tore > 0) treffer.push({ id: m.id, datum: m.date || m.datum || null, tore });
+  }
+
+  // Nach Datum, nicht nach id: Spiele werden nicht zwingend in der
+  // Reihenfolge eingetragen, in der sie stattfanden.
+  treffer.sort((a, b) => String(a.datum || '').localeCompare(String(b.datum || ''))
+    || (a.id || 0) - (b.id || 0));
+
+  return treffer.slice(-anzahl);
+}

@@ -7,6 +7,7 @@ import { getTeamDisplay } from '../../../constants/teams';
 import { istLegacySaison } from '../../../utils/legacySaison';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { spielerStatistik, MASSE } from '../../../utils/spielerStatistik';
+import { formkurve } from '../../../utils/spielerBilanz';
 import { nameKey } from '../../../utils/playerIdentity';
 import { dez } from '../../../utils/zahlen';
 
@@ -41,6 +42,7 @@ export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliess
   const { data: alleSpieler } = useSupabaseQuery('players', '*', opt);
   const { data: alleSds } = useSupabaseQuery('spieler_des_spiels', '*', opt);
   const { data: alleSperren } = useSupabaseQuery('bans', '*', opt);
+  const { data: alleSpiele } = useSupabaseQuery('matches', '*', opt);
 
   const selbstGebaut = useMemo(() => {
     if (!brauchtDaten || !player?.name || !alleSpieler) return null;
@@ -55,6 +57,10 @@ export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliess
       || liste.find((x) => (x.spellings || []).some((n) => nameKey(n) === k))
       || null;
   }, [brauchtDaten, player?.name, alleSpieler, alleSds, alleSperren]);
+
+  const kurve = useMemo(
+    () => formkurve(alleSpiele || [], player?.name || uebergeben?.name),
+    [alleSpiele, player?.name, uebergeben?.name]);
 
   // Ersatz aus der Spielerzeile, falls die Laufbahn (noch) nicht steht.
   //
@@ -203,6 +209,39 @@ export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliess
                   ("Tore") — kleingeschrieben ergab das "mit 12 tore". */}
               {' '}mit {wert(besteSaison)} {aktuellesMass.sortLabel}.
             </p>
+          )}
+
+          {/* FORMKURVE — die letzten Spiele mit Toren.
+              Bewusst KEINE Einsatzkurve: eine Aufstellung gibt es nicht, ein
+              Spiel ohne Tor ist deshalb nicht von einem Spiel zu
+              unterscheiden, bei dem er gar nicht dabei war. Eine Null zu
+              zeichnen, wo vielleicht "nicht dabei" richtig waere, waere eine
+              erfundene Angabe. Die Beschriftung sagt das. */}
+          {kurve.length >= 2 && (
+            <div className="panel-gray rounded-xl p-3">
+              <div className="flex items-baseline justify-between gap-2 mb-2">
+                <span className="text-footnote font-semibold text-text-muted">Letzte Spiele mit Toren</span>
+                <span className="text-caption2 text-text-tertiary">
+                  {kurve.reduce((n, x) => n + x.tore, 0)} in {kurve.length}
+                </span>
+              </div>
+              <div className="flex items-end gap-1.5 h-16">
+                {kurve.map((x) => {
+                  const hoch = Math.max(...kurve.map((y) => y.tore), 1);
+                  return (
+                    <div key={x.id} className="flex-1 flex flex-col items-center gap-1 min-w-0">
+                      <span className="text-caption2 num-tabular text-text-secondary">{x.tore}</span>
+                      <div className="w-full rounded-t bg-system-orange/70"
+                           style={{ height: `${Math.max(8, (x.tore / hoch) * 100)}%` }} />
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-caption2 text-text-tertiary mt-1.5">
+                Links das älteste. Spiele ohne Tor von {spieler.name.split(' ')[0]} fehlen —
+                ob er dabei war, steht nirgends.
+              </p>
+            </div>
           )}
 
           {/* Saison für Saison */}
