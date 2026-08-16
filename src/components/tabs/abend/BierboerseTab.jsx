@@ -9,6 +9,7 @@ import ZahlFeld from '../../ZahlFeld';
 import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
 import ListenPflege from './ListenPflege';
+import AbendBild from './AbendBild';
 import {
   PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, bestandNachFeld, preisEntwicklungJeBier, trinkprofil,
   ladeBoersen, ladeKatalog, ladeVerkostungen,
@@ -606,6 +607,7 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
   // Eingabereihenfolge — beides gab es vorher, aber als zwei getrennte
   // Listen derselben Biere.
   const [bierSort, setBierSort] = useState('note');
+  const [bildOffen, setBildOffen] = useState(false);
 
   /**
    * Die Biere dieser Boerse, in der gewaehlten Reihenfolge.
@@ -930,9 +932,17 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
             {/* Ändern und Löschen liegen bewusst hier unten im aufgeklappten
                 Bereich — nicht neben dem Kopf, wo man beim Auf- und Zuklappen
                 danebentippen kann. */}
+            {/* Zwei Wege statt einem: Text zum Nachlesen, Bild zum
+                Verschicken. Vorher gab es nur den Text, und der landet im
+                Chat als Wand aus Zeilen. */}
+            <button onClick={() => setBildOffen(true)}
+                    className="w-11 rounded-xl bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
+                    aria-label="Abend als Bild" title="Abend als Bild">
+              <Icon name="eye" size={16} strokeWidth={2.2} />
+            </button>
             <button onClick={teilen}
                     className="w-11 rounded-xl bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
-                    aria-label="Abend teilen" title="Abend teilen">
+                    aria-label="Abend als Text teilen" title="Abend als Text teilen">
               <Icon name="share" size={16} strokeWidth={2.2} />
             </button>
             <button onClick={onBoerseBearbeiten}
@@ -946,6 +956,11 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
               <Icon name="trash" size={16} strokeWidth={2.2} />
             </button>
           </div>
+
+          {bildOffen && (
+            <AbendBild boerse={boerse} verkostungen={verkostungen} katalog={katalog}
+                       onSchliessen={() => setBildOffen(false)} />
+          )}
         </div>
       )}
     </div>
