@@ -10,7 +10,8 @@ import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
 import ListenPflege from './ListenPflege';
 import {
-  PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, bestandNachFeld, ladeBoersen, ladeKatalog, ladeVerkostungen,
+  PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, bestandNachFeld, preisEntwicklungJeBier, trinkprofil,
+  ladeBoersen, ladeKatalog, ladeVerkostungen,
   wiederkauf, notenDrift, brauereiStatistik,
   herkunftVerteilung, alkoholVerlauf, preisJe100ml,
   findeOderLegeBierAn, boersenStatistik, bestenListe, katalogBestenListe,
@@ -1638,6 +1639,10 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
 
       <Bestandskarte katalog={katalog} verkostungen={verkostungen} />
 
+      <Trinkprofil verkostungen={verkostungen} katalog={katalog} />
+
+      <Preisentwicklung verkostungen={verkostungen} boersen={boersen} katalog={katalog} />
+
       {/* Wird es im Lauf des Abends staerker? Wie die Notendrift nach
           POSITION, und nach Glaesern gewichtet — ein Doppelbock, von dem
           einer nippt, verschoebe den Schnitt sonst wie drei geteilte Halbe. */}
@@ -2275,6 +2280,27 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
           // Knoepfe — dann lieber die naechstliegende ganze Zahl markieren
           // als gar keine.
           const gerundet = gesamt == null ? null : Math.round(Number(gesamt));
+
+          // WER BEWERTET, HAT GETRUNKEN.
+          // Der Zaehler stand bei 0, und ohne mindestens ein Glas verweigert
+          // das Formular das Speichern — mit einer Fehlermeldung, die erst
+          // nach dem Absenden kommt. Die Note sagt aber laengst aus, dass die
+          // Person das Bier im Glas hatte. Also zaehlt die erste Bewertung
+          // still auf 1 hoch.
+          //
+          // Nur von 0 aus: wer schon zwei Glaeser eingetragen hat, soll sie
+          // durch eine spaetere Bewertung nicht wieder verlieren. Und nur beim
+          // SETZEN einer Note — wer seine Bewertung zuruecknimmt, hat das Bier
+          // trotzdem getrunken.
+          const zaehleErstesGlas = () => setAnzahl((n) => (n === 0 ? 1 : n));
+          const gesamtGesetzt = (wert) => {
+            setGesamt(wert);
+            if (wert != null) zaehleErstesGlas();
+          };
+          const notenGesetzt = (wert) => {
+            setNoten(wert);
+            zaehleErstesGlas();
+          };
           return (
             <div key={p.key} className="panel-gray rounded-xl p-3">
               <div className="flex items-center gap-2 mb-2">
@@ -2296,8 +2322,8 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
               <BewertungsBlock
                 modus={modus}
                 kategorien={einstellungen.kategorien}
-                noten={noten} onNoten={setNoten}
-                gesamt={gesamt} auswahl={gerundet} onGesamt={setGesamt}
+                noten={noten} onNoten={notenGesetzt}
+                gesamt={gesamt} auswahl={gerundet} onGesamt={gesamtGesetzt}
                 farbe={p.farbe}
               />
             </div>
@@ -2761,6 +2787,129 @@ function Bestandskarte({ katalog, verkostungen }) {
           — angelegt, aber noch nicht im Glas gewesen.
         </p>
       )}
+    </div>
+  );
+}
+
+/**
+ * Trinkprofil — die Gesamtsicht auf beide, über alle Abende.
+ *
+ * Je Abend gibt es diese Zahlen schon; was fehlte, war der Vergleich über
+ * alles. "Wer trinkt mehr" beantwortet ein einzelner Abend nicht.
+ */
+function Trinkprofil({ verkostungen, katalog }) {
+  const profile = useMemo(() => trinkprofil(verkostungen, katalog), [verkostungen, katalog]);
+  if (!profile.some((p) => p.glaeser > 0 || p.bewertet > 0)) return null;
+
+  // Fuer die Balken: der jeweils groessere Wert ist der Massstab, damit man
+  // die beiden nebeneinander vergleichen kann statt gegen eine feste Skala.
+  const max = (feld) => Math.max(...profile.map((p) => Number(p[feld]) || 0), 1);
+  // kommaEins lebt in BilanzAnsicht; hier die gleiche Formatierung lokal,
+  // statt sie nach oben zu ziehen und zwei Stellen aneinanderzubinden.
+  const einsNach = (n, stellen = 1) =>
+    n == null ? '—' : Number(n).toLocaleString('de-DE', { maximumFractionDigits: stellen });
+
+  const zeilen = [
+    { feld: 'glaeser', label: 'Gläser', zeige: (p) => p.glaeser },
+    { feld: 'liter', label: 'Liter', zeige: (p) => einsNach(p.liter, 1) },
+    { feld: 'ausgaben', label: 'Wert des Getrunkenen', zeige: (p) => euro(p.ausgaben) },
+    { feld: 'staerke', label: 'Ø Stärke', zeige: (p) => (p.staerke == null ? '—' : `${einsNach(p.staerke, 1)} %`) },
+    { feld: 'schnitt', label: 'Ø Note', zeige: (p) => note(p.schnitt) },
+  ];
+
+  return (
+    <div className="modern-card p-4">
+      <div className="flex items-baseline justify-between gap-2 mb-2.5">
+        <span className="text-footnote font-semibold text-text-muted">Trinkprofil</span>
+        <span className="text-caption2 text-text-tertiary">über alle Abende</span>
+      </div>
+
+      <div className="space-y-2.5">
+        {zeilen.map((z) => (
+          <div key={z.feld}>
+            <div className="text-caption2 text-text-tertiary mb-1">{z.label}</div>
+            {profile.map((p) => (
+              <div key={p.key} className="flex items-center gap-2 mb-1">
+                <TeamLogo team={p.key} size="xs" />
+                <div className="flex-1 min-w-0 h-2 rounded-full bg-bg-tertiary overflow-hidden">
+                  <div className={`h-full ${p.key === 'aek' ? 'bg-system-blue/70' : 'bg-system-red/70'}`}
+                       style={{ width: `${Math.max(3, ((Number(p[z.feld]) || 0) / max(z.feld)) * 100)}%` }} />
+                </div>
+                <span className="num-tabular text-caption2 text-text-secondary w-20 text-right flex-shrink-0">
+                  {z.zeige(p)}
+                </span>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+
+      {/* Die Lieblingssorte steht dazu, weil sie die Zahlen erklaert: wer
+          Doppelbock mag, liegt bei der Staerke vorn, ohne mehr zu trinken. */}
+      <div className="mt-2.5 pt-2.5 border-t border-border-light space-y-1">
+        {profile.map((p) => (
+          <div key={p.key} className="text-caption2 text-text-tertiary">
+            <span className={`font-semibold ${p.farbe}`}>{p.name}</span>
+            {p.lieblingssorte
+              ? ` trinkt am liebsten ${p.lieblingssorte.art} (${p.lieblingssorte.glaeser} ${
+                  p.lieblingssorte.glaeser === 1 ? 'Glas' : 'Gläser'})`
+              : ' — noch keine Sorte oft genug getrunken'}
+            {p.bewertet > 0 && ` · ${p.bewertet} ${p.bewertet === 1 ? 'Bewertung' : 'Bewertungen'}`}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Preisentwicklung je Bier.
+ *
+ * Nur Biere mit mindestens zwei Preisen — ein einzelner Preis ist keine
+ * Entwicklung. Verkostungen ohne Preis fallen raus statt als 0 € zu zaehlen:
+ * ein nicht eingetragener Preis ist kein geschenktes Bier.
+ */
+function Preisentwicklung({ verkostungen, boersen, katalog }) {
+  const liste = useMemo(
+    () => preisEntwicklungJeBier(verkostungen, boersen, katalog),
+    [verkostungen, boersen, katalog]);
+  if (!liste.length) return null;
+
+  return (
+    <div className="modern-card p-4">
+      <div className="flex items-baseline justify-between gap-2 mb-2.5">
+        <span className="text-footnote font-semibold text-text-muted">Preisentwicklung</span>
+        <span className="text-caption2 text-text-tertiary">
+          {liste.length} {liste.length === 1 ? 'Bier' : 'Biere'} mehrfach gekauft
+        </span>
+      </div>
+      <div className="space-y-2.5">
+        {liste.slice(0, 8).map((e) => {
+          const teurer = e.differenz > 0.001;
+          const guenstiger = e.differenz < -0.001;
+          return (
+            <div key={e.bier.id}>
+              <div className="flex items-baseline gap-2 text-caption1">
+                <span className="text-text-primary truncate flex-1 min-w-0">{e.bier.name}</span>
+                <span className="num-tabular text-text-secondary flex-shrink-0 text-caption2">
+                  {euro(e.erster)} → {euro(e.letzter)}
+                </span>
+              </div>
+              <div className="flex items-baseline gap-2 text-caption2 mt-0.5">
+                <span className={teurer ? 'text-system-red' : guenstiger ? 'text-system-green' : 'text-text-tertiary'}>
+                  {teurer ? '+' : ''}{euro(e.differenz)}
+                  {!teurer && !guenstiger && ' gleich geblieben'}
+                </span>
+                <span className="text-text-tertiary ml-auto">
+                  {e.punkte.length}× gekauft
+                  {e.teuerster !== e.guenstigster
+                    && ` · ${euro(e.guenstigster)}–${euro(e.teuerster)}`}
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
     </div>
   );
 }

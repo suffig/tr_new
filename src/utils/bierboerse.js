@@ -1874,3 +1874,111 @@ export function bestandNachFeld(feld, katalog, verkostungen, vorrat = []) {
       || (b.glaeser - a.glaeser)
       || String(a.wert).localeCompare(String(b.wert), 'de'));
 }
+
+/**
+ * Was dasselbe Bier über die Abende gekostet hat.
+ *
+ * NUR BIERE MIT MINDESTENS ZWEI PREISEN
+ * Ein einzelner Preis ist keine Entwicklung. Und Verkostungen ohne Preis
+ * fallen raus, statt als 0 € durchzugehen — ein nicht eingetragener Preis
+ * ist kein geschenktes Bier.
+ *
+ * Sortiert wird nach Datum der Börse, nicht nach id: die Abende werden nicht
+ * zwingend in der Reihenfolge eingetragen, in der sie stattgefunden haben.
+ */
+export function preisEntwicklungJeBier(verkostungen, boersen, katalog, mindestens = 2) {
+  const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+  const boerseVon = new Map((boersen || []).map((b) => [b.id, b]));
+  const proBier = new Map();
+
+  for (const v of verkostungen || []) {
+    const preis = Number(v.preis);
+    if (!Number.isFinite(preis) || v.preis == null) continue;
+    const bier = bierVon.get(v.bier_id);
+    if (!bier) continue;
+    const datum = boerseVon.get(v.boerse_id)?.datum || null;
+    if (!proBier.has(v.bier_id)) proBier.set(v.bier_id, { bier, punkte: [] });
+    proBier.get(v.bier_id).punkte.push({
+      datum, preis, ml: v.groesse_ml || null,
+      // Preis je 100 ml macht 0,33-l- und 0,5-l-Glaeser vergleichbar.
+      je100: v.groesse_ml ? (preis / v.groesse_ml) * 100 : null,
+    });
+  }
+
+  return [...proBier.values()]
+    .map((e) => {
+      const punkte = e.punkte.sort((a, b) => String(a.datum || '').localeCompare(String(b.datum || '')));
+      const erst = punkte[0], letzt = punkte.at(-1);
+      return {
+        bier: e.bier,
+        punkte,
+        erster: erst.preis,
+        letzter: letzt.preis,
+        differenz: letzt.preis - erst.preis,
+        guenstigster: Math.min(...punkte.map((p) => p.preis)),
+        teuerster: Math.max(...punkte.map((p) => p.preis)),
+      };
+    })
+    .filter((e) => e.punkte.length >= mindestens)
+    // Die groesste Veraenderung zuerst — egal in welche Richtung.
+    .sort((a, b) => Math.abs(b.differenz) - Math.abs(a.differenz));
+}
+
+/**
+ * Trinkprofil je Person über alle Abende.
+ *
+ * Die Einzelwerte gibt es je Abend; was fehlte, war die Gesamtsicht — wer
+ * trinkt mehr, wer teurer, wer stärker, wer bewertet strenger.
+ *
+ * WAS HIER BEWUSST NICHT PASSIERT
+ * Die Ausgaben sind das, was die getrunkenen Gläser GEKOSTET haben, nicht
+ * das, was jemand bezahlt hat. Wer zahlt, steht in `bezahlt_von` und ist
+ * eine andere Frage (die Abrechnung). Beides zu vermischen ergäbe eine Zahl,
+ * die keine von beiden ist.
+ */
+export function trinkprofil(verkostungen, katalog) {
+  const bierVon = new Map((katalog || []).map((b) => [b.id, b]));
+
+  return PERSONEN.map((p) => {
+    const feld = p.key === 'aek' ? 'anzahl_aek' : 'anzahl_real';
+    const noteFeld = p.key === 'aek' ? 'note_aek' : 'note_real';
+    let glaeser = 0, ml = 0, ausgaben = 0, alkoholMl = 0;
+    const noten = [];
+    const biere = new Set();
+    const sorten = new Map();
+
+    for (const v of verkostungen || []) {
+      const n = Number(v[feld]) || 0;
+      if (n > 0) {
+        const bier = bierVon.get(v.bier_id);
+        glaeser += n;
+        ml += (v.groesse_ml || 0) * n;
+        ausgaben += (Number(v.preis) || 0) * n;
+        alkoholMl += (v.groesse_ml || 0) * n * ((Number(bier?.alkohol) || 0) / 100);
+        biere.add(v.bier_id);
+        if (bier?.art) sorten.set(bier.art, (sorten.get(bier.art) || 0) + n);
+      }
+      // Bewertet werden kann auch ohne eigenes Glas — der Schluck vom anderen.
+      const note = v[noteFeld];
+      if (note != null) noten.push(Number(note));
+    }
+
+    const liebling = [...sorten.entries()].sort((a, b) => b[1] - a[1])[0] || null;
+    return {
+      ...p,
+      glaeser,
+      liter: ml / 1000,
+      ausgaben,
+      biere: biere.size,
+      proGlas: glaeser ? ausgaben / glaeser : null,
+      // Durchschnittlicher Alkoholgehalt des Getrunkenen, nach Menge gewichtet:
+      // ein Doppelbock, von dem nur genippt wurde, soll den Schnitt nicht so
+      // heben wie drei Glaeser davon.
+      staerke: ml ? (alkoholMl / ml) * 100 : null,
+      standardglaeser: alkoholMl * 0.789 / 12,
+      schnitt: noten.length ? mittel(noten) : null,
+      bewertet: noten.length,
+      lieblingssorte: liebling ? { art: liebling[0], glaeser: liebling[1] } : null,
+    };
+  });
+}
