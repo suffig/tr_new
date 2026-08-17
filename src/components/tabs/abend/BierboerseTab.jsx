@@ -10,6 +10,7 @@ import { zahl, alsText } from '../../../utils/zahlen';
 import { supabaseDb } from '../../../utils/supabase';
 import ListenPflege from './ListenPflege';
 import AbendBild from './AbendBild';
+import { AbendeVerlauf, TrinkVerlauf } from './BierVerlauf';
 import {
   PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, bestandNachFeld, preisEntwicklungJeBier, trinkprofil,
   ladeBoersen, ladeKatalog, ladeVerkostungen,
@@ -845,6 +846,8 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
               )}
             </div>
           )}
+
+          <TrinkVerlauf verkostungen={verkostungen} katalog={katalog} />
 
           {/* EINE Liste statt zweier.
               Vorher standen dieselben Biere zweimal da: als "Bestenliste"
@@ -1757,6 +1760,8 @@ function BilanzAnsicht({ boersen, verkostungen, katalog }) {
           )}
         </div>
       )}
+
+      <AbendeVerlauf boersen={boersen} verkostungen={verkostungen} katalog={katalog} />
 
       <Bestandskarte katalog={katalog} verkostungen={verkostungen} />
 

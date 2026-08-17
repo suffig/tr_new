@@ -8,6 +8,7 @@ import { istLegacySaison } from '../../../utils/legacySaison';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { spielerStatistik, MASSE } from '../../../utils/spielerStatistik';
 import { formkurve } from '../../../utils/spielerBilanz';
+import Verlaufsgrafik from '../../Verlaufsgrafik';
 import { nameKey } from '../../../utils/playerIdentity';
 import { dez } from '../../../utils/zahlen';
 
@@ -58,9 +59,32 @@ export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliess
       || null;
   }, [brauchtDaten, player?.name, alleSpieler, alleSds, alleSperren]);
 
+  const [kurvenArt, setKurvenArt] = useState('je');
+
   const kurve = useMemo(
     () => formkurve(alleSpiele || [], player?.name || uebergeben?.name),
     [alleSpiele, player?.name, uebergeben?.name]);
+
+  /**
+   * Die Punkte fuer die Grafik.
+   *
+   * "Je Spiel" zeigt die Schwankung, "Aufsummiert" die Gesamtentwicklung.
+   * Beide aus derselben Quelle, damit sie nicht auseinanderlaufen koennen.
+   */
+  const kurvenPunkte = useMemo(() => {
+    let summe = 0;
+    return kurve.map((x, i) => {
+      summe += x.tore;
+      const datum = x.datum
+        ? new Date(x.datum).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' })
+        : `Spiel ${i + 1}`;
+      return {
+        label: datum,
+        wert: kurvenArt === 'summe' ? summe : x.tore,
+        zusatz: kurvenArt === 'summe' ? `${x.tore} in diesem Spiel` : null,
+      };
+    });
+  }, [kurve, kurvenArt]);
 
   // Ersatz aus der Spielerzeile, falls die Laufbahn (noch) nicht steht.
   //
@@ -211,35 +235,47 @@ export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliess
             </p>
           )}
 
-          {/* FORMKURVE — die letzten Spiele mit Toren.
-              Bewusst KEINE Einsatzkurve: eine Aufstellung gibt es nicht, ein
-              Spiel ohne Tor ist deshalb nicht von einem Spiel zu
-              unterscheiden, bei dem er gar nicht dabei war. Eine Null zu
-              zeichnen, wo vielleicht "nicht dabei" richtig waere, waere eine
-              erfundene Angabe. Die Beschriftung sagt das. */}
+          {/* FORMKURVE als Grafik.
+              Zwei Linien uebereinander waeren hier falsch: die Tore je Spiel
+              schwanken zwischen 1 und 3, die aufsummierten laufen in die
+              Dutzende. Auf einer gemeinsamen Achse waere die untere Linie
+              platt. Deshalb umschaltbar. */}
           {kurve.length >= 2 && (
             <div className="panel-gray rounded-xl p-3">
-              <div className="flex items-baseline justify-between gap-2 mb-2">
-                <span className="text-footnote font-semibold text-text-muted">Letzte Spiele mit Toren</span>
+              <div className="flex items-center justify-between gap-2 mb-1.5">
+                <span className="text-footnote font-semibold text-text-muted">Formkurve</span>
+                <div className="flex gap-1 p-0.5 bg-bg-tertiary rounded-lg">
+                  {[['je', 'Je Spiel'], ['summe', 'Aufsummiert']].map(([k, label]) => (
+                    <button key={k} type="button" onClick={() => setKurvenArt(k)}
+                            aria-pressed={kurvenArt === k}
+                            className={`px-2 py-0.5 rounded-md text-caption2 font-semibold transition-colors ${
+                              kurvenArt === k ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <Verlaufsgrafik
+                punkte={kurvenPunkte}
+                farbe="var(--system-orange)"
+                hoehe={116}
+                formatWert={(n) => `${n} ${n === 1 ? 'Tor' : 'Tore'}`}
+              />
+
+              <div className="flex items-baseline gap-3 mt-1.5 pt-1.5 border-t border-border-light">
                 <span className="text-caption2 text-text-tertiary">
-                  {kurve.reduce((n, x) => n + x.tore, 0)} in {kurve.length}
+                  {kurve.reduce((n, x) => n + x.tore, 0)} Tore in {kurve.length} Spielen
+                </span>
+                <span className="text-caption2 text-text-secondary num-tabular ml-auto">
+                  Ø {(kurve.reduce((n, x) => n + x.tore, 0) / kurve.length)
+                       .toLocaleString('de-DE', { maximumFractionDigits: 2 })} je Spiel
                 </span>
               </div>
-              <div className="flex items-end gap-1.5 h-16">
-                {kurve.map((x) => {
-                  const hoch = Math.max(...kurve.map((y) => y.tore), 1);
-                  return (
-                    <div key={x.id} className="flex-1 flex flex-col items-center gap-1 min-w-0">
-                      <span className="text-caption2 num-tabular text-text-secondary">{x.tore}</span>
-                      <div className="w-full rounded-t bg-system-orange/70"
-                           style={{ height: `${Math.max(8, (x.tore / hoch) * 100)}%` }} />
-                    </div>
-                  );
-                })}
-              </div>
-              <p className="text-caption2 text-text-tertiary mt-1.5">
-                Links das älteste. Spiele ohne Tor von {spieler.name.split(' ')[0]} fehlen —
-                ob er dabei war, steht nirgends.
+
+              <p className="text-caption2 text-text-tertiary mt-1">
+                Nur Spiele mit Toren von {spieler.name.split(' ')[0]} — ob er in den
+                anderen dabei war, steht nirgends.
               </p>
             </div>
           )}

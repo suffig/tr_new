@@ -2004,3 +2004,75 @@ export function trinkprofil(verkostungen, katalog) {
     };
   });
 }
+
+/**
+ * Verlauf über die Abende — was sich von Bierbörse zu Bierbörse verändert.
+ *
+ * Bisher gab es je Abend eine Zeile in der Bilanz. Eine Zeile sagt aber
+ * nicht, ob es mehr wird: dafür muss man die Abende nebeneinanderlegen.
+ *
+ * ÄLTESTE ZUERST — eine Zeitachse liest man von links nach rechts. Die
+ * Bilanz sortiert sonst neueste zuerst; hier wäre das rückwärts.
+ *
+ * Abende OHNE Verkostungen bleiben drin, mit ihren Nullen. Sie sind erfasst
+ * worden, also haben sie stattgefunden; sie zu überspringen würde eine Lücke
+ * im Verlauf zu einer geraden Linie glätten.
+ */
+export function abendVerlauf(boersen, verkostungen, katalog) {
+  return [...(boersen || [])]
+    .sort((a, b) => String(a.datum || '').localeCompare(String(b.datum || '')))
+    .map((b) => {
+      const eigene = (verkostungen || []).filter((v) => v.boerse_id === b.id);
+      const s = boersenStatistik(eigene, katalog);
+      const noten = eigene.map(schnittNote).filter((n) => n != null);
+      return {
+        boerse: b,
+        datum: b.datum || null,
+        biere: s.biere,
+        glaeser: s.glaeser,
+        liter: s.liter,
+        ausgaben: s.ausgaben,
+        standardglaeser: s.standardglaeser ?? null,
+        schnitt: noten.length ? mittel(noten) : null,
+        // Preis je Glas — die einzige Zahl, die zwei unterschiedlich lange
+        // Abende vergleichbar macht.
+        proGlas: s.glaeser ? s.ausgaben / s.glaeser : null,
+      };
+    });
+}
+
+/**
+ * Der Verlauf INNERHALB eines Abends — wie sich das Trinken aufbaut.
+ *
+ * Aufsummiert in der Reihenfolge der Eintragung: nach dem dritten Bier steht
+ * da, wie viel bis dahin zusammengekommen ist. Das ist die Frage am Abend
+ * selbst („wie viel war das jetzt schon"), und sie ist mit den Einzelzeilen
+ * nicht zu beantworten, ohne im Kopf zu addieren.
+ *
+ * Die REIHENFOLGE ist die der id, nicht die einer Uhrzeit: eine Uhrzeit wird
+ * nicht erfasst. Das stimmt, solange man einträgt, während man trinkt — und
+ * genau dafür ist die App gedacht.
+ */
+export function abendTrinkverlauf(verkostungen, katalog) {
+  const nachId = new Map((katalog || []).map((b) => [b.id, b]));
+  let glaeser = 0, ml = 0, ausgaben = 0, alkoholMl = 0;
+
+  return [...(verkostungen || [])]
+    .sort((a, b) => (a.id || 0) - (b.id || 0))
+    .map((v) => {
+      const bier = nachId.get(v.bier_id);
+      const n = (v.anzahl_aek || 0) + (v.anzahl_real || 0);
+      glaeser += n;
+      ml += (v.groesse_ml || 0) * n;
+      ausgaben += (Number(v.preis) || 0) * n;
+      alkoholMl += (v.groesse_ml || 0) * n * ((Number(bier?.alkohol) || 0) / 100);
+      return {
+        id: v.id,
+        name: bier?.name || '—',
+        glaeser, liter: ml / 1000, ausgaben,
+        // Standardglaeser: 12 g reiner Alkohol, Dichte 0,789 g/ml.
+        standardglaeser: (alkoholMl * 0.789) / 12,
+        note: schnittNote(v),
+      };
+    });
+}
