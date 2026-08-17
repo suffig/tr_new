@@ -261,6 +261,7 @@ export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliess
                 farbe="var(--system-orange)"
                 hoehe={116}
                 formatWert={(n) => `${n} ${n === 1 ? 'Tor' : 'Tore'}`}
+                formatKurz={(n) => `${n}`}
               />
 
               <div className="flex items-baseline gap-3 mt-1.5 pt-1.5 border-t border-border-light">

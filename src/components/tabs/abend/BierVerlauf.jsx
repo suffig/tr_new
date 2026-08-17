@@ -22,11 +22,11 @@ export function AbendeVerlauf({ boersen, verkostungen, katalog }) {
     [boersen, verkostungen, katalog]);
 
   const masse = [
-    { id: 'glaeser', label: 'Gläser', farbe: 'var(--system-yellow)', f: (n) => `${n} Gläser` },
-    { id: 'liter', label: 'Liter', farbe: 'var(--system-blue)', f: (n) => `${eins(n)} l` },
-    { id: 'ausgaben', label: 'Ausgaben', farbe: 'var(--system-green)', f: euro },
-    { id: 'proGlas', label: 'Preis je Glas', farbe: 'var(--system-orange)', f: euro },
-    { id: 'schnitt', label: 'Ø Note', farbe: 'var(--system-purple)', f: (n) => eins(n) },
+    { id: 'glaeser', label: 'Gläser', farbe: 'var(--system-yellow)', f: (n) => `${n} Gläser`, k: (n) => `${n}` },
+    { id: 'liter', label: 'Liter', farbe: 'var(--system-blue)', f: (n) => `${eins(n)} l`, k: eins },
+    { id: 'ausgaben', label: 'Ausgaben', farbe: 'var(--system-green)', f: euro, k: (n) => `${Math.round(Number(n) || 0)}` },
+    { id: 'proGlas', label: 'Preis je Glas', farbe: 'var(--system-orange)', f: euro, k: (n) => (n == null ? '—' : Number(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })) },
+    { id: 'schnitt', label: 'Ø Note', farbe: 'var(--system-purple)', f: (n) => eins(n), k: eins },
   ];
   const aktuell = masse.find((m) => m.id === mass) || masse[0];
 
@@ -59,7 +59,7 @@ export function AbendeVerlauf({ boersen, verkostungen, katalog }) {
       </div>
 
       <Verlaufsgrafik punkte={punkte} farbe={aktuell.farbe} hoehe={128}
-                      formatWert={aktuell.f}
+                      formatWert={aktuell.f} formatKurz={aktuell.k}
                       // Bei Noten und Preis je Glas ist die Null kein
                       // sinnvoller Anfang — dann liegen alle Werte oben im
                       // Bild und die Unterschiede verschwinden.
@@ -81,10 +81,10 @@ export function TrinkVerlauf({ verkostungen, katalog }) {
     [verkostungen, katalog]);
 
   const masse = [
-    { id: 'glaeser', label: 'Gläser', farbe: 'var(--system-yellow)', f: (n) => `${n} Gläser` },
-    { id: 'liter', label: 'Liter', farbe: 'var(--system-blue)', f: (n) => `${eins(n)} l` },
-    { id: 'standardglaeser', label: 'Alkohol', farbe: 'var(--system-red)', f: (n) => `${eins(n)} Std.-Gläser` },
-    { id: 'ausgaben', label: 'Ausgaben', farbe: 'var(--system-green)', f: euro },
+    { id: 'glaeser', label: 'Gläser', farbe: 'var(--system-yellow)', f: (n) => `${n} Gläser`, k: (n) => `${n}` },
+    { id: 'liter', label: 'Liter', farbe: 'var(--system-blue)', f: (n) => `${eins(n)} l`, k: eins },
+    { id: 'standardglaeser', label: 'Alkohol', farbe: 'var(--system-red)', f: (n) => `${eins(n)} Std.-Gläser`, k: eins },
+    { id: 'ausgaben', label: 'Ausgaben', farbe: 'var(--system-green)', f: euro, k: (n) => `${Math.round(Number(n) || 0)}` },
   ];
   const aktuell = masse.find((m) => m.id === mass) || masse[0];
 
@@ -116,7 +116,7 @@ export function TrinkVerlauf({ verkostungen, katalog }) {
       </div>
 
       <Verlaufsgrafik punkte={punkte} farbe={aktuell.farbe} hoehe={110}
-                      formatWert={aktuell.f} />
+                      formatWert={aktuell.f} formatKurz={aktuell.k} />
 
       <p className="text-caption2 text-text-tertiary mt-1">
         Nach dem letzten Bier: {aktuell.f(letzte[aktuell.id])}.

@@ -20,13 +20,21 @@ import { useId, useMemo, useState } from 'react';
  * hat.
  */
 
-const PAD = { oben: 14, unten: 20, links: 4, rechts: 4 };
+// Oben ist Platz fuer die Wertbeschriftung reserviert, die ueber dem
+// hoechsten Punkt sitzt. Links und rechts bleibt es schmal: die erste und
+// letzte Beschriftung wird stattdessen nach innen ausgerichtet.
+const PAD = { oben: 26, unten: 20, links: 4, rechts: 4 };
 
 export default function Verlaufsgrafik({
   punkte,                 // [{ label, wert, zusatz? }] — wert darf null sein
   farbe = 'var(--system-blue)',
   hoehe = 120,
   formatWert = (n) => n,
+  // Kurzform fuer die Beschriftung AM PUNKT. "6 Glaeser" oder "2,68 €"
+  // nebeneinander ueberlagern sich bei acht Punkten auf einem Handy zu
+  // einem Streifen. Am Punkt steht deshalb nur die Zahl — die Einheit sagt
+  // der Knopf darueber, und beim Antippen kommt ohnehin die volle Form.
+  formatKurz = null,
   nullBasiert = true,     // Achse bei 0 beginnen lassen
 }) {
   const id = useId();
@@ -94,8 +102,38 @@ export default function Verlaufsgrafik({
   const gewaehlt = aktiv != null ? punkte[aktiv] : null;
   const letzter = punkte[punkte.length - 1];
 
+  /**
+   * Welche Punkte eine Beschriftung bekommen.
+   *
+   * Bei acht Punkten passen alle nebeneinander. Bei dreissig ueberlagern sie
+   * sich zu einem Streifen, in dem nichts mehr zu lesen ist — dann wird
+   * ausgeduennt. Erster und letzter bleiben immer stehen: sie sind Anfang
+   * und Stand, also die zwei, die man wirklich sucht. Der gerade angetippte
+   * ebenso, sonst verschwaende die Beschriftung genau beim Hinsehen.
+   */
+  const beschriftet = (() => {
+    const n = daten.alle.length;
+    const platzFuer = 8;
+    if (n <= platzFuer) return new Set(daten.alle.map((p) => p.i));
+    const schritt = Math.ceil(n / platzFuer);
+    const raus = new Set(daten.alle.filter((_, k) => k % schritt === 0).map((p) => p.i));
+    raus.add(daten.alle[0].i);
+    raus.add(daten.alle[n - 1].i);
+    if (aktiv != null) raus.add(aktiv);
+    return raus;
+  })();
+
   return (
     <div>
+      {/* Die Beschriftungen liegen als HTML UEBER dem SVG, nicht darin.
+          Grund: preserveAspectRatio="none" streckt die x-Achse auf die
+          Containerbreite, und <text> im selben Koordinatensystem wuerde
+          genauso mitgestreckt — bei einer schmalen Grafik zu unlesbar
+          breitgezogenen Ziffern. Als HTML bleibt die Schrift normal.
+          Die Umrechnung ist exakt: x laeuft im viewBox von 0 bis 100 und
+          entspricht damit direkt Prozent der Breite, y laeuft von 0 bis
+          hoehe und entspricht Pixeln, weil das SVG genau diese Hoehe hat. */}
+      <div className="relative">
       <svg viewBox={`0 0 100 ${hoehe}`} preserveAspectRatio="none"
            className="w-full block" style={{ height: hoehe }}
            role="img"
@@ -136,6 +174,29 @@ export default function Verlaufsgrafik({
         ))}
       </svg>
 
+        {daten.alle.filter((p) => beschriftet.has(p.i)).map((p) => {
+          // Am Rand nach innen ausrichten, sonst wird die erste bzw. letzte
+          // Beschriftung vom Containerrand abgeschnitten.
+          const amAnfang = p.x < 12;
+          const amEnde = p.x > 88;
+          return (
+            <span key={`b${p.i}`}
+                  className={`absolute pointer-events-none num-tabular text-[10px] leading-none
+                              whitespace-nowrap px-1 py-0.5 rounded ${
+                    aktiv === p.i
+                      ? 'font-bold text-text-primary bg-bg-secondary shadow-sm'
+                      : 'font-semibold text-text-secondary'}`}
+                  style={{
+                    left: `${p.x}%`,
+                    top: `${p.y - 7}px`,
+                    transform: `translate(${amAnfang ? '0' : amEnde ? '-100%' : '-50%'}, -100%)`,
+                  }}>
+              {(formatKurz || formatWert)(p.wert)}
+            </span>
+          );
+        })}
+      </div>
+
       <div className="flex items-baseline justify-between gap-2 mt-1 text-caption2">
         <span className="text-text-tertiary truncate">{punkte[0]?.label}</span>
         {gewaehlt ? (
@@ -144,7 +205,9 @@ export default function Verlaufsgrafik({
             {gewaehlt.zusatz ? ` · ${gewaehlt.zusatz}` : ''}
           </span>
         ) : (
-          <span className="text-text-tertiary">antippen für Werte</span>
+          <span className="text-text-tertiary">
+            {punkte.some((x) => x.zusatz) ? 'antippen für Details' : `${punkte.length} Punkte`}
+          </span>
         )}
         <span className="text-text-tertiary truncate text-right">{letzter?.label}</span>
       </div>
