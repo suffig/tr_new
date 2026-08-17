@@ -7,6 +7,11 @@
 
 /* FUSTA Design System — "Pitch & Stadium Night" */
 :root {
+  /* Der Browser malt den Bereich, in den man ueberscrollt, selbst — und
+     zwar nach color-scheme, nicht nach unserem Hintergrund. Ohne diese
+     Angabe bleibt er hell, auch wenn die App dunkel ist. Genau das war am
+     oberen und unteren Rand zu sehen. */
+  color-scheme: light;
   /* Light Theme — clean pitch-tinted off-white */
   --bg-primary: #F3F6F4;
   --bg-secondary: rgba(255, 255, 255, 0.96);
@@ -119,6 +124,7 @@
 
 :root.dark,
 [data-theme="dark"] {
+  color-scheme: dark;
   /* Dark Theme — "Stadium Night" deep navy */
   --bg-primary: #0A1119;
   --bg-secondary: rgba(19, 28, 40, 0.95);
@@ -1767,4 +1773,25 @@
     transform: scale(1.15);
     opacity: 0.8;
   }
+}
+
+/* ---------------------------------------------------------------------------
+   SEITENHINTERGRUND — bewusst AUSSERHALB von @layer base.
+   ---------------------------------------------------------------------------
+   Die Regel stand in @layer base. Diese Schicht hat in der Kaskade die
+   niedrigste Prioritaet: JEDE ungeschichtete Regel gewinnt gegen sie, egal
+   wie unspezifisch sie ist. Im Dunkelmodus blieb die Flaeche dadurch hell,
+   obwohl --bg-primary korrekt auf #0A1119 stand — gemessen: Variable dunkel,
+   gemalte Farbe rgb(243, 246, 244).
+
+   Hier ohne Schicht und auf html UND body: html deckt den Bereich ab, in den
+   das Ueberscrollen laeuft, body den Rest.
+--------------------------------------------------------------------------- */
+html {
+  background-color: var(--bg-primary);
+}
+
+body {
+  background-color: var(--bg-primary);
+  color: var(--text-primary);
 }
