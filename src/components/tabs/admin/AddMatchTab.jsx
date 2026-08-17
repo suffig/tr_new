@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { rekordeDesSpiels } from '../../../utils/rekorde';
 import { createPortal } from 'react-dom';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { MatchBusinessLogic } from '../../../utils/matchBusinessLogic';
@@ -357,6 +358,28 @@ export default function AddMatchTab() {
       toast.success(result.message);
       hapticSuccess();
       celebrate();
+
+      // REKORDE MELDEN.
+      // recentMatches ist der Stand VOR diesem Spiel — die Abfrage laeuft
+      // beim Rendern, das neue Spiel steht also noch nicht darin. Genau das
+      // braucht die Pruefung: sonst vergliche das Spiel gegen sich selbst.
+      // Nur beim NEUEN Eintrag, nicht beim Bearbeiten: eine Korrektur an
+      // einem alten Spiel ist kein Ereignis, das man feiern will.
+      if (!editingMatchId) {
+        try {
+          const gefallen = rekordeDesSpiels(
+            { date: formData.date, goalsa: formData.goalsa, goalsb: formData.goalsb,
+              goalslista: formData.goalslista, goalslistb: formData.goalslistb },
+            recentMatches || []);
+          // Nacheinander und mit Abstand: vier Meldungen auf einmal
+          // ueberlagern sich zu einem Stapel, den niemand liest.
+          gefallen.slice(0, 3).forEach((r, i) => {
+            setTimeout(() => toast.success(`${r.titel} — ${r.text}`, { duration: 7000 }), 900 + i * 1600);
+          });
+        } catch {
+          // Eine Jubelmeldung darf das Speichern nicht gefaehrden.
+        }
+      }
       
       // Eigenes Insert markieren, damit das Realtime-Echo nicht ein zweites
       // Mal benachrichtigt (siehe utils/selfActivity.js).
