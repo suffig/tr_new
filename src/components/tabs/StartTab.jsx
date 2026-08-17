@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import NaechsterSchritt from './start/NaechsterSchritt';
 import Icon from '../icons/Icon';
 import TeamLogo from '../TeamLogo';
 import LoadingSpinner from '../LoadingSpinner';
@@ -83,6 +84,9 @@ export default function StartTab({ onNavigate }) {
   const { data: managers } = useSupabaseQuery('manager', '*');
   const { data: bans } = useSupabaseQuery('bans', '*');
   const { data: players } = useSupabaseQuery('players', 'id,name,team');
+  // Fuer "Steht an": Biere ohne Zahler fallen still aus dem Ausgleich.
+  const { data: boersen } = useSupabaseQuery('bierboersen', '*', { skipFifaFilter: true });
+  const { data: verkostungen } = useSupabaseQuery('bier_verkostungen', '*', { skipFifaFilter: true });
   const name = (team) => (team === 'AEK'
     ? managers?.find((m) => m.id === 1)?.name || 'Alexander'
     : managers?.find((m) => m.id === 2)?.name || 'Philip');
@@ -303,6 +307,13 @@ export default function StartTab({ onNavigate }) {
           {tageszeit()}, {ichHeisse}
         </h1>
       )}
+
+      {/* Ganz oben: was offen ist. Steht nichts an, verschwindet die Karte
+          von selbst — eine Aufgabenliste, die nie leer wird, liest nach
+          einer Woche niemand mehr. */}
+      <NaechsterSchritt matches={matches} players={players} bans={bans}
+                        boersen={boersen} verkostungen={verkostungen}
+                        onNavigate={onNavigate} />
       {/* Der Stand als geteilte Fläche — dieselbe Sprache wie im Duell,
           nur größer: hier ist es die eine Aussage der Seite. */}
       <div className="modern-card p-5">
