@@ -1,5 +1,9 @@
-// D3.js Chart Components for Interactive Statistics Visualization
-export { default as TrendLineChart } from './TrendLineChart';
-export { default as PlayerBarChart } from './PlayerBarChart';
-export { default as WinDistributionChart } from './WinDistributionChart';
+// D3-Diagramme.
+//
+// Hier standen einmal vier. Drei davon (TrendLineChart, PlayerBarChart,
+// WinDistributionChart) hatte niemand mehr eingebunden — sie sind zusammen
+// 627 Zeilen mitgeschleppt worden, ohne je gerendert zu werden. Entfernt.
+//
+// Das verbliebene Diagramm ist der einzige Grund, warum die acht
+// d3-Abhaengigkeiten noch im Projekt sind.
 export { default as GoalTrendAreaChart } from './GoalTrendAreaChart';
