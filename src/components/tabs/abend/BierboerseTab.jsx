@@ -1,4 +1,4 @@
-import { Fragment, useCallback, useEffect, useMemo, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useState, lazy, Suspense } from 'react';
 import Kraefteverhaeltnis from '../../Kraefteverhaeltnis';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
@@ -11,6 +11,13 @@ import { supabaseDb } from '../../../utils/supabase';
 import ListenPflege from './ListenPflege';
 import AbendBild from './AbendBild';
 import { AbendeVerlauf, TrinkVerlauf } from './BierVerlauf';
+// NACHLADEN, NICHT MITLIEFERN.
+// Die Scanner-Bibliothek ist groesser als der Rest der Bierboerse zusammen.
+// Fest importiert laedt sie jeder beim Start herunter — auch wer nie scannt
+// und auch, wenn er nur die Bilanz ansehen will. So kommt sie erst beim
+// Antippen des Knopfes.
+const BarcodeScanner = lazy(() => import('./BarcodeScanner'));
+import { sucheBarcode, merkeBarcode } from '../../../utils/barcode';
 import {
   PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, bestandNachFeld, preisEntwicklungJeBier, trinkprofil,
   ladeBoersen, ladeKatalog, ladeVerkostungen,
@@ -2132,6 +2139,9 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   const [wiederAek, setWiederAek] = useState(verkostung?.wieder_aek ?? null);
   const [wiederReal, setWiederReal] = useState(verkostung?.wieder_real ?? null);
   const [speichert, setSpeichert] = useState(false);
+  const [scannt, setScannt] = useState(false);
+  const [gescannt, setGescannt] = useState(null);   // { ean, quelle } fuers Merken
+  const [scanHinweis, setScanHinweis] = useState(null);
 
   // Der Modus kommt aus den Einstellungen, lässt sich hier aber je Bier
   // umschalten: auf einer langen Börse tippt man schnell durch und macht
@@ -2205,6 +2215,45 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
   // etwas anderes als drei Ziffern über die Zahlentastatur.
   const GROESSEN = [200, 300, 330, 400, 500];
 
+  /**
+   * Ein gescannter Strichcode.
+   *
+   * NUR LEERE FELDER FUELLEN. Wer schon getippt hat, hat sich etwas dabei
+   * gedacht; eine fremde Datenbank darf das nicht ueberschreiben. Beim Namen
+   * ist das besonders wichtig — "Augustiner Lagerbier Hell" aus dem Katalog
+   * des Herstellers ist nicht unbedingt der Name, unter dem ihr es fuehrt.
+   */
+  const barcodeUebernehmen = async (ean) => {
+    setScannt(false);
+    const { quelle, treffer, bier, fehler } = await sucheBarcode(ean, katalog);
+
+    if (!treffer) {
+      setGescannt({ ean, quelle });
+      setScanHinweis(fehler
+        ? 'Kein Netz — der Code ist gemerkt und wird beim Speichern am Bier hinterlegt.'
+        : 'Zu diesem Strichcode ist nichts hinterlegt. Trag das Bier ein — der Code wird '
+          + 'dabei gemerkt und ist beim naechsten Mal sofort da.');
+      return;
+    }
+
+    let uebernommen = 0;
+    if (!name.trim() && bier.name) { setName(bier.name); uebernommen++; }
+    if (!brauerei.trim() && bier.brauerei) { setBrauerei(bier.brauerei); uebernommen++; }
+    if (!art.trim() && bier.art) { setArt(bier.art); uebernommen++; }
+    if (!land.trim() && bier.land) { setLand(bier.land); uebernommen++; }
+    if (!zahl(alkohol) && bier.alkohol != null) { setAlkohol(alsText(bier.alkohol)); uebernommen++; }
+    if (!zahl(ml) && bier.ml != null) { setMl(alsText(bier.ml)); uebernommen++; }
+
+    setGescannt({ ean, quelle });
+    setScanHinweis(
+      quelle === 'katalog'
+        ? `Aus eurem Katalog uebernommen${uebernommen ? '' : ' — alle Felder waren schon gefuellt'}.`
+        : uebernommen
+          ? `${uebernommen} ${uebernommen === 1 ? 'Angabe' : 'Angaben'} aus Open Food Facts `
+            + 'uebernommen. Bitte pruefen — Sorte und Land stehen dort nicht verlaesslich drin.'
+          : 'Gefunden, aber alle Felder waren schon gefuellt. Nichts geaendert.');
+  };
+
   const speichern = async (e) => {
     e.preventDefault();
     if (!name.trim()) { toast.error('Das Bier braucht einen Namen.'); return; }
@@ -2224,6 +2273,10 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
       // ein zweites Bier gleichen Namens an.
       const bier = await findeOderLegeBierAn({
         name, brauerei, art, alkohol: a, land, bierId: verkostung?.bier_id ?? null });
+      // Den gescannten Code am Bier hinterlegen, damit der naechste Scan
+      // derselben Flasche im eigenen Katalog landet. Scheitert still, wenn
+      // db/30 fehlt — daran soll das Eintragen nicht haengen.
+      if (gescannt?.ean) await merkeBarcode(bier.id, gescannt.ean);
       const daten = {
         boerse_id: boerse.id,
         bier_id: bier.id,
@@ -2293,9 +2346,33 @@ function BierFormular({ boerse, verkostung, katalog, verkostungen, einstellungen
 
         <label className="block">
           <span className="text-footnote text-text-secondary">Bier *</span>
-          <input value={name} onChange={(e) => setName(e.target.value)} className="form-input w-full mt-1"
-                 placeholder="z. B. Augustiner Helles" autoFocus />
+          <div className="flex gap-2 mt-1">
+            <input value={name} onChange={(e) => setName(e.target.value)} className="form-input flex-1 min-w-0"
+                   placeholder="z. B. Augustiner Helles" autoFocus />
+            {/* Scannen nur beim NEUEN Eintrag. Beim Bearbeiten steht das Bier
+                schon fest, und ein Scan koennte nur Verwirrung stiften. */}
+            {!vorhandenes && (
+              <button type="button" onClick={() => { setScanHinweis(null); setScannt(true); }}
+                      className="w-11 rounded-xl bg-bg-tertiary text-text-secondary flex items-center justify-center flex-shrink-0"
+                      aria-label="Strichcode scannen" title="Strichcode scannen">
+                <Icon name="grid" size={17} strokeWidth={2.2} />
+              </button>
+            )}
+          </div>
         </label>
+        {scanHinweis && (
+          <p className="text-caption2 text-text-secondary -mt-1 panel-gray rounded-lg p-2">
+            {scanHinweis}
+          </p>
+        )}
+        {scannt && (
+          // Kein sichtbarer Ladezustand: der Scanner legt sich ohnehin als
+          // schwarze Flaeche ueber alles, und ein Platzhalter davor waere ein
+          // Aufblitzen ohne Nutzen.
+          <Suspense fallback={null}>
+            <BarcodeScanner onCode={barcodeUebernehmen} onSchliessen={() => setScannt(false)} />
+          </Suspense>
+        )}
         {vorschlaege.length > 0 && (
           <div className="flex flex-wrap gap-1.5 -mt-1">
             {vorschlaege.map((b) => (

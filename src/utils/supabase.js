@@ -280,7 +280,7 @@ const fallbackData = {
   // Runde ohne Zahler, und eine Bewertung, bei der die beiden drei Punkte
   // auseinanderliegen.
   bier_katalog: [
-    { id: 1, name: 'Augustiner Helles', brauerei: 'Augustiner', art: 'Helles', alkohol: 5.2, land: 'Deutschland' },
+    { id: 1, name: 'Augustiner Helles', ean: '4104300005008', brauerei: 'Augustiner', art: 'Helles', alkohol: 5.2, land: 'Deutschland' },
     { id: 2, name: 'Tannenzäpfle', brauerei: 'Rothaus', art: 'Pils', alkohol: 5.1, land: 'Deutschland' },
     { id: 3, name: 'Schneider Weisse', brauerei: 'Schneider', art: 'Weizen', alkohol: 5.4, land: 'Deutschland' },
     { id: 4, name: 'Salvator', brauerei: 'Paulaner', art: 'Doppelbock', alkohol: 7.9, land: 'Deutschland' },
