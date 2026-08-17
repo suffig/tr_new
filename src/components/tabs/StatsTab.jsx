@@ -14,7 +14,7 @@ import InsightsView from './InsightsView';
 import HistorieView from './HistorieView';
 import CountUp from '../CountUp';
 import { getTeamDisplay } from '../../constants/teams';
-import { GoalTrendAreaChart } from '../charts';
+import Verlaufsgrafik from '../Verlaufsgrafik';
 
 /**
  * Karte fuer eine herausragende Einzelleistung.
@@ -1636,11 +1636,30 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     if (proMonat.length < 2) return null;
 
     return (
-      <GoalTrendAreaChart
-        data={proMonat.slice(-12)}
-        title="Tore über die Zeit"
-        height={300}
-      />
+      <div className="modern-card p-4">
+        <div className="flex items-baseline justify-between gap-2 mb-2">
+          <span className="karten-titel">Tore über die Zeit</span>
+          <span className="text-caption2 text-text-tertiary">
+            {Math.min(proMonat.length, 12)} Monate
+          </span>
+        </div>
+        {/* Zwei Linien auf EINER Skala — nur so lassen sie sich vergleichen.
+            Keine Punktbeschriftung: bei zwei Reihen waeren das doppelt so
+            viele Zahlen, und die Grafik soll den Verlauf zeigen, nicht eine
+            Tabelle ersetzen. Die Werte kommen beim Antippen. */}
+        <Verlaufsgrafik
+          punkte={proMonat.slice(-12).map((m) => ({ label: m.label, wert: m.aek }))}
+          farbe="var(--system-blue)"
+          hoehe={190}
+          formatWert={(n) => `${n} ${n === 1 ? 'Tor' : 'Tore'}`}
+          zweite={{
+            punkte: proMonat.slice(-12).map((m) => ({ label: m.label, wert: m.real })),
+            farbe: 'var(--system-red)',
+            name: 'Philip',
+            nameErste: 'Alexander',
+          }}
+        />
+      </div>
     );
   };
 

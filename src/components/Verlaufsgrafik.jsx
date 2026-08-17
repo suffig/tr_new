@@ -35,6 +35,11 @@ export default function Verlaufsgrafik({
   // einem Streifen. Am Punkt steht deshalb nur die Zahl — die Einheit sagt
   // der Knopf darueber, und beim Antippen kommt ohnehin die volle Form.
   formatKurz = null,
+  // Eine ZWEITE Reihe auf DERSELBEN Skala: { punkte, farbe, name }.
+  // Nur sinnvoll, wenn beide dieselbe Einheit haben — zwei Torreihen ja,
+  // Tore gegen Euro nicht. Die gemeinsame Skala ist genau der Punkt: sonst
+  // koennte man die beiden Linien nicht vergleichen.
+  zweite = null,
   nullBasiert = true,     // Achse bei 0 beginnen lassen
 }) {
   const id = useId();
@@ -45,8 +50,14 @@ export default function Verlaufsgrafik({
     const echte = werte.filter((w) => w != null && Number.isFinite(w));
     if (echte.length < 2) return null;
 
-    const max = Math.max(...echte);
-    const min = nullBasiert ? Math.min(0, ...echte) : Math.min(...echte);
+    // Die Skala muss BEIDE Reihen fassen, sonst laeuft die zweite oben oder
+    // unten aus dem Bild.
+    const werte2 = (zweite?.punkte || []).map((p) => (p.wert == null ? null : Number(p.wert)));
+    const echte2 = werte2.filter((w) => w != null && Number.isFinite(w));
+    const alleEchten = [...echte, ...echte2];
+
+    const max = Math.max(...alleEchten);
+    const min = nullBasiert ? Math.min(0, ...alleEchten) : Math.min(...alleEchten);
     // Eine flache Linie (alle Werte gleich) haette Spanne 0 und wuerde durch
     // Null geteilt. Dann liegt sie mittig statt am oberen Rand.
     const spanne = max - min || 1;
@@ -84,12 +95,28 @@ export default function Verlaufsgrafik({
         + ` L${laengster.at(-1).x.toFixed(2)},${(hoehe - PAD.unten).toFixed(2)} Z`
       : null;
 
+    // Die zweite Reihe: nur Linie, keine Flaeche. Zwei gefuellte Flaechen
+    // uebereinander verdecken sich gegenseitig und keiner sieht mehr, welche
+    // oben liegt.
+    const linien2 = [];
+    if (echte2.length > 1) {
+      let lauf2 = [];
+      werte2.forEach((w, i) => {
+        if (w == null || !Number.isFinite(w)) {
+          if (lauf2.length > 1) linien2.push(lauf2);
+          lauf2 = [];
+        } else lauf2.push({ x: x(i), y: y(w) });
+      });
+      if (lauf2.length > 1) linien2.push(lauf2);
+    }
+
     return {
       linien, flaeche, max, min,
+      linien2: linien2.map((a) => a.map((q, k) => `${k ? 'L' : 'M'}${q.x.toFixed(2)},${q.y.toFixed(2)}`).join(' ')),
       alle: abschnitte.flat(),
       nullLinie: min < 0 && max > 0 ? y(0) : null,
     };
-  }, [punkte, hoehe, nullBasiert]);
+  }, [punkte, hoehe, nullBasiert, zweite]);
 
   if (!daten) {
     return (
@@ -158,6 +185,12 @@ export default function Verlaufsgrafik({
                 strokeLinecap="round" strokeLinejoin="round" />
         ))}
 
+        {(daten.linien2 || []).map((d, i) => (
+          <path key={`z${i}`} d={d} fill="none" stroke={zweite.farbe} strokeWidth="1.6"
+                vectorEffect="non-scaling-stroke"
+                strokeLinecap="round" strokeLinejoin="round" />
+        ))}
+
         {daten.alle.map((p) => (
           <circle key={p.i} cx={p.x} cy={p.y}
                   r={aktiv === p.i ? 2.6 : 1.6}
@@ -174,7 +207,7 @@ export default function Verlaufsgrafik({
         ))}
       </svg>
 
-        {daten.alle.filter((p) => beschriftet.has(p.i)).map((p) => {
+        {!zweite && daten.alle.filter((p) => beschriftet.has(p.i)).map((p) => {
           // Am Rand nach innen ausrichten, sonst wird die erste bzw. letzte
           // Beschriftung vom Containerrand abgeschnitten.
           const amAnfang = p.x < 12;
@@ -196,6 +229,19 @@ export default function Verlaufsgrafik({
           );
         })}
       </div>
+
+      {zweite && (
+        <div className="flex items-center gap-3 mt-1 text-caption2">
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-0.5 rounded-full" style={{ background: farbe }} />
+            <span className="text-text-secondary">{zweite.nameErste || 'Reihe 1'}</span>
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-3 h-0.5 rounded-full" style={{ background: zweite.farbe }} />
+            <span className="text-text-secondary">{zweite.name}</span>
+          </span>
+        </div>
+      )}
 
       <div className="flex items-baseline justify-between gap-2 mt-1 text-caption2">
         <span className="text-text-tertiary truncate">{punkte[0]?.label}</span>
