@@ -508,8 +508,20 @@ export default function MatchesTab({ onNavigate, user }) {
                       return [];
                     };
 
+                    // ERGEBNIS-STREIFEN am linken Rand.
+                    // Beim Scrollen durch viele Spiele liest niemand jede
+                    // Zeile; eine Serie sieht man erst, wenn Sieg und
+                    // Niederlage eine Farbe haben. Inline-Stil statt
+                    // Tailwind-Klasse, weil die Farben CSS-Variablen sind und
+                    // Tailwind dafuer keine border-Klassen erzeugt.
+                    const streifen = winner === 'aek' ? 'var(--system-blue)'
+                      : winner === 'real' ? 'var(--system-red)'
+                      : 'var(--text-quaternary)';
+
                     return (
-                      <div key={match.id} id={`spiel-${match.id}`} className="modern-card p-0 overflow-hidden">
+                      <div key={match.id} id={`spiel-${match.id}`}
+                           className="modern-card p-0 overflow-hidden"
+                           style={{ borderLeft: `4px solid ${streifen}` }}>
                         {/* Match summary row */}
                         <button
                           onClick={() => toggleMatchDetails(match.id)}
