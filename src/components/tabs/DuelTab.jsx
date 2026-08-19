@@ -553,22 +553,36 @@ function WrappedView({ d, aekName, realName }) {
     );
   }
 
-  const canShare = typeof navigator !== 'undefined' && !!navigator.canShare;
-
+  // canShare OHNE Datei zu fragen sagt wenig: Desktop-Browser melden hier
+  // true, koennen aber keine Dateien teilen. Deshalb wird beim Klick mit der
+  // fertigen Datei geprueft und sonst auf Sichern zurueckgefallen — genauso
+  // wie beim Abend-Bild. Der Knopf steht damit IMMER da; vorher verschwand er
+  // auf dem Rechner ganz, und die Ansicht bestand aus einem Bild und einem
+  // einzigen Wort.
   return (
     <div className="space-y-4">
+      <div className="modern-card p-4">
+        <div className="flex items-baseline justify-between gap-2">
+          <span className="karten-titel">Saison-Rückblick</span>
+          <span className="text-caption2 text-text-tertiary">{d.total} Spiele</span>
+        </div>
+        <p className="text-caption2 text-text-tertiary mt-0.5">
+          Die Saison als Bild zum Verschicken — Hochformat 1080 × 1350, das Maß,
+          das Messenger ohne Beschnitt zeigen.
+        </p>
+      </div>
+
       <div className="modern-card p-3">
         <canvas ref={canvasRef} className="w-full h-auto rounded-xl" style={{ aspectRatio: '1080 / 1350' }} />
       </div>
+
       <div className="flex gap-3">
-        <button onClick={save} className="flex-1 btn-primary inline-flex items-center justify-center gap-2">
-          <Icon name="chevronDown" size={16} strokeWidth={2.4} /> Speichern
+        <button onClick={share} className="flex-1 btn-primary inline-flex items-center justify-center gap-2">
+          <Icon name="share" size={16} strokeWidth={2.4} /> Teilen
         </button>
-        {canShare && (
-          <button onClick={share} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-bg-tertiary text-text-primary font-medium">
-            <Icon name="zap" size={16} strokeWidth={2.4} /> Teilen
-          </button>
-        )}
+        <button onClick={save} className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-bg-tertiary text-text-primary font-medium">
+          Sichern
+        </button>
       </div>
     </div>
   );
