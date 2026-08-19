@@ -9,10 +9,8 @@ import HorizontalNavigation from '../HorizontalNavigation';
 import SeasonView from './SeasonView';
 import RecordsView from './RecordsView';
 import SpielerListe from './duell/SpielerListe';
-import HallOfFame from './duell/HallOfFame';
 import SpielerVergleich from './duell/SpielerVergleich';
 import SperrenUebersicht from './duell/SperrenUebersicht';
-import SaisonVergleich from './duell/SaisonVergleich';
 import KaderVerlauf from './duell/KaderVerlauf';
 import VereinsBilanz from './duell/VereinsBilanz';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
@@ -737,11 +735,12 @@ export default function DuelTab() {
       { id: 'sperren', label: 'Sperren' },
       { id: 'kaderverlauf', label: 'Kader' },
     ] },
-    { id: 'saison', label: 'Saison', iconName: 'calendar', views: [
-      { id: 'ruhmeshalle', label: 'Hall of Fame' },
-      { id: 'saisons', label: 'Vergleich' },
-    ] },
   ];
+  // Die Gruppe "Saison" (Hall of Fame, Saison-Vergleich) ist in die Statistik
+  // gezogen. Sie werten eine SAISON aus, nicht das Verhaeltnis der beiden
+  // Personen — und im Duell liessen sie die Leiste auf neun Reiter anwachsen.
+  // Was hier bleibt, beantwortet genau zwei Fragen: wie steht es zwischen
+  // uns, und wer ist wie gut.
   // Zu welcher Gruppe gehoert die gerade gewaehlte Ansicht? Ueber die
   // Ansicht bestimmt, nicht ueber einen zweiten Zustand — sonst koennten
   // Gruppe und Ansicht auseinanderlaufen.
@@ -787,15 +786,10 @@ export default function DuelTab() {
         <VereinsBilanz matches={matches} loading={!matches} />
       ) : view === 'kaderverlauf' ? (
         <KaderVerlauf players={players} loading={!players} />
-      ) : view === 'saisons' ? (
-        <SaisonVergleich matches={matches} players={players} loading={!players} />
       ) : view === 'sperren' ? (
         <SperrenUebersicht players={players} bans={sperrenAlle} loading={!players} />
       ) : view === 'vergleich' ? (
         <SpielerVergleich players={players} sds={sdsAlle} bans={sperrenAlle} loading={!players} />
-      ) : view === 'ruhmeshalle' ? (
-        <HallOfFame players={players} matches={matches} bans={sperrenAlle}
-                    sds={sdsAlle} loading={!players} />
       ) : view === 'rueckblick' ? (
         <WrappedView d={d} aekName={aekName} realName={realName} />
       ) : (

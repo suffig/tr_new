@@ -1,4 +1,6 @@
 ﻿import Icon from '../icons/Icon';
+import HallOfFame from './duell/HallOfFame';
+import SaisonVergleich from './duell/SaisonVergleich';
 import { useState, useEffect, useMemo } from 'react';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { useAktuelleSaison } from '../../hooks/useAktuelleSaison';
@@ -697,6 +699,16 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const { data: sdsData, loading: sdsLoading } = useSupabaseQuery('spieler_des_spiels', '*', abfrageOptionen);
   const { data: bans, loading: bansLoading } = useSupabaseQuery('bans', '*', abfrageOptionen);
 
+  // HALL OF FAME UND SAISON-VERGLEICH BRAUCHEN ALLE SAISONS.
+  // Die uebrigen Abfragen oben laufen mit `abfrageOptionen` und damit unter
+  // dem Saisonfilter der Seite. Beide Ansichten waehlen ihre Saison aber
+  // SELBST — mit gefilterten Daten haetten sie nur eine zur Auswahl, und der
+  // Vergleich zweier Saisons waere unmoeglich.
+  const { data: alleSpieler } = useSupabaseQuery('players', '*', { skipFifaFilter: true });
+  const { data: alleSpiele } = useSupabaseQuery('matches', '*', { skipFifaFilter: true });
+  const { data: alleSperren } = useSupabaseQuery('bans', '*', { skipFifaFilter: true });
+  const { data: alleSds } = useSupabaseQuery('spieler_des_spiels', '*', { skipFifaFilter: true });
+
   // Der Wechsel-Verlauf. Er haengt NICHT am Saison-Umfang: um zu wissen, bei
   // wem jemand am Spieltag stand, braucht es die ganze Kette — auch die
   // Wechsel aus einer anderen Saison als der gerade betrachteten.
@@ -787,6 +799,11 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
     // ueber die Jahre, Steckbrief je Saison. Der Saisonfilter oben
     // gilt hier bewusst nicht.
     { id: 'historie', label: 'Historie', iconName: 'clock' },
+    // Aus dem Duell hierher gezogen: beide werten eine SAISON aus, nicht das
+    // Verhaeltnis der beiden Personen. Im Duell standen sie neben Rekorden
+    // und Kaderverlauf und liessen die Leiste auf neun Reiter anwachsen.
+    { id: 'ruhmeshalle', label: 'Hall of Fame', iconName: 'trophy' },
+    { id: 'saisonvergleich', label: 'Saisons', iconName: 'calendar' },
   ];
 
   if (loading) {
@@ -1669,6 +1686,12 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         return <InsightsView matches={filteredMatches} players={players} bans={bans} />;
       case 'historie':
         return <HistorieView />;
+      case 'ruhmeshalle':
+        return <HallOfFame players={alleSpieler} matches={alleSpiele}
+                           bans={alleSperren} sds={alleSds} loading={!alleSpieler} />;
+      case 'saisonvergleich':
+        return <SaisonVergleich matches={alleSpiele} players={alleSpieler}
+                                loading={!alleSpieler} />;
       case 'players':
         return <div className="space-y-6">{renderPlayers()}{renderSpielerRanglisten()}</div>;
       case 'teams':
