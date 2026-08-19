@@ -1,4 +1,5 @@
 ﻿import Icon from '../icons/Icon';
+import FinanzVerlaufKarte from './finanzen/FinanzVerlaufKarte';
 import { useState } from 'react';
 import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 import { dez } from '../../utils/zahlen';
@@ -496,6 +497,10 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
         </>
       ) : (
         <>
+          {/* Der Verlauf ganz oben in der Uebersicht: die Frage "geht es
+              bergauf oder bergab" beantwortet keine Momentaufnahme. */}
+          <FinanzVerlaufKarte transactions={transactions} finances={finances} />
+
           {/* Die beiden Seiten als Kräfteverhältnis.
               Hier standen zwei halbbreite Spalten mit Wappen, Namen,
               Kontostand, Kaderwert und Schulden. Zwei Dinge stimmten daran
