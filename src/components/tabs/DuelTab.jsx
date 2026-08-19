@@ -14,6 +14,7 @@ import SpielerVergleich from './duell/SpielerVergleich';
 import SperrenUebersicht from './duell/SperrenUebersicht';
 import SaisonVergleich from './duell/SaisonVergleich';
 import KaderVerlauf from './duell/KaderVerlauf';
+import VereinsBilanz from './duell/VereinsBilanz';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { chronoAsc, chronoDesc } from '../../utils/matchChronology';
 import { aggregatePlayers } from '../../utils/playerIdentity';
@@ -728,6 +729,7 @@ export default function DuelTab() {
       { id: 'uebersicht', label: 'Übersicht' },
       { id: 'rekorde', label: 'Rekorde' },
       { id: 'rueckblick', label: 'Saison-Bild' },
+      { id: 'vereine', label: 'Vereine' },
     ] },
     { id: 'spieler', label: 'Spieler', iconName: 'users', views: [
       { id: 'torschuetzen', label: 'Bestenliste' },
@@ -781,6 +783,8 @@ export default function DuelTab() {
         <RecordsView matches={matches} players={players} aekName={aekName} realName={realName} />
       ) : view === 'torschuetzen' ? (
         <SpielerListe players={players} loading={!players} />
+      ) : view === 'vereine' ? (
+        <VereinsBilanz matches={matches} loading={!matches} />
       ) : view === 'kaderverlauf' ? (
         <KaderVerlauf players={players} loading={!players} />
       ) : view === 'saisons' ? (
