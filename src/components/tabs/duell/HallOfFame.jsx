@@ -101,38 +101,50 @@ export default function HallOfFame({ players, matches, bans, sds, loading }) {
           </p>
         </div>
       ) : (
-        <div className="space-y-2">
+        <div className="grid grid-cols-2 gap-2">
+          {/* RASTER STATT LISTE.
+              Als Liste war jeder Titel eine breite Zeile, und sechs Titel
+              hiessen sechsmal Scrollen. Als Kachelraster passen alle auf
+              einen Blick — und darum geht es bei einer Ruhmeshalle: sehen,
+              was es zu holen gibt und wer es hat.
+
+              Zwei Spalten, nicht drei: bei drei bliebe fuer den Namen so
+              wenig Platz, dass "Max Mül…" dastuende, und ein abgeschnittener
+              Name ist keine Auszeichnung. */}
           {ergebnis.titel.map((t) => (
             <button key={t.id} type="button" onClick={() => setOffen(t)}
-                    className="w-full modern-card p-3.5 flex items-center gap-3 text-left active:bg-bg-tertiary/50 transition-colors">
-              <span className={`w-10 h-10 rounded-xl bg-bg-tertiary flex items-center justify-center flex-shrink-0 ${t.farbe}`}>
-                <Icon name={t.icon} size={19} strokeWidth={2.1} />
+                    className="modern-card p-3 flex flex-col items-center text-center gap-1.5 active:bg-bg-tertiary/50 transition-colors">
+              <span className={`w-11 h-11 rounded-xl bg-bg-tertiary flex items-center justify-center flex-shrink-0 ${t.farbe}`}>
+                <Icon name={t.icon} size={21} strokeWidth={2.1} />
               </span>
-              <div className="min-w-0 flex-1">
-                <div className="text-caption2 text-text-tertiary">{t.titel}</div>
-                <div className="flex items-center gap-1.5 min-w-0">
-                  <SpielerWappen team={teamVon.get(t.name)} version={version} size="xs" />
-                  <span className="font-semibold text-text-primary truncate">{t.name}</span>
-                </div>
-                <div className="text-caption2 text-text-secondary truncate">
-                  {t.wert}{t.zusatz ? ` · ${t.zusatz}` : ''}
-                </div>
-                {/* Gleichstand nicht verschweigen: sonst sieht es aus, als
-                    hätte einer den Titel allein geholt. */}
-                {t.gleichauf > 1 && (
-                  <div className="text-caption2 text-system-yellow">
-                    {t.gleichauf} gleichauf — geteilt
-                  </div>
-                )}
+
+              <div className="text-caption2 text-text-tertiary leading-tight w-full">{t.titel}</div>
+
+              <div className="flex items-center justify-center gap-1 min-w-0 w-full">
+                <SpielerWappen team={teamVon.get(t.name)} version={version} size="xs" />
+                <span className="text-caption1 font-semibold text-text-primary truncate">{t.name}</span>
               </div>
-              {/* Statt des abgeschnittenen Vereinsnamens ein Pfeil: das Wappen
-                  neben dem Namen sagt die Mannschaft schon, und "Dynamo
-                  Dres…" sagt nichts. Der Pfeil sagt dafuer, dass hier mehr
-                  dahintersteckt. */}
-              <span className="text-caption2 text-text-tertiary flex-shrink-0 flex items-center gap-1">
-                {t.rangliste?.length > 1 && `${t.rangliste.length}`}
-                <Icon name="chevronRight" size={15} strokeWidth={2.4} />
-              </span>
+
+              <div className="text-caption2 text-text-secondary truncate w-full">
+                {t.wert}
+              </div>
+
+              {/* Gleichstand nicht verschweigen: sonst sieht es aus, als
+                  haette einer den Titel allein geholt. */}
+              {t.gleichauf > 1 && (
+                <div className="text-caption2 text-system-yellow leading-tight">
+                  {t.gleichauf} geteilt
+                </div>
+              )}
+
+              {/* Dass mehr dahintersteckt, muss sichtbar bleiben — in der
+                  Liste sagte das der Pfeil rechts, den es im Raster nicht
+                  mehr gibt. */}
+              {t.rangliste?.length > 1 && (
+                <div className="text-caption2 text-system-blue">
+                  {t.rangliste.length} in der Wertung
+                </div>
+              )}
             </button>
           ))}
         </div>
