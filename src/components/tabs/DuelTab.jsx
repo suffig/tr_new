@@ -707,17 +707,44 @@ export default function DuelTab() {
     );
   }
 
-  const views = [
-    { id: 'uebersicht', label: 'Übersicht', iconName: 'zap' },
-    { id: 'rekorde', label: 'Rekorde', iconName: 'trophy' },
-    { id: 'torschuetzen', label: 'Spieler', iconName: 'users' },
-    { id: 'ruhmeshalle', label: 'Hall of Fame', iconName: 'trophy' },
-    { id: 'vergleich', label: 'Vergleich', iconName: 'swap' },
-    { id: 'sperren', label: 'Sperren', iconName: 'ban' },
-    { id: 'saisons', label: 'Saisons', iconName: 'calendar' },
-    { id: 'kaderverlauf', label: 'Kader', iconName: 'users' },
-    { id: 'rueckblick', label: 'Rückblick', iconName: 'calendar' },
+  /**
+   * NEUN REITER IN EINER LEISTE WAREN ZU VIELE.
+   *
+   * Sie passten auf keinen Handybildschirm; man musste waagerecht scrollen,
+   * um ueberhaupt zu sehen, was es gibt — und was rechts aus dem Bild ragte,
+   * fand man nur durch Zufall. Jetzt drei Gruppen, und erst innerhalb einer
+   * Gruppe die einzelnen Ansichten.
+   *
+   * Der Schnitt folgt der FRAGE, nicht der Technik:
+   *   Duell   — wie steht es zwischen uns beiden
+   *   Spieler — wer ist wie gut, wer fehlt, wer war wann da
+   *   Saison  — was war in einem bestimmten Jahr
+   *
+   * Die zweite Leiste hat hoechstens vier Eintraege und passt damit ohne
+   * Scrollen; die erste hat drei.
+   */
+  const gruppen = [
+    { id: 'duell', label: 'Duell', iconName: 'zap', views: [
+      { id: 'uebersicht', label: 'Übersicht' },
+      { id: 'rekorde', label: 'Rekorde' },
+      { id: 'rueckblick', label: 'Saison-Bild' },
+    ] },
+    { id: 'spieler', label: 'Spieler', iconName: 'users', views: [
+      { id: 'torschuetzen', label: 'Bestenliste' },
+      { id: 'vergleich', label: 'Vergleich' },
+      { id: 'sperren', label: 'Sperren' },
+      { id: 'kaderverlauf', label: 'Kader' },
+    ] },
+    { id: 'saison', label: 'Saison', iconName: 'calendar', views: [
+      { id: 'ruhmeshalle', label: 'Hall of Fame' },
+      { id: 'saisons', label: 'Vergleich' },
+    ] },
   ];
+  // Zu welcher Gruppe gehoert die gerade gewaehlte Ansicht? Ueber die
+  // Ansicht bestimmt, nicht ueber einen zweiten Zustand — sonst koennten
+  // Gruppe und Ansicht auseinanderlaufen.
+  const aktiveGruppe = gruppen.find((g) => g.views.some((v) => v.id === view)) || gruppen[0];
+  const views = gruppen.map((g) => ({ id: g.views[0].id, label: g.label, iconName: g.iconName }));
   // Nur das, was tatsaechlich passiert ist — nicht Erreichbares mit
   // Fortschrittsbalken.
   const besondereMomente = achievements.filter((a) => a.unlocked && a.context);
@@ -730,7 +757,25 @@ export default function DuelTab() {
 
   return (
     <div className="p-4 pb-24 space-y-4">
-      <HorizontalNavigation views={views} selectedView={view} onViewChange={setView} />
+      <HorizontalNavigation views={views}
+                            selectedView={aktiveGruppe.views[0].id}
+                            onViewChange={setView} />
+
+      {/* Zweite Leiste nur, wo es innerhalb der Gruppe ueberhaupt eine Wahl
+          gibt — bei einer einzigen Ansicht waere sie eine Zeile ohne
+          Funktion. */}
+      {aktiveGruppe.views.length > 1 && (
+        <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl">
+          {aktiveGruppe.views.map((v) => (
+            <button key={v.id} type="button" onClick={() => setView(v.id)}
+                    aria-pressed={view === v.id}
+                    className={`flex-1 py-1.5 rounded-lg text-caption2 font-semibold transition-colors ${
+                      view === v.id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {view === 'rekorde' ? (
         <RecordsView matches={matches} players={players} aekName={aekName} realName={realName} />
