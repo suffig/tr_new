@@ -1145,3 +1145,21 @@ textarea.form-input {
     transform: none;
   }
 }
+
+/* Ladebalken des Startbildschirms.
+   Kein Ring, sondern ein Balken — er nimmt die Bernsteinlinie unter dem
+   Schriftzug im 90Proof-Logo auf. Er laeuft hin und her, statt einen
+   Fortschritt vorzutaeuschen, den niemand kennt. */
+.ladebalken {
+  width: 40%;
+  animation: ladebalken-lauf 1.1s ease-in-out infinite;
+}
+
+@keyframes ladebalken-lauf {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(250%); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ladebalken { animation: none; width: 100%; opacity: 0.55; }
+}
