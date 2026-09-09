@@ -11,6 +11,7 @@ import { supabaseDb } from '../../../utils/supabase';
 import ListenPflege from './ListenPflege';
 import AbendBild from './AbendBild';
 import { AbendeVerlauf, TrinkVerlauf } from './BierVerlauf';
+import AbendRekorde from './AbendRekorde';
 // NACHLADEN, NICHT MITLIEFERN.
 // Die Scanner-Bibliothek ist groesser als der Rest der Bierboerse zusammen.
 // Fest importiert laedt sie jeder beim Start herunter — auch wer nie scannt
@@ -484,7 +485,7 @@ export default function BierboerseTab() {
       || String(b.datum || '').localeCompare(String(a.datum || '')));
   }, [boersen]);
   const [formular, setFormular] = useState(null);  // 'boerse' | 'bier' | {bearbeiten}
-  const [ansicht, setAnsicht] = useState('boersen'); // boersen | katalog | bilanz
+  const [ansicht, setAnsicht] = useState('boersen'); // boersen | katalog | bilanz | rekorde
   const [bierOffen, setBierOffen] = useState(null);   // Bier-Detailansicht
   const [einstellungen, setEinstellungen] = useState(
     { modus: 'einfach', kategorien: STANDARD_KATEGORIEN });
@@ -544,7 +545,7 @@ export default function BierboerseTab() {
     <div className="p-4 pb-24 mobile-safe-bottom space-y-4">
       <div className="flex items-center gap-2">
       <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl flex-1 min-w-0">
-        {[['boersen', 'Börsen'], ['katalog', 'Alle Biere'], ['bilanz', 'Bilanz']].map(([id, label]) => (
+        {[['boersen', 'Börsen'], ['katalog', 'Alle Biere'], ['bilanz', 'Bilanz'], ['rekorde', 'Rekorde']].map(([id, label]) => (
           <button key={id} onClick={() => setAnsicht(id)}
             className={`flex-1 py-1.5 rounded-lg text-footnote font-semibold transition-colors ${
               ansicht === id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
@@ -559,7 +560,9 @@ export default function BierboerseTab() {
         </button>
       </div>
 
-      {ansicht === 'bilanz' ? (
+      {ansicht === 'rekorde' ? (
+        <AbendRekorde boersen={boersen} verkostungen={verkostungen} katalog={katalog} />
+      ) : ansicht === 'bilanz' ? (
         <BilanzAnsicht boersen={boersen} verkostungen={verkostungen} katalog={katalog} />
       ) : ansicht === 'katalog' ? (
         <KatalogAnsicht katalog={katalog} verkostungen={verkostungen} boersen={boersen}
