@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { supabase, switchToFallbackMode, usingFallback } from '../utils/supabase';
 import { ErrorHandler, FormValidator } from '../utils/errorHandling';
 // Bewusst aus src/assets/ und nicht aus public/: nur so haengt Vite einen
-// Inhalts-Hash an den Dateinamen. Unter dem festen Pfad /assets/logo-fusta.png
+// Inhalts-Hash an den Dateinamen. Unter dem festen Pfad /assets/logo-90proof.png
 // blieb die URL bei jedem Logo-Wechsel gleich — der Service Worker lieferte
 // dann weiter das alte Bild aus dem Zwischenspeicher.
-import logoFusta from '../assets/logo-fusta.png';
+import logo90Proof from '../assets/logo-90proof.png';
 import Icon from './icons/Icon';
 
 export default function Login() {
@@ -155,14 +155,14 @@ export default function Login() {
             <div className="mb-6 flex justify-center">
               <div className="w-20 h-20 rounded-ios-2xl overflow-hidden shadow-ios-lg login-logo-bounce">
                 <img
-                  src={logoFusta}
-                  alt="FUSTA Logo"
+                  src={logo90Proof}
+                  alt="90Proof Logo"
                   className="w-full h-full object-cover"
                   loading="eager"
                 />
               </div>
             </div>
-            <h1 className="text-title1 font-bold brand-gradient-text mb-2 login-title-bounce">FUSTA</h1>
+            <h1 className="text-title1 font-bold brand-gradient-text mb-2 login-title-bounce">90Proof</h1>
             
             {/* Demo Mode Indicator */}
             {isDemoMode && (

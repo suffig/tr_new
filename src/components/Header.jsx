@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 // Bewusst aus src/assets/ und nicht aus public/: nur so haengt Vite einen
-// Inhalts-Hash an den Dateinamen. Unter dem festen Pfad /assets/logo-fusta.png
+// Inhalts-Hash an den Dateinamen. Unter dem festen Pfad /assets/logo-90proof.png
 // blieb die URL bei jedem Logo-Wechsel gleich — der Service Worker lieferte
 // dann weiter das alte Bild aus dem Zwischenspeicher.
-import logoFusta from '../assets/logo-fusta.png';
+import logo90Proof from '../assets/logo-90proof.png';
 import UserProfile from './UserProfile';
 import SaisonWechsler from './SaisonWechsler';
 import Icon from './icons/Icon';
@@ -24,13 +24,13 @@ export default function Header({ onNavigate }) {
                 Hintergruende uebereinander. */}
             <div className="w-8 h-8 flex-shrink-0 rounded-ios overflow-hidden logo-glow">
               <img
-                src={logoFusta}
-                alt="FUSTA Logo"
+                src={logo90Proof}
+                alt="90Proof Logo"
                 className="w-full h-full object-cover"
                 loading="eager"
               />
             </div>
-            <h1 className="text-title3 font-extrabold tracking-tight text-text-primary truncate hidden min-[400px]:block">FUSTA</h1>
+            <h1 className="text-title3 font-extrabold tracking-tight text-text-primary truncate hidden min-[400px]:block">90Proof</h1>
           </div>
 
           {/* Status + actions */}

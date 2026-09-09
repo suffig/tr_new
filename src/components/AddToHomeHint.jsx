@@ -23,7 +23,7 @@ function isStandalone() {
 }
 
 /**
- * One-time hint that shows iOS Safari users how to add FUSTA to the home screen.
+ * One-time hint that shows iOS Safari users how to add 90Proof to the home screen.
  * Appears once (until dismissed), a few seconds after load, only when the app is
  * running in the browser rather than as an installed PWA.
  */
@@ -65,10 +65,10 @@ export default function AddToHomeHint() {
             </svg>
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-callout font-semibold text-text-primary">FUSTA aufs iPhone legen</p>
+            <p className="text-callout font-semibold text-text-primary">90Proof aufs iPhone legen</p>
             <p className="text-footnote text-text-secondary mt-0.5 leading-snug">
               Tippe unten auf <span className="font-medium text-text-primary">Teilen</span> und dann auf
-              {' '}<span className="font-medium text-text-primary">{'„Zum Home-Bildschirm"'}</span> – so startet FUSTA
+              {' '}<span className="font-medium text-text-primary">{'„Zum Home-Bildschirm"'}</span> – so startet 90Proof
               wie eine echte App (Vollbild, ohne Adressleiste).
             </p>
           </div>

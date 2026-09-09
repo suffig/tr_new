@@ -18,8 +18,13 @@ const quelle = process.argv[2] || 'design/logo-quelle.png';
 const ziel = 'public/assets';
 const splashOrdner = path.join(ziel, 'splash');
 
-// Hintergrund der Startbilder = --bg-primary im Dunkelmodus.
-const HINTERGRUND = { r: 10, g: 17, b: 25, alpha: 1 };
+// Hintergrund der Startbilder = SCHWARZ, nicht --bg-primary.
+//
+// Das 90Proof-Logo hat seinen schwarzen Grund eingebacken (es ist eine JPEG,
+// also ohne Transparenz). Auf dem frueheren #0A1119 haette man deshalb ein
+// dunkles Quadrat mit sichtbarer Kante mitten im Startbild gesehen. Mit
+// Schwarz geht das Logo nahtlos in die Flaeche ueber.
+const HINTERGRUND = { r: 0, g: 0, b: 0, alpha: 1 };
 
 // Anteil der kurzen Seite, den das Logo im Startbild einnimmt. 0.38 entspricht
 // der Groesse, die die bisherigen Startbilder hatten.
@@ -30,7 +35,7 @@ async function iconsErzeugen() {
     ['icon-180.png', 180],
     ['icon-192.png', 192],
     ['icon-512.png', 512],
-    ['logo-fusta.png', 512], // In-App-Logo (Header, Anmeldung)
+    ['logo-90proof.png', 512], // In-App-Logo (Header, Anmeldung)
   ];
   for (const [name, px] of groessen) {
     await sharp(quelle)
@@ -45,11 +50,11 @@ async function iconsErzeugen() {
   // blieb die URL bei jedem Wechsel gleich und der Service Worker lieferte
   // weiter das alte Bild.
   await mkdir('src/assets', { recursive: true });
-  await copyFile(path.join(ziel, 'logo-fusta.png'), 'src/assets/logo-fusta.png');
+  await copyFile(path.join(ziel, 'logo-90proof.png'), 'src/assets/logo-90proof.png');
 
   // Wurzel-Fallback: iOS sucht /apple-touch-icon.png, wenn kein <link> greift.
   await copyFile(path.join(ziel, 'icon-180.png'), 'public/apple-touch-icon.png');
-  console.log('   src/assets/logo-fusta.png + public/apple-touch-icon.png');
+  console.log('   src/assets/logo-90proof.png + public/apple-touch-icon.png');
   console.log('   HINWEIS: ?v= in index.html, manifest.json und vite.config.js hochzaehlen,');
   console.log('            sonst behaelt iOS das alte Symbol im Zwischenspeicher.');
 }

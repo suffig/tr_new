@@ -5,7 +5,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* FUSTA Design System — "Pitch & Stadium Night" */
+/* 90Proof Design System — "Pitch & Stadium Night" */
 :root {
   /* Der Browser malt den Bereich, in den man ueberscrollt, selbst — und
      zwar nach color-scheme, nicht nach unserem Hintergrund. Ohne diese
@@ -35,10 +35,23 @@
   --text-muted: rgba(56, 69, 63, 0.75);
 
   /* Brand */
-  --brand: #FF6B4A;
-  --brand-gradient: linear-gradient(135deg, #FF6B4A 0%, #B661B3 100%);
+  /* MARKENFARBEN AUS DEM 90PROOF-LOGO.
+     Gemessen an der Bilddatei: Bernstein #F4B60B, Weiss #FBFBFA auf Schwarz.
 
-  /* System Colors — tuned to the FUSTA palette */
+     DREI TOKEN STATT EINEM — weil Bernstein je nach Rolle anders muss:
+       --brand          die Flaeche (Knopf, Akzentbalken, Chip-Hintergrund)
+       --brand-auf      was AUF der Flaeche steht. Weiss auf Bernstein misst
+                        1,82:1 und ist unlesbar; Schwarz misst 10,88:1 — und
+                        das ist genau die Kombination des Logos.
+       --brand-text     Bernstein als SCHRIFT auf hellem Grund. Der reine Ton
+                        kommt dort nur auf 1,67:1, abgedunkelt auf 58 % sind
+                        es 4,58:1. */
+  --brand: #F4B60B;
+  --brand-auf: #0A0A0A;
+  --brand-text: #8E6A06;
+  --brand-gradient: linear-gradient(135deg, #F4B60B 0%, #FFD966 100%);
+
+  /* System Colors — tuned to the 90Proof palette */
   --system-blue: #0A6CFF;
   --system-blue-light: #4D94FF;
   --system-blue-dark: #0049C2;
@@ -74,7 +87,7 @@
   /* FIFA Team Colors */
   --fifa-blue: #0A6CFF;
   --fifa-red: #FF3B30;
-  --fifa-green: #FF6B4A;  /* Markenfarbe, jetzt Orange aus dem Logo */
+  --fifa-green: #F4B60B;  /* Markenfarbe: Bernstein aus dem 90Proof-Logo */
 
   /* Aliasse auf die Markenfarbe. Sie werden in globals.css sechsmal benutzt,
      waren aber NIRGENDS definiert — gesetzt hat sie nur ColorCustomization
@@ -150,8 +163,13 @@
   --text-muted: rgba(225, 238, 232, 0.62);
 
   /* Brand */
-  --brand: #FF8A6B;
-  --brand-gradient: linear-gradient(135deg, #FF8A6B 0%, #C77CC4 100%);
+  /* Im Dunkelmodus bleibt der reine Logo-Ton: auf #0A1119 misst er 10,43:1,
+     als Schrift also ohne Weiteres lesbar. --brand-text braucht deshalb
+     keine abgedunkelte Fassung. */
+  --brand: #F4B60B;
+  --brand-auf: #0A0A0A;
+  --brand-text: #F4B60B;
+  --brand-gradient: linear-gradient(135deg, #F4B60B 0%, #FFE08A 100%);
 
   /* System Colors — dark variants */
   --system-blue: #3D9BFF;
@@ -185,7 +203,7 @@
   /* FIFA Team Colors - Dark variants */
   --fifa-blue: #3D9BFF;
   --fifa-red: #FF453A;
-  --fifa-green: #FF8A6B;
+  --fifa-green: #F4B60B;
   --primary-green: var(--fifa-green);
   --primary-green-light: #FFAE96;
   --primary-green-dark: #E5674A;

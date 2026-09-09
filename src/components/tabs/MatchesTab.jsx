@@ -224,12 +224,12 @@ export default function MatchesTab({ onNavigate, user }) {
       return `${i + 1}. ${aek} ${a}:${b} ${real}`;
     });
     const text =
-      `⚽ FUSTA · Spieltag ${dateStr}\n\n` +
+      `⚽ 90Proof · Spieltag ${dateStr}\n\n` +
       `${lines.join('\n')}\n\n` +
       `Tagesbilanz: ${aek} ${sumA}:${sumB} ${real}`;
     try {
       if (navigator.share) {
-        await navigator.share({ title: 'FUSTA Spieltag', text });
+        await navigator.share({ title: '90Proof Spieltag', text });
       } else {
         await navigator.clipboard.writeText(text);
         toast.success('Spieltag in die Zwischenablage kopiert');

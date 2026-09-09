@@ -1,5 +1,5 @@
 /**
- * FUSTA Icon Set — consistent stroke-based SVG icons (Lucide style).
+ * 90Proof Icon Set — consistent stroke-based SVG icons (Lucide style).
  * All icons inherit `currentColor`, so they follow text color and theme.
  */
 

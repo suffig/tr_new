@@ -20,23 +20,23 @@ export default defineConfig({
       // waren hier gelistet, existierten aber nie.
       includeAssets: ['apple-touch-icon.png'],
       manifest: {
-        name: 'FUSTA - FIFA Statistik-Tracker',
-        short_name: 'FUSTA',
-        description: 'FUSTA - Verfolge FIFA-Spiele, Spieler, Sperren und Finanzen mit modernem Design',
-        theme_color: '#FF6B4A',
-        background_color: '#0A1119',
+        name: '90Proof',
+        short_name: '90Proof',
+        description: '90Proof — Fußball, Bier und die Abrechnung danach',
+        theme_color: '#F4B60B',
+        background_color: '#000000',
         display: 'standalone',
         orientation: 'portrait-primary',
         lang: 'de',
         categories: ['sports', 'games'],
         icons: [
           {
-            src: 'assets/icon-192.png?v=2',
+            src: 'assets/icon-192.png?v=3',
             sizes: '192x192',
             type: 'image/png'
           },
           {
-            src: 'assets/icon-512.png?v=2',
+            src: 'assets/icon-512.png?v=3',
             sizes: '512x512',
             type: 'image/png'
           }

@@ -63,7 +63,7 @@ export default function AbendBild({ boerse, verkostungen, katalog, onSchliessen 
     ctx.fillStyle = FARBE.gold;
     ctx.font = 'bold 34px Inter, system-ui, sans-serif';
     ctx.textAlign = 'left';
-    ctx.fillText('FUSTA · BIERBÖRSE', 70, 96);
+    ctx.fillText('90PROOF · BIERBÖRSE', 70, 96);
 
     ctx.fillStyle = FARBE.text;
     ctx.font = 'bold 76px Inter, system-ui, sans-serif';

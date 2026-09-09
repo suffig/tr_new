@@ -344,7 +344,7 @@ class NotificationService {
   async testNotification() {
     await this.showNotification({
       title: '🧪 Test Notification',
-      body: 'FUSTA notifications are working!',
+      body: '90Proof notifications are working!',
       icon: '/assets/icon-180.png',
       tag: 'test-notification'
     });

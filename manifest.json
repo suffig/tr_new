@@ -1,37 +1,37 @@
 {
   "id": "/tr_new/",
-  "name": "FUSTA - FIFA Statistik-Tracker",
-  "short_name": "FUSTA",
-  "description": "FUSTA - Verfolge FIFA-Spiele, Spieler, Sperren und Finanzen mit modernem Design",
+  "name": "90Proof",
+  "short_name": "90Proof",
+  "description": "90Proof — Fußball, Bier und die Abrechnung danach",
   "start_url": "./?source=pwa",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#0A1119",
-  "theme_color": "#FF6B4A",
+  "background_color": "#000000",
+  "theme_color": "#F4B60B",
   "orientation": "portrait-primary",
   "lang": "de",
   "categories": ["sports", "games"],
   "icons": [
     {
-      "src": "./assets/icon-180.png?v=2",
+      "src": "./assets/icon-180.png?v=3",
       "sizes": "180x180",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "./assets/icon-192.png?v=2",
+      "src": "./assets/icon-192.png?v=3",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./assets/icon-512.png?v=2",
+      "src": "./assets/icon-512.png?v=3",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "./assets/logo-fusta.png?v=2",
+      "src": "./assets/logo-fusta.png?v=3",
       "sizes": "1024x1024",
       "type": "image/png",
       "purpose": "any"

@@ -456,7 +456,7 @@ function WrappedView({ d, aekName, realName }) {
 
     // Header
     at('DAS DUELL', cx, 160, 78, '#FFFFFF', '800');
-    at('FUSTA · Rückblick', cx, 214, 34, '#8A93A0', '600');
+    at('90PROOF · Rückblick', cx, 214, 34, '#8A93A0', '600');
 
     // Scoreboard
     //
@@ -511,7 +511,7 @@ function WrappedView({ d, aekName, realName }) {
 
     // Footer
     at(new Date().toLocaleDateString('de-DE', { day: '2-digit', month: 'long', year: 'numeric' }), 90, H - 70, 30, '#5A6472', '600', 'left');
-    at('FUSTA', W - 90, H - 70, 34, '#FF8A6B', '800', 'right'); // Markenfarbe (Canvas kennt keine CSS-Variablen)
+    at('90PROOF', W - 90, H - 70, 34, '#FF8A6B', '800', 'right'); // Markenfarbe (Canvas kennt keine CSS-Variablen)
   }, [d, aekName, realName]);
 
   const filename = `fusta-rueckblick-${new Date().toISOString().slice(0, 10)}.png`;
@@ -533,7 +533,7 @@ function WrappedView({ d, aekName, realName }) {
       const blob = await new Promise((res) => canvas.toBlob(res, 'image/png'));
       const file = new File([blob], filename, { type: 'image/png' });
       if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: 'FUSTA Rückblick' });
+        await navigator.share({ files: [file], title: '90Proof Rückblick' });
       } else {
         save();
       }
