@@ -32,7 +32,7 @@ const FARBE = {
   karte: '#141F2C',
   text: '#F2F6F4',
   leise: '#8FA3AF',
-  gold: '#FFC857',
+  gold: '#F4B60B',   // Markenbernstein, wie im Logo und im Saison-Rueckblick
   aek: '#4A9BFF',
   real: '#FF5A5A',
   linie: '#22313F',
