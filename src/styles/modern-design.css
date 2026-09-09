@@ -1171,3 +1171,21 @@ textarea.form-input {
 .text-marke {
   color: var(--brand-text);
 }
+
+/* -----------------------------------------------------------------------
+   Farbige SCHRIFT zeigt auf den Schriftton, farbige FLAECHEN nicht.
+   -----------------------------------------------------------------------
+   Tailwind erzeugt text-system-yellow aus var(--system-yellow) — demselben
+   Wert, den auch bg-system-yellow benutzt. Das ist fuer eine Flaeche
+   richtig und fuer Schrift auf hellem Grund unlesbar (1,60:1).
+
+   Diese drei Regeln leiten NUR die Textklassen um. Sie stehen ausserhalb
+   jeder @layer und damit spaeter in der Kaskade als Tailwinds Utilities;
+   bg-system-* bleibt unangetastet.
+
+   Damit aendern sich rund 130 Textstellen, ohne dass eine einzige Datei im
+   JSX angefasst werden muss.
+   ----------------------------------------------------------------------- */
+.text-system-yellow { color: var(--system-yellow-schrift); }
+.text-system-orange { color: var(--system-orange-schrift); }
+.text-system-teal   { color: var(--system-teal-schrift); }

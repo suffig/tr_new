@@ -44,11 +44,11 @@
                         1,82:1 und ist unlesbar; Schwarz misst 10,88:1 — und
                         das ist genau die Kombination des Logos.
        --brand-text     Bernstein als SCHRIFT auf hellem Grund. Der reine Ton
-                        kommt dort nur auf 1,67:1, abgedunkelt auf 58 % sind
-                        es 4,58:1. */
+                        kommt dort nur auf 1,67:1, abgedunkelt sind es 4,52:1 —
+                        gemessen auf der hellsten Kachel, nicht nur auf dem Grund. */
   --brand: #F4B60B;
   --brand-auf: #0A0A0A;
-  --brand-text: #8E6A06;
+  --brand-text: #886606;
   --brand-gradient: linear-gradient(135deg, #F4B60B 0%, #FFD966 100%);
 
   /* System Colors — tuned to the 90Proof palette */
@@ -103,6 +103,23 @@
      ohnehin "Bestwert, Trophaee, Hervorhebung" (134 Verwendungen), also
      genau das, wofuer die Marke steht. */
   --system-yellow: #F4B60B;
+
+  /* SCHRIFTTOENE — dieselbe Farbe, andere Rolle.
+     Gelb, Orange und Teal sind als FLAECHE richtig hell (Balken, Punkte,
+     Symbolgruende) und als SCHRIFT auf hellem Grund unlesbar: 1,60:1,
+     1,94:1 und 1,67:1. Sie so weit abzudunkeln, dass sie als Schrift
+     bestehen, haette die Flaechen ruiniert — Gelb waere zu Braun geworden.
+
+     Deshalb zwei Toene je Farbe, wie bei --brand und --brand-text. Die
+     Tailwind-Klassen text-system-* zeigen auf den Schriftton, bg-system-*
+     bleibt auf dem Flaechenton (siehe modern-design.css).
+
+     Der Gelb-Schriftton IST --brand-text: Gelb ist seit dem Rebrand die
+     Markenfarbe, und zwei Werte fuer dieselbe Rolle waren ja gerade das
+     Problem, das wir beseitigt haben. */
+  --system-yellow-schrift: var(--brand-text);
+  --system-orange-schrift: #9C5B00;   /* 1,94 -> 4,54 */
+  --system-teal-schrift:   #32708C;   /* 1,67 -> 4,63 */
   --system-yellow-light: #FFD84D;
   --system-yellow-dark: #CC9900;
   
@@ -221,6 +238,13 @@
   --system-teal-light: #85DDFF;
   --system-teal-dark: #4AC0E6;
   --system-yellow: #F4B60B;   /* Markenbernstein, siehe Hellmodus */
+
+  /* Im Dunkelmodus sind die reinen Toene als Schrift schon lesbar
+     (Gelb 10,4:1, Orange 8,6:1, Teal 9,7:1 auf dem Grund) — hier faellt
+     Flaeche und Schrift zusammen. */
+  --system-yellow-schrift: var(--brand-text);
+  --system-orange-schrift: var(--system-orange);
+  --system-teal-schrift:   var(--system-teal);
   --system-yellow-light: #FFE033;
   --system-yellow-dark: #CCA800;
   

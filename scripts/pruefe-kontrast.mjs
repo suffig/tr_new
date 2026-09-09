@@ -27,10 +27,28 @@ const bloecke = {
   dunkel: css.slice(css.indexOf(':root.dark')),
 };
 
-const holeFarbe = (block, name) => {
+const holeFarbe = (block, name, tiefe = 0) => {
   const m = block.match(new RegExp(`--${name}:\\s*([^;]+);`));
   if (!m) return null;
   const wert = m[1].trim();
+
+  // VERWEISE AUFLOESEN.
+  // --system-yellow-schrift zeigt auf var(--brand-text). Ohne diesen Zweig
+  // gab holeFarbe dafuer null zurueck, die Schleife uebersprang den Token
+  // still — und die Pruefung meldete "alles in Ordnung", ohne ihn je
+  // gemessen zu haben. Ein stiller Durchlaeufer ist schlimmer als ein
+  // Fehler, weil er wie ein Ergebnis aussieht.
+  //
+  // Die Tiefenbegrenzung faengt einen Verweiszirkel ab; ohne sie liefe die
+  // Funktion endlos.
+  const verweis = wert.match(/^var\(\s*--([a-z0-9-]+)\s*\)$/i);
+  if (verweis) {
+    if (tiefe > 5) {
+      console.error(`  --${name}: Verweiskette zu tief (Zirkel?)`);
+      return null;
+    }
+    return holeFarbe(block, verweis[1], tiefe + 1);
+  }
   const rgba = wert.match(/rgba?\(\s*(\d+)[,\s]+(\d+)[,\s]+(\d+)\s*(?:[,/]\s*([\d.]+))?\s*\)/);
   if (rgba) return { rgb: [+rgba[1], +rgba[2], +rgba[3]], a: rgba[4] ? +rgba[4] : 1 };
   const hex = wert.match(/^#([0-9a-f]{6})$/i);
@@ -64,8 +82,11 @@ const SCHWELLE = 4.5;
  * Abbruch wuerde also Faelle erschlagen, die in Ordnung sind — die Liste
  * dagegen zeigt, wo man hinsehen sollte.
  */
-const SYSTEMFARBEN = ['system-blue', 'system-green', 'system-red', 'system-orange',
-  'system-yellow', 'system-teal', 'system-purple', 'system-indigo'];
+const SYSTEMFARBEN = ['system-blue', 'system-green', 'system-red', 'system-purple',
+  'system-indigo',
+  // Diese drei haben einen eigenen SCHRIFTTON — der Flaechenton ist bewusst
+  // hell und wird hier nicht gemessen, weil er nie Text traegt.
+  'system-orange-schrift', 'system-yellow-schrift', 'system-teal-schrift'];
 
 let fehler = 0;
 for (const [thema, block] of Object.entries(bloecke)) {
@@ -96,9 +117,12 @@ for (const [thema, block] of Object.entries(bloecke)) {
 
   // Systemfarben als SCHRIFT — nur Bericht, kein Abbruch (siehe oben).
   const schwach = [];
+  const unbekannt = [];
   for (const name of SYSTEMFARBEN) {
     const fg = holeFarbe(block, name);
-    if (!fg) continue;
+    // Ein Token, das die Pruefung nicht lesen kann, wird GENANNT. Sonst
+    // sieht ein Tippfehler im Namen wie ein bestandener Test aus.
+    if (!fg) { unbekannt.push(name); continue; }
     let schlecht = null;
     for (const [gname, bg] of gruende) {
       const v = kontrast(fg, bg);
@@ -108,6 +132,9 @@ for (const [thema, block] of Object.entries(bloecke)) {
   }
   if (schwach.length) {
     console.log(`  als Schrift zu blass (Hinweis, kein Fehler): ${schwach.join(', ')}`);
+  }
+  if (unbekannt.length) {
+    console.log(`  nicht lesbar und deshalb UNGEPRUEFT: ${unbekannt.join(', ')}`);
   }
 }
 
