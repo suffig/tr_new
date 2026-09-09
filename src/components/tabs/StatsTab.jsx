@@ -789,22 +789,42 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   // "Visualisierungen" und "Spieltage" waren keine eigenen Themen, sondern
   // weitere Karten zu Themen, die es schon gab — sie stehen jetzt dort, wo sie
   // hingehoeren (siehe renderCurrentView und STATS_VIEW_MAP).
-  const views = [
-    { id: 'overview', label: 'Übersicht', iconName: 'chart' },
-    { id: 'teams', label: 'Teams', iconName: 'trophy' },
-    { id: 'players', label: 'Spieler', iconName: 'users' },
-    { id: 'trends', label: 'Verlauf', iconName: 'trendingUp' },
-    { id: 'insights', label: 'Einblicke', iconName: 'bulb' },
-    // Alles, was ueber EINE Saison hinausgeht — ewige Bilanz, Sperren
-    // ueber die Jahre, Steckbrief je Saison. Der Saisonfilter oben
-    // gilt hier bewusst nicht.
-    { id: 'historie', label: 'Historie', iconName: 'clock' },
-    // Aus dem Duell hierher gezogen: beide werten eine SAISON aus, nicht das
-    // Verhaeltnis der beiden Personen. Im Duell standen sie neben Rekorden
-    // und Kaderverlauf und liessen die Leiste auf neun Reiter anwachsen.
-    { id: 'ruhmeshalle', label: 'Hall of Fame', iconName: 'trophy' },
-    { id: 'saisonvergleich', label: 'Saisons', iconName: 'calendar' },
+  /**
+   * ACHT REITER WAREN WIEDER ZU VIELE.
+   *
+   * Dasselbe Problem, das das Duell hatte, nur ein paar Schritte spaeter:
+   * seit Hall of Fame und Saison-Vergleich hierher gezogen sind, passt die
+   * Leiste auf keinen Handybildschirm mehr. Also derselbe Aufbau — drei
+   * Gruppen oben, die Ansichten darin.
+   *
+   * Der Schnitt folgt der ZEITSPANNE, denn danach unterscheiden sich diese
+   * Auswertungen wirklich:
+   *   Aktuell  was der Saisonfilter oben hergibt
+   *   Verlauf  wie es sich innerhalb dieses Zeitraums entwickelt
+   *   Historie was ueber eine Saison hinausgeht — hier gilt der Filter
+   *            bewusst NICHT
+   */
+  const gruppen = [
+    { id: 'aktuell', label: 'Aktuell', iconName: 'chart', views: [
+      { id: 'overview', label: 'Übersicht' },
+      { id: 'teams', label: 'Teams' },
+      { id: 'players', label: 'Spieler' },
+    ] },
+    { id: 'entwicklung', label: 'Verlauf', iconName: 'trendingUp', views: [
+      { id: 'trends', label: 'Verlauf' },
+      { id: 'insights', label: 'Einblicke' },
+    ] },
+    { id: 'lang', label: 'Historie', iconName: 'clock', views: [
+      { id: 'historie', label: 'Historie' },
+      { id: 'ruhmeshalle', label: 'Hall of Fame' },
+      { id: 'saisonvergleich', label: 'Saisons' },
+    ] },
   ];
+  // Die aktive Gruppe wird aus der Ansicht ABGELEITET, nicht getrennt
+  // gespeichert — sonst koennten beide auseinanderlaufen, etwa nach einem
+  // Sprung von aussen direkt auf eine Ansicht.
+  const aktiveGruppe = gruppen.find((g) => g.views.some((v) => v.id === selectedView)) || gruppen[0];
+  const views = gruppen.map((g) => ({ id: g.views[0].id, label: g.label, iconName: g.iconName }));
 
   if (loading) {
     return <LoadingSpinner message="Lade Statistiken..." />;
@@ -1760,9 +1780,23 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       {/* Horizontal Navigation */}
       <HorizontalNavigation
         views={views}
-        selectedView={selectedView}
+        selectedView={aktiveGruppe.views[0].id}
         onViewChange={setSelectedView}
       />
+
+      {/* Zweite Leiste nur, wo es innerhalb der Gruppe eine Wahl gibt. */}
+      {aktiveGruppe.views.length > 1 && (
+        <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl mt-2">
+          {aktiveGruppe.views.map((v) => (
+            <button key={v.id} type="button" onClick={() => setSelectedView(v.id)}
+                    aria-pressed={selectedView === v.id}
+                    className={`flex-1 py-1.5 rounded-lg text-caption2 font-semibold transition-colors ${
+                      selectedView === v.id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+              {v.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       {/* Enhanced Content with Animation */}
       <div className="form-container animate-mobile-slide-in">

@@ -17,8 +17,15 @@ export const ThemeProvider = ({ children }) => {
     if (savedTheme) {
       return savedTheme;
     }
-    // Default to light theme instead of system preference
-    return 'light';
+    // DUNKEL ALS STANDARD.
+    // Das 90Proof-Logo ist auf Schwarz gebaut — weisses Pinsel-"90" und
+    // Bernstein auf schwarzem Grund. Im Hellmodus sass es als schwarze
+    // Kachel in einer hellen Flaeche und wirkte wie ein Fremdkoerper.
+    //
+    // Nur der ANFANGSWERT aendert sich: wer schon einmal umgeschaltet hat,
+    // hat 'fifa-tracker-theme' gesetzt und wird oben abgefangen. Eine
+    // getroffene Wahl zu ueberschreiben waere eine Bevormundung.
+    return 'dark';
   });
 
   const [autoMode, setAutoMode] = useState(() => {
