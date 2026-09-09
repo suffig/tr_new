@@ -53,6 +53,20 @@ const kontrast = (fg, bg) => {
 const GEPRUEFT = ['text-primary', 'text-secondary', 'text-tertiary', 'text-muted'];
 const SCHWELLE = 4.5;
 
+/**
+ * Die Systemfarben werden AUCH als Schrift benutzt — `text-system-yellow`
+ * allein 90 Mal, `text-system-green` 140 Mal. Sie standen bisher nicht in
+ * der Pruefung, obwohl sie Text tragen.
+ *
+ * Sie werden getrennt gemeldet und brechen den Build NICHT ab. Grund: eine
+ * Systemfarbe hat zwei Rollen. Als kleiner Text muss sie lesbar sein, als
+ * Balken, Punkt oder Symbolflaeche gilt das Textmass gar nicht. Ein harter
+ * Abbruch wuerde also Faelle erschlagen, die in Ordnung sind — die Liste
+ * dagegen zeigt, wo man hinsehen sollte.
+ */
+const SYSTEMFARBEN = ['system-blue', 'system-green', 'system-red', 'system-orange',
+  'system-yellow', 'system-teal', 'system-purple', 'system-indigo'];
+
 let fehler = 0;
 for (const [thema, block] of Object.entries(bloecke)) {
   // NICHT NUR GEGEN DEN SEITENGRUND.
@@ -78,6 +92,22 @@ for (const [thema, block] of Object.entries(bloecke)) {
     if (!ok) fehler++;
     console.log(`  --${name}: ${schlecht.v.toFixed(2)}:1 auf --${schlecht.gname}`
       + ` ${ok ? '✓' : `✗ unter ${SCHWELLE}`}`);
+  }
+
+  // Systemfarben als SCHRIFT — nur Bericht, kein Abbruch (siehe oben).
+  const schwach = [];
+  for (const name of SYSTEMFARBEN) {
+    const fg = holeFarbe(block, name);
+    if (!fg) continue;
+    let schlecht = null;
+    for (const [gname, bg] of gruende) {
+      const v = kontrast(fg, bg);
+      if (!schlecht || v < schlecht.v) schlecht = { v, gname };
+    }
+    if (schlecht.v < SCHWELLE) schwach.push(`${name} ${schlecht.v.toFixed(2)}:1 auf --${schlecht.gname}`);
+  }
+  if (schwach.length) {
+    console.log(`  als Schrift zu blass (Hinweis, kein Fehler): ${schwach.join(', ')}`);
   }
 }
 

@@ -52,7 +52,17 @@
   --brand-gradient: linear-gradient(135deg, #F4B60B 0%, #FFD966 100%);
 
   /* System Colors — tuned to the 90Proof palette */
-  --system-blue: #0A6CFF;
+  /* ALS SCHRIFT LESBAR, NICHT NUR ALS FLAECHE.
+     Diese Farben tragen auch Text — text-system-green allein 140 Mal. Auf
+     dem hellsten Flaechenton (--bg-tertiary) lagen sie zwischen 3,00:1 und
+     3,85:1 und damit unter dem Lesbarkeitsmass. Um 9 bis 21 % abgedunkelt
+     erreichen sie 4,5:1 und bleiben dabei erkennbar dieselbe Farbe.
+
+     Gelb, Orange und Teal fehlen hier bewusst: sie braeuchten 45 % und mehr
+     und wuerden dabei zu Braun bzw. Schiefer — sie verloeren ihre Identitaet.
+     Fuer die ist die Trennung in Flaechen- und Schriftton noetig, so wie es
+     --brand und --brand-text schon machen. Der Kontrastpruefer meldet sie. */
+  --system-blue: #0962E8;
   --system-blue-light: #4D94FF;
   --system-blue-dark: #0049C2;
   /* Trotz des Namens KEIN Gruen mehr: das Token traegt die Bedeutung
@@ -65,7 +75,7 @@
      DREI Blautoene (blue, "green", teal) und keinen einzigen gruenen.
      #248A3D kommt auf hellem Grund auf 4,04:1 und ist damit sogar lesbarer
      als das Blau davor (2,87:1). */
-  --system-green: #248A3D;
+  --system-green: #207936;
   --system-green-light: #45BDEB;
   --system-green-dark: #0A7BA8;
   --system-indigo: #5856D6;
@@ -77,10 +87,10 @@
   --system-pink: #FF2D92;
   --system-pink-light: #FF5AAD;
   --system-pink-dark: #D70071;
-  --system-purple: #AF52DE;
+  --system-purple: #9546BD;
   --system-purple-light: #C274E8;
   --system-purple-dark: #8E35B2;
-  --system-red: #FF3B30;
+  --system-red: #C92F26;
   --system-red-light: #FF6961;
   --system-red-dark: #D70015;
   --system-teal: #5AC8FA;
@@ -190,7 +200,9 @@
   --system-green: #30D158;   /* echtes Gruen, 9,38:1 auf dem Grund */
   --system-green-light: #81D4FA;
   --system-green-dark: #2BA3D9;
-  --system-indigo: #5E5CE6;
+  /* 2,87:1 auf --bg-tertiary war der schlechteste Wert der ganzen Palette.
+     Um 40 % aufgehellt sind es 4,54:1. */
+  --system-indigo: #8481FF;
   --system-indigo-light: #7D7BEB;
   --system-indigo-dark: #4644B8;
   --system-orange: #FF9F0A;
@@ -199,10 +211,10 @@
   --system-pink: #FF375F;
   --system-pink-light: #FF5A7A;
   --system-pink-dark: #D02B4C;
-  --system-purple: #BF5AF2;
+  --system-purple: #CA5FFF;  /* 4,12 -> 4,56 auf --bg-tertiary */
   --system-purple-light: #CF7AF5;
   --system-purple-dark: #9A47C4;
-  --system-red: #FF453A;
+  --system-red: #FF5144;     /* 4,26 -> 4,50 auf --bg-tertiary */
   --system-red-light: #FF6961;
   --system-red-dark: #D33A2E;
   --system-teal: #64D2FF;
