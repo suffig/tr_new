@@ -221,7 +221,7 @@ export default function AdminTab({ onLogout, onNavigate, showHints = false, user
                           <Icon name={tab.icon} size={18} strokeWidth={2} />
                         </span>
                         <div className="flex-1 min-w-0">
-                          <div className={`font-medium text-sm ${activeSubTab === tab.id ? 'text-system-green' : 'text-text-primary'}`}>
+                          <div className={`font-medium text-sm ${activeSubTab === tab.id ? 'text-marke' : 'text-text-primary'}`}>
                             {tab.label}
                           </div>
                           <div className="text-xs text-text-muted truncate">{tab.description}</div>

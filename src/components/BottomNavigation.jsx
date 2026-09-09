@@ -42,7 +42,11 @@ export default function BottomNavigation({ activeTab, onTabChange, user }) {
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={`nav-tab flex flex-col items-center justify-center min-w-0 px-1 py-1.5 rounded-ios-lg transition-colors duration-ios touch-target ${
-                  isActive ? 'text-system-green' : 'text-text-tertiary hover:text-text-secondary'
+                  // Der aktive Bereich traegt die MARKE, nicht Gruen: Gruen
+                  // heisst in dieser App jetzt "positiv" (Erfolg, Sieg,
+                  // Haken). "Hier bin ich" ist keine Wertung, sondern die
+                  // Stelle, an der eine App ihre Farbe zeigt.
+                  isActive ? 'text-marke' : 'text-text-tertiary hover:text-text-secondary'
                 }`}
                 aria-label={tab.ariaLabel}
                 aria-current={isActive ? 'page' : undefined}

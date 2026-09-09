@@ -59,7 +59,13 @@
      "positiv" (Siege, Guthaben, zu Null, Erfolgsmeldungen) und ist auf
      Tuerkisblau gewechselt. Umbenennen haette 309 Aufrufstellen
      angefasst; der Wert steht hier an einer Stelle. */
-  --system-green: #0E9CD4;
+  /* EIN GRUEN, DAS GRUEN IST.
+     Hier stand #0E9CD4 — ein Blau. Ein Erfolgshinweis ("erfolgreich"), ein
+     Haken, ein Sieg: alles wurde blau gerendert, und die App hatte damit
+     DREI Blautoene (blue, "green", teal) und keinen einzigen gruenen.
+     #248A3D kommt auf hellem Grund auf 4,04:1 und ist damit sogar lesbarer
+     als das Blau davor (2,87:1). */
+  --system-green: #248A3D;
   --system-green-light: #45BDEB;
   --system-green-dark: #0A7BA8;
   --system-indigo: #5856D6;
@@ -80,7 +86,13 @@
   --system-teal: #5AC8FA;
   --system-teal-light: #7ED4FB;
   --system-teal-dark: #32A0C9;
-  --system-yellow: #FFCC00;
+  /* GELB IST JETZT DER MARKENBERNSTEIN.
+     #FFCC00 und der Logo-Ton #F4B60B liegen 27 Einheiten auseinander — zum
+     Vergleich: Blau zu Rot sind 290. Das waren zwei praktisch identische
+     Gelbtoene nebeneinander, keine zwei Farben. Gelb bedeutet in dieser App
+     ohnehin "Bestwert, Trophaee, Hervorhebung" (134 Verwendungen), also
+     genau das, wofuer die Marke steht. */
+  --system-yellow: #F4B60B;
   --system-yellow-light: #FFD84D;
   --system-yellow-dark: #CC9900;
   
@@ -175,7 +187,7 @@
   --system-blue: #3D9BFF;
   --system-blue-light: #70B5FF;
   --system-blue-dark: #1E6FD6;
-  --system-green: #4FC3F7;
+  --system-green: #30D158;   /* echtes Gruen, 9,38:1 auf dem Grund */
   --system-green-light: #81D4FA;
   --system-green-dark: #2BA3D9;
   --system-indigo: #5E5CE6;
@@ -196,7 +208,7 @@
   --system-teal: #64D2FF;
   --system-teal-light: #85DDFF;
   --system-teal-dark: #4AC0E6;
-  --system-yellow: #FFD60A;
+  --system-yellow: #F4B60B;   /* Markenbernstein, siehe Hellmodus */
   --system-yellow-light: #FFE033;
   --system-yellow-dark: #CCA800;
   
