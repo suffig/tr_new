@@ -59,7 +59,10 @@ export default function NaechsterSchritt({ matches, players, bans, boersen, verk
         text: namen.length && namen.length <= 3
           ? `${namen.join(', ')} ${namen.length === 1 ? 'fehlt' : 'fehlen'} beim nächsten Spiel.`
           : 'Beim nächsten Spiel nicht aufstellbar.',
-        knopf: 'Sperren ansehen', ziel: 'duell',
+        // 'bans' statt 'duell': resolveTab bildet den Namen auf
+        // Spielbetrieb + Unteransicht "sperren" ab, der Sprung landet also
+        // direkt auf der Liste statt nur im Bereich.
+        knopf: 'Sperren ansehen', ziel: 'bans',
       });
     }
 
@@ -74,7 +77,7 @@ export default function NaechsterSchritt({ matches, players, bans, boersen, verk
         text: abend?.name
           ? `Bei „${abend.name}" fehlt die Angabe — diese Biere zählen nicht in den Ausgleich.`
           : 'Diese Biere zählen nicht in den Ausgleich.',
-        knopf: 'Zur Bierbörse', ziel: 'alcohol',
+        knopf: 'Zur Bierbörse', ziel: 'bierboerse',
       });
     }
 
@@ -87,10 +90,12 @@ export default function NaechsterSchritt({ matches, players, bans, boersen, verk
         text: heimatlos.length <= 3
           ? heimatlos.map((p) => p.name).join(', ')
           : 'Sie tauchen in keiner Kaderliste auf.',
-        // 'squad' ist nur ein Altname, der ueber eine Umleitung laeuft und
-        // ueber onNavigate nicht zuverlaessig ankommt. Der Kader liegt im
-        // Spielbetrieb.
-        knopf: 'Zum Kader', ziel: 'spielbetrieb',
+        // 'squad' fuehrt ueber resolveTab auf Spielbetrieb + Unteransicht
+        // "kader". Ich hatte das frueher fuer unzuverlaessig gehalten und auf
+        // 'spielbetrieb' ausweichen lassen — das landete dann im Bereich,
+        // aber auf der zuletzt benutzten Ansicht. Nachgeprueft: der Altname
+        // kommt an.
+        knopf: 'Zum Kader', ziel: 'squad',
       });
     }
 

@@ -49,6 +49,10 @@ export const LEGACY_TAB_MAP = {
   teams: { tab: 'abend', view: 'teams' },
   alcohol: { tab: 'abend', view: 'alkohol' },
   spielersaufen: { tab: 'abend', view: 'saufen' },
+  // Die Bierboerse hatte keinen Sprungnamen: ein onNavigate('abend') landete
+  // im Bereich, aber auf der zuletzt benutzten Unteransicht. Die Karte
+  // "Steht an" auf der Startseite meint aber genau diesen Reiter.
+  bierboerse: { tab: 'abend', view: 'bierboerse' },
   // Englische Schreibweise aus der globalen Suche — zeigte schon vor dem Umbau
   // auf einen Tab, den es nie gab, und landete deshalb im Default.
   finances: { tab: 'finanzen', view: null },
