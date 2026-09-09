@@ -291,7 +291,11 @@ const fallbackData = {
   ],
   bierboersen: [
     { id: 1, name: 'Bierbörse Dortmund', ort: 'Dortmund', datum: '2026-06-14' },
-    { id: 2, name: 'Sommerabend Balkon', ort: 'Zuhause', datum: '2026-07-26' }
+    { id: 2, name: 'Sommerabend Balkon', ort: 'Zuhause', datum: '2026-07-26' },
+    // Am 12.08. wird GESPIELT und getrunken. Ohne diesen Abend liesse sich
+    // der Fall, um den es bei 90Proof geht, mit den Demodaten gar nicht
+    // zeigen: die beiden anderen Boersen liegen auf Tagen ohne Spiel.
+    { id: 3, name: 'Spielabend mit Bier', ort: 'Zuhause', datum: '2026-08-12' }
   ],
   // Drei Zeilen mit Kategorien (db/21), zwei bewusst ohne — so laesst sich
   // beides pruefen: die neue Aufschluesselung und die alten Eintraege, die nur
@@ -309,6 +313,11 @@ const fallbackData = {
     { id: 4, boerse_id: 2, bier_id: 1, preis: 2.4, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 2, note_aek: 9, note_real: 8, bezahlt_von: 'Real', wieder_aek: true, wieder_real: true },
     { id: 6, boerse_id: 2, bier_id: 5, preis: 2.9, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 1, note_aek: 3, note_real: 4, bezahlt_von: 'AEK', wieder_aek: false, wieder_real: false },
     { id: 5, boerse_id: 2, bier_id: 3, preis: 3.1, groesse_ml: 500, anzahl_aek: 1, anzahl_real: 0, note_aek: 5, note_real: null, bezahlt_von: 'Real', wieder_aek: false, wieder_real: null }
+,
+    { id: 90, boerse_id: 3, bier_id: 1, preis: 2.4, groesse_ml: 500, anzahl_aek: 2, anzahl_real: 2,
+      note_aek: 8, note_real: 7, bezahlt_von: 'Real', wieder_aek: true, wieder_real: true },
+    { id: 91, boerse_id: 3, bier_id: 4, preis: 3.6, groesse_ml: 330, anzahl_aek: 1, anzahl_real: 2,
+      note_aek: 6, note_real: 8, bezahlt_von: 'AEK', wieder_aek: false, wieder_real: true }
   ],
   // Eigene Bewertungskategorien (db/28). Eine aktive und eine stillgelegte —
   // nur so ist im Demo-Modus zu sehen, dass ausgeblendete Kategorien ihre

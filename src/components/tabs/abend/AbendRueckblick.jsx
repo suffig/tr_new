@@ -6,6 +6,7 @@ import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { getTeamDisplay } from '../../../constants/teams';
 import { ladeLokal, standFuer, logischesDatum } from '../../../utils/abende';
 import { loadPulls } from '../../../utils/teamCollection';
+import { boersenStatistik } from '../../../utils/bierboerse';
 
 // Der Abend als Einheit.
 //
@@ -47,6 +48,25 @@ function Wert({ icon, farbe, zahl, label }) {
 
 export default function AbendRueckblick() {
   const { data: matches, loading } = useSupabaseQuery('matches', '*');
+  // DIE BIERBOERSE GEHOERT HIERHER.
+
+  // Die Kachel "Bier" zaehlte bisher nur den lokalen Saufen-Zaehler. Wer
+
+  // seine Biere in der Bierboerse eintraegt — also im genaueren der
+
+  // beiden Wege —, sah hier trotzdem einen Strich. Genau an diesem Abend
+
+  // liegt aber die Frage, um die es bei 90Proof geht: wie lief das Spiel,
+
+  // und wie viel stand daneben.
+
+  const opt = { skipFifaFilter: true };
+
+  const { data: boersen } = useSupabaseQuery('bierboersen', '*', opt);
+
+  const { data: verkostungen } = useSupabaseQuery('bier_verkostungen', '*', opt);
+
+  const { data: bierKatalog } = useSupabaseQuery('bier_katalog', '*', opt);
 
   const abende = useMemo(() => {
     const ereignisse = ladeLokal();
@@ -57,6 +77,8 @@ export default function AbendRueckblick() {
     ereignisse.forEach((e) => e.datum && tage.add(e.datum));
     (matches || []).forEach((m) => m.date && tage.add(String(m.date).slice(0, 10)));
     pulls.forEach((p) => tage.add(logischesDatum(new Date(p.ts))));
+    // Ein Abend, an dem nur getrunken wurde, ist auch ein Abend.
+    (boersen || []).forEach((b) => b.datum && tage.add(String(b.datum).slice(0, 10)));
 
     return [...tage].sort((a, b) => (a < b ? 1 : -1)).map((datum) => {
       const spiele = (matches || []).filter((m) => String(m.date).slice(0, 10) === datum);
@@ -70,13 +92,20 @@ export default function AbendRueckblick() {
         if (a > b) aek++; else if (b > a) real++;
       }
 
+      // Die Boerse dieses Abends — falls es eine gibt.
+      const boerse = (boersen || []).find((b) => String(b.datum || '').slice(0, 10) === datum) || null;
+      const boersenBiere = boerse
+        ? (verkostungen || []).filter((v) => v.boerse_id === boerse.id)
+        : [];
+      const bStat = boersenBiere.length ? boersenStatistik(boersenBiere, bierKatalog) : null;
+
       return {
-        datum, spiele, ziehungen, stand,
+        datum, spiele, ziehungen, stand, boerse, bStat,
         bilanz: { aek, real, unentschieden: spiele.length - aek - real, toreA, toreB },
         getraenke: stand.bier.gesamt + stand.shot20.gesamt + stand.shot40.gesamt + stand.schnaps.gesamt,
       };
-    }).filter((a) => a.spiele.length || a.ziehungen.length || a.stand.anzahl);
-  }, [matches]);
+    }).filter((a) => a.spiele.length || a.ziehungen.length || a.stand.anzahl || a.bStat);
+  }, [matches, boersen, verkostungen, bierKatalog]);
 
   if (loading) return <LoadingSpinner message="Lade Abende…" />;
 
@@ -136,10 +165,44 @@ export default function AbendRueckblick() {
               <Wert icon="trophy" farbe="text-system-orange" zahl={a.ziehungen.length} label="Ziehungen" />
               <Wert icon="starFilled" farbe="text-system-yellow"
                 zahl={a.stand.sterne.gesamt > 0 ? `+${fmt(a.stand.sterne.gesamt)}` : '—'} label="Sterne" />
-              <Wert icon="beer" farbe="text-system-orange" zahl={a.stand.bier.gesamt || '—'} label="Bier" />
+              {/* Die Boerse ist der genauere Wert und hat deshalb Vorrang;
+                  der Saufen-Zaehler bleibt der Rueckfall. */}
+              <Wert icon="beer" farbe="text-system-orange"
+                zahl={a.bStat ? a.bStat.glaeser : (a.stand.bier.gesamt || '—')}
+                label={a.bStat ? 'Gläser' : 'Bier'} />
               <Wert icon="glass" farbe="text-system-purple"
                 zahl={(a.stand.shot20.gesamt + a.stand.shot40.gesamt + a.stand.schnaps.gesamt) || '—'} label="Kurze" />
             </div>
+
+            {/* SPIEL UND GLAS AN EINEM ORT.
+                Das ist die Zeile, wegen der die Bierboerse hierher geholt
+                wurde: das Ergebnis des Abends steht darueber, was daneben
+                stand, hier. Eine Uhrzeit wird nirgends erfasst — die Zeile
+                behauptet deshalb keine Reihenfolge und kein "deshalb". */}
+            {a.bStat && (
+              <div className="mt-2.5 pt-2.5 border-t border-border-light">
+                <div className="flex items-baseline gap-2 mb-1">
+                  <span className="text-caption2 font-semibold text-text-muted truncate min-w-0 flex-1">
+                    {a.boerse?.name || 'Bierbörse'}
+                  </span>
+                  <span className="text-caption2 text-text-tertiary flex-shrink-0">
+                    {a.bStat.biere} {a.bStat.biere === 1 ? 'Bier' : 'Biere'}
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-1.5">
+                  <span className="chip chip-sm chip-gray">
+                    {fmt(a.bStat.liter)} l
+                  </span>
+                  <span className="chip chip-sm chip-gray">
+                    {fmt(a.bStat.standardglaeser ?? 0)} Std.-Gläser
+                  </span>
+                  <span className="chip chip-sm chip-gray">
+                    {(a.bStat.ausgaben || 0).toLocaleString('de-DE',
+                      { minimumFractionDigits: 2, maximumFractionDigits: 2 })} €
+                  </span>
+                </div>
+              </div>
+            )}
 
             {/* Wer wie viel — nur, wenn es etwas zu unterscheiden gibt */}
             {(a.stand.sterne.gesamt > 0 || a.getraenke > 0) && (
