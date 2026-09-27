@@ -12,6 +12,7 @@ import { getTeamDisplay } from '../../../constants/teams';
 import { saisonAbschluss, verwerfeEntwurf, OFFEN_SCHULDEN, OFFEN_ENTWURF } from '../../../utils/saisonAbschluss';
 import { legeSaisonAn, naechsteVersionsId, pruefeVersionsId } from '../../../utils/saisonAnlegen';
 import { ladeOffenenDraft } from '../../../utils/saisonDraft';
+import { pruefeSaisonBereit } from '../../../utils/saisonBereit';
 import { useIchBin } from '../../../hooks/useIchBin';
 
 const mio = (n) => `${((Number(n) || 0) / 1_000_000).toLocaleString('de-DE', { maximumFractionDigits: 2 })} Mio €`;
@@ -45,6 +46,8 @@ export default function Saisonwechsel() {
 
   const [schritt, setSchritt] = useState(null);
   const [neueSaison, setNeueSaison] = useState(null);
+  // Was der Draft angelegt hat — steuert den Abschlussbildschirm.
+  const [fertig, setFertig] = useState(null);
   const [pruefe, setPruefe] = useState(true);
 
   // Läuft schon ein Draft? Dann direkt dorthin.
@@ -126,6 +129,9 @@ export default function Saisonwechsel() {
                  onZurueck={() => setSchritt('abschluss')}
                  onFertig={(v) => { setNeueSaison(v); setSchritt('draft'); }} />
       )}
+      {schritt === 'fertig' && fertig && (
+        <Fertig ergebnis={fertig} onNochmal={() => { setFertig(null); setSchritt('abschluss'); }} />
+      )}
       {schritt === 'draft' && (
         <>
           {neueSaison && (
@@ -137,7 +143,7 @@ export default function Saisonwechsel() {
               </span>
             </div>
           )}
-          <SaisonDraft />
+          <SaisonDraft onAbgeschlossen={(e) => { setFertig(e); setSchritt('fertig'); }} />
         </>
       )}
     </div>
@@ -148,6 +154,24 @@ export default function Saisonwechsel() {
 function Abschluss({ stand, version, onAktualisieren, onWeiter }) {
   const [arbeitet, setArbeitet] = useState(false);
   const [erledigt, setErledigt] = useState([]);
+
+  /**
+   * IST DIE DATENBANK BEREIT?
+   *
+   * Der Wechsel ist der einzige Vorgang, der sich nicht wiederholen laesst.
+   * Mitten im Draft festzustellen, dass `draft_picks` gar nicht existiert,
+   * heisst mit einer halb angelegten Saison dazustehen — die alte ist zu, die
+   * neue leer. Deshalb wird VOR dem ersten Schritt geprueft, ob alle noetigen
+   * Tabellen ansprechbar sind.
+   */
+  const [bereit, setBereit] = useState(null);
+  useEffect(() => {
+    let weg = false;
+    pruefeSaisonBereit()
+      .then((r) => { if (!weg) setBereit(r); })
+      .catch(() => { if (!weg) setBereit(null); });
+    return () => { weg = true; };
+  }, []);
 
   const offen = stand.offen.filter((o) => !erledigt.includes(o.art));
 
@@ -245,6 +269,70 @@ function Abschluss({ stand, version, onAktualisieren, onWeiter }) {
         )}
       </div>
 
+      {/* DATENBANK NICHT BEREIT — das wiegt schwerer als alles andere hier
+          und steht deshalb ganz oben, noch vor den offenen Posten. */}
+      {bereit && !bereit.bereit && (
+        <div className="modern-card p-4 border-2 border-system-red/45">
+          <div className="flex items-start gap-2.5">
+            <span className="w-9 h-9 rounded-xl bg-system-red/12 text-system-red flex items-center justify-center flex-shrink-0">
+              <Icon name="warning" size={18} strokeWidth={2.3} />
+            </span>
+            <div className="min-w-0">
+              <div className="font-semibold text-text-primary">Der Wechsel kann so nicht durchlaufen</div>
+              <p className="text-caption1 text-text-secondary mt-0.5">
+                {bereit.fehlend.length === 1 ? 'Eine Tabelle ist' : `${bereit.fehlend.length} Tabellen sind`}
+                {' '}in der Datenbank nicht ansprechbar. Bitte zuerst die
+                genannten Dateien in Supabase einspielen — sonst bricht der
+                Draft mittendrin ab, mit abgeschlossener alter und leerer
+                neuer Saison.
+              </p>
+            </div>
+          </div>
+          <div className="mt-2.5 space-y-1.5">
+            {bereit.fehlend.map((f) => (
+              <div key={f.tabelle} className="panel-gray rounded-lg p-2.5">
+                <div className="text-caption1 font-semibold text-text-primary">
+                  {f.tabelle} <span className="text-system-red font-normal">— {f.grund}</span>
+                </div>
+                <div className="text-caption2 text-text-tertiary">{f.wofuer}</div>
+                {f.migration !== '—' && (
+                  <div className="text-caption2 text-system-blue mt-0.5">Einspielen: {f.migration}</div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Nicht zwingend, aber gut zu wissen. */}
+      {bereit?.bereit && bereit.warnungen.length > 0 && (
+        <div className="modern-card p-3">
+          <div className="flex items-start gap-2">
+            <Icon name="warning" size={15} strokeWidth={2.3} className="text-system-orange flex-shrink-0 mt-0.5" />
+            <div className="text-caption2 text-text-secondary">
+              {bereit.warnungen.map((w) => (
+                <div key={w.tabelle}>{w.wofuer} <span className="text-text-tertiary">({w.migration})</span></div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {bereit?.bereit && (
+        <div className="modern-card p-3 flex items-center gap-2.5">
+          <Icon name={bereit.demo ? 'warning' : 'check'} size={16} strokeWidth={2.6}
+                className={`flex-shrink-0 ${bereit.demo ? 'text-system-orange' : 'text-system-green'}`} />
+          <span className="text-caption1 text-text-secondary">
+            {bereit.demo
+              /* Im Demo-Betrieb gibt es keine Datenbank, gegen die sich
+                 pruefen liesse. "Bereit" waere dort eine Behauptung ohne
+                 Grundlage. */
+              ? 'Demo-Modus — die Datenbank lässt sich von hier aus nicht prüfen.'
+              : 'Datenbank bereit — alle Tabellen für den Wechsel sind ansprechbar.'}
+          </span>
+        </div>
+      )}
+
       {/* Offene Punkte */}
       {offen.length > 0 ? (
         <div className="space-y-2">
@@ -305,8 +393,14 @@ function Abschluss({ stand, version, onAktualisieren, onWeiter }) {
         </p>
       </div>
 
-      <button onClick={onWeiter} className="btn-primary w-full">
-        {offen.length > 0 ? 'Trotzdem weiter' : 'Weiter zur neuen Saison'}
+      {/* Gesperrt, solange die Datenbank nicht bereit ist. Ein Hinweis, den
+          man wegklicken kann, reicht hier nicht: der Schritt danach ist
+          nicht mehr zurueckzunehmen. */}
+      <button onClick={onWeiter} disabled={bereit ? !bereit.bereit : false}
+              className="btn-primary w-full disabled:opacity-50">
+        {bereit && !bereit.bereit
+          ? 'Erst die Datenbank vorbereiten'
+          : offen.length > 0 ? 'Trotzdem weiter' : 'Weiter zur neuen Saison'}
       </button>
     </div>
   );
@@ -425,5 +519,66 @@ function Anlegen({ alteVersion, onZurueck, onFertig }) {
         unsichtbar, und Einträge darin gingen verloren.
       </p>
     </form>
+  );
+}
+
+/**
+ * Der Schlussbildschirm.
+ *
+ * Bisher endete der Wechsel damit, dass die Ansicht neu lud, keinen offenen
+ * Draft mehr fand — und wieder das LEERE Draft-Formular zeigte. Nach dem
+ * wichtigsten Vorgang des Jahres sah es also aus, als sei nichts passiert,
+ * oder als müsse man noch einmal draften. Genau hier braucht es einen
+ * Schlusspunkt: was ist entstanden, und wo geht es weiter.
+ */
+function Fertig({ ergebnis, onNochmal }) {
+  const { version, spieler } = ergebnis;
+  return (
+    <div className="space-y-3">
+      <div className="modern-card p-5 text-center">
+        <div className="w-14 h-14 mx-auto mb-3 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
+          <Icon name="check" size={28} strokeWidth={2.4} />
+        </div>
+        <h3 className="karten-titel mb-1">Saison {version} läuft</h3>
+        <p className="text-text-muted">
+          {spieler} Spieler angelegt, Restgeld als Kontostand gesetzt.
+        </p>
+      </div>
+
+      {/* Was jetzt geht — und zwar konkret, nicht als Gluecksrad. */}
+      <div className="modern-card p-4">
+        <div className="text-footnote font-semibold text-text-muted mb-2">Ab sofort möglich</div>
+        <ul className="space-y-1.5">
+          {[
+            ['football', 'Spiele eintragen — die gedrafteten Spieler stehen als Torschützen bereit'],
+            ['users', 'Kader ansehen, Marktwerte pflegen, Transfers buchen'],
+            ['euro', 'Finanzen: das Restgeld ist der Startkontostand'],
+            ['trophy', 'Statistik und Duell rechnen ab dem ersten Spiel mit'],
+          ].map(([icon, text]) => (
+            <li key={text} className="flex items-start gap-2">
+              <span className="w-6 h-6 rounded-lg bg-bg-tertiary text-system-green flex items-center justify-center flex-shrink-0 mt-0.5">
+                <Icon name={icon} size={13} strokeWidth={2.3} />
+              </span>
+              <span className="text-caption1 text-text-secondary">{text}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Die Vorsaison ausdruecklich erwaehnen: die Sorge, ob die alten Daten
+          noch da sind, ist die haeufigste nach so einem Wechsel. */}
+      <div className="modern-card p-4">
+        <p className="text-caption1 text-text-secondary">
+          Die Vorsaison ist vollständig erhalten. Über die Saisonwahl oben im
+          Kopf lässt sie sich jederzeit wieder ansehen — Spiele, Kader,
+          Finanzen und Statistik bleiben, wie sie waren.
+        </p>
+      </div>
+
+      <button type="button" onClick={onNochmal}
+              className="w-full py-2 rounded-xl bg-bg-tertiary text-text-secondary text-footnote font-medium">
+        Saisonwechsel erneut öffnen
+      </button>
+    </div>
   );
 }

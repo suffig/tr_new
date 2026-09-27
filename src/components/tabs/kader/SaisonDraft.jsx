@@ -23,7 +23,7 @@ const mio = (n) => `${((Number(n) || 0) / 1_000_000).toLocaleString('de-DE', { m
  * Bewusst hier unter Kader und nicht im Admin-Bereich: der Draft erzeugt den
  * Kader der neuen Saison, und dort sucht man ihn auch.
  */
-export default function SaisonDraft() {
+export default function SaisonDraft({ onAbgeschlossen }) {
   const version = getCurrentFifaVersion();
   const { data: spieler } = useSupabaseQuery('players', '*', { skipFifaFilter: true });
   const { data: finanzen } = useSupabaseQuery('finances', '*', { skipFifaFilter: true });
@@ -66,7 +66,8 @@ export default function SaisonDraft() {
   }
 
   return session
-    ? <DraftLaeuft session={session} picks={picks} onAendern={neuLaden} />
+    ? <DraftLaeuft session={session} picks={picks} onAendern={neuLaden}
+                   onAbgeschlossen={onAbgeschlossen} />
     : <DraftStart version={version} spieler={spieler} finanzen={finanzen} onGestartet={neuLaden} />;
 }
 
@@ -197,7 +198,7 @@ function DraftStart({ version, spieler, finanzen, onGestartet }) {
 }
 
 /** Während des Drafts. */
-function DraftLaeuft({ session, picks, onAendern }) {
+function DraftLaeuft({ session, picks, onAendern, onAbgeschlossen }) {
   const [name, setName] = useState('');
   const [preis, setPreis] = useState('');
   const [position, setPosition] = useState('');
@@ -267,6 +268,10 @@ function DraftLaeuft({ session, picks, onAendern }) {
     try {
       const n = await schliesseAb(session, picks);
       toast.success(`${n} Spieler übernommen.`);
+      // Dem Saisonwechsel sagen, WAS entstanden ist. Ohne das laedt er nur
+      // neu, findet keinen offenen Draft mehr und zeigt wieder das leere
+      // Draft-Formular — als waere nichts passiert.
+      onAbgeschlossen?.({ version: session.fifa_version, spieler: n });
       onAendern();
     } catch (err) {
       toast.error(err?.message || 'Abschluss fehlgeschlagen.');
