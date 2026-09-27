@@ -3,7 +3,7 @@ import toast from 'react-hot-toast';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
 import ZahlFeld from '../../ZahlFeld';
-import { zahl } from '../../../utils/zahlen';
+import { zahl, alsText } from '../../../utils/zahlen';
 import LoadingSpinner from '../../LoadingSpinner';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { getCurrentFifaVersion } from '../../../utils/fifaVersionManager';
@@ -229,6 +229,49 @@ function DraftLaeuft({ session, picks, onAendern, onAbgeschlossen }) {
     return raus;
   }, [name, alleSpieler, picks]);
 
+  /**
+   * DER POOL DER VORSAISON — sichtbar, BEVOR man tippt.
+   *
+   * Die Vorschlaege oben greifen erst ab zwei Zeichen. Am Draft-Abend will
+   * man aber oft nicht einen Namen eingeben, an den man sich erinnert,
+   * sondern sehen, wer ueberhaupt zur Wahl steht. 28 Namen auf einem Handy
+   * zu tippen ist die eigentliche Muehe des Abends.
+   *
+   * Gezeigt wird der Kader der JUENGSTEN Saison vor der Zielsaison — das ist
+   * der Bestand, aus dem in aller Regel gedraftet wird. Wer schon gezogen
+   * wurde, faellt raus: ein Vorschlag, der zu "steht schon im Kader" fuehrt,
+   * ist keiner.
+   *
+   * Nach Marktwert absteigend, weil die teuren zuerst weggehen.
+   */
+  const pool = useMemo(() => {
+    if (name.trim()) return [];           // beim Tippen greifen die Vorschlaege
+    const schon = new Set(picks.map((p) => p.spieler_name.toLowerCase()));
+
+    // Die juengste Saison, die NICHT die Zielsaison ist. Nach Kennung
+    // sortiert und nicht nach Datum: eine Saison hat kein Datum, nur eine
+    // laufende Nummer im Namen.
+    const saisons = [...new Set((alleSpieler || [])
+      .map((p) => p.fifa_version).filter(Boolean)
+      .filter((v) => v !== session.fifa_version))]
+      .sort((a, b) => String(b).localeCompare(String(a), 'de', { numeric: true }));
+    const vor = saisons[0];
+    if (!vor) return [];
+
+    const gesehen = new Set();
+    return (alleSpieler || [])
+      .filter((p) => p.fifa_version === vor)
+      .filter((p) => {
+        const k = String(p.name || '').toLowerCase();
+        if (!k || schon.has(k) || gesehen.has(k)) return false;
+        gesehen.add(k);
+        return true;
+      })
+      .map((p) => ({ name: p.name, value: Number(p.value) || 0,
+                     position: p.position || '', team: p.team, saison: vor }))
+      .sort((a, b) => b.value - a.value);
+  }, [name, alleSpieler, picks, session.fifa_version]);
+
   const ziehen = async (e) => {
     e?.preventDefault?.();
     if (!dran) return;
@@ -353,11 +396,44 @@ function DraftLaeuft({ session, picks, onAendern, onAbgeschlossen }) {
             <div className="flex flex-wrap gap-1.5">
               {vorschlaege.map((v) => (
                 <button key={v.name} type="button"
-                        onClick={() => { setName(v.name); if (v.value) setPreis(String(v.value)); }}
+                        // alsText statt String(): 18.3 mit Punkt in einer deutschen
+                        // Oberflaeche, und ZahlFeld erwartet das Komma.
+                        onClick={() => { setName(v.name); if (v.value) setPreis(alsText(v.value)); }}
                         className="chip-gray text-caption2">
                   {v.name}{v.value ? ` · ${v.value} Mio` : ''}
                 </button>
               ))}
+            </div>
+          )}
+
+          {/* Der Pool der Vorsaison, solange nichts getippt ist. */}
+          {pool.length > 0 && (
+            <div>
+              <div className="flex items-baseline justify-between gap-2 mb-1">
+                <span className="text-caption2 text-text-tertiary">
+                  Aus {pool[0].saison} — noch nicht gezogen
+                </span>
+                <span className="text-caption2 text-text-tertiary">{pool.length}</span>
+              </div>
+              {/* Hoehe begrenzt und scrollbar: bei 28 Namen waere die Liste
+                  sonst laenger als der Bildschirm, und der Ziehen-Knopf
+                  verschwaende nach unten. */}
+              <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto">
+                {pool.map((v) => (
+                  <button key={`${v.saison}-${v.name}`} type="button"
+                          onClick={() => {
+                            setName(v.name);
+                            if (v.value) setPreis(alsText(v.value));
+                            if (v.position) setPosition(v.position);
+                          }}
+                          className={`chip chip-sm ${v.team === 'AEK' ? 'chip-blue' : 'chip-red'}`}>
+                    {v.name}{v.value ? ` · ${v.value}` : ''}
+                  </button>
+                ))}
+              </div>
+              <p className="text-caption2 text-text-tertiary mt-1">
+                Tippen übernimmt Name, Marktwert und Position — alles noch änderbar.
+              </p>
             </div>
           )}
           <div className="grid grid-cols-2 gap-2">
