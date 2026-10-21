@@ -304,7 +304,7 @@ const DataExportImportTab = () => {
 
       {/* Copy Financial Data Modal */}
       {showCopyModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 modal-schleier flex items-center justify-center z-50">
           <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4">
             <h4 className="karten-titel mb-4">Finanzdaten kopieren</h4>
             
@@ -380,7 +380,7 @@ const DataExportImportTab = () => {
 
       {/* Import Data Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 modal-schleier flex items-center justify-center z-50">
           <div className="bg-bg-secondary rounded-xl p-6 max-w-md w-full mx-4">
             <h4 className="karten-titel mb-4">Daten importieren</h4>
             

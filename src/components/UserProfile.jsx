@@ -43,7 +43,7 @@ export default function UserProfile({ onClose, onNavigate }) {
   const go = (tab) => { onNavigate(tab); onClose(); };
 
   return (
-    <div className="fixed inset-0 bg-bg-overlay backdrop-blur-sm z-50 flex items-end sm:items-center justify-center sm:p-4">
+    <div className="fixed inset-0 modal-schleier z-50 flex items-end sm:items-center justify-center sm:p-4">
       <div className="bg-bg-primary border border-border-light w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto safe-area-bottom">
         {/* Header */}
         <div className="flex items-center justify-between px-5 py-4 sticky top-0 bg-bg-primary/90 backdrop-blur z-10 border-b border-separator">

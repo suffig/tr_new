@@ -182,7 +182,7 @@ function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeich
   };
 
   return createPortal(
-    <div className="fixed inset-0 z-[70] bg-bg-overlay backdrop-blur-sm flex items-end sm:items-center justify-center sm:p-4">
+    <div className="fixed inset-0 z-[70] modal-schleier flex items-end sm:items-center justify-center sm:p-4">
       <div className="bg-bg-primary w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl max-h-[92vh] overflow-y-auto safe-area-bottom">
         <div className="flex items-center justify-between px-5 py-4 sticky top-0 bg-bg-primary/95 backdrop-blur z-10 border-b border-separator">
           <h2 className="text-lg font-bold text-text-primary">Spielduell</h2>
@@ -1279,7 +1279,7 @@ function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel 
       {/* Achievement detail sheet */}
       {achievePerson && createPortal((
         <div className="fixed inset-0 z-[70] flex items-end sm:items-center justify-center" role="dialog" aria-modal="true" aria-label="Errungenschaften">
-          <button className="absolute inset-0 bg-black/50" aria-label="Schließen" onClick={() => setAchievePerson(null)} />
+          <button className="absolute inset-0 modal-schleier" aria-label="Schließen" onClick={() => setAchievePerson(null)} />
           <div
             className="relative w-full max-w-md bg-bg-elevated rounded-t-3xl sm:rounded-3xl shadow-ios-floating p-4 flex flex-col animate-mobile-slide-in"
             style={{ maxHeight: 'calc(100dvh - 2rem)', paddingBottom: 'max(env(safe-area-inset-bottom), 16px)' }}

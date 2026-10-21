@@ -839,7 +839,7 @@ export default function AddMatchTab() {
           the viewport (a transformed .tab-transition ancestor would otherwise
           become the containing block and misplace/mis-size the dialog). */}
       {showModal && createPortal((
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-[60] p-2 sm:p-4">
+        <div className="fixed inset-0 modal-schleier flex items-center justify-center z-[60] p-2 sm:p-4">
           <div
             className="bg-bg-secondary rounded-lg w-full max-w-lg modal-content match-modal-content modal-mobile-safe flex flex-col"
             style={{ maxHeight: 'calc(100dvh - 1rem)' }}

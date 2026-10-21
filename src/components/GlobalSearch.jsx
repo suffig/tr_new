@@ -122,7 +122,7 @@ export default function GlobalSearch({ onNavigate, onClose, sofortOffen = false 
 
       {/* Search Modal */}
       {isOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-start justify-center pt-20 z-50">
+        <div className="fixed inset-0 modal-schleier flex items-start justify-center pt-20 z-50">
           <div className="bg-bg-primary border border-border-light rounded-lg shadow-xl w-full max-w-2xl mx-4">
             {/* Search Input */}
             <div className="p-4 border-b border-border-light">

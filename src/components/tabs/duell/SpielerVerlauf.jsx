@@ -156,7 +156,7 @@ export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliess
   }
 
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 p-0 sm:p-4"
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center modal-schleier p-0 sm:p-4"
          onClick={onSchliessen} role="dialog" aria-modal="true" aria-label={`Laufbahn von ${spieler.name}`}>
       <div className="bg-bg-secondary w-full sm:max-w-md rounded-t-2xl sm:rounded-2xl max-h-[88dvh] overflow-y-auto"
            onClick={(e) => e.stopPropagation()}>

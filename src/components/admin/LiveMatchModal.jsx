@@ -109,7 +109,7 @@ export default function LiveMatchModal({ players, onClose, onFinish }) {
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-[70] p-4">
+    <div className="fixed inset-0 modal-schleier flex items-center justify-center z-[70] p-4">
       <div className="bg-bg-secondary rounded-2xl max-w-md w-full modal-content modal-mobile-safe">
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">

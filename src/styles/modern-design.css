@@ -1212,3 +1212,98 @@ textarea.form-input {
     min-height: 40px !important;
   }
 }
+
+/* ---------------------------------------------------------------------------
+   DER SCHLEIER HINTER EINEM MODAL
+
+   Vorher gab es vier Varianten, in 18 Overlays verteilt: `bg-black
+   bg-opacity-50`, `bg-black bg-opacity-60`, `bg-black/60`, `bg-black/70` und
+   zweimal `bg-bg-overlay backdrop-blur-sm`. Also Deckkraft 50/60/70, zwei mit
+   Weichzeichner und sechzehn ohne — je nachdem, wann das Modal geschrieben
+   wurde.
+
+   Und keiner blendete ein. `.modal-content` gleitet in 0,4 s mit einer
+   ueberschwingenden Kurve hoch, die schwarze Flaeche dahinter war im selben
+   Bild schon vollstaendig da. Das sah nicht nach "ein Fenster geht auf" aus,
+   sondern nach einem Schlag, dem die Karte hinterherkommt.
+
+   Der Schleier ist jetzt schneller als die Karte (0,2 s gegen 0,4 s). Das ist
+   Absicht und nicht Nachlaessigkeit: der Raum verdunkelt sich, DANN kommt die
+   Karte an. Umgekehrt — Karte zuerst — wirkt es, als haette sie auf den
+   Hintergrund gewartet.
+
+   Nur `opacity` wird bewegt. `backdrop-filter` zu animieren rechnet der
+   Browser in jedem Einzelbild neu; auf dem Telefon ruckelt das.
+   -------------------------------------------------------------------------- */
+.modal-schleier {
+  /* Position und inset bleiben bei Tailwind (`fixed inset-0` am Element) —
+     sonst gibt es zwei Quellen dafuer, wo der Schleier liegt. */
+  background: var(--bg-overlay);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: schleier-auf 0.2s ease-out;
+}
+
+@keyframes schleier-auf {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Der Schleier bleibt, nur ohne Einblenden — er trennt das Modal vom
+     Hintergrund und ist damit Information, nicht Zierde. */
+  .modal-schleier { animation: none; }
+}
+
+/* ---------------------------------------------------------------------------
+   DIE MODAL-KARTE
+
+   Stand vorher in match-animations.css — und die Datei wird nur von
+   MatchesTab und FinanzenTab importiert, ist also ein nachgeladenes Stueck.
+   Vier der sechs Modals mit dieser Klasse (LiveMatchModal, NewSeasonModal,
+   AddBanTab, AddPlayerTab) laden sie nie.
+
+   Die Folge war von der Vorgeschichte abhaengig: "Neuer Spieler" aus dem
+   Kader geoeffnet glitt NICHT hoch — es sei denn, man war vorher einmal auf
+   Spiele oder Finanzen, dann schon. Dasselbe Modal, zwei Verhalten.
+
+   Hier in modern-design.css wird es immer geladen (main.jsx).
+
+   Der eigene Keyframe-Name: `slideInUp` steht in der nachgeladenen Datei. Ein
+   gleicher Name haette, sobald beide geladen sind, von der Reihenfolge
+   abgehangen — genau die Sorte Fehler, die hier gerade behoben wird.
+   -------------------------------------------------------------------------- */
+.modal-content {
+  animation: modal-auf 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes modal-auf {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ---------------------------------------------------------------------------
+   BEWEGUNG REDUZIEREN — DIE PAUSCHALE BREMSE
+
+   Sie stand in match-animations.css, also im nachgeladenen Stueck. Damit galt
+   sie erst, nachdem man einmal auf Spiele oder Finanzen war, und ab dann
+   global, weil `*` alles trifft. Wer die Einstellung gesetzt hatte, sah auf
+   dem Startbildschirm Animationen und nach einem Umweg ueber Spiele keine
+   mehr — auch nicht mehr den Ladebalken.
+
+   Jetzt immer geladen und damit in jeder Ansicht gleich.
+
+   Warum trotzdem pauschal: die gezielten Listen weiter oben in dieser Datei
+   deckten nur ab, woran jemand gedacht hat. Bei 69 Keyframes in fuenf Dateien
+   ist eine Liste immer unvollstaendig. Das Netz darunter faengt den Rest.
+
+   0.01ms statt 0: eine Dauer von 0 kann `animationend` verschlucken, und
+   daran haengt in manchen Komponenten das Aufraeumen.
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}

@@ -162,12 +162,12 @@
 
 /* Accessibility - reduce motion for users who prefer it */
 @media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-  
+  /* Die pauschale `*`-Regel stand hier und ist nach modern-design.css
+     umgezogen. Grund: diese Datei wird nachgeladen, also galt die
+     Bewegungsbremse erst, NACHDEM man einmal auf Spiele oder Finanzen war —
+     und dann global, weil `*` alles trifft. Wer "Bewegung reduzieren"
+     eingeschaltet hatte, sah auf dem Startbildschirm Animationen und nach
+     einem Umweg ueber Spiele keine mehr. */
   .match-card:hover {
     transform: none;
   }
@@ -396,9 +396,9 @@
   animation: fadeInScale 0.3s ease-out forwards;
 }
 
-.modal-content {
-  animation: slideInUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
-}
+/* .modal-content ist nach modern-design.css umgezogen — siehe dort.
+   Diese Datei wird nur von MatchesTab und FinanzenTab geladen; vier der sechs
+   Modals, die die Klasse benutzen, laden sie nie. */
 
 /* List item stagger animation */
 .list-item-stagger {

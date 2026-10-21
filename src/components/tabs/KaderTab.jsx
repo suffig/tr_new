@@ -360,7 +360,7 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
       
       {/* Player Edit Modal */}
       {editingPlayer && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+        <div className="fixed inset-0 modal-schleier flex items-center justify-center z-50 p-4">
           {/* bg-bg-elevated statt bg-bg-elevated — die feste Farbe blieb im
               Dunkelmodus weiss. Rundung wie bei den uebrigen Modals. */}
           <div className="bg-bg-elevated border border-border-light rounded-2xl shadow-ios-floating max-w-md w-full max-h-[calc(100dvh-2rem)] overflow-y-auto">
