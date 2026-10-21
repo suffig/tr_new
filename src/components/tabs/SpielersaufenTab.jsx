@@ -410,11 +410,26 @@ export default function SpielersaufenTab() {
       )}
 
       {/* ── Sub-nav ────────────────────────────────────────────────────────── */}
-      <div className="mb-5 overflow-x-auto scrollbar-hide">
-        <div className="flex gap-1 bg-bg-tertiary rounded-2xl p-1 min-w-max">
+      {/* UMBRUCH STATT UNSICHTBAREM SCROLLEN.
+          Der Streifen war `overflow-x-auto scrollbar-hide` mit `min-w-max`:
+          fuenf Reiter in einer erzwungenen Zeile, zusammen rund 540 px. Auf
+          375 px lag "Ergebnis" damit 165 px ausserhalb — und weil die
+          Bildlaufleiste ausgeblendet ist, gab es keinerlei Hinweis, dass dort
+          ueberhaupt noch etwas steht. Wer den Reiter nicht kennt, findet ihn
+          nicht.
+
+          Mit Umbruch sind alle fuenf sichtbar, auf dem Handy in zwei Zeilen,
+          auf breiten Schirmen weiterhin in einer. Kein Scrollen, keine
+          versteckten Reiter. */}
+      <div className="mb-5">
+        <div className="flex flex-wrap gap-1 bg-bg-tertiary rounded-2xl p-1">
           {navItems.map(n => (
             <button key={n.id} onClick={() => setSection(n.id)}
-              className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap min-h-[40px] ${section===n.id ? 'bg-bg-secondary text-system-orange shadow-sm' : 'text-text-tertiary hover:text-text-secondary'}`}>
+              // KEIN flex-1: es erzwingt gleiche Breiten, und mit
+              // whitespace-nowrap wird der laengste Text dann abgeschnitten —
+              // "Aufstellung" braucht 66 px, bekam aber nur 48. Jede Schaltflaeche
+              // nimmt sich jetzt die Breite ihres Textes, der Rest bricht um.
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap min-h-[44px] ${section===n.id ? 'bg-bg-secondary text-system-orange shadow-sm' : 'text-text-tertiary hover:text-text-secondary'}`}>
               <Icon name={n.icon} size={15} strokeWidth={2.1} /><span>{n.label}</span>
               {n.id==='counter' && data.currentGame.active && <span className="w-1.5 h-1.5 rounded-full bg-system-green animate-pulse ml-0.5" />}
             </button>

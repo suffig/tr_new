@@ -484,7 +484,11 @@ export default function MatchesTab({ onNavigate, user }) {
                     <button
                       onClick={() => shareMatchday(dateGroup)}
                       aria-label="Spieltag teilen"
-                      className="btn-compact w-8 h-8 rounded-full flex items-center justify-center text-text-tertiary hover:text-system-green hover:bg-system-green/10 active:scale-90 transition-all"
+                      // 44 statt 32 Pixel: das ist die Flaeche, die ein Daumen
+                      // zuverlaessig trifft. Das Symbol bleibt gleich gross, nur
+                      // der antippbare Rand waechst — sichtbar aendert sich fast
+                      // nichts, treffen laesst es sich deutlich besser.
+                      className="btn-compact w-11 h-11 rounded-full flex items-center justify-center text-text-tertiary hover:text-system-green hover:bg-system-green/10 active:scale-90 transition-all"
                     >
                       <Icon name="share" size={15} strokeWidth={2.2} />
                     </button>
