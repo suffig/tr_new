@@ -31,7 +31,7 @@ export default function MatchesTab({ onNavigate, user }) {
   // weil sein eigener Effekt das Spiel aus dem sessionStorage liest und dabei
   // schon setShowModal(true) aufruft. Wuerde hier 'formular' stehen, liefe
   // danach noch makeEmptyForm() und das vorbefuellte Formular waere leer.
-  const [eingabe, setEingabe] = useState(null);   // null | 'formular' | 'live'
+  const [eingabe, setEingabe] = useState(null);   // null | 'formular' | 'live' | 'bearbeiten'
 
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
@@ -742,12 +742,14 @@ export default function MatchesTab({ onNavigate, user }) {
                                   e.stopPropagation();
                                   try {
                                     sessionStorage.setItem('fusta_edit_match', JSON.stringify(match));
-                                    // NOCH der alte Weg ueber die Verwaltung.
-                                    // Inline waere setEingabe('bearbeiten') —
-                                    // ungeprueft, und ein kaputtes Bearbeiten
-                                    // ist schlimmer als ein Umweg.
+                                    setEingabe('bearbeiten');
+                                  } catch {
+                                    // Ohne sessionStorage kaeme das Formular
+                                    // leer — dann lieber der alte Umweg ueber
+                                    // die Verwaltung als ein leeres
+                                    // Bearbeiten-Fenster.
                                     onNavigate?.('admin');
-                                  } catch { /* ignore */ }
+                                  }
                                 }}
                                 className="btn-secondary w-full mt-1"
                               >

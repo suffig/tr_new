@@ -931,7 +931,17 @@ export default function AddMatchTab({ eingebettet = false, startModus = null, on
             <div ref={scrollBereichRef} className="p-4 sm:p-6 overflow-y-auto mobile-safe-bottom flex-1 min-h-0">
               <div ref={modalKopfRef} className="mb-4 sticky top-0 bg-bg-secondary z-10 pb-3">
                 <div className="flex justify-between items-center mb-2.5">
-                  <h3 className="karten-titel">{editingDraftId ? 'Entwurf bearbeiten' : 'Neues Spiel'}</h3>
+                  <h3 className="karten-titel">{
+                    /* editingMatchId fehlte hier: beim Bearbeiten eines
+                       gespeicherten Spiels stand "Neues Spiel" ueber dem
+                       Formular, obwohl der Hinweis darunter vom Ersetzen
+                       sprach. Vorher fiel das kaum auf, weil man dafuer in
+                       die Verwaltung wechselte — aus der Liste geoeffnet
+                       steht es direkt neben dem Spiel, das man anklickt. */
+                    editingMatchId ? 'Spiel bearbeiten'
+                      : editingDraftId ? 'Entwurf bearbeiten'
+                      : 'Neues Spiel'
+                  }</h3>
                   <button
                     onClick={closeModal}
                     aria-label="Schließen (als Entwurf speichern)"
