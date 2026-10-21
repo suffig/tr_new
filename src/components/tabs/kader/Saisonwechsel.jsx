@@ -9,6 +9,7 @@ import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { supabaseDb } from '../../../utils/supabase';
 import { getCurrentFifaVersion } from '../../../utils/fifaVersionManager';
 import { getTeamDisplay } from '../../../constants/teams';
+import { WAPPEN, wappenPfad } from '../../../constants/wappenKatalog';
 import { saisonAbschluss, verwerfeEntwurf, OFFEN_SCHULDEN, OFFEN_ENTWURF } from '../../../utils/saisonAbschluss';
 import { legeSaisonAn, naechsteVersionsId, pruefeVersionsId } from '../../../utils/saisonAnlegen';
 import { ladeOffenenDraft } from '../../../utils/saisonDraft';
@@ -411,8 +412,11 @@ function Anlegen({ alteVersion, onZurueck, onFertig }) {
   const [id, setId] = useState(() => naechsteVersionsId(alteVersion));
   const [name, setName] = useState('');
   const [teams, setTeams] = useState({
-    AEK: { label: '', short: '', logo: null },
-    Real: { label: '', short: '', logo: null },
+    // `wappen: undefined` heisst "nicht angefasst" — dann behaelt die neue
+    // Saison das geerbte Wappen. Erst eine Auswahl im Formular setzt es auf
+    // einen Slug oder ausdruecklich auf null ("keines").
+    AEK: { label: '', short: '', logo: null, wappen: undefined },
+    Real: { label: '', short: '', logo: null, wappen: undefined },
   });
   const [uebernehmen, setUebernehmen] = useState(false);
   const [arbeitet, setArbeitet] = useState(false);
@@ -484,15 +488,42 @@ function Anlegen({ alteVersion, onZurueck, onFertig }) {
                        className="form-input w-full mt-0.5" maxLength={6}
                        placeholder={key === 'AEK' ? 'FCB' : 'BVB'} />
               </label>
+              {/* WAPPEN AUS DEM KATALOG.
+                  Bisher gab es nur "Datei hochladen". Wer der neuen Saison
+                  andere Vereine gibt, haette damit entweder eine Bilddatei
+                  zur Hand haben muessen — oder er behaelt die geerbten
+                  Wappen der Vorsaison unter neuen Namen, also Dynamo und
+                  Schalke bei "Werder Bremen". Die Dateien liegen laengst im
+                  Repo; sie waren nur nicht auswaehlbar. */}
+              <label className="block">
+                <span className="text-caption2 text-text-tertiary">Wappen aus dem Katalog</span>
+                <select value={teams[key].wappen || ''}
+                        onChange={(e) => setTeam(key, { wappen: e.target.value || null })}
+                        className="form-input w-full mt-0.5 text-sm">
+                  <option value="">— keines —</option>
+                  {WAPPEN.filter((w) => !w.eigen).map((w) => (
+                    <option key={w.slug} value={w.slug}>{w.name}</option>
+                  ))}
+                  {/* Die Platzhalter ans Ende: sie sind kein Verein, aber
+                      fuer Saisons ohne Vereinsnamen die richtige Wahl. */}
+                  {WAPPEN.filter((w) => w.eigen).map((w) => (
+                    <option key={w.slug} value={w.slug}>{w.name}</option>
+                  ))}
+                </select>
+              </label>
             </div>
             <div className="flex flex-col items-center gap-1.5">
+              {/* Vorschau: hochgeladene Datei schlaegt Katalogauswahl, weil sie
+                  die speziellere Angabe ist. */}
               <div className="w-16 h-16 rounded-xl bg-bg-tertiary flex items-center justify-center overflow-hidden border border-border-light">
                 {teams[key].logo
                   ? <img src={teams[key].logo} alt="" className="w-full h-full object-contain" />
-                  : <Icon name="users" size={22} className="text-text-tertiary" />}
+                  : teams[key].wappen
+                    ? <img src={wappenPfad(teams[key].wappen)} alt="" className="w-full h-full object-contain p-1" />
+                    : <Icon name="users" size={22} className="text-text-tertiary" />}
               </div>
               <label className="text-caption2 font-medium text-system-blue cursor-pointer">
-                Wappen
+                Datei wählen
                 <input type="file" accept="image/*" className="hidden"
                        onChange={(e) => logo(key, e.target.files?.[0])} />
               </label>

@@ -78,6 +78,13 @@ export async function legeSaisonAn({ id, name, teams = {}, basisVon = null, akti
     if (t.label?.trim()) konfig[key].label = t.label.trim();
     if (t.short?.trim()) konfig[key].short = t.short.trim();
     if (t.logo) konfig[key].customIcon = t.logo;
+    // Wappen aus dem Katalog. Ohne diese Zeile waere die Auswahl im Formular
+    // wirkungslos gewesen: die Basis der Vorsaison haette ihr Wappen
+    // behalten, also Dynamo und Schalke unter neuen Vereinsnamen.
+    //
+    // `t.wappen === null` heisst ausdruecklich "keines" und muss das geerbte
+    // ueberschreiben — deshalb auf undefined geprueft, nicht auf Wahrheit.
+    if (t.wappen !== undefined) konfig[key].wappen = t.wappen;
   }
   setVersionTeams(konfig, version);
 
