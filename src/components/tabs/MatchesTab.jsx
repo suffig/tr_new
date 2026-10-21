@@ -5,15 +5,15 @@ import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
 import { getTeamDisplay, getTeamShort } from '../../constants/teams';
-import { ADMIN_EMAIL } from '../../constants/navigation';
 import { checkMilestones } from '../../utils/milestoneAlerts';
 import SaisonZeitstrahl from './matches/SaisonZeitstrahl';
 import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
 import AddMatchTab from './admin/AddMatchTab';
+import { useIchBin } from '../../hooks/useIchBin';
 import { hasStoredLiveMatch } from '../admin/LiveMatchModal';
-export default function MatchesTab({ onNavigate, user }) {
+export default function MatchesTab({ onNavigate }) {
   // SPIEL HINZUFUEGEN, OHNE DEN BEREICH ZU VERLASSEN.
   //
   // Die Liste steht unter Spielbetrieb, das Formular lag aber in der
@@ -31,6 +31,11 @@ export default function MatchesTab({ onNavigate, user }) {
   // weil sein eigener Effekt das Spiel aus dem sessionStorage liest und dabei
   // schon setShowModal(true) aufruft. Wuerde hier 'formular' stehen, liefe
   // danach noch makeEmptyForm() und das vorbefuellte Formular waere leer.
+  // Schreiben darf nur der Admin. Ueber useIchBin und nicht ueber einen
+  // eigenen E-Mail-Vergleich: der Hook ist genau deshalb entstanden,
+  // weil dieselbe Frage vorher sechsmal einzeln im Code stand und neue
+  // Ansichten die Pruefung schlicht vergessen haben.
+  const { darfEintragen } = useIchBin();
   const [eingabe, setEingabe] = useState(null);   // null | 'formular' | 'live' | 'bearbeiten'
 
   const [expandedMatches, setExpandedMatches] = useState(new Set());
@@ -326,6 +331,7 @@ export default function MatchesTab({ onNavigate, user }) {
           Oben, nicht als schwebender Knopf: der Zeitstrahl und die Liste
           darunter sind zum Lesen da, und ein Knopf, der darueber schwebt,
           verdeckt genau die letzte Zeile. */}
+      {darfEintragen && (
       <div className="flex gap-2 mb-3">
         <button type="button" onClick={() => setEingabe('formular')}
                 className="btn-brand flex-1 inline-flex items-center justify-center gap-2">
@@ -338,6 +344,7 @@ export default function MatchesTab({ onNavigate, user }) {
           {hasStoredLiveMatch() ? 'Live läuft' : 'Live'}
         </button>
       </div>
+      )}
 
       {/* Nur gehalten, solange ein Dialog offen ist — siehe Kommentar oben. */}
       {eingabe && (
@@ -736,7 +743,7 @@ export default function MatchesTab({ onNavigate, user }) {
                             </div>
 
                             {/* Admin: Spiel bearbeiten (öffnet AddMatch vorbefüllt im Edit-Modus) */}
-                            {user?.email === ADMIN_EMAIL && (
+                            {darfEintragen && (
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
