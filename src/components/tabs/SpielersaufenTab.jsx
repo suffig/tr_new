@@ -390,7 +390,7 @@ export default function SpielersaufenTab() {
       {data.currentGame.active && (
         <div className="flex justify-end mb-3">
           <div className="flex items-center gap-1 bg-system-green/15 text-system-green px-2.5 py-1.5 rounded-full text-xs font-bold border border-system-green/45">
-            <span className="w-1.5 h-1.5 rounded-full bg-system-green animate-pulse" />
+            <span className="w-1.5 h-1.5 rounded-full bg-system-green status-ping" />
             {totalShotsAll()} <Icon name="glass" size={15} strokeWidth={2.2} />
           </div>
         </div>
@@ -431,7 +431,7 @@ export default function SpielersaufenTab() {
               // nimmt sich jetzt die Breite ihres Textes, der Rest bricht um.
               className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap min-h-[44px] ${section===n.id ? 'bg-bg-secondary text-system-orange shadow-sm' : 'text-text-tertiary hover:text-text-secondary'}`}>
               <Icon name={n.icon} size={15} strokeWidth={2.1} /><span>{n.label}</span>
-              {n.id==='counter' && data.currentGame.active && <span className="w-1.5 h-1.5 rounded-full bg-system-green animate-pulse ml-0.5" />}
+              {n.id==='counter' && data.currentGame.active && <span className="w-1.5 h-1.5 rounded-full bg-system-green status-ping ml-0.5" />}
             </button>
           ))}
         </div>
@@ -821,7 +821,7 @@ export default function SpielersaufenTab() {
             <>
               {/* Live header */}
               <div className="panel-green rounded-2xl p-3 flex items-center gap-2.5">
-                <span className="w-3 h-3 rounded-full bg-system-green animate-pulse flex-shrink-0" />
+                <span className="w-3 h-3 rounded-full bg-system-green status-ping flex-shrink-0" />
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-system-green text-sm">Spiel läuft</span>

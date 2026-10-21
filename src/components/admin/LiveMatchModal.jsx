@@ -118,7 +118,7 @@ export default function LiveMatchModal({ players, onClose, onFinish }) {
         <div className="p-5 space-y-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-system-red animate-pulse" />
+              <span className="w-2 h-2 rounded-full bg-system-red status-ping status-ping-rot" />
               <span className="text-footnote font-bold text-text-primary uppercase tracking-wide">Live</span>
               <span className="text-footnote tabular-nums text-text-secondary">{fmt(elapsed)}</span>
             </div>

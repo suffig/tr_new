@@ -1,70 +1,5 @@
 /* Enhanced Match Page Animations */
 
-@keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes slideDown {
-  from {
-    opacity: 0;
-    max-height: 0;
-    transform: translateY(-10px);
-  }
-  to {
-    opacity: 1;
-    max-height: 1000px;
-    transform: translateY(0);
-  }
-}
-
-@keyframes fadeInScale {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes shimmer {
-  0% {
-    background-position: -200px 0;
-  }
-  100% {
-    background-position: calc(200px + 100%) 0;
-  }
-}
-
-@keyframes bounce-subtle {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-4px);
-  }
-  60% {
-    transform: translateY(-2px);
-  }
-}
-
-@keyframes pulse-glow {
-  0%, 100% {
-    box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
-  }
-  50% {
-    box-shadow: 0 0 0 8px rgba(59, 130, 246, 0);
-  }
-}
-
 @keyframes float {
   0%, 100% {
     transform: translateY(0px);
@@ -75,31 +10,11 @@
 }
 
 /* Animation classes */
-.animate-slideDown {
-  animation: slideDown 0.3s ease-out forwards;
-}
 
-.animate-fadeInScale {
-  animation: fadeInScale 0.2s ease-out forwards;
-}
 
-.animate-shimmer {
-  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.4) 50%, transparent 100%);
-  background-size: 200px 100%;
-  animation: shimmer 2s infinite;
-}
 
-.animate-bounce-subtle {
-  animation: bounce-subtle 1s ease-in-out infinite;
-}
 
-.animate-pulse-glow {
-  animation: pulse-glow 2s ease-in-out infinite;
-}
 
-.animate-float {
-  animation: float 3s ease-in-out infinite;
-}
 
 /* Match card hover effects */
 .match-card {
@@ -143,11 +58,6 @@
 }
 
 /* Loading skeleton for match cards */
-.match-skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-  background-size: 200% 100%;
-  animation: shimmer 1.5s infinite;
-}
 
 /* Responsive animations */
 @media (max-width: 768px) {
@@ -204,98 +114,12 @@
 
 /* Additional animations for enhanced user experience */
 
-@keyframes slideInLeft {
-  from {
-    opacity: 0;
-    transform: translateX(-30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes slideInRight {
-  from {
-    opacity: 0;
-    transform: translateX(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
-}
-
-@keyframes cardFlip {
-  0% {
-    transform: rotateY(0);
-  }
-  50% {
-    transform: rotateY(-90deg);
-  }
-  100% {
-    transform: rotateY(0);
-  }
-}
-
-@keyframes numberCount {
-  from {
-    opacity: 0;
-    transform: translateY(-10px) scale(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
-}
-
-@keyframes buttonPress {
-  0% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(0.95);
-  }
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes fadeInStagger {
-  from {
-    opacity: 0;
-    transform: translateY(20px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
 /* New animation classes */
-.animate-slideInLeft {
-  animation: slideInLeft 0.4s ease-out forwards;
-}
 
-.animate-slideInRight {
-  animation: slideInRight 0.4s ease-out forwards;
-}
 
-.animate-cardFlip {
-  animation: cardFlip 0.6s ease-in-out;
-}
 
-.animate-numberCount {
-  animation: numberCount 0.3s ease-out forwards;
-}
 
-.animate-buttonPress {
-  animation: buttonPress 0.15s ease-in-out;
-}
 
-.animate-fadeInStagger {
-  animation: fadeInStagger 0.5s ease-out forwards;
-}
 
 /* Hover effects for buttons and interactive elements */
 .btn-spring {
@@ -380,44 +204,18 @@
   position: relative;
 }
 
-.progress-fill::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  right: 0;
-  bottom: 0;
-  width: 20px;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.3));
-  animation: shimmer 2s infinite;
-}
 
 /* Modal animations */
-.modal-overlay {
-  animation: fadeInScale 0.3s ease-out forwards;
-}
 
 /* .modal-content ist nach modern-design.css umgezogen — siehe dort.
    Diese Datei wird nur von MatchesTab und FinanzenTab geladen; vier der sechs
    Modals, die die Klasse benutzen, laden sie nie. */
 
-/* List item stagger animation */
-.list-item-stagger {
-  opacity: 0;
-  transform: translateY(20px);
-  animation: fadeInStagger 0.4s ease-out forwards;
-}
-
-.list-item-stagger:nth-child(1) { animation-delay: 0.1s; }
-.list-item-stagger:nth-child(2) { animation-delay: 0.2s; }
-.list-item-stagger:nth-child(3) { animation-delay: 0.3s; }
-.list-item-stagger:nth-child(4) { animation-delay: 0.4s; }
-.list-item-stagger:nth-child(5) { animation-delay: 0.5s; }
+/* .list-item-stagger stand hier: dieselbe Sache wie .stagger-children in
+   modern-design.css, nur schlechter — Verzoegerungen nur bis zum fuenften
+   Kind (ab dem sechsten gar keine Animation mehr, weil opacity: 0 ohne
+   animation-delay haengen bliebe) und in dieser nachgeladenen Datei. Benutzt
+   wurde sie nirgends. .stagger-children deckelt die Verzoegerung ab dem
+   neunten Kind und liegt im immer geladenen Stylesheet. */
 
 /* Success/Error notification animations */
-.notification-slide {
-  animation: slideInRight 0.3s ease-out forwards;
-}
-
-.notification-slide.exit {
-  animation: slideInRight 0.3s ease-out reverse forwards;
-}

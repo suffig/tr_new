@@ -308,6 +308,18 @@ export default function StartTab({ onNavigate }) {
         </h1>
       )}
 
+      {/* DIE BEGRUESSUNG STEHT AUSSERHALB VON .stagger-children.
+          Die Klasse staffelt ihre direkten Kinder ueber animation-delay nach
+          nth-child. Die Begruessung erscheint erst, wenn `ichHeisse` da ist —
+          sie waere dann ein neues erstes Kind und wuerde alle Verzoegerungen
+          um einen Platz nach hinten schieben (gemessen: 30/70/110ms wurden zu
+          70/110/150ms). Bei `animation-fill-mode: both` kann das eine schon
+          FERTIGE Animation zurueck in die Wartephase schieben, und die Karte
+          blendet wieder aus. Ob das auffaellt, haengt allein daran, wie
+          schnell `useIchBin` antwortet — eine Wette auf eine Laufzeit.
+          Mit eigenem Platz bleibt die Kinderzahl hier konstant. */}
+      <div className="space-y-4 stagger-children">
+
       {/* Ganz oben: was offen ist. Steht nichts an, verschwindet die Karte
           von selbst — eine Aufgabenliste, die nie leer wird, liest nach
           einer Woche niemand mehr. */}
@@ -629,6 +641,7 @@ export default function StartTab({ onNavigate }) {
           hinweis={`${name('AEK')} zu ${name('Real')}`}
           onClick={() => onNavigate?.('finanzen')}
         />
+      </div>
       </div>
     </div>
   );

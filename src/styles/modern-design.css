@@ -330,19 +330,6 @@ button {
 .loader-dots.loader-sm > span { width: 6px; height: 6px; }
 .loader-dots.loader-lg > span { width: 12px; height: 12px; }
 
-@keyframes loaderRingSpin {
-  to { transform: rotate(360deg); }
-}
-
-.loader-ring {
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  border: 3px solid var(--border-light);
-  border-top-color: var(--system-blue);
-  border-right-color: var(--system-green);
-  animation: loaderRingSpin 0.9s linear infinite;
-}
 
 /* --------------------------------------------------------------------------
    8. Micro-interactions for interactive elements
@@ -367,7 +354,7 @@ button {
 /* Subtle attention pulse for status dots */
 @keyframes statusPing {
   0% {
-    box-shadow: 0 0 0 0 color-mix(in srgb, var(--system-green) 50%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--ping-farbe) 50%, transparent);
   }
   70% {
     box-shadow: 0 0 0 6px transparent;
@@ -377,9 +364,20 @@ button {
   }
 }
 
+/* Ein Punkt, der einen Ring aussendet — fuer etwas, das GERADE laeuft.
+   Unterschied zu Tailwinds `animate-pulse`: das blinkt die Deckkraft des
+   Punktes, was auch zu "Achtung" oder "laedt" passt. Der ausgehende Ring
+   heisst "sendet", und genau das soll ein Live-Punkt sagen.
+
+   Die Farbe stand hier fest auf --system-green. Die Live-Anzeigen der App
+   sind rot, die Klasse war damit fuer sie nicht benutzbar. Jetzt ueber
+   --ping-farbe, mit Gruen als Vorgabe. */
 .status-ping {
+  --ping-farbe: var(--system-green);
   animation: statusPing 2.2s ease-out infinite;
 }
+
+.status-ping-rot { --ping-farbe: var(--system-red); }
 
 /* --------------------------------------------------------------------------
    8a-0. Apple-style page anatomy: Large Title headers + icon tiles
