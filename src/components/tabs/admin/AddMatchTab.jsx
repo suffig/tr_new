@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { rekordeDesSpiels } from '../../../utils/rekorde';
 import { createPortal } from 'react-dom';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
@@ -11,6 +11,7 @@ import { getTeamDisplay } from '../../../constants/teams';
 import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
 import LiveMatchModal, { hasStoredLiveMatch } from '../../admin/LiveMatchModal';
+import FormularSprungleiste from '../../admin/FormularSprungleiste';
 
 import useModal from '../../../hooks/useModal';
 const DRAFTS_KEY = 'fusta_match_drafts_v1';
@@ -57,6 +58,11 @@ export default function AddMatchTab() {
   const { data: finances } = useSupabaseQuery('finances', '*');
   const { data: recentMatches } = useSupabaseQuery('matches', '*', { order: { column: 'date', ascending: false } });
   const [showModal, setShowModal] = useState(false);
+  // Fuer die Sprungleiste: der Scroll-Bereich des Dialogs und sein
+  // klebender Kopf. Die Leiste rechnet die Zielposition selbst, weil
+  // scrollIntoView den Abschnitt unter den Kopf schieben wuerde.
+  const scrollBereichRef = useRef(null);
+  const modalKopfRef = useRef(null);
   
   // Escape schliesst, und der Hintergrund scrollt nicht mit.
   // Beides fehlte hier: man scrollte im Formular bis zum Ende, und ab da
@@ -851,17 +857,20 @@ export default function AddMatchTab() {
             className="bg-bg-secondary rounded-lg w-full max-w-lg modal-content match-modal-content modal-mobile-safe flex flex-col"
             style={{ maxHeight: 'calc(100dvh - 1rem)' }}
           >
-            <div className="p-4 sm:p-6 overflow-y-auto mobile-safe-bottom flex-1 min-h-0">
-              <div className="flex justify-between items-center mb-6 sticky top-0 bg-bg-secondary z-10 pb-4">
-                <h3 className="karten-titel">{editingDraftId ? 'Entwurf bearbeiten' : 'Neues Spiel'}</h3>
-                <button
-                  onClick={closeModal}
-                  aria-label="Schließen (als Entwurf speichern)"
-                  className="text-text-secondary hover:text-text-primary text-2xl font-bold bg-bg-tertiary hover:bg-bg-hover rounded-full w-8 h-8 flex items-center justify-center transition-colors flex-shrink-0"
-                  disabled={loading}
-                >
-                  ×
-                </button>
+            <div ref={scrollBereichRef} className="p-4 sm:p-6 overflow-y-auto mobile-safe-bottom flex-1 min-h-0">
+              <div ref={modalKopfRef} className="mb-4 sticky top-0 bg-bg-secondary z-10 pb-3">
+                <div className="flex justify-between items-center mb-2.5">
+                  <h3 className="karten-titel">{editingDraftId ? 'Entwurf bearbeiten' : 'Neues Spiel'}</h3>
+                  <button
+                    onClick={closeModal}
+                    aria-label="Schließen (als Entwurf speichern)"
+                    className="text-text-secondary hover:text-text-primary text-2xl font-bold bg-bg-tertiary hover:bg-bg-hover rounded-full w-8 h-8 flex items-center justify-center transition-colors flex-shrink-0"
+                    disabled={loading}
+                  >
+                    ×
+                  </button>
+                </div>
+                <FormularSprungleiste containerRef={scrollBereichRef} kopfRef={modalKopfRef} />
               </div>
 
               <form onSubmit={handleSubmit} className="space-y-4">
@@ -887,7 +896,7 @@ export default function AddMatchTab() {
                 </div>
 
                 {/* Date */}
-                <div>
+                <div data-abschnitt="datum">
                   <label className="block text-sm font-medium text-text-primary mb-2">
                     Datum *
                   </label>
@@ -902,7 +911,7 @@ export default function AddMatchTab() {
                 </div>
 
                 {/* Live Goal Scoring */}
-                <div className="border-t border-border-light pt-4">
+                <div className="border-t border-border-light pt-4" data-abschnitt="tore">
                   <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="football" size={16} strokeWidth={2.2} className="text-system-green" />Live Torwertung</h4>
 
                   {/* Compact score display */}
@@ -931,7 +940,7 @@ export default function AddMatchTab() {
                 </div>
 
                 {/* Cards */}
-                <div className="border-t border-border-light pt-4">
+                <div className="border-t border-border-light pt-4" data-abschnitt="karten">
                   <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="ban" size={16} strokeWidth={2.2} className="text-system-red" />Karten</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-2">
@@ -952,7 +961,7 @@ export default function AddMatchTab() {
                 </div>
 
                 {/* Player of the Match */}
-                <div className="border-t pt-4">
+                <div className="border-t pt-4" data-abschnitt="sds">
                   <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="star" size={16} strokeWidth={2.2} className="text-system-orange" />Spieler des Spiels</h4>
                   
                   {/* Team Filter */}
@@ -1020,7 +1029,7 @@ export default function AddMatchTab() {
                 </div>
 
                 {/* Prize Money */}
-                <div className="border-t pt-4">
+                <div className="border-t pt-4" data-abschnitt="geld">
                   <h4 className="karten-titel mb-3 inline-flex items-center gap-2"><Icon name="euro" size={16} strokeWidth={2.2} className="text-system-green" />Preisgelder (automatisch berechnet)</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     {/* Kein Eingabefeld: die Betraege werden gerechnet, nicht
