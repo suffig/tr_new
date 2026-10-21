@@ -43,6 +43,10 @@ export const WAPPEN = [
     eigen: true
   },
   {
+    slug: "psv-eindhoven",
+    name: "PSV Eindhoven"
+  },
+  {
     slug: "real-madrid",
     name: "Real Madrid"
   },

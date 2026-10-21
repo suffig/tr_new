@@ -361,6 +361,32 @@ const VersionTeamSettingsTab = () => {
                         <option key={w.slug} value={w.slug}>{w.name}</option>
                       ))}
                     </select>
+                    {/* PASST DAS WAPPEN ZUM NAMEN?
+                        In FC27 stand "Dynamo Dresden" mit dem Wappen von AEK
+                        Athen und "PSV Eindhoven" mit dem von Real Madrid —
+                        beide waren beim Anlegen auf die Vorgaben der
+                        Altsaison zurueckgefallen, und niemand hat es
+                        bemerkt. Der Hinweis vergleicht nur Woerter; er
+                        behauptet nichts, sondern fragt. Ein Verein darf
+                        durchaus ein fremdes Wappen tragen, wenn ihr das so
+                        wollt. */}
+                    {(() => {
+                      const slug = teamConfig.wappen;
+                      if (!slug) return null;
+                      const katalogName = WAPPEN.find((w) => w.slug === slug)?.name || '';
+                      const woerter = (x) => String(x || '').toLowerCase()
+                        .replace(/[^a-zäöüß0-9 ]/g, ' ')
+                        .split(/\s+/).filter((t) => t.length > 2);
+                      const a = woerter(teamConfig.label);
+                      const b = woerter(katalogName);
+                      if (!a.length || !b.length) return null;
+                      if (a.some((w) => b.includes(w))) return null;
+                      return (
+                        <p className="text-xs text-system-orange mt-1">
+                          {`Das Wappen heißt „${katalogName}“, der Verein „${teamConfig.label}“. Absicht?`}
+                        </p>
+                      );
+                    })()}
                     <p className="text-xs text-text-muted mt-1">
                       Gilt für beide Geräte. Fehlt ein Verein, muss sein Wappen einmal
                       ins Repo geholt werden.
