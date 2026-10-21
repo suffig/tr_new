@@ -8,12 +8,12 @@
 @media (max-width: 640px) {
   /* Large title scales down a touch so long titles wrap gracefully */
   .page-title {
-    font-size: 28px;
+    font-size: 1.75rem;
     line-height: 1.12;
   }
 
   .page-subtitle {
-    font-size: 13px;
+    font-size: 0.8125rem;
   }
 
   /* Every tinted/brand/primary button is a comfortable tap target */
@@ -43,7 +43,7 @@
   .text-\[9px\],
   .text-\[10px\],
   .text-caption2 {
-    font-size: 11px;
+    font-size: 0.6875rem;
   }
 
   /* Die Mindestgroesse fuer .btn-compact steht NICHT hier, sondern ganz am
@@ -413,7 +413,7 @@ button {
  * mit einem Knopf sitzt und mal allein ueber einem Block.
  */
 .karten-titel {
-  font-size: 15px;
+  font-size: 0.9375rem;
   line-height: 20px;
   font-weight: 600;
   letter-spacing: -0.01em;
@@ -433,7 +433,7 @@ button {
 }
 
 .section-label {
-  font-size: 13px;
+  font-size: 0.8125rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
@@ -623,7 +623,7 @@ button {
 .form-input {
   width: 100%;
   padding: 0.7rem 0.9rem;
-  font-size: 16px;            /* iOS Safari: ≥16px prevents focus zoom */
+  font-size: max(16px, 1rem);            /* iOS Safari: ≥16px prevents focus zoom */
   line-height: 1.4;
   color: var(--text-primary);
   background: var(--bg-secondary);
@@ -727,7 +727,7 @@ textarea.form-input {
 
 .btn-sm {
   padding: 0.45rem 0.85rem;
-  font-size: 13px;
+  font-size: 0.8125rem;
 }
 
 .alert {
@@ -771,14 +771,14 @@ textarea.form-input {
   align-items: center;
   gap: 4px;
   padding: 2px 9px;
-  font-size: 12px;
+  font-size: 0.75rem;
   font-weight: 600;
   line-height: 1.5;
   letter-spacing: 0.005em;
   border-radius: 9999px;
   white-space: nowrap;
 }
-.chip-sm { padding: 1px 7px; font-size: 11px; }
+.chip-sm { padding: 1px 7px; font-size: 0.6875rem; }
 
 .chip-blue   { background: color-mix(in srgb, var(--system-blue) 13%, transparent);   color: var(--system-blue); }
 .chip-green  { background: color-mix(in srgb, var(--system-green) 14%, transparent);  color: var(--system-green-dark); }

@@ -84,17 +84,29 @@ export default {
       fontFamily: {
         sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'SF Pro Display', 'SF Pro Text', 'system-ui', 'sans-serif'],
       },
+      /* IN REM, NICHT PX — damit die Systemschrift wirkt.
+         Alle zehn Groessen standen in px. Wer auf dem iPhone "Groessere
+         Schrift" einstellt, sah davon nichts: px ignoriert die Einstellung,
+         und die App benutzt diese Skala fast ueberall (text-caption2,
+         text-body, text-title3 ...).
+
+         Die Werte sind durch 16 geteilt, also exakt dieselbe Groesse bei der
+         Standard-Grundschrift von 16px — optisch aendert sich nichts.
+         Unterschiedlich wird es erst, wenn jemand die Schrift vergroessert,
+         und das ist der Zweck.
+
+         Zeilenhoehen bleiben einheitenlos und skalieren dadurch mit. */
       fontSize: {
-        'headline': ['34px', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'title1': ['28px', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' }],
-        'title2': ['22px', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }],
-        'title3': ['20px', { lineHeight: '1.3', letterSpacing: '-0.01em', fontWeight: '600' }],
-        'body': ['17px', { lineHeight: '1.4', fontWeight: '400' }],
-        'callout': ['16px', { lineHeight: '1.4', fontWeight: '400' }],
-        'subhead': ['15px', { lineHeight: '1.4', fontWeight: '400' }],
-        'footnote': ['13px', { lineHeight: '1.4', fontWeight: '400' }],
-        'caption1': ['12px', { lineHeight: '1.3', fontWeight: '400' }],
-        'caption2': ['11px', { lineHeight: '1.3', fontWeight: '400' }],
+        'headline': ['2.125rem', { lineHeight: '1.1', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'title1': ['1.75rem', { lineHeight: '1.2', letterSpacing: '-0.02em', fontWeight: '700' }],
+        'title2': ['1.375rem', { lineHeight: '1.2', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'title3': ['1.25rem', { lineHeight: '1.3', letterSpacing: '-0.01em', fontWeight: '600' }],
+        'body': ['1.0625rem', { lineHeight: '1.4', fontWeight: '400' }],
+        'callout': ['1rem', { lineHeight: '1.4', fontWeight: '400' }],
+        'subhead': ['0.9375rem', { lineHeight: '1.4', fontWeight: '400' }],
+        'footnote': ['0.8125rem', { lineHeight: '1.4', fontWeight: '400' }],
+        'caption1': ['0.75rem', { lineHeight: '1.3', fontWeight: '400' }],
+        'caption2': ['0.6875rem', { lineHeight: '1.3', fontWeight: '400' }],
       },
       spacing: {
         '18': '4.5rem',

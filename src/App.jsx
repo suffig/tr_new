@@ -285,7 +285,7 @@ function App() {
               color: 'var(--text-primary)',
               borderRadius: '12px',
               padding: '16px',
-              fontSize: '14px',
+              fontSize: '0.875rem',
               border: '1px solid var(--border-light)',
             },
             success: {
@@ -408,7 +408,7 @@ function App() {
               color: 'var(--text-primary)',
               borderRadius: '12px',
               padding: '16px',
-              fontSize: '15px',
+              fontSize: '0.9375rem',
               boxShadow: 'var(--shadow-lg)',
               border: '1px solid var(--border-light)',
               backdropFilter: 'var(--blur-md)',
