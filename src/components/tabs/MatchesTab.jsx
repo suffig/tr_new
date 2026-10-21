@@ -11,7 +11,27 @@ import SaisonZeitstrahl from './matches/SaisonZeitstrahl';
 import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
+import AddMatchTab from './admin/AddMatchTab';
 export default function MatchesTab({ onNavigate, user }) {
+  // SPIEL HINZUFUEGEN, OHNE DEN BEREICH ZU VERLASSEN.
+  //
+  // Die Liste steht unter Spielbetrieb, das Formular lag aber in der
+  // Verwaltung — ein anderer Hauptbereich. "Spiel bearbeiten" schickte einen
+  // mit onNavigate('admin') dorthin, und danach stand man in der Verwaltung
+  // und musste von Hand zurueck. Zum Eintragen eines Spiels waren es vier
+  // Wechsel: Verwaltung, Kategorie, Formular, zurueck.
+  //
+  // AddMatchTab kann sich jetzt einbetten (nur die Dialoge, keine eigene
+  // Seite). Hier wird es nur gehalten, solange ein Dialog offen ist, und beim
+  // Schliessen wieder ausgehaengt — dann laufen auch seine Abfragen nicht
+  // unnoetig neben der Liste mit.
+  //
+  // `null` als Modus heisst beim Bearbeiten: AddMatchTab oeffnet sich selbst,
+  // weil sein eigener Effekt das Spiel aus dem sessionStorage liest und dabei
+  // schon setShowModal(true) aufruft. Wuerde hier 'formular' stehen, liefe
+  // danach noch makeEmptyForm() und das vorbefuellte Formular waere leer.
+  const [eingabe, setEingabe] = useState(null);   // null | 'formular'
+
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
   const [timeFilter, setTimeFilter] = useState('all'); // '1week', '4weeks', '3months', 'all'
@@ -301,6 +321,35 @@ export default function MatchesTab({ onNavigate, user }) {
 
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
+      {/* Schnellwechsel: eintragen und Live direkt von der Liste aus.
+          Oben, nicht als schwebender Knopf: der Zeitstrahl und die Liste
+          darunter sind zum Lesen da, und ein Knopf, der darueber schwebt,
+          verdeckt genau die letzte Zeile. */}
+      <div className="flex gap-2 mb-3">
+        <button type="button" onClick={() => setEingabe('formular')}
+                className="btn-brand flex-1 inline-flex items-center justify-center gap-2">
+          <Icon name="plus" size={16} strokeWidth={2.4} />
+          Spiel eintragen
+        </button>
+        {/* HIER FEHLT NOCH DER LIVE-KNOPF.
+            Eingebaut war er schon, er oeffnete aber nichts: AddMatchTab wird
+            mit startModus="live" eingehaengt, der Effekt setzt showLive(true),
+            und trotzdem erscheint kein Dialog — ohne Fehler in der Konsole.
+            Reihenfolge der Deklarationen und die JSX-Struktur sind geprueft
+            und in Ordnung, die Ursache ist offen. Ein Knopf, der nichts tut,
+            ist schlechter als keiner: Live laeuft bis dahin weiter ueber
+            Verwaltung. */}
+      </div>
+
+      {/* Nur gehalten, solange ein Dialog offen ist — siehe Kommentar oben. */}
+      {eingabe && (
+        <AddMatchTab
+          eingebettet
+          startModus={eingabe}
+          onBeendet={() => setEingabe(null)}
+        />
+      )}
+
       {/* Die Saison als Linie statt als Kopfzahlen.
           Hier stand eine Kopfkarte mit Siegzahlen, Torsumme, Serie und
           Formkurve — alles davon beantwortet inzwischen die Startseite und,
@@ -687,6 +736,10 @@ export default function MatchesTab({ onNavigate, user }) {
                                   e.stopPropagation();
                                   try {
                                     sessionStorage.setItem('fusta_edit_match', JSON.stringify(match));
+                                    // NOCH der alte Weg ueber die Verwaltung.
+                                    // Inline waere setEingabe('bearbeiten') —
+                                    // ungeprueft, und ein kaputtes Bearbeiten
+                                    // ist schlimmer als ein Umweg.
                                     onNavigate?.('admin');
                                   } catch { /* ignore */ }
                                 }}

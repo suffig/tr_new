@@ -53,7 +53,17 @@ const makeEmptyForm = () => ({
   motmTeamFilter: 'all'
 });
 
-export default function AddMatchTab() {
+/**
+ * @param {object} props
+ * @param {boolean} [props.eingebettet] Nur die Dialoge rendern, nicht die
+ *   eigene Seite. Dafuer gedacht, dass die Spieleliste das Formular selbst
+ *   oeffnen kann, statt nach Verwaltung zu schicken.
+ * @param {'formular'|'live'|null} [props.startModus] Beim Einhaengen sofort
+ *   oeffnen.
+ * @param {() => void} [props.onBeendet] Wird gerufen, wenn der Dialog zu ist —
+ *   der Aufrufer haengt die Komponente dann wieder aus.
+ */
+export default function AddMatchTab({ eingebettet = false, startModus = null, onBeendet } = {}) {
   const { data: players } = useSupabaseQuery('players', '*');
   const { data: finances } = useSupabaseQuery('finances', '*');
   const { data: recentMatches } = useSupabaseQuery('matches', '*', { order: { column: 'date', ascending: false } });
@@ -282,6 +292,24 @@ export default function AddMatchTab() {
 
   // Closing the modal (× or "Schließen") keeps the work: if anything was
   // entered, it is silently stored/updated as a draft instead of being lost.
+  // Eingebettet gestartet: gleich den gewuenschten Dialog oeffnen, damit
+  // niemand erst noch einen Knopf in einer Seite druecken muss, die hier gar
+  // nicht gerendert wird.
+  //
+  // Nur beim Einhaengen, deshalb die leere Abhaengigkeitsliste: ein erneutes
+  // Ausfuehren wuerde ein gerade geschlossenes Fenster wieder aufreissen.
+  const startRef = useRef(startModus);
+  useEffect(() => {
+    if (!startRef.current) return;
+    if (startRef.current === 'live') setShowLive(true);
+    else {
+      setEditingDraftId(null);
+      setEditingMatchId(null);
+      setFormData(makeEmptyForm());
+      setShowModal(true);
+    }
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const closeModal = () => {
     if (hasMeaningfulInput()) {
       const now = new Date().toISOString();
@@ -298,6 +326,7 @@ export default function AddMatchTab() {
     }
     setEditingDraftId(null);
     setShowModal(false);
+    onBeendet?.();
   };
 
   const loadDraft = (draft) => {
@@ -761,13 +790,26 @@ export default function AddMatchTab() {
   );
 
   return (
-    <div className="p-4 pb-20">
+    <div className={eingebettet ? 'contents' : 'p-4 pb-20'}>
+      {/* EINGEBETTET: KEINE EIGENE SEITE.
+          Seitenkopf, Einstiegskarte und die Entwurfsliste gehoeren in den
+          Verwaltungsbereich. Wird das Formular aus der Spieleliste geoeffnet,
+          liegt der Dialog darueber — alles dahinter waere ohnehin verdeckt,
+          und der Seitenkopf "Neues Spiel hinzufuegen" wuerde nach dem
+          Schliessen mitten in der Liste stehen.
+
+          `contents` statt eines Rahmens: das Element verschwindet aus dem
+          Layout, die Dialoge haengen direkt im Elternelement. Mit `p-4 pb-20`
+          saesse unter der Liste sonst ein leerer Block von 80px. */}
+      {!eingebettet && (
       <div className="mb-6">
         <h3 className="karten-titel">
           Neues Spiel hinzufügen
         </h3>
       </div>
+      )}
 
+      {!eingebettet && (
       <div className="modern-card">
         <div className="text-center py-8">
           <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-system-green/12 text-system-green flex items-center justify-center">
@@ -795,17 +837,18 @@ export default function AddMatchTab() {
           </div>
         </div>
       </div>
+      )}
 
       {showLive && (
         <LiveMatchModal
           players={players}
-          onClose={() => setShowLive(false)}
+          onClose={() => { setShowLive(false); onBeendet?.(); }}
           onFinish={handleLiveFinish}
         />
       )}
 
       {/* Draft matches — saved locally, not yet on the DB */}
-      {drafts.length > 0 && (
+      {!eingebettet && drafts.length > 0 && (
         <div className="modern-card mt-4">
           <h4 className="karten-titel mb-1 inline-flex items-center gap-2">
             <Icon name="clipboard" size={18} strokeWidth={2.2} className="text-system-orange" />
