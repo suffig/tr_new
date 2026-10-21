@@ -78,7 +78,22 @@ export default function AddMatchTab({ eingebettet = false, startModus = null, on
   // Beides fehlte hier: man scrollte im Formular bis zum Ende, und ab da
   // wanderte die Seite dahinter. Waehrend des Speichern tut Escape nichts —
   // derselbe Grund, aus dem der x-Knopf dann disabled ist.
-  useModal(() => { if (!loading) setShowModal(false); }, showModal);
+  //
+  // ESCAPE MUSS closeModal() RUFEN, NICHT setShowModal(false).
+  // Vorher stand hier setShowModal(false). Das schloss das Fenster, liess
+  // aber zwei Dinge aus, die closeModal tut: den Entwurf speichern und
+  // onBeendet melden. Ohne die Meldung blieb die Komponente im eingebetteten
+  // Fall eingehaengt (eingabe in MatchesTab stand weiter auf 'formular'), und
+  // ein spaeterer Klick auf "Live" aenderte nur noch eine Eigenschaft an
+  // dieser bestehenden Instanz. Deren startModus ist in einer Ref
+  // eingefroren, der Effekt laeuft nicht erneut — Live tat also gar nichts,
+  // und zwar genau dann, wenn man vorher das Formular mit Escape geschlossen
+  // hatte. Mit der Maus auf das x war alles in Ordnung, was die Suche
+  // erschwert hat.
+  //
+  // closeModal wird erst weiter unten definiert; das ist in Ordnung, weil der
+  // Rueckruf erst beim Tastendruck laeuft und useModal ihn in einer Ref haelt.
+  useModal(() => { if (!loading) closeModal(); }, showModal);
   const [drafts, setDrafts] = useState(loadDraftsFromStorage);
   const [editingDraftId, setEditingDraftId] = useState(null);
   const [formData, setFormData] = useState({
@@ -239,7 +254,18 @@ export default function AddMatchTab({ eingebettet = false, startModus = null, on
 
   // Live-Match-Modus: läuft parallel zum normalen Formular. Auto-Resume, wenn
   // ein Live-Match gespeichert ist (Reload/Crash verliert nichts).
-  const [showLive, setShowLive] = useState(hasStoredLiveMatch());
+  //
+  // EINGEBETTET GILT DAS AUTO-RESUME NICHT.
+  // Gemessen: aus der Spieleliste "Spiel eintragen" geoeffnet lagen ZWEI
+  // Schleier uebereinander — das Formular und obendrauf das Live-Fenster,
+  // weil ein Live-Stand im localStorage lag. Das Fortsetzen ist als Angebot
+  // auf der Verwaltungsseite gedacht ("du hast da noch was laufen"); in einem
+  // Formular, das man gerade gezielt geoeffnet hat, ist es ein Fenster, das
+  // man nicht angefordert hat und erst wegklicken muss.
+  //
+  // Eingebettet zaehlt deshalb nur, wonach gefragt wurde.
+  const [showLive, setShowLive] = useState(
+    eingebettet ? startModus === 'live' : hasStoredLiveMatch());
   const handleLiveFinish = (live) => {
     setShowLive(false);
     setEditingDraftId(null);
@@ -300,9 +326,11 @@ export default function AddMatchTab({ eingebettet = false, startModus = null, on
   // Ausfuehren wuerde ein gerade geschlossenes Fenster wieder aufreissen.
   const startRef = useRef(startModus);
   useEffect(() => {
-    if (!startRef.current) return;
-    if (startRef.current === 'live') setShowLive(true);
-    else {
+    // 'live' braucht hier nichts: der Anfangswert von showLive deckt es ab
+    // (siehe dort). Zweimal zu setzen hiesse zwei Quellen fuer denselben
+    // Zustand.
+    if (startRef.current !== 'formular') return;
+    {
       setEditingDraftId(null);
       setEditingMatchId(null);
       setFormData(makeEmptyForm());

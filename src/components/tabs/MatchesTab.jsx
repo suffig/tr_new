@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import '../../styles/match-animations.css';
 
 import AddMatchTab from './admin/AddMatchTab';
+import { hasStoredLiveMatch } from '../admin/LiveMatchModal';
 export default function MatchesTab({ onNavigate, user }) {
   // SPIEL HINZUFUEGEN, OHNE DEN BEREICH ZU VERLASSEN.
   //
@@ -30,7 +31,7 @@ export default function MatchesTab({ onNavigate, user }) {
   // weil sein eigener Effekt das Spiel aus dem sessionStorage liest und dabei
   // schon setShowModal(true) aufruft. Wuerde hier 'formular' stehen, liefe
   // danach noch makeEmptyForm() und das vorbefuellte Formular waere leer.
-  const [eingabe, setEingabe] = useState(null);   // null | 'formular'
+  const [eingabe, setEingabe] = useState(null);   // null | 'formular' | 'live'
 
   const [expandedMatches, setExpandedMatches] = useState(new Set());
   const [filterExpanded, setFilterExpanded] = useState(false);
@@ -331,19 +332,24 @@ export default function MatchesTab({ onNavigate, user }) {
           <Icon name="plus" size={16} strokeWidth={2.4} />
           Spiel eintragen
         </button>
-        {/* HIER FEHLT NOCH DER LIVE-KNOPF.
-            Eingebaut war er schon, er oeffnete aber nichts: AddMatchTab wird
-            mit startModus="live" eingehaengt, der Effekt setzt showLive(true),
-            und trotzdem erscheint kein Dialog — ohne Fehler in der Konsole.
-            Reihenfolge der Deklarationen und die JSX-Struktur sind geprueft
-            und in Ordnung, die Ursache ist offen. Ein Knopf, der nichts tut,
-            ist schlechter als keiner: Live laeuft bis dahin weiter ueber
-            Verwaltung. */}
+        <button type="button" onClick={() => setEingabe('live')}
+                className="btn-soft-red inline-flex items-center justify-center gap-2 px-4">
+          <span className="w-2 h-2 rounded-full bg-system-red status-ping status-ping-rot" />
+          {hasStoredLiveMatch() ? 'Live läuft' : 'Live'}
+        </button>
       </div>
 
       {/* Nur gehalten, solange ein Dialog offen ist — siehe Kommentar oben. */}
       {eingabe && (
         <AddMatchTab
+          // key je Modus: erzwingt eine FRISCHE Instanz, wenn von 'formular'
+          // auf 'live' gewechselt wird. AddMatchTab friert seinen startModus
+          // beim Einhaengen in einer Ref ein (damit ein erneuter Lauf kein
+          // geschlossenes Fenster wieder aufreisst) — eine bestehende Instanz
+          // wuerde einen neuen Modus deshalb ignorieren. Das ist jetzt schon
+          // dadurch abgedeckt, dass Escape ordentlich abmeldet; der key macht
+          // es unabhaengig davon richtig.
+          key={eingabe}
           eingebettet
           startModus={eingabe}
           onBeendet={() => setEingabe(null)}
