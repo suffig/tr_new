@@ -627,7 +627,11 @@ export default function AddMatchTab() {
       <button
         type="button"
         onClick={onDec}
-        className="w-8 h-8 rounded-lg bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover flex items-center justify-center text-lg font-semibold disabled:opacity-40 transition-colors"
+        // 40 statt 32 Pixel, passend zum dokumentierten Kompromiss fuer
+          // dichte Bedienelemente. Diese Knoepfe werden bei jedem Spiel
+          // mehrfach getroffen — Tore zaehlen ist die haeufigste Eingabe
+          // der ganzen App.
+        className="w-10 h-10 rounded-lg bg-bg-secondary border border-border-light text-text-secondary hover:bg-bg-hover flex items-center justify-center text-lg font-semibold disabled:opacity-40 transition-colors"
         disabled={loading || decDisabled}
       >
         −

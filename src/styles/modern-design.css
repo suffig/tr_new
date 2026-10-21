@@ -46,14 +46,10 @@
     font-size: 11px;
   }
 
-  /* .btn-compact nimmt Bedienelemente bewusst vom 48px-Minimum aus (dichte
-     Listen, Stepper). Ganz ohne Untergrenze landeten sie aber bei 32px — zu
-     klein zum sicheren Treffen. 40px ist der Kompromiss: dicht genug fuer die
-     Liste, gross genug fuer den Daumen. */
-  .btn-compact {
-    min-width: 40px;
-    min-height: 40px;
-  }
+  /* Die Mindestgroesse fuer .btn-compact steht NICHT hier, sondern ganz am
+     Ende der Datei. Grund: die Ausnahme in Abschnitt 9 hebt sie mit
+     !important auf, und bei gleicher Spezifitaet gewinnt die spaetere Regel.
+     Hier stehend war sie wirkungslos — siehe dort. */
 }
 
 /* Slightly larger tap area for icon-only controls everywhere */
@@ -1189,3 +1185,30 @@ textarea.form-input {
 .text-system-yellow { color: var(--system-yellow-schrift); }
 .text-system-orange { color: var(--system-orange-schrift); }
 .text-system-teal   { color: var(--system-teal-schrift); }
+
+/* --------------------------------------------------------------------------
+   Mindestgroesse kleiner Bedienelemente auf dem Handy
+   --------------------------------------------------------------------------
+   Diese Regel MUSS am Dateiende stehen. Abschnitt 9 hebt das globale
+   48px-Minimum fuer .btn-compact, .stepper-btn und .chip-btn mit !important
+   auf, damit dichte Listen auf breiten Schirmen dicht bleiben duerfen. Bei
+   gleicher Spezifitaet und beidseitigem !important gewinnt die SPAETERE
+   Regel — also diese.
+
+   Vorher war die Absicht "40px fuer den Daumen" nie wirksam: sie stand weiter
+   oben und verlor. Gemessen im Spielformular auf 375px: die
+   Torschuetzen-Chips kamen auf 22px Hoehe bei min-height: 0px. Mein erster
+   Anlauf, einfach !important zu ergaenzen, aenderte nichts — aus genau
+   diesem Grund.
+
+   Nur unter 640px. Auf breiten Schirmen bleibt die Ausnahme gueltig, dort
+   ist Dichte richtig und es wird mit der Maus getroffen.
+   -------------------------------------------------------------------------- */
+@media (max-width: 640px) {
+  .btn-compact,
+  .stepper-btn,
+  .chip-btn {
+    min-width: 40px !important;
+    min-height: 40px !important;
+  }
+}
