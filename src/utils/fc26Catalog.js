@@ -100,16 +100,29 @@ export function setRating(name, rating) {
   return t ? dbUpsertTeam(t) : Promise.resolve({ ok: false, fehler: new Error('Team nicht im Katalog') });
 }
 
+/**
+ * Ein Team anlegen (oder, wenn es den Namen schon gibt, dessen Sterne setzen).
+ *
+ * Gibt dasselbe zurueck wie setRating: ein Versprechen auf
+ * { ok, fehler, angelegt, name }. Vorher gab die Funktion synchron `true`
+ * zurueck und liess das Ergebnis von dbUpsertTeam fallen — der Aufrufer
+ * konnte also nur "hat geklappt" melden, auch wenn nichts in der Datenbank
+ * ankam. Dasselbe Muster, das bei den Vereinswappen zu einer Aenderung
+ * fuehrte, die nach dem naechsten Start wieder weg war.
+ *
+ * `ok: false` ohne `fehler` heisst: der Name war leer. Das ist kein
+ * Datenbankproblem und soll auch nicht so gemeldet werden.
+ */
 export function addTeam({ name, rating = null, women = false, national = false }) {
-  const clean = name.trim();
-  if (!clean) return false;
+  const clean = (name || '').trim();
+  if (!clean) return Promise.resolve({ ok: false, fehler: null, leer: true });
   const o = loadOverrides();
   o.removed = o.removed.filter((n) => n.toLowerCase() !== clean.toLowerCase());
   const exists = getCatalog().some((t) => t.name.toLowerCase() === clean.toLowerCase());
   if (exists) { o.edits[clean] = rating; saveOverrides(o); }
   else { o.added.push({ name: clean, rating, women, national }); saveOverrides(o); }
-  dbUpsertTeam({ name: clean, rating, women, national });
-  return true;
+  return dbUpsertTeam({ name: clean, rating, women, national })
+    .then((e) => ({ ...e, angelegt: !exists, name: clean }));
 }
 
 export function removeTeam(name) {

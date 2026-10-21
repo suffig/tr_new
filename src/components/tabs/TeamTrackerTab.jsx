@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from '../icons/Icon';
 import ZiehungsAuswertung from './teams/ZiehungsAuswertung';
-import { getCatalog, setRating } from '../../utils/fc26Catalog';
+import { getCatalog, setRating, addTeam } from '../../utils/fc26Catalog';
 import { addSterneEintrag, gutschriftFuer, STERNE_PERSON_KEY } from '../../utils/sterneCounter';
 import useModal from '../../hooks/useModal';
 import {
@@ -496,6 +496,45 @@ export default function TeamTrackerTab() {
     else toast.error(`${name}: ${fmtRating(rating)}★ nur auf diesem Gerät — `
       + 'die Datenbank hat die Änderung nicht angenommen.', { duration: 6000 });
   };
+  // ANLEGEN DIREKT HIER, NICHT IN DER VERWALTUNG.
+  //
+  // Diese Uebersicht konnte Sterne aendern, aber kein Team hinzufuegen —
+  // dafuer musste man in die Verwaltung, den Katalog-Reiter finden, den Namen
+  // dort noch einmal tippen und zurueckwechseln. Dabei weiss man genau in dem
+  // Moment, dass ein Team fehlt, in dem man danach GESUCHT hat. Der Name steht
+  // dann schon im Suchfeld.
+  const [neuSterne, setNeuSterne] = useState(5);
+  const [neuFrauen, setNeuFrauen] = useState(false);
+  const [neuNational, setNeuNational] = useState(false);
+  const [neuLaeuft, setNeuLaeuft] = useState(false);
+
+  const teamAnlegen = async (name) => {
+    const sauber = (name || '').trim();
+    if (!sauber) return;
+    setNeuLaeuft(true);
+    // Nationalteams haben kein offizielles Rating — dann null statt einer
+    // ausgedachten Zahl. Dieselbe Regel wie im Katalog-Reiter.
+    const { ok, fehler } = await addTeam({
+      name: sauber,
+      rating: neuNational ? null : neuSterne,
+      women: neuFrauen,
+      national: neuNational,
+    });
+    setCatalog(getCatalog());
+    setNeuLaeuft(false);
+    if (ok) {
+      // Suchfeld leeren: das Team ist jetzt da, und der Suchbegriff waere
+      // sonst weiter ein Filter auf genau diesen einen Treffer.
+      setSearch('');
+      setNeuFrauen(false);
+      setNeuNational(false);
+      toast.success(`„${sauber}" angelegt${neuNational ? '' : ` · ${fmtRating(neuSterne)}★`}`);
+    } else if (fehler) {
+      toast.error(`„${sauber}" nur auf diesem Gerät — die Datenbank hat die `
+        + 'Änderung nicht angenommen.', { duration: 6000 });
+    }
+  };
+
   const teamByName = useMemo(() => {
     const m = new Map();
     catalog.forEach((t) => m.set(t.name, t));
@@ -579,6 +618,12 @@ export default function TeamTrackerTab() {
 
   const q = search.trim().toLowerCase();
   const filterActive = !!q || ratingFilter !== 'all' || typeFilter !== 'all';
+  // Der getippte Name, so wie er dasteht — fuer das Anlegen, das ihn
+  // uebernimmt. `q` ist kleingeschrieben und taugt dafuer nicht.
+  const suchName = search.trim();
+  const exakterTreffer = useMemo(
+    () => catalog.some((t) => t.name.toLowerCase() === q),
+    [catalog, q]);
   const matchesFilter = (t) => {
     if (q && !t.name.toLowerCase().includes(q)) return false;
     if (typeFilter === 'clubs' && t.national) return false;
@@ -877,6 +922,27 @@ export default function TeamTrackerTab() {
                   <p className="text-text-muted text-sm">Kein Team gefunden.</p>
                 </div>
               )}
+
+              {/* Gesucht, nicht gefunden — dann hier anlegen.
+                  Nur bei einem getippten Namen: ein reiner Sterne- oder
+                  Typfilter ohne Suchbegriff hat keinen Namen, den man
+                  uebernehmen koennte. Und nur, wenn es noch keinen genauen
+                  Treffer gibt: sonst stuende das Angebot neben dem Team,
+                  das es schon ist. */}
+              {!!suchName && !exakterTreffer && (
+                <TeamAnlegenKarte
+                  name={suchName}
+                  sterne={neuSterne}
+                  onSterne={setNeuSterne}
+                  frauen={neuFrauen}
+                  onFrauen={setNeuFrauen}
+                  national={neuNational}
+                  onNational={setNeuNational}
+                  laeuft={neuLaeuft}
+                  wenigeTreffer={flatFiltered.length === 0}
+                  onAnlegen={() => teamAnlegen(suchName)}
+                />
+              )}
             </div>
           ) : (
             <div className="space-y-2">
@@ -906,6 +972,93 @@ export default function TeamTrackerTab() {
           )}
         </>
       )}
+    </div>
+  );
+}
+
+/**
+ * „Team X anlegen" — direkt im Suchergebnis der Teamsübersicht.
+ *
+ * WARUM HIER UND NICHT IN DER VERWALTUNG
+ * Die Übersicht konnte Sterne ändern, aber kein Team hinzufügen. Dafür ging
+ * es in die Verwaltung, in den Katalog-Reiter, den Namen dort noch einmal
+ * tippen und zurückwechseln. Dabei merkt man genau in dem Moment, dass ein
+ * Team fehlt, in dem man danach gesucht hat — und der Name steht schon im
+ * Suchfeld. Den übernimmt diese Karte.
+ *
+ * Der Katalog-Reiter in der Verwaltung bleibt: dort gibt es Entfernen und die
+ * Liste aller Einträge am Stück. Hier geht es nur um den einen Fall
+ * „fehlt mir gerade".
+ *
+ * DIE STERNE ALS CHIP-REIHE
+ * Dieselbe Darstellung wie der Sterne-Filter ein paar Zeilen darüber. Zehn
+ * Stufen in halben Schritten lassen sich antippen; ein Schieber oder ein
+ * Fünf-Sterne-Feld mit Halb-Treffern wäre auf dem Telefon Zielen statt
+ * Tippen.
+ */
+function TeamAnlegenKarte({ name, sterne, onSterne, frauen, onFrauen,
+                            national, onNational, laeuft, wenigeTreffer,
+                            onAnlegen }) {
+  return (
+    <div className={`modern-card ${wenigeTreffer ? '' : 'mt-3'}`}>
+      <div className="flex items-start gap-2.5 mb-3">
+        <span className="w-9 h-9 rounded-xl bg-system-blue/12 text-system-blue flex items-center justify-center flex-shrink-0">
+          <Icon name="plus" size={18} strokeWidth={2.4} />
+        </span>
+        <div className="min-w-0 flex-1">
+          <div className="font-semibold text-text-primary text-sm truncate">
+            {'„'}{name}{'" anlegen'}
+          </div>
+          <div className="text-[11px] text-text-tertiary">
+            {wenigeTreffer
+              ? 'Steht nicht im Katalog. Sterne wählen und anlegen.'
+              : 'Nicht der gesuchte Verein dabei? Hier anlegen.'}
+          </div>
+        </div>
+      </div>
+
+      {/* Nationalmannschaften haben kein offizielles Rating. Dann gibt es
+          hier auch nichts zu wählen, statt eine Zahl zu speichern, die
+          niemand vergeben hat. */}
+      {!national && (
+        <div className="mb-3">
+          <div className="section-label mb-1.5">Sterne</div>
+          <div className="flex flex-wrap gap-2">
+            {RATING_TIERS.map((r) => (
+              <button key={r} type="button" onClick={() => onSterne(r)}
+                className={`chip-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium ${
+                  sterne === r ? 'bg-system-blue text-white' : 'bg-bg-tertiary text-text-secondary'}`}>
+                <Icon name="starFilled" size={11} strokeWidth={0}
+                      className={sterne === r ? '' : 'text-system-yellow'} />
+                {fmtRating(r)}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <div className="flex flex-wrap gap-2 mb-3">
+        <button type="button" onClick={() => onFrauen(!frauen)}
+          className={`chip-btn px-3 py-1.5 rounded-lg text-xs font-medium ${
+            frauen ? 'bg-system-purple text-white' : 'bg-bg-tertiary text-text-secondary'}`}>
+          Frauenteam
+        </button>
+        <button type="button" onClick={() => onNational(!national)}
+          className={`chip-btn px-3 py-1.5 rounded-lg text-xs font-medium ${
+            national ? 'bg-system-orange text-white' : 'bg-bg-tertiary text-text-secondary'}`}>
+          Nationalmannschaft
+        </button>
+      </div>
+
+      <button type="button" onClick={onAnlegen} disabled={laeuft}
+              className="btn-primary w-full disabled:opacity-50">
+        {laeuft ? 'Wird angelegt …' : (
+          <span className="inline-flex items-center gap-1.5">
+            <Icon name="plus" size={15} strokeWidth={2.4} />
+            Anlegen{national ? '' : ` · ${fmtRating(sterne)}★`}
+          </span>
+        )}
+      </button>
     </div>
   );
 }

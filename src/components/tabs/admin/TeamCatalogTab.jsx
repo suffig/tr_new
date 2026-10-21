@@ -39,13 +39,20 @@ export default function TeamCatalogTab() {
 
   const editRating = (name, next) => { setRating(name, next); refresh(); };
 
-  const onAdd = () => {
+  const onAdd = async () => {
     const name = addName.trim();
     if (!name) { toast.error('Bitte einen Teamnamen eingeben.'); return; }
     if (catalog.some((t) => t.name.toLowerCase() === name.toLowerCase())) { toast.error('Team existiert bereits.'); return; }
-    addTeam({ name, rating: addNational ? null : addRating, women: addWomen, national: addNational });
+    // Lokal ist es sofort da, die Meldung wartet aber auf die Datenbank:
+    // „hinzugefuegt" zu sagen, waehrend nur der localStorage beschrieben
+    // wurde, faellt erst auf dem anderen Geraet auf.
+    const { ok, fehler } = await addTeam({
+      name, rating: addNational ? null : addRating, women: addWomen, national: addNational,
+    });
     setAddName(''); refresh();
-    toast.success(`„${name}" hinzugefügt`);
+    if (ok) toast.success(`„${name}" hinzugefügt`);
+    else if (fehler) toast.error(`„${name}" nur auf diesem Gerät — die Datenbank `
+      + 'hat die Änderung nicht angenommen.', { duration: 6000 });
   };
 
   // Team samt allem entfernen: Katalogeintrag UND alle Ziehungen beider
