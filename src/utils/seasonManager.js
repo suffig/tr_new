@@ -5,11 +5,10 @@
  * Now integrated with FIFA version database management
  */
 
-import { 
-  getCurrentFifaVersion, 
-  setCurrentFifaVersion, 
+import {
+  getCurrentFifaVersion,
+  setCurrentFifaVersion,
   FIFA_VERSIONS,
-  getFifaVersionDisplayName 
 } from './fifaVersionManager.js';
 
 // Season definitions (keeping legacy compatibility)

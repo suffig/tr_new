@@ -1,5 +1,4 @@
 import { getVersionTeamsArray, getVersionTeamDisplay } from '../utils/versionTeamManager.js';
-import { getCurrentFifaVersion, BUILT_IN_FIFA_VERSIONS } from '../utils/fifaVersionManager.js';
 
 // Legacy TEAMS constant for backward compatibility (FC25 defaults)
 export const TEAMS = [

@@ -3,7 +3,7 @@
  * Manages team settings per FIFA version including custom names and icons
  */
 
-import { getCurrentFifaVersion, getAllFifaVersions, BUILT_IN_FIFA_VERSIONS } from './fifaVersionManager.js';
+import { getCurrentFifaVersion, BUILT_IN_FIFA_VERSIONS } from './fifaVersionManager.js';
 
 // Storage keys
 const VERSION_TEAMS_STORAGE_KEY = 'fifa_version_teams';
@@ -66,9 +66,6 @@ const DEFAULT_TEAMS_FC26 = {
     customIcon: null
   }
 };
-
-// Default team configurations (for backward compatibility)
-const DEFAULT_TEAMS = DEFAULT_TEAMS_FC25;
 
 /**
  * Get default teams for a specific FIFA version

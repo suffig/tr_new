@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from '../../icons/Icon';
 import SpielerWappen from '../../SpielerWappen';
@@ -6,6 +6,7 @@ import LoadingSpinner from '../../LoadingSpinner';
 import { istLegacySaison } from '../../../utils/legacySaison';
 import { saisonsMitTiteln, titelDerSaison } from '../../../utils/hallOfFame';
 
+import useModal from '../../../hooks/useModal';
 /**
  * Hall of Fame — die Titel einer Saison.
  *
@@ -174,13 +175,7 @@ export default function HallOfFame({ players, matches, bans, sds, loading }) {
  * Erste, dann Platz 3), weil zwei geteilte Erste keinen Zweiten haben.
  */
 function Rangliste({ titel, version, teamVon, onSchliessen }) {
-  useEffect(() => {
-    const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
-    document.addEventListener('keydown', esc);
-    const vorher = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => { document.removeEventListener('keydown', esc); document.body.style.overflow = vorher; };
-  }, [onSchliessen]);
+  useModal(onSchliessen);
 
   const liste = titel.rangliste || [];
   const hoechster = liste[0]?.wert || 1;

@@ -6,7 +6,7 @@
     "plugin:react/recommended",
     "plugin:react-hooks/recommended"
   ],
-  "ignorePatterns": ["dist", "*.js"],
+  "ignorePatterns": ["dist", "/*.js", "scripts/**", "public/**"],
   "parserOptions": {
     "ecmaVersion": "latest",
     "sourceType": "module"

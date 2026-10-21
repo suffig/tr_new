@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import Icon from '../../icons/Icon';
 import { boersenStatistik, bestenListe, rechnung } from '../../../utils/bierboerse';
 
+import useModal from '../../../hooks/useModal';
 /**
  * Der Abend als Bild — zum Verschicken.
  *
@@ -39,6 +40,9 @@ const FARBE = {
 };
 
 export default function AbendBild({ boerse, verkostungen, katalog, onSchliessen }) {
+  // Escape schliesst, und der Hintergrund scrollt nicht mit — beides fehlte.
+  useModal(onSchliessen);
+
   const canvasRef = useRef(null);
   const [bereit, setBereit] = useState(false);
 

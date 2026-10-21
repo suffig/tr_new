@@ -5,6 +5,7 @@ import Icon from '../icons/Icon';
 import ZiehungsAuswertung from './teams/ZiehungsAuswertung';
 import { getCatalog, setRating } from '../../utils/fc26Catalog';
 import { addSterneEintrag, gutschriftFuer, STERNE_PERSON_KEY } from '../../utils/sterneCounter';
+import useModal from '../../hooks/useModal';
 import {
   loadPulls, countsInWindow, addPull, removeLatestPull, clearPerson,
   windowStart, TIME_WINDOWS,
@@ -117,6 +118,9 @@ function StarRating({ rating, size = 13 }) {
 // Regel wie im Alkohol-Tab). Wer mit einem schwachen Team gewinnt, holt also
 // mehr — mit einem 5-Sterne-Team nur 1,0.
 function SpielduellModal({ catalog, entwurf, onClose, onConfirm, onEntwurfSpeichern, onEntwurfSichern, onEntwurfVerwerfen, onRatingChange }) {
+  // Escape schliesst, und der Hintergrund scrollt nicht mit — beides fehlte.
+  useModal(onClose);
+
   const [teams, setTeams] = useState(() => entwurf?.teams || { alexander: null, philip: null });
   const [sieger, setSieger] = useState(() => entwurf?.sieger || null);
   const [waehlt, setWaehlt] = useState(() => (entwurf?.teams?.alexander ? null : 'alexander'));
@@ -919,6 +923,9 @@ function countsTotal(pulls, personId, sinceTs) {
 function StatsView({ people, statsFor, pulls, catalog, sinceTs = 0, windowLabel }) {
   const [openDetails, setOpenDetails] = useState({});
   const [achievePerson, setAchievePerson] = useState(null);
+  // Escape schliesst, und der Hintergrund scrollt nicht mit — beides fehlte.
+  useModal(() => setAchievePerson(null), !!achievePerson);
+
 
   const all = people.map((p) => ({ ...p, stats: statsFor(p.id) }));
   const combinedPulls = all.reduce((s, p) => s + p.stats.totalPulls, 0);

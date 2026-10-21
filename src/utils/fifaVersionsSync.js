@@ -86,27 +86,71 @@ export async function pushVersionToDB(id, { name = null, teams = null } = {}) {
   }
 }
 
+/* -----------------------------------------------------------------------------
+   WARUM DIESE DREI JETZT EIN ERGEBNIS ZURUECKGEBEN
+
+   Sie waren mit einem leeren catch-Block ("best effort") geschrieben und gaben
+   nichts zurueck. Zwei Fehler steckten darin:
+
+   1. Der supabase-Aufruf WIRFT bei einem abgelehnten Schreibvorgang nicht. Er
+      liefert `{ error }`. Das `try/catch` fing also gar nicht den Fall, um den
+      es geht — der Fehler stand im Rueckgabewert und wurde nicht angesehen.
+
+   2. Ohne Ergebnis kann der Aufrufer nicht unterscheiden, ob geschrieben wurde.
+      VersionTeamSettingsTab meldete deshalb "Team-Einstellungen gespeichert",
+      auch wenn nichts in der Datenbank ankam.
+
+   Die Folge war nicht nur eine falsche Meldung, sondern Datenverlust mit
+   Zeitverzoegerung: die Aenderung lag dann allein im localStorage, und
+   hydrateFifaVersionsFromDB setzt K_TEAMS beim naechsten Start komplett aus
+   der DB neu — die Aenderung war still wieder weg. Wer in der Verwaltung die
+   Wappen fuer eine Saison setzt, saehe "gespeichert", danach die richtigen
+   Wappen, und nach dem naechsten App-Start wieder die alten.
+
+   Dieselbe Form wie pushVersionToDB: { ok, offline?, error? }. `offline: true`
+   heisst Demo-Modus ohne Datenbank — das ist kein Fehler, aber der Aufrufer
+   soll es sagen koennen.
+   -------------------------------------------------------------------------- */
+
 /** Make exactly one version active. */
 export async function setActiveVersionInDB(id) {
-  if (usingFallback || !id) return;
+  if (!id) return { ok: false, error: new Error('Keine Versions-ID') };
+  if (usingFallback) return { ok: true, offline: true };
   try {
-    await supabase.from(TABLE).update({ is_active: false }).neq('id', id);
-    await supabase.from(TABLE).upsert({ id, is_active: true }, { onConflict: 'id' });
-  } catch { /* best effort */ }
+    // Erst alle anderen abwaehlen, dann diese setzen. Schlaegt der erste
+    // Schritt fehl, waeren zwei Saisons aktiv — dann hier abbrechen.
+    const ab = await supabase.from(TABLE).update({ is_active: false }).neq('id', id);
+    if (ab.error) return { ok: false, error: ab.error };
+    const an = await supabase.from(TABLE).upsert({ id, is_active: true }, { onConflict: 'id' });
+    if (an.error) return { ok: false, error: an.error };
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
 }
 
 /** Persist the team config (names/short/color/base64 logos) for a version. */
 export async function pushTeamsToDB(id, teams) {
-  if (usingFallback || !id || !teams) return;
+  if (!id || !teams) return { ok: false, error: new Error('Keine Versions-ID oder keine Teams') };
+  if (usingFallback) return { ok: true, offline: true };
   try {
-    await supabase.from(TABLE).upsert({ id, teams }, { onConflict: 'id' });
-  } catch { /* best effort */ }
+    const { error } = await supabase.from(TABLE).upsert({ id, teams }, { onConflict: 'id' });
+    if (error) return { ok: false, error };
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
 }
 
 /** Remove a version from the shared registry. */
 export async function deleteVersionFromDB(id) {
-  if (usingFallback || !id) return;
+  if (!id) return { ok: false, error: new Error('Keine Versions-ID') };
+  if (usingFallback) return { ok: true, offline: true };
   try {
-    await supabase.from(TABLE).delete().eq('id', id);
-  } catch { /* best effort */ }
+    const { error } = await supabase.from(TABLE).delete().eq('id', id);
+    if (error) return { ok: false, error };
+    return { ok: true };
+  } catch (error) {
+    return { ok: false, error };
+  }
 }

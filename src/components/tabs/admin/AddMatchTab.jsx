@@ -12,6 +12,7 @@ import Icon from '../../icons/Icon';
 import TeamLogo from '../../TeamLogo';
 import LiveMatchModal, { hasStoredLiveMatch } from '../../admin/LiveMatchModal';
 
+import useModal from '../../../hooks/useModal';
 const DRAFTS_KEY = 'fusta_match_drafts_v1';
 
 const loadDraftsFromStorage = () => {
@@ -56,6 +57,12 @@ export default function AddMatchTab() {
   const { data: finances } = useSupabaseQuery('finances', '*');
   const { data: recentMatches } = useSupabaseQuery('matches', '*', { order: { column: 'date', ascending: false } });
   const [showModal, setShowModal] = useState(false);
+  
+  // Escape schliesst, und der Hintergrund scrollt nicht mit.
+  // Beides fehlte hier: man scrollte im Formular bis zum Ende, und ab da
+  // wanderte die Seite dahinter. Waehrend des Speichern tut Escape nichts —
+  // derselbe Grund, aus dem der x-Knopf dann disabled ist.
+  useModal(() => { if (!loading) setShowModal(false); }, showModal);
   const [drafts, setDrafts] = useState(loadDraftsFromStorage);
   const [editingDraftId, setEditingDraftId] = useState(null);
   const [formData, setFormData] = useState({

@@ -4,6 +4,7 @@ import TeamLogo from '../TeamLogo';
 import { getTeamShort } from '../../constants/teams';
 import { hapticLight } from '../../utils/feedback';
 
+import useModal from '../../hooks/useModal';
 // Live capture for a running match: tap goals (with scorer) and cards as they
 // happen. Writes NOTHING to the DB — on finish it hands the collected data to
 // the normal AddMatch form (review + save via the existing, tested flow).
@@ -22,6 +23,9 @@ export function hasStoredLiveMatch() {
 }
 
 export default function LiveMatchModal({ players, onClose, onFinish }) {
+  // Escape schliesst, und der Hintergrund scrollt nicht mit. Dieses Modal wird
+  // nur gerendert, wenn es offen ist — deshalb ohne Schalter.
+  useModal(onClose);
   const [live, setLive] = useState(() => {
     try {
       const s = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');

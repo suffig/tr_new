@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Icon from '../../icons/Icon';
 import SpielerWappen from '../../SpielerWappen';
@@ -12,6 +12,7 @@ import Verlaufsgrafik from '../../Verlaufsgrafik';
 import { nameKey } from '../../../utils/playerIdentity';
 import { dez } from '../../../utils/zahlen';
 
+import useModal from '../../../hooks/useModal';
 /**
  * Ein Spieler über alle Saisons hinweg.
  *
@@ -108,16 +109,7 @@ export default function SpielerVerlauf({ spieler: uebergeben, player, onSchliess
   }, [player]);
 
   const spieler = uebergeben || selbstGebaut || ersatz;
-  useEffect(() => {
-    const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
-    document.addEventListener('keydown', esc);
-    const vorher = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', esc);
-      document.body.style.overflow = vorher;
-    };
-  }, [onSchliessen]);
+  useModal(onSchliessen);
 
   // Die Saisonzeilen bringen Tore, Auszeichnungen und Sperren schon mit
   // (spielerStatistik). Hier nur noch sortieren — zweimal dieselbe Zuordnung

@@ -19,6 +19,7 @@ import AbendRekorde from './AbendRekorde';
 // Antippen des Knopfes.
 const BarcodeScanner = lazy(() => import('./BarcodeScanner'));
 import { sucheBarcode, merkeBarcode } from '../../../utils/barcode';
+import useModal from '../../../hooks/useModal';
 import {
   PERSONEN, BIERARTEN, HERKUNFT, eigeneWerte, bestandNachFeld, preisEntwicklungJeBier, trinkprofil,
   ladeBoersen, ladeKatalog, ladeVerkostungen,
@@ -2833,17 +2834,7 @@ function BierDetail({ bier, verkostungen, boersen, katalog, onSchliessen }) {
  * Navigation, damit der Absende-Knopf auch bei kurzem Bildschirm frei liegt.
  */
 function Modal({ titel, onSchliessen, children }) {
-  useEffect(() => {
-    const esc = (e) => { if (e.key === 'Escape') onSchliessen(); };
-    document.addEventListener('keydown', esc);
-    // Hintergrund nicht mitscrollen lassen, solange der Dialog offen ist.
-    const vorher = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.removeEventListener('keydown', esc);
-      document.body.style.overflow = vorher;
-    };
-  }, [onSchliessen]);
+  useModal(onSchliessen);
 
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center modal-schleier p-0 sm:p-4"

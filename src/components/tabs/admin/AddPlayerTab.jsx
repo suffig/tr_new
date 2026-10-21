@@ -7,6 +7,7 @@ import { TEAMS, getTeamDisplay } from '../../../constants/teams';
 import { POSITIONS } from '../../../utils/errorHandling';
 import toast from 'react-hot-toast';
 
+import useModal from '../../../hooks/useModal';
 // Position labels for display (matching POSITIONS from errorHandling.js)
 const POSITION_LABELS = {
   'TH': 'Torwart (TH)',
@@ -25,6 +26,12 @@ const POSITION_LABELS = {
 
 export default function AddPlayerTab() {
   const [showModal, setShowModal] = useState(false);
+  
+  // Escape schliesst, und der Hintergrund scrollt nicht mit.
+  // Beides fehlte hier: man scrollte im Formular bis zum Ende, und ab da
+  // wanderte die Seite dahinter. Waehrend des Speichern tut Escape nichts —
+  // derselbe Grund, aus dem der x-Knopf dann disabled ist.
+  useModal(() => { if (!loading) setShowModal(false); }, showModal);
   const [formData, setFormData] = useState({
     name: '',
     team: '',

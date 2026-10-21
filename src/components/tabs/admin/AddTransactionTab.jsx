@@ -9,6 +9,7 @@ import { wechselEintragen } from '../../../utils/spielerWechsel';
 import { getCurrentFifaVersion } from '../../../utils/fifaVersionManager';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 
+import useModal from '../../../hooks/useModal';
 // Ohne Icon-Feld: die Liste steht in einem <select>, und in einem <option>
 // kann kein SVG stehen. Vorher trug jeder Eintrag ein Emoji — die einzige
 // Stelle der App, an der eines im Klartext einer Auswahl stand.
@@ -24,6 +25,12 @@ const TRANSACTION_TYPES = [
 
 export default function AddTransactionTab() {
   const [showModal, setShowModal] = useState(false);
+  
+  // Escape schliesst, und der Hintergrund scrollt nicht mit.
+  // Beides fehlte hier: man scrollte im Formular bis zum Ende, und ab da
+  // wanderte die Seite dahinter. Waehrend des Speichern tut Escape nichts —
+  // derselbe Grund, aus dem der x-Knopf dann disabled ist.
+  useModal(() => { if (!loading) setShowModal(false); }, showModal);
   const [formData, setFormData] = useState({
     team: '',
     type: '',

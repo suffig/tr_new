@@ -6,9 +6,16 @@ import { TEAMS, getTeamDisplay } from '../../../constants/teams';
 import toast from 'react-hot-toast';
 import { BAN_TYPES } from '../../../constants/banTypes';
 
+import useModal from '../../../hooks/useModal';
 export default function AddBanTab() {
   const { data: players } = useSupabaseQuery('players', '*');
   const [showModal, setShowModal] = useState(false);
+  
+  // Escape schliesst, und der Hintergrund scrollt nicht mit.
+  // Beides fehlte hier: man scrollte im Formular bis zum Ende, und ab da
+  // wanderte die Seite dahinter. Waehrend des Speichern tut Escape nichts —
+  // derselbe Grund, aus dem der x-Knopf dann disabled ist.
+  useModal(() => { if (!loading) setShowModal(false); }, showModal);
   const [selectedTeam, setSelectedTeam] = useState('');
   const [formData, setFormData] = useState({
     player_id: '',

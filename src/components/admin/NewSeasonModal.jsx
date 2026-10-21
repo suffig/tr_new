@@ -4,6 +4,7 @@ import toast from 'react-hot-toast';
 import { getCurrentFifaVersion } from '../../utils/fifaVersionManager';
 import { legeSaisonAn } from '../../utils/saisonAnlegen';
 
+import useModal from '../../hooks/useModal';
 // Saison anlegen aus dem Admin-Bereich — fuer den Fall, dass man nur eine
 // Version braucht (Nachtragen, Korrektur) und nicht den ganzen Saisonwechsel.
 // Der gefuehrte Weg steht unter Spiele -> Saisonwechsel.
@@ -14,6 +15,9 @@ import { legeSaisonAn } from '../../utils/saisonAnlegen';
 const MAX_LOGO_BYTES = 1024 * 1024; // 1 MB
 
 export default function NewSeasonModal({ onClose, onCreated }) {
+  // Escape schliesst, und der Hintergrund scrollt nicht mit. Dieses Modal wird
+  // nur gerendert, wenn es offen ist — deshalb ohne Schalter.
+  useModal(onClose);
   const [versionId, setVersionId] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [teams, setTeams] = useState({

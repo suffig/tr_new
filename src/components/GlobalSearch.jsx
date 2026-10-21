@@ -2,6 +2,7 @@ import Icon from './icons/Icon';
 import { useState, useEffect, useCallback } from 'react';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 
+import useModal from '../hooks/useModal';
 /**
  * `sofortOffen` wird gesetzt, wenn die Suche von aussen geoeffnet wird (Knopf
  * im Kopfbereich oder Strg+K). Ohne das startet die Komponente geschlossen
@@ -11,6 +12,12 @@ import { useSupabaseQuery } from '../hooks/useSupabase';
 export default function GlobalSearch({ onNavigate, onClose, sofortOffen = false }) {
   const [query, setQuery] = useState('');
   const [isOpen, setIsOpen] = useState(sofortOffen);
+
+  // Nur die Scroll-Sperre — die fehlte hier, der Hintergrund lief beim
+  // Blaettern durch die Treffer mit. Escape behandelt diese Komponente selbst,
+  // zusammen mit Pfeiltasten und Enter; deshalb `null` als Rueckruf, damit das
+  // Schliessen nicht ein zweites Mal ausgeloest wird.
+  useModal(null, isOpen);
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [activeFilter, setActiveFilter] = useState('all');
 

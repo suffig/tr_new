@@ -130,8 +130,17 @@ const FifaVersionManagerTab = () => {
 
     try {
       await removeCustomFifaVersion(version);
-      await deleteVersionFromDB(version);
-      toast.success(`Version ${version} erfolgreich entfernt!`);
+      const weg = await deleteVersionFromDB(version);
+      if (!weg.ok) {
+        // Lokal ist sie weg, in der DB nicht. Beim naechsten Start holt
+        // hydrateFifaVersionsFromDB die Liste aus der DB — die Saison waere
+        // dann wieder da. Das muss dastehen, sonst sucht man den Fehler
+        // beim naechsten Mal bei sich.
+        toast.error(`Version ${version} ist nur hier entfernt — die Datenbank `
+          + 'hat abgelehnt. Beim nächsten Start ist sie wieder da.');
+      } else {
+        toast.success(`Version ${version} erfolgreich entfernt!`);
+      }
     } catch (error) {
       toast.error(error.message);
     }
@@ -140,8 +149,16 @@ const FifaVersionManagerTab = () => {
   const handleSwitchVersion = async (version) => {
     try {
       setCurrentFifaVersion(version);
-      await setActiveVersionInDB(version);
-      toast.success(`Zu Version ${getFifaVersionDisplayName(version)} gewechselt!`);
+      const akt = await setActiveVersionInDB(version);
+      // Der Wechsel hier ist eine Geraeteentscheidung und gilt auch ohne DB.
+      // Das Merkmal "laufende Saison" in der DB ist aber das, woran die
+      // andere Person es sieht — schlaegt es fehl, gehoert das gesagt.
+      if (!akt.ok) {
+        toast.error(`Hier ist ${getFifaVersionDisplayName(version)} eingestellt, `
+          + 'aber in der Datenbank steht noch die alte als laufende Saison.');
+      } else {
+        toast.success(`Zu Version ${getFifaVersionDisplayName(version)} gewechselt!`);
+      }
       
       // Reload page to ensure all components pick up the new version
       setTimeout(() => {

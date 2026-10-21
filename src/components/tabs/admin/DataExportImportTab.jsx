@@ -16,12 +16,17 @@ import {
 } from '../../../utils/fifaVersionManager.js';
 import Icon from '../../icons/Icon';
 
+import useModal from '../../../hooks/useModal';
 const DataExportImportTab = () => {
   const [versions, setVersions] = useState([]);
   const [versionsWithFinances, setVersionsWithFinances] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
+  // Escape schliesst, und der Hintergrund scrollt nicht mit — beides fehlte.
+  useModal(() => setShowCopyModal(false), showCopyModal);
+  useModal(() => setShowImportModal(false), showImportModal);
+
   const [copyFromVersion, setCopyFromVersion] = useState('');
   const [copyToVersion, setCopyToVersion] = useState('');
   const [overwriteFinances, setOverwriteFinances] = useState(false);

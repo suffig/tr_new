@@ -15,8 +15,32 @@ import {
   getFifaVersionDisplayName
 } from '../../../utils/fifaVersionManager.js';
 import { pushTeamsToDB } from '../../../utils/fifaVersionsSync.js';
+
+/**
+ * Was nach einem Schreibvorgang in die Datenbank zu sagen ist.
+ *
+ * Vorher meldeten alle fuenf Stellen hier blind Erfolg: pushTeamsToDB gab
+ * nichts zurueck und schluckte den Fehler. Wer die Wappen fuer eine Saison
+ * setzte, sah "gespeichert", danach die richtigen Wappen — und nach dem
+ * naechsten App-Start wieder die alten, weil hydrateFifaVersionsFromDB die
+ * Konfiguration komplett aus der DB neu setzt.
+ *
+ * Die Meldung nennt deshalb nicht nur das Scheitern, sondern die FOLGE.
+ */
+function meldeErgebnis(erg, erfolg) {
+  if (erg?.ok && erg.offline) {
+    toast.success(`${erfolg} (Demo-Modus: nur auf diesem Gerät)`);
+  } else if (erg?.ok) {
+    toast.success(erfolg);
+  } else {
+    toast.error('Nur auf diesem Gerät gespeichert — die Datenbank hat abgelehnt. '
+      + 'Beim nächsten Start ist die Änderung wieder weg.');
+  }
+}
+
 import Icon from '../../icons/Icon';
 
+import useModal from '../../../hooks/useModal';
 const VersionTeamSettingsTab = () => {
   const [currentVersion, setCurrentVersion] = useState('');
   const [versions, setVersions] = useState([]);
@@ -25,6 +49,9 @@ const VersionTeamSettingsTab = () => {
   const [loading, setLoading] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
   const [showCopyModal, setShowCopyModal] = useState(false);
+  // Escape schliesst, und der Hintergrund scrollt nicht mit — beides fehlte.
+  useModal(() => setShowCopyModal(false), showCopyModal);
+
   const [copyFromVersion, setCopyFromVersion] = useState('');
 
   useEffect(() => {
@@ -114,8 +141,8 @@ const VersionTeamSettingsTab = () => {
       const success = await uploadTeamIcon(teamKey, file, selectedVersion);
       
       if (success) {
-        await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion));
-        toast.success('Icon erfolgreich hochgeladen');
+        meldeErgebnis(await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion)),
+          'Icon erfolgreich hochgeladen');
         loadTeamsForVersion(selectedVersion);
       } else {
         toast.error('Fehler beim Hochladen des Icons');
@@ -134,8 +161,8 @@ const VersionTeamSettingsTab = () => {
       const success = await removeTeamIcon(teamKey, selectedVersion);
       
       if (success) {
-        await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion));
-        toast.success('Icon entfernt');
+        meldeErgebnis(await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion)),
+          'Icon entfernt');
         loadTeamsForVersion(selectedVersion);
       } else {
         toast.error('Fehler beim Entfernen des Icons');
@@ -154,8 +181,8 @@ const VersionTeamSettingsTab = () => {
       const success = setVersionTeams(teams, selectedVersion);
 
       if (success) {
-        await pushTeamsToDB(selectedVersion, teams);
-        toast.success('Team-Einstellungen gespeichert');
+        meldeErgebnis(await pushTeamsToDB(selectedVersion, teams),
+          'Team-Einstellungen gespeichert');
         setHasChanges(false);
       } else {
         toast.error('Fehler beim Speichern');
@@ -179,8 +206,8 @@ const VersionTeamSettingsTab = () => {
       const success = copyTeamsBetweenVersions(copyFromVersion, selectedVersion);
       
       if (success) {
-        await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion));
-        toast.success(`Team-Einstellungen von ${getFifaVersionDisplayName(copyFromVersion)} kopiert`);
+        meldeErgebnis(await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion)),
+          `Team-Einstellungen von ${getFifaVersionDisplayName(copyFromVersion)} kopiert`);
         loadTeamsForVersion(selectedVersion);
         setShowCopyModal(false);
         setCopyFromVersion('');
@@ -204,8 +231,8 @@ const VersionTeamSettingsTab = () => {
       const success = resetVersionTeams(selectedVersion);
       
       if (success) {
-        await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion));
-        toast.success('Team-Einstellungen zurückgesetzt');
+        meldeErgebnis(await pushTeamsToDB(selectedVersion, getVersionTeams(selectedVersion)),
+          'Team-Einstellungen zurückgesetzt');
         loadTeamsForVersion(selectedVersion);
       } else {
         toast.error('Fehler beim Zurücksetzen');

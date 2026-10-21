@@ -3,7 +3,7 @@
  * Handles downloading legacy data and copying financial data between versions
  */
 
-import { getCurrentFifaVersion, getAllFifaVersions } from './fifaVersionManager.js';
+import { getAllFifaVersions } from './fifaVersionManager.js';
 
 // Legacy data keys that need to be exportable
 const LEGACY_DATA_KEYS = [

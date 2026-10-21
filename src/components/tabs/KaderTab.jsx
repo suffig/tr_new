@@ -12,6 +12,7 @@ import { useIchBin } from '../../hooks/useIchBin';
 import { toreFuerSeite } from '../../utils/spielerBilanz';
 import toast from 'react-hot-toast';
 
+import useModal from '../../hooks/useModal';
 export default function KaderTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   // Eine Quelle fuer "wer bin ich und was darf ich" — siehe useIchBin.
   const { darfEintragen: isAdmin } = useIchBin();
@@ -20,6 +21,9 @@ export default function KaderTab({ onNavigate, showHints = false }) { // eslint-
   // zu sehen, und konnte immer nur einen offen haben.
   const [aktivesTeam, setAktivesTeam] = useState('AEK');
   const [editingPlayer, setEditingPlayer] = useState(null);
+  // Escape schliesst, und der Hintergrund scrollt nicht mit — beides fehlte.
+  useModal(() => setEditingPlayer(null), !!editingPlayer);
+
   const [selectedPlayer, setSelectedPlayer] = useState(null);
   const [showPlayerDetail, setShowPlayerDetail] = useState(false);
   // Sortierung des Kaders. Aufstellung ist die Voreinstellung — so liest man

@@ -1,10 +1,9 @@
 // Enhanced Supabase client with fallback support for React
 import { createClient } from '@supabase/supabase-js';
-import { 
-    getCurrentFifaVersion, 
-    addFifaVersionToData, 
+import {
+    addFifaVersionToData,
     createFifaVersionFilter,
-    shouldFilterByFifaVersion 
+    shouldFilterByFifaVersion,
 } from './fifaVersionManager.js';
 
 // Supabase configuration

@@ -22,7 +22,7 @@ import {
   getAllFifaVersions,
 } from './fifaVersionManager';
 import { getVersionTeams, setVersionTeams } from './versionTeamManager';
-import { pushVersionToDB, pushTeamsToDB, setActiveVersionInDB } from './fifaVersionsSync';
+import { pushVersionToDB, setActiveVersionInDB } from './fifaVersionsSync';
 
 /**
  * Ist die ID als Saisonkennung brauchbar?
@@ -95,11 +95,27 @@ export async function legeSaisonAn({ id, name, teams = {}, basisVon = null, akti
       'NICHT aktiviert. Bitte Verbindung prüfen und erneut versuchen.'
     );
   }
-  await pushTeamsToDB(version, konfig);
+  // Kein zweiter Schreibvorgang fuer die Teams: pushVersionToDB oben hat
+  // `teams: konfig` im selben upsert mitgeschickt. Der frueher hier stehende
+  // pushTeamsToDB-Aufruf schrieb dasselbe noch einmal — und sein Ergebnis
+  // wurde nicht angesehen, was den Eindruck erzeugte, es sei eine zweite
+  // Absicherung. War es nicht.
 
   if (aktivieren) {
     setCurrentFifaVersion(version);
-    await setActiveVersionInDB(version);
+    const akt = await setActiveVersionInDB(version);
+    if (!akt.ok) {
+      // Die Saison IST angelegt und lokal umgestellt — nur das Merkmal
+      // "laufende Saison" fehlt in der DB. Deshalb kein Abbruch, aber auch
+      // kein Verschweigen: fuer die andere Person laeuft dann noch die alte.
+      throw new Error(
+        `Die Saison ${version} ist angelegt und hier eingestellt, aber in der `
+        + 'Datenbank steht noch die alte als laufende Saison. Für die andere '
+        + 'Person sieht es deshalb aus, als wäre nichts passiert. '
+        + 'Bitte Verbindung prüfen und die Saison in der Verwaltung noch '
+        + 'einmal aktivieren.'
+      );
+    }
   }
 
   return { version, anzeige, teams: konfig };

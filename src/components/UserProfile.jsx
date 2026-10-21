@@ -7,7 +7,11 @@ import Icon from './icons/Icon';
 import { getVisibleTabs } from '../constants/navigation';
 import { useIchBin } from '../hooks/useIchBin';
 
+import useModal from '../hooks/useModal';
 export default function UserProfile({ onClose, onNavigate }) {
+  // Escape schliesst, und der Hintergrund scrollt nicht mit — beides fehlte.
+  useModal(onClose);
+
   const { user, signOut } = useAuth();
   const { istAdmin, name: ichHeisse, bekannt } = useIchBin();
   const { isDark, setManualTheme } = useTheme();
