@@ -1,9 +1,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
+import toast from 'react-hot-toast';
 import Icon from './icons/Icon';
 import {
   ARTEN, erfasse, entferne, ladeLokal, logischesDatum, standFuer,
 } from '../utils/abende';
+import { beende, istAbgeschlossen, wiederOeffnen } from '../utils/abendAbschluss';
+import { BAN_TYPES } from '../constants/banTypes';
+import { useSupabaseQuery } from '../hooks/useSupabase';
+import { supabaseDb } from '../utils/supabase';
+import { getTeamShort } from '../constants/teams';
 
 /**
  * Sterne, Bier und Kurze eintragen — ohne die Seite zu verlassen.
@@ -46,10 +52,17 @@ const PERSONEN = [
   { id: 'philip', name: 'Philip', farbe: 'text-system-red', flaeche: 'panel-red' },
 ];
 
-/** Was sich zählen lässt. `art` muss in ARTEN stehen, sonst wirft `erfasse`. */
+/**
+ * Was sich zählen lässt. `art` muss in ARTEN stehen, sonst wirft `erfasse`.
+ *
+ * NUR DIE SCHNÄPSE.
+ * Hier standen zusätzlich Sterne und Bier. Beide sind im Eifer des Abends
+ * nicht das, was zwischen zwei Eingaben dazwischenkommt: die Sterne stehen
+ * ohnehin im Duell, und Bier wird in der Bierbörse mit Sorte und Zahler
+ * erfasst — ein Strich hier wäre die unschärfere zweite Quelle. Übrig
+ * bleiben die drei Arten, die tatsächlich mitten im Spiel anfallen.
+ */
 const ZEILEN = [
-  { art: 'stern', label: 'Sterne', icon: 'starFilled', farbe: 'text-system-yellow' },
-  { art: 'bier', label: 'Bier', icon: 'beer', farbe: 'text-system-orange' },
   { art: 'shot20', label: 'Kurzer 20 %', icon: 'glass', farbe: 'text-system-purple' },
   { art: 'shot40', label: 'Kurzer 40 %', icon: 'glass', farbe: 'text-system-purple' },
   { art: 'schnaps', label: 'Schnaps', icon: 'glass', farbe: 'text-system-teal' },
@@ -87,11 +100,31 @@ export default function Schnellerfassung() {
   const [log, setLog] = useState([]);
   const [laeuft, setLaeuft] = useState(null);
 
+  // Sperren: Spieler nur laden, wenn die Erfassung offen ist — sonst zieht
+  // jede Seite der App diese Abfrage mit, nur weil der Knopf unten links
+  // existiert.
+  const { data: spieler } = useSupabaseQuery('players', '*', {}, [offen]);
+  const [sperreSpieler, setSperreSpieler] = useState('');
+  const [sperreArt, setSperreArt] = useState(BAN_TYPES[0]?.value || '');
+  const [sperreSpiele, setSperreSpiele] = useState(BAN_TYPES[0]?.duration ?? 1);
+  const [sperreLaeuft, setSperreLaeuft] = useState(false);
+
+  // Beenden: Nachfrage statt Sofortwirkung, siehe Kommentar am Knopf.
+  const [beendenGefragt, setBeendenGefragt] = useState(false);
+  const [abgeschlossen, setAbgeschlossen] = useState(false);
+
   const auffrischen = useCallback(() => setLog(ladeLokal()), []);
 
   // Beim Öffnen frisch lesen: zwischenzeitlich kann der Alkohol-Bereich
   // gezählt haben. Ein gemerkter Stand wäre dann falsch.
   useEffect(() => { if (offen) auffrischen(); }, [offen, auffrischen]);
+
+  // Ob der gewählte Abend schon abgeschlossen ist, hängt am Datum — und das
+  // kann man hier umstellen. Deshalb bei jedem Wechsel neu nachsehen.
+  useEffect(() => {
+    setAbgeschlossen(istAbgeschlossen(datum));
+    setBeendenGefragt(false);
+  }, [datum, offen]);
 
   // Von überall aufrufbar, ohne die Komponente durchzureichen — dasselbe
   // Muster wie die globale Suche ('global-search-toggle' in App.jsx).
@@ -111,6 +144,9 @@ export default function Schnellerfassung() {
   }, [offen]);
 
   const stand = standFuer(log, datum);
+  // Für die Nachfrage beim Beenden: was ist an diesem Abend zusammengekommen?
+  // Nur die Kurzen, denn nur die zählt diese Erfassung.
+  const kurzeGesamt = ZEILEN.reduce((s, z) => s + (stand[z.art]?.gesamt || 0), 0);
 
   const buchen = async (person, art, richtung) => {
     const schluessel = `${person}-${art}`;
@@ -131,6 +167,60 @@ export default function Schnellerfassung() {
       auffrischen();
       setLaeuft(null);
     }
+  };
+
+  /**
+   * Eine Sperre eintragen.
+   *
+   * Dieselben Felder, die AddBanTab schreibt — player_id, team, type,
+   * totalgames, matchesserved, reason. `team` kommt vom Spieler und nicht aus
+   * einer eigenen Auswahl: der Spieler steht in genau einem Kader, eine
+   * zweite Angabe wäre eine zweite Wahrheit.
+   *
+   * `matchesserved: 0`, weil eine frisch eingetragene Sperre noch nicht
+   * abgesessen ist. Das ist der Wert, an dem die App „gesperrt" erkennt
+   * (totalgames > matchesserved).
+   */
+  const sperreEintragen = async () => {
+    const p = (spieler || []).find((s) => String(s.id) === String(sperreSpieler));
+    if (!p) { toast.error('Bitte einen Spieler wählen.'); return; }
+    const spiele = Math.max(1, Number(sperreSpiele) || 1);
+    setSperreLaeuft(true);
+    try {
+      const { error } = await supabaseDb.insert('bans', {
+        player_id: p.id,
+        team: p.team,
+        type: sperreArt,
+        totalgames: spiele,
+        matchesserved: 0,
+        reason: sperreArt,
+      });
+      if (error) throw error;
+      toast.success(`${p.name}: ${spiele} ${spiele === 1 ? 'Spiel' : 'Spiele'} gesperrt`);
+      setSperreSpieler('');
+    } catch (fehler) {
+      toast.error(`Sperre nicht gespeichert: ${fehler?.message || 'unbekannter Fehler'}`);
+    } finally {
+      setSperreLaeuft(false);
+    }
+  };
+
+  const abendBeenden = async () => {
+    const { nurLokal } = await beende(datum);
+    setAbgeschlossen(true);
+    setBeendenGefragt(false);
+    if (nurLokal) {
+      toast.error('Abend nur auf diesem Gerät abgeschlossen — die Datenbank hat '
+        + 'es nicht angenommen. Fehlt db/33_abend_abschluss.sql?', { duration: 7000 });
+    } else {
+      toast.success('Abend abgeschlossen. Die Zahlen stehen im Rückblick.');
+    }
+  };
+
+  const abendWiederOeffnen = async () => {
+    await wiederOeffnen(datum);
+    setAbgeschlossen(false);
+    toast.success('Abend zählt wieder mit.');
   };
 
   return (
@@ -200,8 +290,15 @@ export default function Schnellerfassung() {
                           <span className={`text-caption2 font-semibold truncate min-w-0 flex-1 ${p.farbe}`}>
                             {p.name}
                           </span>
+                          {/* Bei abgeschlossenem Abend nicht bedienbar.
+                              Die Zahlen bleiben sichtbar — sie sind der
+                              Stand dieses Abends, und ihn nach dem Beenden
+                              zu verstecken hiesse, die eigene Auskunft
+                              wieder einzusammeln. Aber hinzufügen lässt sich
+                              nichts mehr, ohne den Abend wieder zu öffnen:
+                              sonst wäre „abgeschlossen" eine Behauptung. */}
                           <button type="button" aria-label={`${z.label} für ${p.name} eins weniger`}
-                                  disabled={beschaeftigt || wert <= 0}
+                                  disabled={beschaeftigt || wert <= 0 || abgeschlossen}
                                   onClick={() => buchen(p.id, z.art, -1)}
                                   className="btn-compact stepper-btn w-7 h-7 rounded-md bg-bg-elevated
                                              text-text-secondary font-semibold disabled:opacity-40 flex-shrink-0">
@@ -211,7 +308,7 @@ export default function Schnellerfassung() {
                             {wert}
                           </span>
                           <button type="button" aria-label={`${z.label} für ${p.name} eins mehr`}
-                                  disabled={beschaeftigt}
+                                  disabled={beschaeftigt || abgeschlossen}
                                   onClick={() => buchen(p.id, z.art, 1)}
                                   className="btn-compact stepper-btn w-7 h-7 rounded-md bg-bg-elevated
                                              text-text-primary font-semibold disabled:opacity-40 flex-shrink-0">
@@ -223,6 +320,110 @@ export default function Schnellerfassung() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* SPERRE — die zweite Sache, die mitten im Spiel anfällt.
+                Ein Zähler reicht hier nicht: eine Sperre braucht Spieler,
+                Art und Spielzahl. Deshalb drei Felder in einer Zeile und ein
+                Knopf — kurz genug, um das Spielformular darunter nicht
+                vergessen zu lassen.
+
+                Die Spielzahl folgt der Art (Gelb-Rot = 1 Spiel), lässt sich
+                aber überschreiben: bei Rot und Verletzung entscheidet der
+                Fall, nicht die Vorgabe. */}
+            <div className="panel-gray rounded-xl px-3 py-2 mt-3">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <Icon name="ban" size={14} strokeWidth={2.2} className="text-system-red flex-shrink-0" />
+                <span className="text-caption1 font-semibold text-text-secondary">Sperre</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                <select value={sperreSpieler} onChange={(e) => setSperreSpieler(e.target.value)}
+                        aria-label="Spieler für die Sperre"
+                        className="btn-compact flex-1 min-w-[8rem] bg-bg-elevated rounded-lg px-2 py-1.5
+                                   text-footnote text-text-primary focus:outline-none">
+                  <option value="">Spieler …</option>
+                  {(spieler || []).map((s) => (
+                    <option key={s.id} value={s.id}>
+                      {s.name} · {getTeamShort(s.team)}
+                    </option>
+                  ))}
+                </select>
+                <select value={sperreArt}
+                        onChange={(e) => {
+                          setSperreArt(e.target.value);
+                          const t = BAN_TYPES.find((b) => b.value === e.target.value);
+                          if (t) setSperreSpiele(t.duration ?? 1);
+                        }}
+                        aria-label="Art der Sperre"
+                        className="btn-compact flex-1 min-w-[8rem] bg-bg-elevated rounded-lg px-2 py-1.5
+                                   text-footnote text-text-primary focus:outline-none">
+                  {BAN_TYPES.map((b) => (
+                    <option key={b.value} value={b.value}>{b.label}</option>
+                  ))}
+                </select>
+                <div className="flex items-center gap-1 bg-bg-elevated rounded-lg px-2">
+                  <input type="number" min="1" max="20" inputMode="numeric"
+                         value={sperreSpiele}
+                         onChange={(e) => setSperreSpiele(e.target.value)}
+                         aria-label="Anzahl Spiele"
+                         className="btn-compact w-10 bg-transparent text-footnote num-tabular
+                                    text-text-primary text-center focus:outline-none" />
+                  <span className="text-caption2 text-text-tertiary">Sp.</span>
+                </div>
+                <button type="button" onClick={sperreEintragen}
+                        disabled={sperreLaeuft || !sperreSpieler}
+                        className="btn-compact btn-soft-red px-3 py-1.5 rounded-lg text-footnote
+                                   font-semibold disabled:opacity-40">
+                  {sperreLaeuft ? '…' : 'Sperren'}
+                </button>
+              </div>
+            </div>
+
+            {/* ABEND BEENDEN.
+                Der Abschluss ist eine MARKIERUNG, kein Löschen: die
+                Ereignisse bleiben stehen, der Rückblick rechnet weiter daraus.
+                „Zurücksetzen" heißt nur, dass die Zähler diesen Abend nicht
+                mehr mitzählen — deshalb ist er auch umkehrbar.
+
+                Mit Nachfrage, weil der Knopf die Zähler auf Null stellt und
+                das ohne Rückfrage wie ein Datenverlust aussieht. Die
+                Nachfrage nennt die Zahl, die gerade zusammenkam, damit man
+                abschließt, was man gesehen hat. */}
+            <div className="mt-3 pt-3 border-t border-border-light">
+              {abgeschlossen ? (
+                <div className="flex items-center gap-2">
+                  <Icon name="check" size={16} strokeWidth={2.6} className="text-system-green flex-shrink-0" />
+                  <span className="text-footnote text-text-secondary flex-1 min-w-0">
+                    {kurzesDatum(datum)} ist abgeschlossen.
+                  </span>
+                  <button type="button" onClick={abendWiederOeffnen}
+                          className="btn-compact text-footnote font-semibold text-system-blue px-2 py-1">
+                    Wieder öffnen
+                  </button>
+                </div>
+              ) : beendenGefragt ? (
+                <div>
+                  <p className="text-footnote text-text-secondary mb-2">
+                    {kurzeGesamt > 0
+                      ? `${kurzeGesamt} ${kurzeGesamt === 1 ? 'Kurzer' : 'Kurze'} an diesem Abend. `
+                      : 'Keine Kurzen an diesem Abend. '}
+                    Abschließen setzt die Zähler zurück; die Zahlen bleiben im
+                    Rückblick.
+                  </p>
+                  <div className="flex gap-2">
+                    <button type="button" onClick={() => setBeendenGefragt(false)}
+                            className="btn-secondary flex-1">Abbrechen</button>
+                    <button type="button" onClick={abendBeenden}
+                            className="btn-primary flex-1">Ja, abschließen</button>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setBeendenGefragt(true)}
+                        className="btn-secondary w-full inline-flex items-center justify-center gap-2">
+                  <Icon name="check" size={16} strokeWidth={2.4} />
+                  Abend beenden
+                </button>
+              )}
             </div>
 
             <p className="text-caption2 text-text-tertiary mt-3">

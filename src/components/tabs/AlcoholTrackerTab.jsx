@@ -8,6 +8,7 @@ import {
   ladeLokal as ladeAbendLokal, erfasse as erfasseAbend, entferne as entferneAbend,
   bierStand, shotStand, schnapsStand,
 } from '../../utils/abende';
+import { nurOffene } from '../../utils/abendAbschluss';
 import { useState, useEffect, useCallback } from 'react';
 import ZahlFeld from '../ZahlFeld';
 import { zahl, dez, dezKurz } from '../../utils/zahlen';
@@ -218,7 +219,15 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // Stand IMMER aus dem Ereignis-Log ableiten. Der Tab fuehrt keine eigenen
   // Summen mehr fort; das lag vorher doppelt vor und konnte auseinanderlaufen.
   const aktualisiereAusLog = () => {
-    const log = ladeAbendLokal();
+    // ABGESCHLOSSENE ABENDE ZAEHLEN NICHT MIT.
+    // Hier stand `ladeAbendLokal()` pur — ohne jeden Datumsfilter. Die Zaehler
+    // summierten damit ueber ALLE Abende und wuchsen endlos; nach Wochen stand
+    // dort eine Zahl, die niemandem mehr etwas sagte.
+    //
+    // `nurOffene` laesst die Abende weg, die ueber "Abend beenden" in der
+    // Schnellerfassung abgeschlossen wurden. Geloescht wird nichts: der
+    // Abendrueckblick rechnet weiter aus dem vollen Protokoll, je Datum.
+    const log = nurOffene(ladeAbendLokal());
     setBeerConsumption(bierStand(log));
     setShotConsumption(shotStand(log));
     setSchnapsShotsData((d) => ({ ...d, ...schnapsStand(log) }));
