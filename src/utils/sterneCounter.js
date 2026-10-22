@@ -16,6 +16,7 @@
 // Oberflaechen unveraendert weiterlaufen.
 
 import { ladeLokal, erfasse, entferne, ladeAusDB, ersetzeLokal } from './abende';
+import { nurOffene } from './abendAbschluss';
 
 const ALT_KEY = 'sterneData'; // nur noch fuer die einmalige Uebernahme
 
@@ -56,8 +57,24 @@ function zuVerlaufseintrag(e) {
   };
 }
 
-export function loadSterne() {
-  const verlauf = ladeLokal()
+/**
+ * Sterne laden.
+ *
+ * @param {object} [opt]
+ * @param {boolean} [opt.ohneAbgeschlossene] Abende, die über „Abend beenden"
+ *   abgeschlossen wurden, weglassen. Das ist die Form, die ein ZÄHLER
+ *   braucht: er soll nach dem Abschluss bei Null anfangen.
+ *
+ * STANDARD IST DER VOLLE VERLAUF, UND ZWAR ABSICHTLICH.
+ * Erst wollte ich hier einfach `nurOffene(...)` einsetzen. Das hätte die
+ * Duell-Statistik zerstört: ZiehungsAuswertung baut ihre Auswertung über ALLE
+ * Zeiten aus `loadSterne().history`, und die hätte dann jeden abgeschlossenen
+ * Abend verloren. Deshalb ein Schalter statt einer stillen Änderung — wer den
+ * Verlauf will, bekommt ihn weiterhin ganz.
+ */
+export function loadSterne({ ohneAbgeschlossene = false } = {}) {
+  const quelle = ohneAbgeschlossene ? nurOffene(ladeLokal()) : ladeLokal();
+  const verlauf = quelle
     .filter((e) => e.art === 'stern')
     .sort((a, b) => new Date(a.ts) - new Date(b.ts))
     .map(zuVerlaufseintrag);

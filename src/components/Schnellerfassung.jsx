@@ -5,7 +5,7 @@ import Icon from './icons/Icon';
 import {
   ARTEN, erfasse, entferne, ladeLokal, logischesDatum, standFuer,
 } from '../utils/abende';
-import { beende, istAbgeschlossen, wiederOeffnen } from '../utils/abendAbschluss';
+import { beende, istAbgeschlossen, nurOffene, wiederOeffnen } from '../utils/abendAbschluss';
 import { BAN_TYPES } from '../constants/banTypes';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import { supabaseDb } from '../utils/supabase';
@@ -55,16 +55,18 @@ const PERSONEN = [
 /**
  * Was sich zählen lässt. `art` muss in ARTEN stehen, sonst wirft `erfasse`.
  *
- * NUR DIE SCHNÄPSE.
- * Hier standen zusätzlich Sterne und Bier. Beide sind im Eifer des Abends
- * nicht das, was zwischen zwei Eingaben dazwischenkommt: die Sterne stehen
- * ohnehin im Duell, und Bier wird in der Bierbörse mit Sorte und Zahler
- * erfasst — ein Strich hier wäre die unschärfere zweite Quelle. Übrig
- * bleiben die drei Arten, die tatsächlich mitten im Spiel anfallen.
+ * NUR SCHNAPS.
+ * Hier standen erst Sterne und Bier mit drin, dann noch „Kurzer 20 %" und
+ * „Kurzer 40 %". Sterne stehen ohnehin im Duell, Bier wird in der Bierbörse
+ * mit Sorte und Zahler erfasst — ein Strich hier wäre die unschärfere zweite
+ * Quelle. Und die Unterscheidung nach Prozenten ist mitten im Spiel keine
+ * Frage, die sich jemand stellt: es ist ein Kurzer. Wer sie braucht, hat sie
+ * im Alkohol-Bereich.
+ *
+ * Eine Zeile statt fünf heißt auch: der Dialog ist kurz genug, um das
+ * Formular darunter nicht zu verdecken.
  */
 const ZEILEN = [
-  { art: 'shot20', label: 'Kurzer 20 %', icon: 'glass', farbe: 'text-system-purple' },
-  { art: 'shot40', label: 'Kurzer 40 %', icon: 'glass', farbe: 'text-system-purple' },
   { art: 'schnaps', label: 'Schnaps', icon: 'glass', farbe: 'text-system-teal' },
 ];
 
@@ -75,17 +77,29 @@ ZEILEN.forEach((z) => {
   }
 });
 
-/** Die letzten sieben Abende zur Auswahl, der laufende zuerst. */
-function letzteAbende() {
-  // Mittags als Uhrzeit, damit die Sommerzeit-Umstellung den Tag nicht kippt.
-  const d = new Date(`${logischesDatum()}T12:00:00`);
-  const p = (n) => String(n).padStart(2, '0');
-  const raus = [];
-  for (let i = 0; i < 7; i++) {
-    raus.push(`${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`);
-    d.setDate(d.getDate() - 1);
+/**
+ * Welche Abende zur Auswahl stehen.
+ *
+ * DIE ABENDE MIT EINTRÄGEN, NICHT DIE LETZTEN SIEBEN TAGE.
+ * Hier stand eine Liste der letzten sieben Kalendertage. Damit war der
+ * wichtigste Fall nicht erreichbar: liegt der letzte Spielabend länger
+ * zurück — und das ist der Normalfall, es wird nicht jeden Tag gespielt —
+ * tauchte er in der Auswahl gar nicht auf, und man konnte ihn nicht
+ * abschließen. Genau das war gemeldet.
+ *
+ * Jetzt: der laufende Abend immer (dort trägt man gerade ein), dazu jeder
+ * Abend, von dem noch Einträge offen sind. Absteigend, der jüngste zuerst.
+ *
+ * @param {Array} ereignisse Das Protokoll (voll, nicht gefiltert).
+ * @returns {string[]} Datumswerte 'YYYY-MM-DD'.
+ */
+function waehlbareAbende(ereignisse) {
+  const heute = logischesDatum();
+  const mit = new Set([heute]);
+  for (const e of nurOffene(ereignisse)) {
+    if (e?.datum) mit.add(e.datum);
   }
-  return raus;
+  return [...mit].sort((a, b) => (a < b ? 1 : -1));
 }
 
 const kurzesDatum = (iso) => {
@@ -144,9 +158,15 @@ export default function Schnellerfassung() {
   }, [offen]);
 
   const stand = standFuer(log, datum);
-  // Für die Nachfrage beim Beenden: was ist an diesem Abend zusammengekommen?
-  // Nur die Kurzen, denn nur die zählt diese Erfassung.
-  const kurzeGesamt = ZEILEN.reduce((s, z) => s + (stand[z.art]?.gesamt || 0), 0);
+  // Für die Nachfrage beim Beenden: gab es an diesem Abend überhaupt etwas?
+  //
+  // Schnaps UND Sterne, weil der Abschluss beide Zähler zurücksetzt. Nur den
+  // Schnaps zu nennen hieße, etwas bestätigen zu lassen, das nicht dasteht.
+  // `stand.sterne`, NICHT `stand.stern`: die Ereignis-Art heisst 'stern',
+  // standFuer legt sie aber unter `sterne` ab. Mit dem Singular stand hier
+  // `undefined`, und die Sterne fehlten in der Zusammenfassung — also genau
+  // in der Nachfrage, die sie mit zurueckzusetzen verspricht.
+  const gesamtAmAbend = (stand.schnaps?.gesamt || 0) + (stand.sterne?.gesamt || 0);
 
   const buchen = async (person, art, richtung) => {
     const schluessel = `${person}-${art}`;
@@ -225,19 +245,43 @@ export default function Schnellerfassung() {
 
   return (
     <>
-      {/* Der Knopf liegt LINKS unten. Rechts sitzen schon zwei feste Knöpfe
-          (nach oben scrollen und der grüne). Über der unteren Leiste, damit er
-          sie nicht verdeckt. */}
-      {!offen && (
+      {/* AUCH DER KNOPF MUSS INS PORTAL — sonst liegt er NICHT über den
+          anderen Dialogen.
+
+          GEMESSEN, nicht vermutet: bei offenem Duell-Dialog denselben Knopf
+          einmal als Kind von document.body und einmal im Baum von App.jsx,
+          gleiche Klassen, gleiche Position. `document.elementFromPoint` auf
+          seinem Mittelpunkt trifft im Portal den Knopf, im App-Baum dagegen
+          einen Knopf INNERHALB des Dialogs. Er war dort also verdeckt und
+          nicht antippbar — genau deshalb war die Schnellerfassung über einem
+          offenen Dialog nutzlos.
+
+          Die genaue Ursache habe ich NICHT festgenagelt. Mein erster Verdacht
+          war ein Stapelkontext aus `will-change`/`transform` bei einem
+          Vorfahren, wie ihn der Kommentar in AddMatchTab beschreibt; gemessen
+          hat der einzige auffällige Vorfahr aber `will-change: auto`,
+          `transform: none`, `z-index: auto`. Was bleibt, ist der Befund: als
+          Kind von body erreichbar, im App-Baum nicht. Dialoge in dieser App
+          hängen sich ohnehin alle per createPortal an body — der Knopf tut
+          jetzt dasselbe und steht damit in derselben Ebene, wo sein z-index
+          wirklich zählt.
+
+          Meine frühere Prüfung hat das übersehen, weil sie den Knopf per
+          `click()` ausgelöst hat. Das umgeht die Treffer-Erkennung vollständig
+          und sagt nichts darüber, ob man ihn erreicht.
+
+          Links unten, weil rechts schon zwei feste Knöpfe sitzen (nach oben
+          scrollen und der grüne), und über der unteren Leiste. */}
+      {!offen && createPortal((
         <button type="button" onClick={() => setOffen(true)}
-                aria-label="Schnell eintragen: Sterne, Bier, Kurze"
+                aria-label="Schnell eintragen: Schnaps und Sperre"
                 className="fixed left-4 z-[120] w-12 h-12 rounded-full bg-bg-elevated shadow-ios-floating
                            border border-border-light text-system-purple
                            flex items-center justify-center active:scale-95 transition-transform"
                 style={{ bottom: 'calc(5.25rem + env(safe-area-inset-bottom, 0px))' }}>
           <Icon name="glass" size={22} strokeWidth={2.2} />
         </button>
-      )}
+      ), document.body)}
 
       {offen && createPortal((
         <div className="fixed inset-0 z-[120] flex items-end sm:items-center justify-center"
@@ -264,7 +308,7 @@ export default function Schnellerfassung() {
                       aria-label="Abend wählen"
                       className="btn-compact bg-bg-tertiary rounded-lg px-2 py-1.5 text-footnote
                                  font-medium text-text-primary focus:outline-none">
-                {letzteAbende().map((d) => (
+                {waehlbareAbende(log).map((d) => (
                   <option key={d} value={d}>{kurzesDatum(d)}</option>
                 ))}
               </select>
@@ -403,12 +447,43 @@ export default function Schnellerfassung() {
                 </div>
               ) : beendenGefragt ? (
                 <div>
-                  <p className="text-footnote text-text-secondary mb-2">
-                    {kurzeGesamt > 0
-                      ? `${kurzeGesamt} ${kurzeGesamt === 1 ? 'Kurzer' : 'Kurze'} an diesem Abend. `
-                      : 'Keine Kurzen an diesem Abend. '}
-                    Abschließen setzt die Zähler zurück; die Zahlen bleiben im
-                    Rückblick.
+                  {/* DIE ZUSAMMENFASSUNG VOR DEM ABSCHLUSS.
+                      Vorher stand hier nur die Schnapszahl. Das reichte
+                      nicht: der Abschluss setzt auch die STERNE zurück, und
+                      die standen in der Nachfrage gar nicht — man hätte etwas
+                      bestätigt, das man nicht gesehen hat.
+
+                      Je Person und nicht als Summe, weil genau das die Frage
+                      des Abends ist. Was es nicht gab, steht auch nicht da:
+                      eine Zeile „0 Sterne" sagt nichts. */}
+                  <div className="section-label mb-1.5">{kurzesDatum(datum)}</div>
+                  <div className="space-y-1 mb-2.5">
+                    {PERSONEN.map((p) => {
+                      const schnaps = stand.schnaps?.[p.id] || 0;
+                      // `sterne` und nicht `stern` — siehe gesamtAmAbend.
+                      const sterne = stand.sterne?.[p.id] || 0;
+                      if (!schnaps && !sterne) return null;
+                      return (
+                        <div key={p.id} className="flex items-baseline gap-2 text-footnote">
+                          <span className={`font-semibold ${p.farbe} w-20 flex-shrink-0`}>{p.name}</span>
+                          <span className="text-text-secondary num-tabular">
+                            {[
+                              schnaps ? `${schnaps} Schnaps` : null,
+                              sterne ? `+${sterne} ${sterne === 1 ? 'Stern' : 'Sterne'}` : null,
+                            ].filter(Boolean).join(' · ')}
+                          </span>
+                        </div>
+                      );
+                    })}
+                    {!gesamtAmAbend && (
+                      <p className="text-footnote text-text-tertiary">
+                        An diesem Abend ist nichts eingetragen.
+                      </p>
+                    )}
+                  </div>
+                  <p className="text-caption2 text-text-tertiary mb-2.5">
+                    Abschließen setzt die Zähler zurück. Gelöscht wird nichts —
+                    die Zahlen stehen danach im Abendrückblick.
                   </p>
                   <div className="flex gap-2">
                     <button type="button" onClick={() => setBeendenGefragt(false)}

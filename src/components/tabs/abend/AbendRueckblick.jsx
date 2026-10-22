@@ -261,11 +261,18 @@ export default function AbendRueckblick() {
             {/* Wer wie viel — nur, wenn es etwas zu unterscheiden gibt */}
             {(a.stand.sterne.gesamt > 0 || a.getraenke > 0) && (
               <div className="flex flex-wrap gap-1.5 mt-2.5 pt-2.5 border-t border-border-light">
+                {/* Einzahl bei genau einem Stern — hier stand „+1 Sterne". */}
                 {a.stand.sterne.alexander > 0 && (
-                  <span className="chip chip-sm chip-blue">Alexander +{fmt(a.stand.sterne.alexander)} Sterne</span>
+                  <span className="chip chip-sm chip-blue">
+                    Alexander +{fmt(a.stand.sterne.alexander)}{' '}
+                    {a.stand.sterne.alexander === 1 ? 'Stern' : 'Sterne'}
+                  </span>
                 )}
                 {a.stand.sterne.philip > 0 && (
-                  <span className="chip chip-sm chip-red">Philip +{fmt(a.stand.sterne.philip)} Sterne</span>
+                  <span className="chip chip-sm chip-red">
+                    Philip +{fmt(a.stand.sterne.philip)}{' '}
+                    {a.stand.sterne.philip === 1 ? 'Stern' : 'Sterne'}
+                  </span>
                 )}
                 {/* KURZE JE PERSON, KEINE BIERZAHL.
                     Hier standen „Alexander N Bier" und „Philip N Bier". Die

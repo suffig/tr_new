@@ -173,9 +173,28 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     // uebernehmen, DANN mit der Datenbank abgleichen — sonst wuerde der
     // Abgleich den Altbestand ueberschreiben, bevor er hochgeladen ist.
     altenSterneStandUebernehmen();
-    setSterneData(loadSterne());
+    // `ohneAbgeschlossene`: hier steht ein ZAEHLER, und der soll nach
+    // "Abend beenden" bei Null anfangen — genau wie der Schnaps-Zaehler
+    // darunter. Ohne den Schalter liefen die Sterne weiter, waehrend der
+    // Schnaps schon zurueckgesetzt war: zwei Zaehler, zwei Regeln.
+    setSterneData(loadSterne({ ohneAbgeschlossene: true }));
+
+    // NEU RECHNEN, WENN EIN ABEND ABGESCHLOSSEN WIRD.
+    // Der Abschluss passiert in der Schnellerfassung, also in einer Ebene
+    // ueber diesem Bereich. Ohne dieses Zuhoeren stand hier nach
+    // "Abend beenden" weiter der alte Stand — gemessen 3/18 und Sterne 2 —
+    // und sprang erst nach einem Neuladen auf 0. Man haette gedacht, der
+    // Abschluss habe nicht gegriffen.
+    const neuRechnen = () => {
+      aktualisiereAusLog();
+      setSterneData(loadSterne({ ohneAbgeschlossene: true }));
+    };
+    window.addEventListener('abend-abschluss-geaendert', neuRechnen);
+    // Abgemeldet wird am Ende dieses Effekts, zusammen mit dem
+    // managerSettingsChanged-Zuhoerer — eine Stelle fuers Aufraeumen.
+
     sterneAbgleichen().then((r) => {
-      if (r.ok) setSterneData(loadSterne());
+      if (r.ok) setSterneData(loadSterne({ ohneAbgeschlossene: true }));
       else if (r.lokalMehr) {
         console.warn(`[Sterne] Lokal ${r.lokal} Ereignisse, Datenbank ${r.db} — nicht ueberschrieben.`);
       }
@@ -213,7 +232,10 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     };
 
     window.addEventListener('managerSettingsChanged', handleManagerChange);
-    return () => window.removeEventListener('managerSettingsChanged', handleManagerChange);
+    return () => {
+      window.removeEventListener('managerSettingsChanged', handleManagerChange);
+      window.removeEventListener('abend-abschluss-geaendert', neuRechnen);
+    };
   }, [loadManagersFromDatabase]);
 
   // Stand IMMER aus dem Ereignis-Log ableiten. Der Tab fuehrt keine eigenen

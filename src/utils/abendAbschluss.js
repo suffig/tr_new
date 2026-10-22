@@ -45,6 +45,21 @@ export function ladeAbgeschlossene() {
 
 function speichere(liste) {
   try { localStorage.setItem(SPEICHER, JSON.stringify([...new Set(liste)])); } catch { /* Quota */ }
+
+  // ANDEREN BESCHEID SAGEN.
+  // Ohne das hier wirkte der Abschluss erst nach einem Neuladen: gemessen
+  // stand der Alkohol-Bereich nach „Abend beenden" weiter auf 3/18 und
+  // Sterne 2, nach dem Neuladen dann auf 0/18. Der Abschluss kommt aus der
+  // Schnellerfassung, also aus einer Ebene DARÜBER — die Zähler darunter
+  // erfahren von sich aus nichts davon.
+  //
+  // Ein Fensterereignis und kein gemeinsamer Zustand: dasselbe Muster, mit
+  // dem App.jsx schon die Saison-Hydrierung und die globale Suche meldet
+  // ('fifaVersionsHydrated', 'global-search-toggle'). Wer zuhört, rechnet
+  // neu; wer nicht, merkt nichts.
+  try {
+    window.dispatchEvent(new CustomEvent('abend-abschluss-geaendert'));
+  } catch { /* kein window — etwa in einem Test ohne DOM */ }
 }
 
 export function istAbgeschlossen(datum) {
