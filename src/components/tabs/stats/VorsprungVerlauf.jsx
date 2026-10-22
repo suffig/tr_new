@@ -161,13 +161,23 @@ export default function VorsprungVerlauf({ matches, aekName, realName }) {
 
       {/* Die zweite Aussage der Kurve: wie weit ist jede Seite je vorn gewesen?
           Das ist etwas anderes als der Endstand — eine Saison kann kippen. */}
-      <div className="flex gap-2 mt-3 pt-3 border-t border-border-light">
+      {/* „Größter Vorsprung" steht EINMAL über beiden Spalten, nicht je Spalte
+          hinter dem Vereinsnamen.
+
+          Vorher hieß jede Spalte „Größter Vorsprung {Verein}" mit `truncate`:
+          gemessen auf 375px brauchte „Größter Vorsprung Dynamo Dresden" 190px
+          und hatte 147px — es stand also „…Dynamo Dres…" da. Zweimal dieselben
+          beiden Wörter nebeneinander waren ohnehin eine Wiederholung; so bleibt
+          der Platz für den Namen, auf den es ankommt. */}
+      <div className="mt-3 pt-3 border-t border-border-light">
+        <div className="section-label mb-1.5">Größter Vorsprung</div>
+        <div className="flex gap-2">
         {[
           { name: aekName, wert: hoch.aek, bei: hoch.aekBei, farbe: 'text-system-blue' },
           { name: realName, wert: hoch.real, bei: hoch.realBei, farbe: 'text-system-red' },
         ].map((s) => (
           <div key={s.name} className="flex-1 min-w-0">
-            <div className="text-caption2 text-text-tertiary truncate">Größter Vorsprung {s.name}</div>
+            <div className="text-caption2 text-text-tertiary truncate">{s.name}</div>
             <div className={`text-callout font-bold num-tabular ${s.wert > 0 ? s.farbe : 'text-text-tertiary'}`}>
               {s.wert > 0 ? `+${s.wert}` : '—'}
               {s.wert > 0 && s.bei >= 0 && (
@@ -178,6 +188,7 @@ export default function VorsprungVerlauf({ matches, aekName, realName }) {
             </div>
           </div>
         ))}
+        </div>
       </div>
 
       <div className="sr-only">

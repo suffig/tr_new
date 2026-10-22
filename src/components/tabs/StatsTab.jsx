@@ -15,7 +15,7 @@ import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
 import HistorieView from './HistorieView';
 import CountUp from '../CountUp';
-import { getTeamDisplay } from '../../constants/teams';
+import { getTeamDisplay, getTeamShort } from '../../constants/teams';
 import Verlaufsgrafik from '../Verlaufsgrafik';
 
 /**
@@ -811,11 +811,18 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
       { id: 'players', label: 'Spieler' },
     ] },
     { id: 'entwicklung', label: 'Verlauf', iconName: 'trendingUp', views: [
-      { id: 'trends', label: 'Verlauf' },
+      // NICHT nochmal "Verlauf": der Name stand zweimal untereinander, einmal
+      // als Gruppe und einmal als Ansicht darin — die zweite Leiste sah dann
+      // aus, als hätte die erste nichts getan. "Kurven" benennt, was dort
+      // steht: Entwicklung, Diagramme und Spieltage.
+      { id: 'trends', label: 'Kurven' },
       { id: 'insights', label: 'Einblicke' },
     ] },
     { id: 'lang', label: 'Historie', iconName: 'clock', views: [
-      { id: 'historie', label: 'Historie' },
+      // Dasselbe hier: Gruppe "Historie", Ansicht "Historie". HistorieView
+      // zeigt die Gesamtbilanz über alle Saisons — "Bilanz" sagt das und
+      // unterscheidet sich von der Gruppe.
+      { id: 'historie', label: 'Bilanz' },
       { id: 'ruhmeshalle', label: 'Hall of Fame' },
       { id: 'saisonvergleich', label: 'Saisons' },
     ] },
@@ -1181,16 +1188,35 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <div className="flex items-baseline gap-2 mb-2">
               <span className="text-caption2 text-text-tertiary num-tabular w-5 flex-shrink-0">{i + 1}.</span>
               <span className="font-semibold text-text-primary truncate min-w-0 flex-1">{player.name}</span>
+              {/* KURZFORM, NICHT DER VOLLE VEREINSNAME.
+                  In dieser Zeile konkurrieren Rangnummer, Spielername und
+                  Vereins-Chip. Mit „Dynamo Dresden" im Chip blieben dem Namen
+                  auf 320px 84px — gemessen brauchte „Leon Wagner" 102px, war
+                  also abgeschnitten. In einer Spielerrangliste ist der Name
+                  die Aussage und der Verein die Nebenangabe; die Chipfarbe
+                  sagt die Seite ohnehin.
+
+                  getTeamShort statt Namen zu kürzen: die Kurzform steht in
+                  der Saisonkonfiguration (FC26: „Dynamo", „S04") und stimmt
+                  damit auch nach einem Vereinswechsel zwischen Saisons. */}
               <span className={`chip chip-sm flex-shrink-0 ${
                 player.team === 'AEK' ? 'chip-blue'
                   : player.team === 'Ehemalige' ? 'chip-gray'
                   : 'chip-red'
               }`}>
-                {getTeamDisplay(player.team)}
+                {getTeamShort(player.team)}
               </span>
             </div>
 
-            <div className="grid grid-cols-4 gap-1 text-center">
+            {/* AUF SCHMALEN SCHIRMEN ZWEI MAL ZWEI, NICHT VIER IN EINER REIHE.
+                Vier Spalten lassen auf 320px je ~60px übrig. Gemessen
+                brauchten „Bestes Spiel" 64px und „Wert (Mio €)" 65px — beide
+                waren mit `truncate` um 4 bzw. 5px beschnitten, es stand also
+                „Bestes Spie…" da. Die Labels zu kürzen hätte die Aussage
+                gekostet (die Einheit „Mio €" steht hier bewusst im Label,
+                weil sie sonst den Betrag abschnitt). Ab sm bleibt es eine
+                Reihe. */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1 text-center">
               {[
                 // "⌀/Spiel" und "Spiele" standen hier und waren beide
                 // erfunden — siehe countMatchesWithGoal. Ersetzt durch zwei
@@ -1733,13 +1759,24 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
 
-      {/* Umfang + Zeitraum. Beide dezent, beide in einer Zeile — sie
-          beantworten dieselbe Frage: "worueber rechnen wir hier eigentlich?" */}
-      <div className="mb-4 flex flex-wrap items-center gap-2">
+      {/* Umfang + Zeitraum. Beide dezent, beide in EINER Zeile — sie
+          beantworten dieselbe Frage: „worüber rechnen wir hier eigentlich?"
+
+          IN EINER ZEILE HEISST: AUCH AUF 320px.
+          Gemessen auf 320px brauchte dieser Block 96px, weil „Alle Saisons"
+          und „Alle Spiele" zusammen zu breit waren und flex-wrap ihn umbrach.
+          Mit den beiden Navigationsleisten standen damit 255 von 720
+          Bildschirmpunkten Bedienung, bevor die erste Zahl kam.
+
+          Deshalb kurze Beschriftungen: „Alle" statt „Alle Saisons",
+          „1 Woche" statt „Letzte Woche". Der Zusammenhang steht daneben (die
+          Saison-Kennung links) bzw. im Kalendersymbol davor, und unter dem
+          Umschalter erklärt ein Satz, was „Alle" einschließt. */}
+      <div className="mb-3 flex flex-wrap items-center gap-2">
         <div className="inline-flex bg-bg-tertiary rounded-xl p-0.5">
           {[
             { id: 'saison', label: aktuelleSaison },
-            { id: 'alle', label: 'Alle Saisons' },
+            { id: 'alle', label: 'Alle' },
           ].map((o) => (
             <button
               key={o.id}
@@ -1761,10 +1798,10 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             className="bg-transparent text-sm font-medium text-text-primary focus:outline-none pr-1"
           >
             <option value="all">Alle Spiele</option>
-            <option value="1week">Letzte Woche</option>
-            <option value="1month">Letzter Monat</option>
-            <option value="3months">Letzte 3 Monate</option>
-            <option value="6months">Letzte 6 Monate</option>
+            <option value="1week">1 Woche</option>
+            <option value="1month">1 Monat</option>
+            <option value="3months">3 Monate</option>
+            <option value="6months">6 Monate</option>
           </select>
         </div>
       </div>
@@ -1776,27 +1813,47 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         </p>
       )}
 
-      {/* Enhanced View Navigation with iOS 26 Design - Horizontal Layout */}
-      {/* Horizontal Navigation */}
-      <HorizontalNavigation
-        views={views}
-        selectedView={aktiveGruppe.views[0].id}
-        onViewChange={setSelectedView}
-      />
+      {/* GRUPPE UND ANSICHT ALS EIN BLOCK, NICHT ALS ZWEI WIDGETS.
+          Vorher waren es zwei getrennt gestaltete Leisten mit 8px Abstand
+          dazwischen — beide mit eigener Fläche, eigener Rundung, eigenem
+          Abstand. Auf dem Telefon las sich das als zwei gleichrangige
+          Navigationen, obwohl die zweite der ersten untergeordnet ist.
 
-      {/* Zweite Leiste nur, wo es innerhalb der Gruppe eine Wahl gibt. */}
-      {aktiveGruppe.views.length > 1 && (
-        <div className="flex gap-1 p-1 bg-bg-tertiary rounded-xl mt-2">
-          {aktiveGruppe.views.map((v) => (
-            <button key={v.id} type="button" onClick={() => setSelectedView(v.id)}
-                    aria-pressed={selectedView === v.id}
-                    className={`flex-1 py-1.5 rounded-lg text-caption2 font-semibold transition-colors ${
-                      selectedView === v.id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
-              {v.label}
-            </button>
-          ))}
-        </div>
-      )}
+          Jetzt ein Rahmen um beide: die Gruppenleiste oben, die Ansichten
+          darunter durch eine Trennlinie abgesetzt. Das zeigt die Hierarchie,
+          die vorher nur aus der Reihenfolge zu erraten war, und spart die
+          doppelten Außenabstände.
+
+          Die Ansichtenleiste bricht um statt zu scrollen, wie überall in der
+          App (siehe HorizontalNavigation): ein abgeschnittener Eintrag sieht
+          nach Anzeigefehler aus, nicht nach „hier kann man wischen". */}
+      <div className="mb-4 rounded-2xl bg-bg-tertiary p-1">
+        <HorizontalNavigation
+          views={views}
+          selectedView={aktiveGruppe.views[0].id}
+          onViewChange={setSelectedView}
+          // Nur den Außenabstand wegnehmen: `className` landet in
+          // HorizontalNavigation auf dem ÄUSSEREN Wrapper (mit mb-4 sm:mb-6),
+          // nicht auf der Pillenfläche darin — die steckt eine Ebene tiefer.
+          // Ihr `bg-bg-tertiary` ist derselbe Ton wie der Rahmen hier, beides
+          // liest sich deshalb als eine Fläche.
+          className="!mb-0"
+        />
+
+        {/* Zweite Reihe nur, wo es innerhalb der Gruppe eine Wahl gibt. */}
+        {aktiveGruppe.views.length > 1 && (
+          <div className="flex flex-wrap gap-1 mt-1 pt-1 border-t border-border-light">
+            {aktiveGruppe.views.map((v) => (
+              <button key={v.id} type="button" onClick={() => setSelectedView(v.id)}
+                      aria-pressed={selectedView === v.id}
+                      className={`flex-1 min-w-[5.5rem] py-1.5 px-2 rounded-lg text-caption2 font-semibold transition-colors ${
+                        selectedView === v.id ? 'bg-bg-secondary text-text-primary shadow-sm' : 'text-text-secondary'}`}>
+                {v.label}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
 
       {/* Enhanced Content with Animation */}
       <div className="form-container animate-mobile-slide-in">

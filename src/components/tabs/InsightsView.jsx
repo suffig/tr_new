@@ -312,21 +312,41 @@ export default function InsightsView({ matches, players, bans }) {
           <div className="space-y-1.5">
             {r.scorerImpact.slice(0, 8).map((s) => {
               const diff = s.winRate - s.baseline;
+              // DER NAME BEKOMMT DIE ERSTE ZEILE FÜR SICH.
+              // Vorher standen fünf Dinge in einer Zeile: Wappen, Name,
+              // „x Sp.", Prozentwert und Abweichungs-Chip. Alles außer dem
+              // Namen war `flex-shrink-0`, also fest — zusammen mit den
+              // Abständen 206 von 250px. Gemessen auf 320px blieben dem Namen
+              // 62px, während „Leon Wagner" 89px braucht: in einer Liste von
+              // Torschützen war gerade der Torschütze abgeschnitten.
+              //
+              // Jetzt Name und Prozentwert oben (das Paar, um das es geht),
+              // Spielzahl und Abweichung darunter. Der Name hat damit rund
+              // 140px statt 62.
+              //
+              // Als Zeilenkommentar, nicht als {/* … */}: direkt hinter
+              // `return (` liest JSX eine geschweifte Klammer als
+              // Objektliteral, und der Build bricht mit "Unexpected token key"
+              // auf der Zeile DANACH ab.
               return (
-                <div key={s.name} className="flex items-center gap-2.5 bg-bg-tertiary rounded-xl px-3 py-2">
-                  <TeamLogo team={s.team === 'AEK' ? 'aek' : 'real'} size="xs" />
-                  <span className="flex-1 text-sm font-medium text-text-primary truncate min-w-0">{s.name}</span>
+                <div key={s.name} className="bg-bg-tertiary rounded-xl px-3 py-2">
+                  <div className="flex items-center gap-2 min-w-0">
+                    <TeamLogo team={s.team === 'AEK' ? 'aek' : 'real'} size="xs" />
+                    <span className="flex-1 text-sm font-medium text-text-primary truncate min-w-0">{s.name}</span>
+                    <span className={`stat-display text-[15px] text-right flex-shrink-0 ${
+                      s.winRate >= 60 ? 'text-system-green' : s.winRate <= 35 ? 'text-system-red' : 'text-text-secondary'
+                    }`}>
+                      {s.winRate.toFixed(0)}%
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-0.5 pl-[1.625rem]">
                   <span className="text-caption2 text-text-tertiary num-tabular flex-shrink-0">{s.games} Sp.</span>
-                  <span className={`stat-display text-[15px] w-12 text-right flex-shrink-0 ${
-                    s.winRate >= 60 ? 'text-system-green' : s.winRate <= 35 ? 'text-system-red' : 'text-text-secondary'
-                  }`}>
-                    {s.winRate.toFixed(0)}%
-                  </span>
                   {Math.abs(diff) >= 5 && (
                     <span className={`chip chip-sm flex-shrink-0 ${diff > 0 ? 'chip-green' : 'chip-red'}`}>
                       {diff > 0 ? '+' : ''}{diff.toFixed(0)}
                     </span>
                   )}
+                  </div>
                 </div>
               );
             })}
@@ -419,18 +439,25 @@ export default function InsightsView({ matches, players, bans }) {
             beim Preis ist weniger besser — eine geteilte Flaeche wuerde die
             teurere Seite als die groessere zeigen und damit das Gegenteil
             nahelegen. */}
-        <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-border-light">
+        {/* „je Sieg" steht EINMAL über beiden Spalten, nicht je Spalte vor dem
+            Vereinsnamen. Gemessen auf 320px brauchte „je Sieg · Dynamo
+            Dresden" 134px und hatte 121px — der Vereinsname war abgeschnitten,
+            also genau das, was die Zeile unterscheidet. */}
+        <div className="mt-3 pt-3 border-t border-border-light">
+        <div className="section-label mb-1.5">Kaderwert je Sieg</div>
+        <div className="grid grid-cols-2 gap-2">
           {r.value.map((v) => (
-            <div key={v.team}>
+            <div key={v.team} className="min-w-0">
               <div className={`stat-display text-[17px] num-tabular ${
                 v.team === 'AEK' ? 'text-system-blue' : 'text-system-red'}`}>
                 {v.costPerWin != null ? `${dez(v.costPerWin)} Mio` : '—'}
               </div>
               <div className="text-caption2 text-text-tertiary truncate">
-                je Sieg · {getTeamDisplay(v.team)}
+                {getTeamDisplay(v.team)}
               </div>
             </div>
           ))}
+        </div>
         </div>
       </Section>
 
