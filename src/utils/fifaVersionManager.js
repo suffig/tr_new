@@ -51,7 +51,26 @@ const saveCustomFifaVersions = (customVersions) => {
  */
 export const getAllFifaVersions = () => {
   const customVersions = getCustomFifaVersions();
-  return { ...BUILT_IN_FIFA_VERSIONS, ...customVersions };
+  const alle = { ...BUILT_IN_FIFA_VERSIONS, ...customVersions };
+
+  // DIE LAUFENDE SAISON GEHÖRT IMMER IN DIE LISTE.
+  //
+  // Vorher waren es nur die eingebauten (FC25, FC26) plus die örtlich
+  // gemerkten. Steht die laufende Saison aus der Datenbank nicht im
+  // localStorage — anderes Gerät, geleerter Browser, Hydrierung noch nicht
+  // durchgelaufen — fehlte sie in jeder Auswahl. Im Umschalter oben rechts
+  // standen dann FC25 und FC26, obwohl in FC27 gespielt wird, und man kam
+  // auch nicht dorthin zurück.
+  //
+  // Der Wert kommt von hydrateFifaVersionsFromDB aus der Spalte is_active.
+  // Als Zeichenkette statt Import: fifaVersionsSync.js importiert diese
+  // Datei, ein Import zurück wäre ein Zirkel.
+  try {
+    const laufend = localStorage.getItem('fifa_active_version');
+    if (laufend && !alle[laufend]) alle[laufend] = laufend;
+  } catch { /* kein localStorage — dann eben nur die bekannten */ }
+
+  return alle;
 };
 
 /**
@@ -173,6 +192,33 @@ export const getCurrentFifaVersion = () => {
     if (stored && allVersions[stored]) {
       return stored;
     }
+
+    // OHNE GÜLTIGE EIGENE WAHL: DER LAUFENDEN SAISON AUS DER DATENBANK FOLGEN.
+    //
+    // Hier stand direkt der Rückfall auf CURRENT_FIFA_VERSION, und das ist
+    // eine festgeschriebene Konstante ('FC26'). Folge: ein Gerät, auf dem
+    // niemand von Hand umgeschaltet hat, hielt FC26 für die laufende Saison,
+    // obwohl in der Datenbank FC27 auf is_active steht. Im Umschalter oben
+    // rechts standen dann FC25 und FC26 zur Wahl, während gespielt in FC27
+    // wird.
+    //
+    // Derselbe Fall tritt ein, wenn `stored` eine Saison nennt, die die
+    // örtliche Liste (noch) nicht kennt: die Bedingung oben fällt durch, und
+    // eine von Hand gewählte FC27 kippte still auf FC26 zurück.
+    //
+    // `fifa_active_version` schreibt hydrateFifaVersionsFromDB aus der Spalte
+    // is_active. Der Name steht hier als Zeichenkette und nicht als Import,
+    // weil fifaVersionsSync.js diese Datei importiert — ein Import zurück
+    // wäre ein Zirkel. Einzige Quelle bleibt K_AKTIV dort.
+    //
+    // Bewusst OHNE Prüfung gegen allVersions: der Wert kommt aus der
+    // Datenbank und ist damit verlässlicher als eine örtliche Liste, die
+    // hinterherhängen kann. Genau diese Prüfung war Teil des Problems.
+    const laufend = localStorage.getItem('fifa_active_version');
+    if (laufend) {
+      return laufend;
+    }
+
     // Default to FC26 for new installations, FC25 for existing data
     return hasExistingData() ? DEFAULT_FIFA_VERSION : CURRENT_FIFA_VERSION;
   } catch (error) {

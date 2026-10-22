@@ -7,7 +7,7 @@ import { useSupabaseQuery } from '../../hooks/useSupabase';
 import LoadingSpinner from '../LoadingSpinner';
 import HorizontalNavigation from '../HorizontalNavigation';
 import TeamLogo from '../TeamLogo';
-import { getTeamDisplay } from '../../constants/teams';
+import { getTeamDisplay, getTeamShort } from '../../constants/teams';
 import OffeneRechnung from './finanzen/OffeneRechnung';
 import '../../styles/match-animations.css';
 
@@ -189,8 +189,17 @@ export default function FinanzenTab({ onNavigate, showHints = false }) { // esli
   // Define views for horizontal navigation
   const views = [
     { id: 'overview', label: 'Übersicht', iconName: 'wallet' },
-    { id: 'aek', label: 'AEK', logoComponent: <TeamLogo team="aek" size="sm" /> },
-    { id: 'real', label: 'Real', logoComponent: <TeamLogo team="real" size="sm" /> },
+    // Die Beschriftung kommt aus der Saisonkonfiguration, nicht aus festem
+    // Text. Hier stand 'AEK' und 'Real' — die Vereine aus FC25. In FC26
+    // spielen Dynamo Dresden und Schalke 04, in FC27 wieder andere; die
+    // Reiter hießen trotzdem weiter AEK und Real, während alles andere in
+    // dieser Datei (Zeile 238, 379) schon getTeamDisplay benutzt.
+    //
+    // getTeamShort und nicht getTeamDisplay: hier stehen vier Reiter in einer
+    // Reihe. „Dynamo Dresden" wäre dort zu breit, „Dynamo" passt. Die IDs
+    // 'aek'/'real' bleiben — sie bezeichnen die Seite, nicht den Verein.
+    { id: 'aek', label: getTeamShort('AEK'), logoComponent: <TeamLogo team="aek" size="sm" /> },
+    { id: 'real', label: getTeamShort('Real'), logoComponent: <TeamLogo team="real" size="sm" /> },
     { id: 'transactions', label: 'Transaktionen', iconName: 'swap' },
   ];
 
