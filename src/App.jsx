@@ -17,6 +17,7 @@ import ScrollToTop from './components/ScrollToTop';
 import LoadingSpinner, { FullScreenLoader } from './components/LoadingSpinner';
 import GlobalSearch from './components/GlobalSearch';
 import NotificationSystem from './components/NotificationSystem';
+import Schnellerfassung from './components/Schnellerfassung';
 import AddToHomeHint from './components/AddToHomeHint';
 import LegacyHinweis from './components/LegacyHinweis';
 
@@ -446,6 +447,18 @@ function App() {
             onClose={() => setShowGlobalSearch(false)}
           />
         )}
+
+        {/* SCHNELL EINTRAGEN — ÜBER ALLEM, AUF JEDER SEITE.
+            Hier und nicht in einem Bereich, weil der Sinn gerade der ist,
+            dass sie beim Eintragen eines Duells oder Spiels erreichbar bleibt:
+            sie liegt auf z-[120], über allen Modals der App (60, 70, 100,
+            110), und lässt das Formular darunter unberührt stehen. Vorher
+            musste man es als Entwurf speichern, den Bereich wechseln, zählen
+            und zurück.
+
+            Nur für Angemeldete: ohne `user` ist nicht klar, wessen Striche das
+            wären, und der Anmeldebildschirm braucht keinen Zähler. */}
+        {user && <Schnellerfassung />}
 
         {/* Global Notification System */}
         <NotificationSystem onNavigate={(tab) => {

@@ -133,6 +133,22 @@ export default function AbendRueckblick() {
           alexander: a.stand.shot20.alexander + a.stand.shot40.alexander + a.stand.schnaps.alexander,
           philip: a.stand.shot20.philip + a.stand.shot40.philip + a.stand.schnaps.philip,
         };
+
+        /**
+         * Wer hat an diesem Abend mehr? Gibt den Namen zurueck — oder null
+         * bei Gleichstand und wenn es nichts gab.
+         *
+         * KEIN SIEGER BEI GLEICHSTAND. Wer bei 3:3 einen von beiden nennt,
+         * erfindet ein Ergebnis. Dann steht "unentschieden" da, und das ist
+         * auch eine Aussage.
+         */
+        const sieger = (ax, ph) => {
+          if (!(ax > 0 || ph > 0)) return undefined;   // gab es nicht
+          if (ax === ph) return null;                   // Gleichstand
+          return ax > ph ? 'Alexander' : 'Philip';
+        };
+        const sterneSieger = sieger(a.stand.sterne.alexander, a.stand.sterne.philip);
+        const kurzeSieger = sieger(kurze.alexander, kurze.philip);
         return (
           <div key={a.datum} className="modern-card">
             <div className="flex items-baseline justify-between gap-2 mb-3">
@@ -166,17 +182,47 @@ export default function AbendRueckblick() {
               </div>
             )}
 
-            {/* Der Rest des Abends.
-                Drei Kacheln, nicht vier: die Kachel „Kurze" mit der
-                Gesamtzahl ist weg. Kurze interessieren je Person — wer wie
-                viele hatte — und nicht als Summe des Abends; sie stehen jetzt
-                als Chip unten bei den Personen. */}
-            <div className="grid grid-cols-3 gap-1.5">
+            {/* Der Rest des Abends. Vier Kacheln, auf dem Handy zwei mal zwei
+                — je rund 165px breit, und darin passt „Alexander vorn".
+                Drei Spalten nebeneinander hätten je 105px gelassen, zu wenig
+                für einen Namen. */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
               <Wert icon="trophy" farbe="text-system-orange" zahl={a.ziehungen.length} label="Ziehungen" />
+              {/* DER SIEGER, NICHT DIE SUMME.
+                  Hier stand die Gesamtzahl der Sterne des Abends. Die sagt,
+                  dass getrunken wurde, aber nicht das, worum es geht: wer
+                  vorn war. Die Einzelzahlen beider stehen weiter unten als
+                  Chips, die Summe braucht niemand — sie ist deren Addition.
+
+                  Bei Gleichstand steht „unentschieden": einen von beiden zu
+                  nennen hiesse, ein Ergebnis zu erfinden. */}
+              {/* DER SIEGER, NICHT DIE SUMME — als Vorsprung plus Name.
+                  Der Name als ZAHL wäre in der 15px-Schrift der Kachel
+                  abgeschnitten („Alexand…"); die Kachel ist auf 375px rund
+                  105px breit. Also die Zahl ist der Vorsprung und der Name
+                  steht im Label darunter, wo die kleine Schrift hinpasst. */}
               <Wert icon="starFilled" farbe="text-system-yellow"
-                zahl={a.stand.sterne.gesamt > 0 ? `+${fmt(a.stand.sterne.gesamt)}` : '—'} label="Sterne" />
+                zahl={sterneSieger === undefined ? '—'
+                  : sterneSieger === null ? '='
+                    : `+${fmt(Math.abs(a.stand.sterne.alexander - a.stand.sterne.philip))}`}
+                label={sterneSieger === undefined ? 'Sterne'
+                  : sterneSieger === null ? 'Sterne gleich'
+                    : `${sterneSieger} vorn`} />
               {/* Die Boerse ist der genauere Wert und hat deshalb Vorrang;
                   der Saufen-Zaehler bleibt der Rueckfall. */}
+              {/* Kurze genauso: wer vorn war, nicht wie viele es zusammen
+                  waren. Die Einzelzahlen stehen als Chips darunter. */}
+              <Wert icon="glass" farbe="text-system-purple"
+                zahl={kurzeSieger === undefined ? '—'
+                  : kurzeSieger === null ? '='
+                    : `+${Math.abs(kurze.alexander - kurze.philip)}`}
+                label={kurzeSieger === undefined ? 'Kurze'
+                  : kurzeSieger === null ? 'Kurze gleich'
+                    : `${kurzeSieger} vorn`} />
+              {/* Die Gläser bleiben eine Summe: sie kommen aus der Bierbörse,
+                  wo jede Flasche einzeln mit Zahler steht — das ist die
+                  Menge des Abends und keine Frage von „wer mehr". Wer das je
+                  Person braucht, findet es in der Börse selbst. */}
               <Wert icon="beer" farbe="text-system-orange"
                 zahl={a.bStat ? a.bStat.glaeser : (a.stand.bier.gesamt || '—')}
                 label={a.bStat ? 'Gläser' : 'Bier'} />

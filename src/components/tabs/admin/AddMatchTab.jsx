@@ -922,11 +922,32 @@ export default function AddMatchTab({ eingebettet = false, startModus = null, on
       {/* Match Modal — rendered in a portal so `position: fixed` is relative to
           the viewport (a transformed .tab-transition ancestor would otherwise
           become the containing block and misplace/mis-size the dialog). */}
+      {/* ABSTÄNDE AUS DEN SAFE-AREA-WERTEN, NICHT GERATEN.
+          Vorher: `p-2` am Schleier (8px) und `maxHeight: calc(100dvh - 1rem)`.
+          Auf einem iPhone mit Dynamic Island sind 8px nach oben zu wenig — die
+          Überschrift sitzt fast in der Insel. Unten war es umgekehrt zu viel,
+          siehe den Kommentar am Scroll-Bereich.
+
+          `env(safe-area-inset-*)` liefert, was das Gerät wirklich frei haben
+          will; `max(…)` sorgt dafür, dass auf Geräten ohne Insel (und im
+          Browser, wo die Werte 0 sind) der normale Abstand bleibt. Die Höhe
+          zieht beide Einzüge ab, sonst ragt die Karte darunter hinaus.
+
+          Als Kommentar HIER und nicht hinter `createPortal((`: dort liest JSX
+          die geschweifte Klammer als Objektliteral, und der Build bricht mit
+          einem Fehler auf der Zeile danach ab. */}
       {showModal && createPortal((
-        <div className="fixed inset-0 modal-schleier flex items-center justify-center z-[60] p-2 sm:p-4">
+        <div className="fixed inset-0 modal-schleier flex items-center justify-center z-[60] px-2 sm:px-4"
+             style={{
+               paddingTop: 'max(0.5rem, env(safe-area-inset-top, 0px))',
+               paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))',
+             }}>
           <div
             className="bg-bg-secondary rounded-lg w-full max-w-lg modal-content match-modal-content modal-mobile-safe flex flex-col"
-            style={{ maxHeight: 'calc(100dvh - 1rem)' }}
+            style={{
+              maxHeight: 'calc(100dvh - env(safe-area-inset-top, 0px)'
+                + ' - env(safe-area-inset-bottom, 0px) - 1rem)',
+            }}
           >
             {/* OBEN KEINE POLSTERUNG AM SCROLL-BEREICH — die liefert der Kopf.
                 `position: sticky` mit `top-0` klebt an der Kante der
@@ -935,7 +956,19 @@ export default function AddMatchTab({ eingebettet = false, startModus = null, on
                 bei 9), durch den der Inhalt sichtbar durchlief. Ein negatives
                 Margin am Kopf half nicht — es verschiebt die Box, nicht die
                 Klebekante. */}
-            <div ref={scrollBereichRef} className="px-4 pb-4 sm:px-6 sm:pb-6 overflow-y-auto mobile-safe-bottom flex-1 min-h-0">
+            {/* KEIN `mobile-safe-bottom` IM MODAL.
+                Die Klasse setzt `padding-bottom: calc(5rem + safe-area)`,
+                unter einem Breakpoint sogar 6rem — also 80 bis 96px. Sie ist
+                für SEITEN gedacht, die hinter der unteren Navigationsleiste
+                liegen. In einem Modal gibt es die nicht, das Modal deckt sie
+                ab: die 80px waren leerer Raum unter dem letzten Knopf, und
+                genau das war „unten zu viel".
+
+                Jetzt nur so viel, wie der Home-Indicator braucht, mindestens
+                aber ein normaler Abstand. */}
+            <div ref={scrollBereichRef}
+                 className="px-4 sm:px-6 overflow-y-auto flex-1 min-h-0"
+                 style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom, 0px))' }}>
               {/* DER KLEBENDE KOPF MUSS DIE GANZE BREITE DECKEN.
                   Gemessen auf 375px: der Scroll-Bereich lief von 9 bis 366,
                   der Kopf nur von 25 bis 350 — links und rechts blieben je
