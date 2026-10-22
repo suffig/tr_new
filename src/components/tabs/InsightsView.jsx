@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 
 /** Dezimalzahl deutsch — dieselbe Schreibweise wie in Statistik und Duell. */
@@ -213,15 +213,50 @@ function computeInsights(matches, players, bans) {
   };
 }
 
-function Section({ icon, iconClass, title, hint, children }) {
+/**
+ * Ein Abschnitt der Einblicke — zugeklappt eine Zeile, aufgeklappt der Inhalt.
+ *
+ * WARUM AUFKLAPPBAR
+ * Es sind neun Abschnitte. Gemessen auf 375px war diese Ansicht 2753px hoch,
+ * also 3,4 Bildschirme, die man durchscrollen musste, um zu sehen, was es
+ * überhaupt gibt. Zugeklappt stehen die neun Überschriften auf einem halben
+ * Bildschirm: erst die Übersicht, dann mit einem Tipp die Einzelheiten.
+ *
+ * DER ERSTE IST OFFEN
+ * Eine Seite, die nur aus zugeklappten Zeilen besteht, sieht aus wie ein
+ * Inhaltsverzeichnis und nicht wie eine Auswertung. Also landet man auf einem
+ * Abschnitt mit Zahlen; der Rest ist einen Tipp weit weg.
+ *
+ * MEHRERE DÜRFEN OFFEN SEIN
+ * Kein Akkordeon, das beim Öffnen das Vorige zuklappt: wer zwei Abschnitte
+ * vergleichen will, soll das können. Der Zustand lebt im Abschnitt selbst,
+ * nicht in einer gemeinsamen Verwaltung — das ist eine Zeile statt einer
+ * zweiten Zustandsquelle, die mit der Reihenfolge auseinanderlaufen könnte.
+ *
+ * DER ERKLÄRSATZ ERSCHEINT ERST BEIM ÖFFNEN
+ * Zugeklappt wäre er eine zweite Zeile je Abschnitt — bei neun Abschnitten
+ * also ein weiterer halber Bildschirm, nur um zu sagen, was man ohnehin
+ * gleich sieht.
+ */
+function Section({ icon, iconClass, title, hint, children, offenVorgabe = false }) {
+  const [offen, setOffen] = useState(offenVorgabe);
   return (
-    <div className="modern-card">
-      <h3 className="karten-titel inline-flex items-center gap-2 mb-1">
-        <Icon name={icon} size={18} strokeWidth={2.2} className={iconClass} />
-        {title}
-      </h3>
-      {hint && <p className="text-caption1 text-text-tertiary mb-3">{hint}</p>}
-      <div className={hint ? '' : 'mt-3'}>{children}</div>
+    <div className="modern-card p-0 overflow-hidden">
+      <button type="button" onClick={() => setOffen((o) => !o)} aria-expanded={offen}
+              className="w-full flex items-center gap-2.5 p-4 text-left">
+        <Icon name={icon} size={18} strokeWidth={2.2} className={`${iconClass} flex-shrink-0`} />
+        <span className="karten-titel flex-1 min-w-0 truncate">{title}</span>
+        <span className={`text-text-tertiary flex-shrink-0 transition-transform duration-200 ${
+          offen ? 'rotate-90' : ''}`}>
+          <Icon name="chevronRight" size={18} strokeWidth={2.2} />
+        </span>
+      </button>
+      {offen && (
+        <div className="px-4 pb-4">
+          {hint && <p className="text-caption1 text-text-tertiary mb-3">{hint}</p>}
+          {children}
+        </div>
+      )}
     </div>
   );
 }
@@ -247,10 +282,14 @@ export default function InsightsView({ matches, players, bans }) {
 
   return (
     <div className="space-y-4">
-      {/* 1 — Spielrhythmus nach Wochentag */}
+      {/* 1 — Spielrhythmus nach Wochentag.
+          Der einzige Abschnitt, der offen startet: siehe Kopfkommentar von
+          Section. Eine Seite aus neun zugeklappten Zeilen sähe wie ein
+          Inhaltsverzeichnis aus. */}
       <Section
         icon="calendar" iconClass="text-system-blue" title="Spielrhythmus"
         hint="An welchen Tagen ihr spielt — und wie die Spiele an ihnen ausgehen."
+        offenVorgabe
       >
         <div className="space-y-1.5">
           {r.byDay.map((d) => {

@@ -11,6 +11,7 @@ import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
 import { toreJeSeite } from '../../utils/spielerBilanz';
 import { ladeWechsel, wechselVon, kaderSpiele, abschnitte } from '../../utils/spielerWechsel';
 import MatchDayOverview from '../MatchDayOverview';
+import Aufklappbar from './stats/Aufklappbar';
 import TeamLogo from '../TeamLogo';
 import InsightsView from './InsightsView';
 import HistorieView from './HistorieView';
@@ -679,7 +680,16 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
   const [timePeriod, setTimePeriod] = useState(() => { try { return localStorage.getItem('fusta_stats_period') || 'all'; } catch { return 'all'; } });
   useEffect(() => { try { localStorage.setItem('fusta_stats_view', selectedView); } catch { /* ignore */ } }, [selectedView]);
   useEffect(() => { try { localStorage.setItem('fusta_stats_period', timePeriod); } catch { /* ignore */ } }, [timePeriod]);
-  
+
+  // Spielerliste: erst sechs, auf Tipp alle. Bewusst NICHT im localStorage
+  // gemerkt wie Ansicht und Zeitraum — das sind Einstellungen, das hier ist
+  // ein Blick auf etwas. Beim naechsten Oeffnen soll wieder die kurze Liste
+  // dastehen.
+  // `alleSpielerZeigen` und nicht `alleSpieler`: der Name ist in dieser Datei
+  // schon die saisonuebergreifende Spielerliste (Zeile 714, fuer Hall of Fame
+  // und Saisonvergleich).
+  const [alleSpielerZeigen, setAlleSpielerZeigen] = useState(false);
+
   const aktuelleSaison = useAktuelleSaison();
 
   // Saison-Umfang: nur die gewaehlte Saison oder alle zusammen. Der Schalter
@@ -1182,8 +1192,17 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           Karte je Spieler: die vier Kennzahlen, die man wirklich vergleicht, in
           einer Reihe; SdS und Sperren nur, wenn es sie gibt. Auf breiten
           Schirmen stehen zwei Karten nebeneinander. */}
+      {/* NICHT ALLE SPIELER AUF EINMAL.
+          Hier stand `playerStats.map(...)` ohne Grenze — eine Karte je
+          Spieler. Im Demo sind das sechs, mit einem echten Kader über zwanzig,
+          und die Ansicht wächst mit jedem Zugang weiter. Die Liste ist nach
+          Toren sortiert; wer oben steht, ist die Aussage, der Rest ist
+          Nachschlagen. Deshalb sechs und dann auf Tipp der Rest.
+
+          Kein Ausschnitt ohne Hinweis: der Knopf nennt die Gesamtzahl, damit
+          nicht der Eindruck entsteht, es gäbe nur diese sechs. */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-2">
-        {playerStats.map((player, i) => (
+        {(alleSpielerZeigen ? playerStats : playerStats.slice(0, 6)).map((player, i) => (
           <div key={player.id} className="bg-bg-secondary rounded-xl p-3">
             <div className="flex items-baseline gap-2 mb-2">
               <span className="text-caption2 text-text-tertiary num-tabular w-5 flex-shrink-0">{i + 1}.</span>
@@ -1305,6 +1324,15 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
           </div>
         ))}
       </div>
+
+      {playerStats.length > 6 && (
+        <button type="button" onClick={() => setAlleSpielerZeigen((a) => !a)}
+                className="btn-compact w-full mt-2 py-2 rounded-xl panel-gray text-footnote font-semibold text-text-secondary">
+          {alleSpielerZeigen
+            ? 'Weniger zeigen'
+            : `Alle ${playerStats.length} Spieler zeigen`}
+        </button>
+      )}
 
       {/* Player Insights */}
       {/* Zwei Karten, nicht drei: hier stand zusaetzlich "Bestes
@@ -1739,16 +1767,43 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
         return <SaisonVergleich matches={alleSpiele} players={alleSpieler}
                                 loading={!alleSpieler} />;
       case 'players':
-        return <div className="space-y-6">{renderPlayers()}{renderSpielerRanglisten()}</div>;
+        // Die Spielerstatistiken immer sichtbar, die Ranglisten auf Tipp.
+        // Gemessen auf 375px war diese Ansicht 2253px hoch (2,8 Bildschirme);
+        // die Ranglisten machten den Großteil aus und sortieren überwiegend
+        // um, was in den Statistiken darüber schon steht.
+        return (
+          <div className="space-y-4">
+            {renderPlayers()}
+            <Aufklappbar titel="Ranglisten" icon="trophy" iconKlasse="text-system-orange"
+                         hinweis="Beste Quote, meiste Tore, Treffer je Spiel">
+              {renderSpielerRanglisten()}
+            </Aufklappbar>
+          </div>
+        );
       case 'teams':
         return renderTeams();
       case 'trends':
-        // Alles Zeitliche an einem Ort: Entwicklung, Diagramme, Spieltage
+        // Alles Zeitliche an einem Ort: Entwicklung, Diagramme, Spieltage.
+        //
+        // Die Monatsentwicklung steht offen da, die beiden anderen Blöcke
+        // hinter einem Tipp: gemessen auf 375px war die Ansicht 1855px hoch
+        // (2,3 Bildschirme), und was unten liegt, findet man nur durch
+        // Scrollen. Als Zeile ist es sichtbar, ohne Platz zu kosten.
         return (
-          <div className="space-y-6">
+          <div className="space-y-4">
             {renderTrends()}
-            {renderToreUeberZeit()}
-            <MatchDayOverview matches={matches} />
+            <Aufklappbar titel="Tore über die Zeit" icon="football" iconKlasse="text-system-green"
+                         hinweis="Treffer je Monat, beide Seiten">
+              {renderToreUeberZeit()}
+            </Aufklappbar>
+            {/* Kurzer Hinweis: die Zeile hat `truncate`, und
+                "Wie viele Spiele an einem Abend, und wie sie ausgingen"
+                war auf 375px um 38px zu lang — gemessen, nachdem ich ihn
+                selbst eingebaut hatte. */}
+            <Aufklappbar titel="Spieltage" icon="calendar" iconKlasse="text-system-blue"
+                         hinweis="Spiele je Abend und ihr Ausgang">
+              <MatchDayOverview matches={matches} />
+            </Aufklappbar>
           </div>
         );
       default:
