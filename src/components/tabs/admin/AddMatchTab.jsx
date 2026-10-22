@@ -928,8 +928,36 @@ export default function AddMatchTab({ eingebettet = false, startModus = null, on
             className="bg-bg-secondary rounded-lg w-full max-w-lg modal-content match-modal-content modal-mobile-safe flex flex-col"
             style={{ maxHeight: 'calc(100dvh - 1rem)' }}
           >
-            <div ref={scrollBereichRef} className="p-4 sm:p-6 overflow-y-auto mobile-safe-bottom flex-1 min-h-0">
-              <div ref={modalKopfRef} className="mb-4 sticky top-0 bg-bg-secondary z-10 pb-3">
+            {/* OBEN KEINE POLSTERUNG AM SCROLL-BEREICH — die liefert der Kopf.
+                `position: sticky` mit `top-0` klebt an der Kante der
+                POLSTERUNG, nicht am Rand des Bereichs. Mit `pt-4` hier blieb
+                darüber ein 16px hoher Streifen (gemessen: Kopf bei 25, Bereich
+                bei 9), durch den der Inhalt sichtbar durchlief. Ein negatives
+                Margin am Kopf half nicht — es verschiebt die Box, nicht die
+                Klebekante. */}
+            <div ref={scrollBereichRef} className="px-4 pb-4 sm:px-6 sm:pb-6 overflow-y-auto mobile-safe-bottom flex-1 min-h-0">
+              {/* DER KLEBENDE KOPF MUSS DIE GANZE BREITE DECKEN.
+                  Gemessen auf 375px: der Scroll-Bereich lief von 9 bis 366,
+                  der Kopf nur von 25 bis 350 — links und rechts blieben je
+                  16px frei, weil der Scroll-Bereich `p-4` hat und der Kopf
+                  innerhalb dieser Polsterung sitzt. Durch diese zwei Spalten
+                  scrollte der Inhalt ungehindert am Kopf vorbei, also neben
+                  Überschrift und Sprungleiste sichtbar durch.
+
+                  `-mx-4 px-4` zieht den Kopf in die Polsterung hinein, ohne
+                  sie für den übrigen Inhalt zu ändern. Ab sm entsprechend 6.
+
+                  Dazu `-mt-4 pt-4`: oben blieb sonst ein 16px hoher Streifen
+                  über dem Kopf, durch den derselbe Inhalt lief. */}
+              <div ref={modalKopfRef}
+                   // backdrop-blur: --bg-secondary ist zu 95% deckend (der
+                   // Kartenton ist bewusst leicht durchscheinend). Hinter
+                   // einem KLEBENDEN Kopf laeuft dadurch der Inhalt mit 5%
+                   // durch und hinterlaesst beim Scrollen einen Schleier aus
+                   // lesbarem Text. Derselbe Weg wie beim klebenden Kopf in
+                   // TeamTrackerTab: durchscheinend plus Weichzeichner, dann
+                   // ist es Unschaerfe statt Text.
+                   className="sticky top-0 z-10 bg-bg-secondary backdrop-blur-sm mb-3 -mx-4 px-4 pt-4 pb-2.5 sm:-mx-6 sm:px-6">
                 <div className="flex justify-between items-center mb-2.5">
                   <h3 className="karten-titel">{
                     /* editingMatchId fehlte hier: beim Bearbeiten eines

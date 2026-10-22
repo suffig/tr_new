@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { Fragment, useEffect, useRef, useState } from 'react';
 import Icon from './icons/Icon';
 import TeamLogo from './TeamLogo';
 import { getAllFifaVersions, setCurrentFifaVersion } from '../utils/fifaVersionManager';
@@ -58,16 +58,30 @@ export default function SaisonWechsler({ className = '' }) {
   // Bewusst erst beim Oeffnen berechnet statt gemerkt: die Liste kommt aus dem
   // localStorage und kann sich durch die Synchronisierung mit der Datenbank
   // aendern. Ein useMemo wuerde eine dazugekommene Saison verschlucken.
-  const saisons = !offen ? [] : Object.keys(getAllFifaVersions())
-    .sort((a, b) => nummer(a) - nummer(b))
-    .map((v, i) => ({
-      version: v,
-      nr: i + 1,
-      aek: getVersionTeamDisplay('AEK', v)?.label || 'AEK',
-      real: getVersionTeamDisplay('Real', v)?.label || 'Real',
-      legacy: istLegacySaison(v),
-      laeuft: v === laufend,
-    }));
+  const saisons = !offen ? [] : (() => {
+    // Erst aufsteigend, denn daraus entsteht die Saisonnummer: FC15 ist
+    // Saison 1, und das muss unabhaengig von der Anzeigereihenfolge gelten.
+    const mitNummer = Object.keys(getAllFifaVersions())
+      .sort((a, b) => nummer(a) - nummer(b))
+      .map((v, i) => ({
+        version: v,
+        nr: i + 1,
+        aek: getVersionTeamDisplay('AEK', v)?.label || 'AEK',
+        real: getVersionTeamDisplay('Real', v)?.label || 'Real',
+        legacy: istLegacySaison(v),
+        laeuft: v === laufend,
+      }));
+
+    // ANGEZEIGT WIRD DIE LAUFENDE ZUERST, DANN DAS ARCHIV VON NEU NACH ALT.
+    // Aufsteigend sortiert stand die laufende Saison ganz unten, hinter neun
+    // Archiv-Saisons — man musste bis zum Ende scrollen, um zu der zu kommen,
+    // in der gespielt wird. Innerhalb des Archivs ist die jüngste die
+    // wahrscheinlichere.
+    return [...mitNummer].sort((a, b) => {
+      if (a.laeuft !== b.laeuft) return a.laeuft ? -1 : 1;
+      return b.nr - a.nr;
+    });
+  })();
 
   const wechseln = (v) => {
     setOffen(false);
@@ -102,15 +116,39 @@ export default function SaisonWechsler({ className = '' }) {
                      bg-bg-elevated rounded-2xl shadow-ios-floating border border-border-light
                      overflow-hidden animate-scale-in origin-top-right"
         >
-          <div className="px-3 pt-2.5 pb-1.5 text-caption2 font-semibold uppercase tracking-wide text-text-tertiary">
-            Saison
-          </div>
+          {/* GRUPPIERT STATT EINER LISTE MIT DER ÜBERSCHRIFT „SAISON".
+              Vorher stand über allem „Saison", und FC25 und FC26 waren
+              dadurch von der laufenden nicht zu unterscheiden — sie hießen
+              einfach „Saison 1" und „Saison 2". Dass dort nicht mehr gespielt
+              wird, stand nur in einem Satz am Ende der Liste, und den sieht
+              man erst, wenn man schon umgeschaltet HAT.
+
+              Jetzt zwei Überschriften: die laufende Saison oben, alles andere
+              unter „Archiv".
+
+              Die laufende Saison kommt aus `fifa_active_version`, also aus
+              der Datenbank (Spalte is_active) und nicht aus der eigenen Wahl:
+              „Archiv" heißt „hier wird nicht mehr gespielt" und nicht „das
+              sehe ich gerade nicht an". Ist nichts aus der Datenbank bekannt,
+              bleibt es bei der einen alten Überschrift — eine Gruppierung
+              ohne Grundlage wäre geraten. */}
           <div className="max-h-[60vh] overflow-y-auto pb-1">
-            {saisons.map((s) => {
+            {saisons.map((s, i) => {
               const gewaehlt = s.version === aktuell;
+              const vorige = saisons[i - 1];
+              const kopfzeile = !laufend
+                ? (i === 0 ? 'Saison' : null)
+                : s.laeuft ? 'Läuft'
+                  : (i === 0 || vorige?.laeuft) ? 'Archiv'
+                    : null;
               return (
+                <Fragment key={s.version}>
+                {kopfzeile && (
+                  <div className="px-3 pt-2.5 pb-1.5 text-caption2 font-semibold uppercase tracking-wide text-text-tertiary">
+                    {kopfzeile}
+                  </div>
+                )}
                 <button
-                  key={s.version}
                   role="option"
                   aria-selected={gewaehlt}
                   onClick={() => wechseln(s.version)}
@@ -146,6 +184,7 @@ export default function SaisonWechsler({ className = '' }) {
                     <Icon name="check" size={16} strokeWidth={2.8} className="text-system-blue flex-shrink-0" />
                   )}
                 </button>
+                </Fragment>
               );
             })}
           </div>

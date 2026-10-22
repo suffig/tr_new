@@ -127,6 +127,12 @@ export default function AbendRueckblick() {
     <div className="space-y-3">
       {abende.map((a) => {
         const fuehrend = a.bilanz.aek === a.bilanz.real ? null : (a.bilanz.aek > a.bilanz.real ? 'AEK' : 'Real');
+        // Kurze je Person: die drei Arten zusammengezaehlt. Siehe Kommentar
+        // weiter unten bei den Chips, warum zusammen und nicht getrennt.
+        const kurze = {
+          alexander: a.stand.shot20.alexander + a.stand.shot40.alexander + a.stand.schnaps.alexander,
+          philip: a.stand.shot20.philip + a.stand.shot40.philip + a.stand.schnaps.philip,
+        };
         return (
           <div key={a.datum} className="modern-card">
             <div className="flex items-baseline justify-between gap-2 mb-3">
@@ -160,8 +166,12 @@ export default function AbendRueckblick() {
               </div>
             )}
 
-            {/* Der Rest des Abends */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+            {/* Der Rest des Abends.
+                Drei Kacheln, nicht vier: die Kachel „Kurze" mit der
+                Gesamtzahl ist weg. Kurze interessieren je Person — wer wie
+                viele hatte — und nicht als Summe des Abends; sie stehen jetzt
+                als Chip unten bei den Personen. */}
+            <div className="grid grid-cols-3 gap-1.5">
               <Wert icon="trophy" farbe="text-system-orange" zahl={a.ziehungen.length} label="Ziehungen" />
               <Wert icon="starFilled" farbe="text-system-yellow"
                 zahl={a.stand.sterne.gesamt > 0 ? `+${fmt(a.stand.sterne.gesamt)}` : '—'} label="Sterne" />
@@ -170,8 +180,6 @@ export default function AbendRueckblick() {
               <Wert icon="beer" farbe="text-system-orange"
                 zahl={a.bStat ? a.bStat.glaeser : (a.stand.bier.gesamt || '—')}
                 label={a.bStat ? 'Gläser' : 'Bier'} />
-              <Wert icon="glass" farbe="text-system-purple"
-                zahl={(a.stand.shot20.gesamt + a.stand.shot40.gesamt + a.stand.schnaps.gesamt) || '—'} label="Kurze" />
             </div>
 
             {/* SPIEL UND GLAS AN EINEM ORT.
@@ -213,11 +221,23 @@ export default function AbendRueckblick() {
                 {a.stand.sterne.philip > 0 && (
                   <span className="chip chip-sm chip-red">Philip +{fmt(a.stand.sterne.philip)} Sterne</span>
                 )}
-                {a.stand.bier.alexander > 0 && (
-                  <span className="chip chip-sm chip-gray">Alexander {a.stand.bier.alexander} Bier</span>
+                {/* KURZE JE PERSON, KEINE BIERZAHL.
+                    Hier standen „Alexander N Bier" und „Philip N Bier". Die
+                    Biere sagt die Bierbörse genauer — Gläser, Liter und
+                    Ausgaben stehen zwei Zeilen darüber, und zwar aus den
+                    einzeln eingetragenen Flaschen statt aus einem Zähler.
+                    Die Kurzen dagegen gab es nur als Tagessumme, und die
+                    beantwortet nicht die Frage, die man sich an einem Abend
+                    stellt: wer hatte wie viele.
+
+                    Drei Arten zusammen (20 %, 40 %, Schnaps): in diesem
+                    Rückblick zählt die Anzahl, nicht die Stärke. Wer das
+                    einzeln braucht, findet es im Alkohol-Bereich. */}
+                {kurze.alexander > 0 && (
+                  <span className="chip chip-sm chip-blue">Alexander {kurze.alexander} Kurze</span>
                 )}
-                {a.stand.bier.philip > 0 && (
-                  <span className="chip chip-sm chip-gray">Philip {a.stand.bier.philip} Bier</span>
+                {kurze.philip > 0 && (
+                  <span className="chip chip-sm chip-red">Philip {kurze.philip} Kurze</span>
                 )}
               </div>
             )}

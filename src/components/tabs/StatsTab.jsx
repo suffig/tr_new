@@ -1836,7 +1836,15 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             <button
               key={o.id}
               onClick={() => setUmfang(o.id)}
-              className={`px-3 h-8 rounded-[0.6rem] text-footnote font-semibold transition-all
+              // `btn-compact h-11` statt `h-8`: eine globale Regel in
+              // mobile-enhancements.css setzt `button { min-height: 48px }`.
+              // Mit h-8 (32px) waren die Knoepfe trotzdem 48 hoch und der
+              // Umschalter damit 52 — neben einem 36px hohen Nachbarn.
+              // btn-compact ist der im Projekt vorgesehene Ausstieg aus dieser
+              // Regel, h-11 (44px) setzt die Hoehe dann selbst. Mit p-0.5 am
+              // Rahmen ergibt das 48 und damit dieselbe Hoehe wie die
+              // Zeitraum-Pille daneben.
+              className={`btn-compact px-3 h-11 rounded-[0.6rem] text-footnote font-semibold transition-all
                 ${umfang === o.id
                   ? 'bg-bg-elevated text-text-primary shadow-ios-sm'
                   : 'text-text-secondary hover:text-text-primary'}`}
@@ -1845,12 +1853,23 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             </button>
           ))}
         </div>
-        <div className="inline-flex items-center gap-2 bg-bg-tertiary rounded-xl pl-3 pr-2 h-9 text-text-secondary">
+        {/* DIE PILLE IST SO HOCH WIE IHR INHALT, NICHT 36px.
+            Hier stand `h-9` (36px). mobile-enhancements.css setzt unter 640px
+            aber `input, select, textarea { min-height: 48px }` — gemessen auf
+            375px war das Auswahlfeld 48px hoch in einer 36px hohen Huelle und
+            ragte 6px oben UND unten heraus, also ueber die Nachbarschaft.
+            Das war der ueberlappende Saison-Filter.
+
+            Jetzt h-12 (48px) am Rahmen und `btn-compact` am Feld: das ist der
+            im Projekt vorgesehene Ausstieg aus der Mindesthoehe, das Feld wird
+            40px und liegt damit innerhalb seiner Huelle. Beide Bedienteile der
+            Zeile sind so 48px hoch. */}
+        <div className="inline-flex items-center gap-2 bg-bg-tertiary rounded-xl pl-3 pr-2 h-12 text-text-secondary">
           <Icon name="calendar" size={16} strokeWidth={2.2} />
           <select
             value={timePeriod}
             onChange={(e) => setTimePeriod(e.target.value)}
-            className="bg-transparent text-sm font-medium text-text-primary focus:outline-none pr-1"
+            className="btn-compact bg-transparent text-sm font-medium text-text-primary focus:outline-none pr-1"
           >
             <option value="all">Alle Spiele</option>
             <option value="1week">1 Woche</option>

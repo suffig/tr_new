@@ -38,12 +38,19 @@ import Icon from '../icons/Icon';
  * Systemschrift, wenn der Kopf umbricht und höher wird.
  */
 
+// KEIN EINTRAG FÜR DIE PREISGELDER.
+// Der stand hier („Geld"), führt aber an eine Stelle, an der es nichts zu tun
+// gibt: die Beträge werden aus Ergebnis und Karten gerechnet und nicht
+// eingegeben — dort steht bewusst kein Eingabefeld. Ein Sprungziel ist für
+// Stellen da, an denen man etwas einträgt.
+//
+// Der Abschnitt bleibt im Formular und wird beim Scrollen gelesen; nur
+// angesprungen wird er nicht mehr.
 const ABSCHNITTE = [
   { id: 'datum', label: 'Datum', icon: 'calendar' },
   { id: 'tore', label: 'Tore', icon: 'football' },
   { id: 'karten', label: 'Karten', icon: 'ban' },
   { id: 'sds', label: 'Spieler', icon: 'star' },
-  { id: 'geld', label: 'Geld', icon: 'euro' },
 ];
 
 export default function FormularSprungleiste({ containerRef, kopfRef }) {

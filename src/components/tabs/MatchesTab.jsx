@@ -12,7 +12,6 @@ import '../../styles/match-animations.css';
 
 import AddMatchTab from './admin/AddMatchTab';
 import { useIchBin } from '../../hooks/useIchBin';
-import { hasStoredLiveMatch } from '../admin/LiveMatchModal';
 export default function MatchesTab({ onNavigate }) {
   // SPIEL HINZUFUEGEN, OHNE DEN BEREICH ZU VERLASSEN.
   //
@@ -338,11 +337,16 @@ export default function MatchesTab({ onNavigate }) {
           <Icon name="plus" size={16} strokeWidth={2.4} />
           Spiel eintragen
         </button>
-        <button type="button" onClick={() => setEingabe('live')}
-                className="btn-soft-red inline-flex items-center justify-center gap-2 px-4">
-          <span className="w-2 h-2 rounded-full bg-system-red status-ping status-ping-rot" />
-          {hasStoredLiveMatch() ? 'Live läuft' : 'Live'}
-        </button>
+        {/* KEIN LIVE-KNOPF HIER.
+            Er stand neben „Spiel eintragen" und war die seltenere von zwei
+            gleich aussehenden Möglichkeiten — zwei Knöpfe, zwischen denen man
+            sich entscheiden muss, bevor man weiß, was man vorhat. Der
+            Live-Modus bleibt über Verwaltung → Spiele erreichbar; dort wird
+            auch das Fortsetzen eines unterbrochenen Live-Matches angeboten.
+
+            Die Verdrahtung für `eingabe === 'live'` bleibt stehen: sie kostet
+            eine Zeile und macht einen späteren Einstieg von hier aus zu einer
+            Einzeiler-Änderung. */}
       </div>
       )}
 
