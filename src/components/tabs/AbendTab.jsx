@@ -37,7 +37,7 @@ export default function AbendTab({ viewRequest, ...props }) {
   return (
     <div>
       <div className="px-4 pt-4">
-        <HorizontalNavigation views={VIEWS} selectedView={view} onViewChange={setView} />
+        <HorizontalNavigation views={VIEWS} selectedView={view} onViewChange={setView} className="!mb-0" />
       </div>
       {view === 'teams' && <TeamTrackerTab {...props} />}
       {view === 'alkohol' && <AlcoholTrackerTab {...props} />}

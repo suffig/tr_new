@@ -803,10 +803,19 @@
   .mobile-card-stack > *:nth-child(5) { animation-delay: 0.5s; }
 
   .modern-card {
-    @apply bg-bg-secondary border border-border-light rounded-lg shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-1;
+    @apply bg-bg-secondary border border-border-light rounded-lg shadow-sm transition-all duration-300;
     position: relative;
     overflow: hidden;
+    /* Abstände EINMAL und für jede Breite. Vorher standen sie viermal in
+       mobile-enhancements.css, je Bildschirmgröße anders: auf dem iPhone
+       rückten Karten 8px weiter ein als die Leisten darüber, und am Rechner
+       gab es gar keinen Innenabstand. p-*, mb-* und space-y-* gehen vor. */
+    padding: 1rem;
+    margin-bottom: 0.75rem;
   }
+
+  /* Im Raster macht gap den Abstand, sonst zählt er doppelt. */
+  .grid > .modern-card { margin-bottom: 0; }
 
   .modern-card::before {
     content: '';

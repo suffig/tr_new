@@ -110,7 +110,24 @@ const kurzesDatum = (iso) => {
   return `${t}.${m}.${j.slice(2)}`;
 };
 
+/**
+ * Ist gerade ein Dialog offen? useModal sperrt dann das Scrollen am body —
+ * daran ist es abzulesen, ohne jeden Dialog einzeln zu kennen.
+ */
+function useDialogOffen() {
+  const [auf, setAuf] = useState(false);
+  useEffect(() => {
+    const sieh = () => setAuf(document.body.style.overflow === 'hidden');
+    sieh();
+    const wache = new MutationObserver(sieh);
+    wache.observe(document.body, { attributes: true, attributeFilter: ['style'] });
+    return () => wache.disconnect();
+  }, []);
+  return auf;
+}
+
 export default function Schnellerfassung() {
+  const dialogOffen = useDialogOffen();
   const [offen, setOffen] = useState(false);
   const [datum, setDatum] = useState(logischesDatum);
 
@@ -262,9 +279,9 @@ export default function Schnellerfassung() {
           `click()` ausgelöst hat. Das umgeht die Treffer-Erkennung vollständig
           und sagt nichts darüber, ob man ihn erreicht.
 
-          Links unten, weil rechts schon zwei feste Knöpfe sitzen (nach oben
-          scrollen und der grüne), und über der unteren Leiste. */}
-      {!offen && createPortal((
+          Nur über offenen Dialogen: sonst sitzt der Knopf in der unteren
+          Leiste, wo er nichts verdeckt (BottomNavigation). */}
+      {!offen && dialogOffen && createPortal((
         <button type="button" onClick={() => setOffen(true)}
                 aria-label="Schnell eintragen: Schnaps und Sperre"
                 className="fixed left-4 z-[120] w-12 h-12 rounded-full bg-bg-elevated shadow-ios-floating

@@ -17,13 +17,13 @@ const VIEWS = [
   { id: 'sperren', label: 'Sperren', iconName: 'ban', hinweis: 'Wer aussetzen muss und wie lange' },
   // Werte ueber alle Saisons — gehoert zum Kader, nicht in die Statistik:
   // die Frage ist "was war unser Kader wert", nicht "wie lief die Saison".
-  { id: 'werte', label: 'Marktwerte', iconName: 'euro', hinweis: 'Kaderwert und Spielerwerte über alle Saisons' },
+  { id: 'werte', label: 'Werte', iconName: 'euro', hinweis: 'Kaderwert und Spielerwerte über alle Saisons' },
   // Wer wann zu wem gewechselt ist. Die einzelnen Wechsel stehen auf den
   // Spielerkarten — hier der Blick ueber alle, samt Preisen.
   { id: 'transfers', label: 'Transfers', iconName: 'swap', hinweis: 'Alle Wechsel mit Datum und Preis' },
   // Der Saisonwechsel erzeugt den Kader der naechsten Saison — gehoert
   // deshalb hierher und nicht in den Admin-Bereich.
-  { id: 'draft', label: 'Saisonwechsel', iconName: 'dice', hinweis: 'Alte Saison abschließen, neue anlegen, Kader draften' },
+  { id: 'draft', label: 'Saison', iconName: 'dice', hinweis: 'Alte Saison abschließen, neue anlegen, Kader draften' },
 ];
 
 const KEY = 'fusta_spielbetrieb_view';
@@ -48,7 +48,7 @@ export default function SpielbetriebTab({ viewRequest, ...props }) {
   return (
     <div>
       <div className="px-4 pt-4">
-        <HorizontalNavigation views={VIEWS} selectedView={view} onViewChange={setView} />
+        <HorizontalNavigation views={VIEWS} selectedView={view} onViewChange={setView} className="!mb-0" />
       </div>
       {view === 'spiele' && <MatchesTab {...props} />}
       {view === 'kader' && <KaderTab {...props} />}

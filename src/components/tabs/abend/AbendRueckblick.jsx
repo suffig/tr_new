@@ -209,7 +209,7 @@ export default function AbendRueckblick() {
                     : `+${fmt(Math.abs(a.stand.sterne.alexander - a.stand.sterne.philip))}`}
                 label={sterneSieger === undefined ? 'Sterne'
                   : sterneSieger === null ? 'Sterne gleich'
-                    : `${sterneSieger} vorn`} />
+                    : `Sterne: ${sterneSieger} vorn`} />
               {/* Die Boerse ist der genauere Wert und hat deshalb Vorrang;
                   der Saufen-Zaehler bleibt der Rueckfall. */}
               {/* Kurze genauso: wer vorn war, nicht wie viele es zusammen
@@ -220,7 +220,7 @@ export default function AbendRueckblick() {
                     : `+${Math.abs(kurze.alexander - kurze.philip)}`}
                 label={kurzeSieger === undefined ? 'Kurze'
                   : kurzeSieger === null ? 'Kurze gleich'
-                    : `${kurzeSieger} vorn`} />
+                    : `Kurze: ${kurzeSieger} vorn`} />
               {/* Die Gläser bleiben eine Summe: sie kommen aus der Bierbörse,
                   wo jede Flasche einzeln mit Zahler steht — das ist die
                   Menge des Abends und keine Frage von „wer mehr". Wer das je

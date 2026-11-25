@@ -721,7 +721,7 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
           aufgeklappten Bereich, also hinter dem Aufklappen UND dem Scrollen
           an allen Bieren vorbei. Auf einem langen Abend ist das der weiteste
           Weg zur haeufigsten Handlung. */}
-      <div className="w-full p-4">
+      <div className="w-full">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-xl bg-system-yellow/12 text-system-yellow flex items-center justify-center flex-shrink-0">
             <Icon name="beer" size={20} strokeWidth={2} />
@@ -762,7 +762,7 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
       </div>
 
       {offen && (
-        <div className="px-4 pb-4 space-y-3 border-t border-border-light pt-3">
+        <div className="mt-3 space-y-3 border-t border-border-light pt-3">
           {boerse.notiz && (
             <p className="text-caption1 text-text-secondary italic">{boerse.notiz}</p>
           )}

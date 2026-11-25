@@ -18,6 +18,8 @@ import TeamLogo from '../TeamLogo';
 
 /** Betrag deutsch: "7,50 €" statt "7.50€". */
 const euro = (n) => `${dez(n, 2)} €`;
+/** Mit Vorzeichen, aber ohne „+0,00 €".*/
+const plusEuro = (n) => `${n > 0 ? '+' : ''}${euro(n)}`;
 
 /**
  * Die beiden Trinker.
@@ -33,6 +35,23 @@ const TRINKER = [
 import AlcoholProgressionGraph from '../AlcoholProgressionGraph.jsx';
 import { ladeManager } from '../../utils/manager';
 import Kraefteverhaeltnis from '../Kraefteverhaeltnis';
+import HorizontalNavigation from '../HorizontalNavigation';
+
+/** Kleine Zahl neben dem Reiter — bei null gar nichts. */
+const zahlAbzeichen = (n, farbe) => (n > 0
+  ? <span className={`text-caption2 num-tabular px-1.5 rounded-full ${farbe}`}>{dezKurz(n)}</span>
+  : null);
+
+/**
+ * Die zwei Spalten von Schnaps und Sternen. Alexander blau, Philip rot — in
+ * diesem Bereich war Philip an zwölf Stellen grün.
+ */
+const SEITEN = [
+  { key: 'alex', team: 'aek', text: 'text-system-blue', voll: 'bg-system-blue', zart: 'bg-system-blue/10 border-system-blue/25', panel: 'panel-blue' },
+  { key: 'philip', team: 'real', text: 'text-system-red', voll: 'bg-system-red', zart: 'bg-system-red/10 border-system-red/25', panel: 'panel-red' },
+];
+
+const uhrzeit = (ts) => new Date(ts).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
 
 export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { // eslint-disable-line no-unused-vars
   // Sub-navigation state
@@ -703,11 +722,10 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     erfasseAbend({ person: person === 'alex' ? 'alexander' : 'philip', art: 'schnaps' });
   };
 
-  const undoLastShot = () => {
-    const verlauf = schnapsShotsData.history || [];
-    const letzter = verlauf[verlauf.length - 1];
-    if (!letzter?._ereignis) return;
-    entferneAbend(letzter._ereignis);
+  /** Den letzten Shot dieser Person zuruecknehmen. */
+  const undoShot = (person) => {
+    const letzter = [...schnapsShotsData.history].reverse().find((v) => v.person === person);
+    if (letzter?._ereignis) entferneAbend(letzter._ereignis);
   };
 
   const resetSchnapsShotsData = () => {
@@ -736,11 +754,6 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   };
 
   const undoLastSterne = () => removeSterneEintrag(sterneData.history[sterneData.history.length - 1]);
-
-  // Einzelnen Verlaufseintrag loeschen (Gutschrift faellt damit weg).
-  const deleteSterneEintrag = removeSterneEintrag;
-
-  const resetSterneData = alleSterneLoeschen;
 
   // Render filled / half / empty stars
   const renderStars = (value, maxStars = 5) => {
@@ -780,68 +793,17 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   return (
     <div className="p-4 pb-24 mobile-safe-bottom">
 
-      {/* Sub-Navigation */}
-      <div className="mb-6">
-        <div className="flex bg-bg-tertiary rounded-2xl p-1 gap-1">
-          <button
-            onClick={() => setActiveSection('alcohol')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] ${
-              activeSection === 'alcohol'
-                ? 'bg-bg-secondary text-system-blue shadow-sm'
-                : 'text-text-tertiary hover:text-text-secondary'
-            }`}
-          >
-            <Icon name="beer" size={17} strokeWidth={2.1} />
-            <span className="text-text-secondary">Alkohol</span>
-          </button>
-          <button
-            onClick={() => setActiveSection('schnaps')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] ${
-              activeSection === 'schnaps'
-                ? 'bg-bg-secondary text-system-orange shadow-sm'
-                : 'text-text-tertiary hover:text-text-secondary'
-            }`}
-          >
-            <Icon name="glass" size={17} strokeWidth={2.1} />
-            <span className="text-text-secondary">Schnaps</span>
-            {(() => {
-              const done = schnapsShotsData.alex + schnapsShotsData.philip;
-              const rem = schnapsShotsData.target - done;
-              return rem > 0
-                ? <span className="text-xs bg-system-orange/15 text-system-orange px-1.5 py-0.5 rounded-full">{rem}</span>
-                : <span className="bg-system-green/15 text-system-green px-1.5 py-0.5 rounded-full inline-flex items-center"><Icon name="check" size={11} strokeWidth={3} /></span>;
-            })()}
-          </button>
-          <button
-            onClick={() => setActiveSection('sterne')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] ${
-              activeSection === 'sterne'
-                ? 'bg-bg-secondary text-system-yellow shadow-sm'
-                : 'text-text-tertiary hover:text-text-secondary'
-            }`}
-          >
-            <Icon name="star" size={17} strokeWidth={2.1} />
-            <span className="text-text-secondary">Sterne</span>
-            {(() => {
-              const net = Math.abs(sterneData.philip - sterneData.alex);
-              return net > 0
-                ? <span className="text-xs bg-system-yellow/15 text-system-yellow px-1.5 py-0.5 rounded-full">{dezKurz(net)}</span>
-                : null;
-            })()}
-          </button>
-          <button
-            onClick={() => setActiveSection('blackjack')}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-2.5 px-2 rounded-xl text-sm font-semibold transition-all duration-200 min-h-[44px] ${
-              activeSection === 'blackjack'
-                ? 'bg-bg-secondary text-system-red shadow-sm'
-                : 'text-text-tertiary hover:text-text-secondary'
-            }`}
-          >
-            <Icon name="spade" size={17} strokeWidth={2.1} />
-            <span className="text-text-secondary">BJ</span>
-          </button>
-        </div>
-      </div>
+      <HorizontalNavigation
+        kompakt
+        selectedView={activeSection}
+        onViewChange={setActiveSection}
+        views={[
+          { id: 'alcohol', label: 'Alkohol' },
+          { id: 'schnaps', label: 'Schnaps', abzeichen: zahlAbzeichen(schnapsShotsData.alex + schnapsShotsData.philip, 'bg-system-orange/15 text-system-orange') },
+          { id: 'sterne', label: 'Sterne', abzeichen: zahlAbzeichen(Math.abs(sterneData.philip - sterneData.alex), 'bg-system-yellow/15 text-system-yellow') },
+          { id: 'blackjack', label: 'Blackjack' },
+        ]}
+      />
 
       {/* Alcohol Section */}
       {activeSection === 'alcohol' && (
@@ -996,343 +958,197 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
         </>
       )}
 
-      {/* ─── Schnaps-Counter Section ─────────────────────────────────────── */}
-      {activeSection === 'schnaps' && (
-        <>
-          {(() => {
-            const total = schnapsShotsData.alex + schnapsShotsData.philip;
-            const remaining = schnapsShotsData.target - total;
-            const pct = Math.min(100, (total / schnapsShotsData.target) * 100);
-            const isDone = remaining <= 0;
+      {/* ─── Schnaps ─────────────────────────────────────────────────────── */}
+      {activeSection === 'schnaps' && (() => {
+        const { target } = schnapsShotsData;
+        const total = schnapsShotsData.alex + schnapsShotsData.philip;
+        const rest = target - total;
+        const skala = Math.max(target, total, 1);
 
-            return (
-              <>
-                {/* Hero card */}
-                {/* bg-system-orange OHNE Tint-Stufe war die volle Farbe, und
-                    saemtlicher Text darauf ist text-system-orange: orange auf
-                    orange, gemessener Kontrastabstand 0 — "18", "Shots noch
-                    uebrig" und "0 getrunken" waren schlicht unsichtbar. Der
-                    gruene Zweig daneben stand immer richtig auf /10. */}
-                <div className={`modern-card mb-6 border ${isDone ? 'border-system-green/45 bg-system-green/10' : 'border-system-orange/45 bg-system-orange/10'}`}>
-                  <div className="text-center mb-6">
-                    {isDone ? (
-                      <>
-                        <div className="text-3xl font-bold text-system-green mb-1">Fertig!</div>
-                        <div className="text-system-green font-medium">{total} von {schnapsShotsData.target} Shots getrunken</div>
-                      </>
-                    ) : (
-                      <>
-                        <div className="text-6xl font-black text-system-orange leading-none">{remaining}</div>
-                        <div className="text-lg text-system-orange font-semibold mt-1">
-                          {remaining === 1 ? 'Shot noch übrig' : 'Shots noch übrig'}
-                        </div>
-                      </>
-                    )}
+        // EIN BILDSCHIRM. Vorher lagen die Eintrag-Knoepfe unter der grossen
+        // Restzahl, zwei Balken und zwei Personenkarten — auf dem iPhone
+        // ausserhalb des Bildes, fuer jeden Shot musste man scrollen. Jetzt
+        // ist die Personenkarte selbst der Knopf.
+        return (
+          <>
+            <div className="modern-card">
+              <div className="flex items-start justify-between gap-3 mb-3">
+                <div>
+                  <div className="stat-display num-tabular text-[40px] leading-none text-text-primary">
+                    <span key={total} className="zahl-sprung">{total}</span>
+                    <span className="text-title3 text-text-tertiary"> / {target}</span>
                   </div>
-
-                  {/* Progress bar */}
-                  <div className="mb-6">
-                    <div className="flex justify-between text-sm font-semibold mb-2">
-                      <span className="text-system-orange">{total} getrunken</span>
-                      <div className="flex items-center gap-2">
-                        {editingSchnapsTarget ? (
-                          <>
-                            <ZahlFeld
-                              ganzzahl
-                              wert={schnapsTargetInput}
-                              onChange={setSchnapsTargetInput}
-                              onKeyDown={e => { if (e.key === 'Enter') applySchnapsTarget(); if (e.key === 'Escape') setEditingSchnapsTarget(false); }}
-                              className="w-16 text-center border border-system-orange/45 rounded-lg px-1 py-0.5 text-sm font-bold text-system-orange bg-bg-elevated focus:outline-none focus:ring-2 focus:ring-system-orange"
-                              autoFocus
-                            />
-                            <button onClick={applySchnapsTarget} aria-label="Übernehmen" className="bg-system-orange text-white px-2 py-1 rounded-md inline-flex items-center"><Icon name="check" size={12} strokeWidth={3} /></button>
-                            <button onClick={() => setEditingSchnapsTarget(false)} className="text-xs text-text-tertiary" aria-label="Abbrechen"><Icon name="x" size={12} strokeWidth={2.4} /></button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => { setSchnapsTargetInput(String(schnapsShotsData.target)); setEditingSchnapsTarget(true); }}
-                            className="flex items-center gap-1 text-text-tertiary hover:text-system-orange active:scale-95 transition-all"
-                            title="Ziel anpassen"
-                          >
-                            <span className="text-text-secondary">Ziel: <span className="text-system-orange font-bold">{schnapsShotsData.target}</span></span>
-                            <Icon name="edit" size={12} strokeWidth={2.2} />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                    <div className="w-full bg-bg-tertiary rounded-full h-6 overflow-hidden relative">
-                      <div
-                        className={`h-full rounded-full transition-all duration-700 ${isDone ? 'bg-system-green' : 'bg-system-orange'}`}
-                        style={{ width: `${pct}%` }}
-                      />
-                      {/* Shot markers */}
-                      {Array.from({ length: schnapsShotsData.target - 1 }).map((_, i) => (
-                        <div
-                          key={i}
-                          className="absolute top-0 bottom-0 w-px bg-white/40"
-                          style={{ left: `${((i + 1) / schnapsShotsData.target) * 100}%` }}
-                        />
-                      ))}
-                      {/* Bei 0 Shots ist der Balken leer und weisser Text
-                          stand auf hellgrauem Grund. */}
-                      <div className={`absolute inset-0 flex items-center justify-center text-sm font-bold num-tabular ${
-                        pct > 25 ? 'text-white drop-shadow' : 'text-text-primary'}`}>
-                        {total}/{schnapsShotsData.target}
-                      </div>
-                    </div>
-                    {/* Individual shot bubbles */}
-                    <div className="flex flex-wrap gap-1 mt-2">
-                      {Array.from({ length: Math.max(schnapsShotsData.target, total) }).map((_, i) => {
-                        const isAlex = i < schnapsShotsData.alex;
-                        const isPhilip = !isAlex && i < total;
-                        return (
-                          <div
-                            key={i}
-                            className={`w-7 h-7 rounded-full text-xs flex items-center justify-center font-bold border-2 transition-all duration-300 ${
-                              isAlex
-                                ? 'bg-system-blue border-system-blue text-white'
-                                : isPhilip
-                                ? 'bg-system-red border-system-red text-white'
-                                : 'panel-gray text-text-tertiary'
-                            }`}
-                            title={isAlex ? managers.aek.name : isPhilip ? managers.real.name : ''}
-                          >
-                            {isAlex || isPhilip ? <Icon name="glass" size={12} strokeWidth={2.4} /> : i + 1}
-                          </div>
-                        );
-                      })}
-                    </div>
-                    <div className="flex gap-4 mt-2 text-xs">
-                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-system-blue inline-block"></span>{managers.aek.name}</span>
-                      <span className="flex items-center gap-1"><span className="w-3 h-3 rounded-full bg-system-red inline-block"></span>{managers.real.name}</span>
-                    </div>
-                  </div>
-
-                  {/* Per-person counts */}
-                  <div className="grid grid-cols-2 gap-4 mb-6">
-                    <div className="bg-system-blue/12 border border-system-blue/25 rounded-xl p-4 text-center">
-                      <TeamLogo team="aek" size="sm" />
-                      <div className="font-bold text-system-blue text-lg">{managers.aek.name}</div>
-                      <div className="text-4xl font-black text-system-blue">{schnapsShotsData.alex}</div>
-                      <div className="text-sm text-system-blue">Shots</div>
-                    </div>
-                    <div className="bg-system-red/12 border border-system-red/25 rounded-xl p-4 text-center">
-                      <TeamLogo team="real" size="sm" />
-                      <div className="font-bold text-system-red text-lg">{managers.real.name}</div>
-                      <div className="text-4xl font-black text-system-red">{schnapsShotsData.philip}</div>
-                      <div className="text-sm text-system-red">Shots</div>
-                    </div>
-                  </div>
-
-                  {/* Das Ziel nimmt die Knoepfe nicht weg: am 18. Shot ist der
-                      Abend nicht vorbei, und ohne Knopf geht kein Eintrag. */}
-                      <div className="grid grid-cols-2 gap-4 mb-3">
-                        <button
-                          onClick={() => addSchnapShot('alex')}
-                          className="bg-system-blue hover:opacity-90 active:scale-95 text-white py-5 rounded-2xl transition-all duration-150 font-bold text-lg shadow-lg border-b-4 border-system-blue"
-                        >
-                          +1 Shot<br />
-                          <span className="text-sm font-normal">{managers.aek.name}</span>
-                        </button>
-                        <button
-                          onClick={() => addSchnapShot('philip')}
-                          className="bg-system-green hover:opacity-90 active:scale-95 text-white py-5 rounded-2xl transition-all duration-150 font-bold text-lg shadow-lg border-b-4 border-system-green"
-                        >
-                          +1 Shot<br />
-                          <span className="text-sm font-normal">{managers.real.name}</span>
-                        </button>
-                      </div>
-                      <button
-                        onClick={addSchnapShotToBoth}
-                        className="w-full mb-4 bg-system-orange hover:opacity-90 active:scale-95 text-white py-4 rounded-2xl transition-all duration-150 font-bold text-base shadow-lg border-b-4 border-system-orange disabled:opacity-40 disabled:cursor-not-allowed"
-                      >
-                        Beide +1 (je ein Shot)
-                      </button>
-
-                  {/* Secondary actions */}
-                  <div className="flex gap-3">
-                    <button
-                      onClick={undoLastShot}
-                      disabled={schnapsShotsData.history.length === 0}
-                      className="flex-1 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary font-medium transition-all text-sm border border-border-medium"
-                    >
-                      Letzten rückgängig
-                    </button>
-                    <button
-                      onClick={() => {
-                        if (window.confirm('Schnaps-Counter zurücksetzen?')) resetSchnapsShotsData();
-                      }}
-                      className="flex-1 py-3 rounded-xl bg-system-red/10 hover:bg-system-red/15 text-system-red font-medium transition-all text-sm border border-system-red/25"
-                    >
-                      Reset
-                    </button>
+                  <div className={`text-caption1 mt-1 font-medium ${rest > 0 ? 'text-text-secondary' : 'text-system-green'}`}>
+                    {rest > 0 ? `noch ${rest} bis zum Ziel` : rest === 0 ? 'Ziel erreicht' : `Ziel erreicht, ${-rest} darüber`}
                   </div>
                 </div>
-
-                {/* History */}
-                {schnapsShotsData.history.length > 0 && (
-                  <div className="modern-card">
-                    <h4 className="karten-titel mb-3 flex items-center gap-2">
-                      Verlauf
-                    </h4>
-                    <div className="space-y-1 max-h-64 overflow-y-auto">
-                      {[...schnapsShotsData.history].reverse().map((entry, i) => {
-                        const isAlex = entry.person === 'alex';
-                        return (
-                          <div key={i} className={`flex items-center justify-between px-3 py-2 rounded-lg ${isAlex ? 'panel-blue' : 'panel-red'}`}>
-                            <div className="flex items-center gap-2">
-                              <TeamLogo team={isAlex ? 'aek' : 'real'} size="xs" />
-                              <span className={`font-medium text-sm ${isAlex ? 'text-system-blue' : 'text-system-red'}`}>
-                                {isAlex ? managers.aek.name : managers.real.name}
-                              </span>
-                              <Icon name="glass" size={14} strokeWidth={2.2} className="text-text-tertiary" />
-                            </div>
-                            <span className="text-xs text-text-tertiary">
-                              {new Date(entry.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
+                {editingSchnapsTarget ? (
+                  <div className="flex items-center gap-1.5">
+                    <ZahlFeld
+                      ganzzahl
+                      wert={schnapsTargetInput}
+                      onChange={setSchnapsTargetInput}
+                      onKeyDown={e => { if (e.key === 'Enter') applySchnapsTarget(); if (e.key === 'Escape') setEditingSchnapsTarget(false); }}
+                      className="w-16 text-center border border-system-orange/45 rounded-lg px-1 py-0.5 text-sm font-bold text-system-orange bg-bg-elevated focus:outline-none focus:ring-2 focus:ring-system-orange"
+                      autoFocus
+                    />
+                    <button onClick={applySchnapsTarget} aria-label="Ziel übernehmen"
+                            className="btn-compact w-9 h-9 rounded-lg bg-system-orange text-white inline-flex items-center justify-center">
+                      <Icon name="check" size={14} strokeWidth={3} />
+                    </button>
+                    <button onClick={() => setEditingSchnapsTarget(false)} aria-label="Abbrechen"
+                            className="btn-compact w-9 h-9 rounded-lg bg-bg-tertiary text-text-secondary inline-flex items-center justify-center">
+                      <Icon name="x" size={14} strokeWidth={2.4} />
+                    </button>
                   </div>
+                ) : (
+                  <button
+                    onClick={() => { setSchnapsTargetInput(String(target)); setEditingSchnapsTarget(true); }}
+                    className="btn-compact inline-flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-bg-tertiary text-caption1 font-medium text-text-secondary">
+                    Ziel {target}
+                    <Icon name="edit" size={12} strokeWidth={2.2} />
+                  </button>
                 )}
-              </>
-            );
-          })()}
-        </>
-      )}
+              </div>
 
-      {/* ─── Sterne-Counter Section ──────────────────────────────────────── */}
+              {/* Wer wie viel, und wie weit noch — in einem Balken. */}
+              <div className="flex h-2.5 rounded-full overflow-hidden bg-bg-tertiary mb-4" aria-hidden="true">
+                {SEITEN.map((s) => (
+                  <div key={s.key} className={`${s.voll} transition-[width] duration-500`}
+                       style={{ width: `${(schnapsShotsData[s.key] / skala) * 100}%` }} />
+                ))}
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                {SEITEN.map((s) => {
+                  const name = managers[s.team].name;
+                  const zahl = schnapsShotsData[s.key];
+                  return (
+                    <div key={s.key} className={`${s.panel} rounded-2xl p-3`}>
+                      <div className="flex items-center gap-1.5 min-w-0">
+                        <TeamLogo team={s.team} size="xs" />
+                        <span className={`text-footnote font-semibold truncate ${s.text}`}>{name}</span>
+                      </div>
+                      <div className="flex items-center justify-between my-2">
+                        <span key={zahl} className={`zahl-sprung stat-display num-tabular text-[44px] leading-none ${s.text}`}>{zahl}</span>
+                        <button onClick={() => undoShot(s.key)} disabled={zahl === 0}
+                                aria-label={`Letzten Shot von ${name} zurücknehmen`}
+                                className="btn-compact w-10 h-10 rounded-xl bg-bg-elevated text-text-secondary text-xl font-semibold
+                                           flex items-center justify-center disabled:opacity-30">
+                          −
+                        </button>
+                      </div>
+                      <button onClick={() => addSchnapShot(s.key)} aria-label={`Shot für ${name}`}
+                              className={`w-full h-14 rounded-xl text-white text-title3 font-bold active:scale-95 transition-transform ${s.voll}`}>
+                        +1
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
+
+              <button onClick={addSchnapShotToBoth} className="btn-secondary w-full mt-2.5">Beide +1</button>
+            </div>
+
+            {total > 0 && (
+              <details className="modern-card group">
+                <summary className="flex items-center justify-between cursor-pointer list-none">
+                  <span className="karten-titel">Verlauf</span>
+                  <span className="inline-flex items-center gap-1.5 text-caption1 text-text-tertiary">
+                    {total} {total === 1 ? 'Eintrag' : 'Einträge'}
+                    <Icon name="chevronDown" size={15} strokeWidth={2.4} className="transition-transform group-open:rotate-180" />
+                  </span>
+                </summary>
+                <div className="space-y-1 max-h-64 overflow-y-auto mt-3">
+                  {[...schnapsShotsData.history].reverse().map((entry) => {
+                    const s = SEITEN.find((x) => x.key === entry.person);
+                    return (
+                      <div key={entry._ereignis?.id || entry.timestamp}
+                           className={`flex items-center justify-between px-3 py-2 rounded-lg ${s.panel}`}>
+                        <span className="flex items-center gap-2 min-w-0">
+                          <TeamLogo team={s.team} size="xs" />
+                          <span className={`font-medium text-footnote truncate ${s.text}`}>{managers[s.team].name}</span>
+                        </span>
+                        <span className="text-caption1 text-text-tertiary num-tabular">{uhrzeit(entry.timestamp)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <button
+                  onClick={() => {
+                    if (window.confirm(`Alle ${total} Schnäpse im Zähler löschen? Das lässt sich nicht zurücknehmen.`)) resetSchnapsShotsData();
+                  }}
+                  className="btn-compact mt-3 px-3 py-2 rounded-lg text-footnote font-medium text-system-red bg-system-red/10"
+                >
+                  Zähler löschen
+                </button>
+              </details>
+            )}
+          </>
+        );
+      })()}
+
+      {/* ─── Sterne ──────────────────────────────────────────────────────── */}
       {activeSection === 'sterne' && (() => {
-        const net = sterneData.philip - sterneData.alex; // positive = Philip leads
-        const absNet = Math.abs(net);
-        const leader = net > 0 ? managers.real.name : net < 0 ? managers.aek.name : null;
-        // Philip ist rot, nicht gruen. Hier stand `net > 0 ? 'green' : 'blue'`,
-        // Philip fuehrte also in einer Farbe, die ihm in der ganzen uebrigen
-        // App nicht gehoert — damit sagte die Farbe des Fuehrenden nichts mehr.
-        const leaderKlasse = net > 0 ? 'text-system-red' : 'text-system-blue';
-
+        const abstand = Math.round((sterneData.philip - sterneData.alex) * 10) / 10;
+        const fuehrt = abstand > 0 ? SEITEN[1] : abstand < 0 ? SEITEN[0] : null;
+        const gewaehlt = SEITEN.find((s) => s.key === sterneInput.person);
         const starOptions = [0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5];
 
         return (
           <>
-            {/* Balance card */}
-            {/* Vorher: vollflaechig gelber Kartenhintergrund mit zweifarbigem
-                Rand, darauf farbiger Text — beides gab es nur an dieser Stelle
-                der App. Jetzt eine ruhige Karte, der gelbe Stern ist der
-                Akzent. */}
-            <div className="modern-card mb-6">
-              <div className="text-center mb-5">
-                <div className="flex justify-center mb-2 text-system-yellow"><Icon name="starFilled" size={38} strokeWidth={0} /></div>
-                {leader ? (
-                  <>
-                    <div className={`text-title3 font-bold ${leaderKlasse} mb-1`}>
-                      {leader} führt
-                    </div>
-                    <div className="flex justify-center gap-1 text-3xl mb-1">
-                      {renderStars(absNet, 5)}
-                    </div>
-                    <div className="text-system-yellow font-semibold">
-                      {dezKurz(absNet)} Stern{absNet !== 1 ? 'e' : ''} Vorsprung
-                    </div>
-                  </>
-                ) : (
-                  <>
-                    <div className="text-xl font-bold text-text-secondary mb-1">Gleichstand</div>
-                    <div className="text-text-tertiary text-sm">Noch kein Vorsprung</div>
-                  </>
-                )}
+            <div className="modern-card">
+              <div className="flex items-center gap-2">
+                <Icon name="starFilled" size={18} strokeWidth={0} className="text-system-yellow" />
+                <span className={`text-callout font-bold ${fuehrt ? fuehrt.text : 'text-text-secondary'}`}>
+                  {fuehrt
+                    ? `${managers[fuehrt.team].name} führt mit ${dezKurz(Math.abs(abstand))}`
+                    : 'Gleichstand'}
+                </span>
               </div>
+              <Kraefteverhaeltnis
+                label="Sterne gesamt"
+                aek={sterneData.alex} real={sterneData.philip}
+                anzeige={(n) => dezKurz(n)}
+                aekName={managers.aek.name} realName={managers.real.name} />
 
-              {/* Die Gesamtstaende standen als zwei Kacheln nebeneinander,
-                  jede mit Namen, Sternreihe und Zahl. Wer mehr hat, musste man
-                  quer ueber die Luecke vergleichen — genau das zeigt die
-                  geteilte Flaeche unmittelbar, wie ueberall sonst in der App.
-                  Die Sternreihe steht oben beim Vorsprung, wo sie etwas
-                  aussagt; zweimal fuenf Sterne nebeneinander waren vor allem
-                  Dekoration. */}
-              <div className="mb-6 pt-3 border-t border-border-light">
-                <Kraefteverhaeltnis
-                  label="Sterne gesamt"
-                  aek={sterneData.alex} real={sterneData.philip}
-                  anzeige={(n) => dezKurz(n)}
-                  aekName={managers.aek.name} realName={managers.real.name} />
-              </div>
-
-              {/* Star entry form */}
-              <div className="bg-bg-elevated border border-system-yellow/25 rounded-2xl p-4 mb-4">
-                <div className="text-sm font-semibold text-text-secondary mb-3 text-center inline-flex items-center justify-center gap-2 w-full"><Icon name="starFilled" size={14} strokeWidth={0} className="text-system-yellow" />Sterne eintragen</div>
-
-                {/* Person selector */}
-                <div className="flex gap-2 mb-3">
-                  <button
-                    onClick={() => setSterneInput(p => ({ ...p, person: 'alex' }))}
-                    className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 ${sterneInput.person === 'alex' ? 'bg-system-blue text-white shadow-md' : 'bg-system-blue/10 text-system-blue border border-system-blue/25'}`}
-                  >
-                    {managers.aek.name}
-                  </button>
-                  <button
-                    onClick={() => setSterneInput(p => ({ ...p, person: 'philip' }))}
-                    className={`flex-1 py-2.5 rounded-xl font-semibold text-sm transition-all active:scale-95 ${sterneInput.person === 'philip' ? 'bg-system-red text-white shadow-md' : 'bg-system-red/10 text-system-red border border-system-red/25'}`}
-                  >
-                    {managers.real.name}
-                  </button>
+              {/* Eintragen: Wer, wie stark, fertig — ohne zu scrollen. */}
+              <div className="mt-2 pt-4 border-t border-border-light">
+                <div className="grid grid-cols-2 gap-2 mb-2.5">
+                  {SEITEN.map((s) => (
+                    <button key={s.key}
+                      onClick={() => setSterneInput((p) => ({ ...p, person: s.key }))}
+                      aria-pressed={sterneInput.person === s.key}
+                      className={`py-2.5 rounded-xl font-semibold text-footnote transition-all active:scale-95 border ${
+                        sterneInput.person === s.key ? `${s.voll} text-white border-transparent` : `${s.zart} ${s.text}`}`}>
+                      {managers[s.team].name}
+                    </button>
+                  ))}
                 </div>
 
-                {/* Star amount selector */}
-                <div className="flex flex-wrap gap-1.5 justify-center mb-4">
-                  {starOptions.map(s => (
-                    <button
-                      key={s}
-                      onClick={() => setSterneInput(p => ({ ...p, stars: s }))}
-                      className={`w-12 h-10 rounded-lg text-sm font-bold transition-all active:scale-95 ${sterneInput.stars === s ? 'bg-system-yellow text-white shadow-md scale-105' : 'bg-bg-tertiary text-text-secondary border border-border-light'}`}
-                    >
+                <div className="flex items-center justify-between mb-1.5">
+                  <span className="section-label">Stärke des Teams</span>
+                  <span className="flex gap-0.5 text-base leading-none" aria-hidden="true">{renderStars(sterneInput.stars, 5)}</span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5 mb-3">
+                  {starOptions.map((s) => (
+                    <button key={s}
+                      onClick={() => setSterneInput((p) => ({ ...p, stars: s }))}
+                      aria-pressed={sterneInput.stars === s}
+                      className={`btn-compact h-11 rounded-lg text-footnote font-bold num-tabular transition-all active:scale-95 ${
+                        sterneInput.stars === s ? 'bg-system-yellow text-black' : 'bg-bg-tertiary text-text-secondary'}`}>
                       {dezKurz(s)}
                     </button>
                   ))}
                 </div>
 
-                {/* Preview: entered stars + computed gain */}
-                <div className="flex flex-col items-center gap-1 mb-4">
-                  <div className="flex justify-center gap-0.5 text-2xl">
-                    {renderStars(sterneInput.stars, 5)}
-                  </div>
-                  <div className="text-xs text-text-tertiary">
-                    Team-Stärke: <strong className="text-text-secondary">{sterneInput.stars}</strong>
-                    {' → '}
-                    Gutschrift: <strong className="text-system-yellow">+{dezKurz(gutschriftFuer(sterneInput.stars))} ★</strong>
-                    {' '}(6 − {sterneInput.stars})
-                  </div>
-                </div>
-
-                {/* Confirm button */}
-                <button
-                  onClick={addSterne}
-                  className={`w-full py-4 rounded-2xl font-bold text-lg text-white shadow-lg active:scale-95 transition-all border-b-4 ${
-                    sterneInput.person === 'alex'
-                      ? 'bg-system-blue border-system-blue'
-                      : 'bg-system-green border-system-green'
-                  }`}
-                >
-                  +{dezKurz(6 - sterneInput.stars)} für {sterneInput.person === 'alex' ? managers.aek.name : managers.real.name}
+                <button onClick={addSterne}
+                  className={`w-full py-3.5 rounded-xl font-bold text-callout text-white active:scale-[0.98] transition-transform ${gewaehlt.voll}`}>
+                  +{dezKurz(gutschriftFuer(sterneInput.stars))} für {managers[gewaehlt.team].name}
                 </button>
-              </div>
-
-              {/* Secondary actions */}
-              <div className="flex gap-3">
-                <button
-                  onClick={undoLastSterne}
-                  disabled={sterneData.history.length === 0}
-                  className="flex-1 py-3 rounded-xl bg-bg-tertiary hover:bg-bg-tertiary disabled:opacity-40 disabled:cursor-not-allowed text-text-secondary font-medium transition-all text-sm border border-border-medium"
-                >
-                  Letzten rückgängig
-                </button>
-                <button
-                  onClick={() => { if (window.confirm('Sterne-Counter zurücksetzen?')) resetSterneData(); }}
-                  className="flex-1 py-3 rounded-xl bg-system-red/10 hover:bg-system-red/15 text-system-red font-medium transition-all text-sm border border-system-red/25"
-                >
-                  Reset
-                </button>
+                <p className="text-caption2 text-text-tertiary text-center mt-2">
+                  Gutschrift = 6 − Stärke: schwächere Teams bringen mehr.
+                </p>
               </div>
             </div>
 
@@ -1342,57 +1158,52 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               namen={{ alex: managers.aek.name, philip: managers.real.name }}
             />
 
-            {/* History */}
             {sterneData.history.length > 0 && (
               <div className="modern-card">
-                <h4 className="karten-titel mb-3 flex items-center gap-2">
-                  Verlauf
-                </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="karten-titel">Verlauf</h4>
+                  <button onClick={undoLastSterne}
+                          className="btn-compact px-2.5 py-1.5 rounded-lg bg-bg-tertiary text-caption1 font-medium text-text-secondary">
+                    Letzten zurücknehmen
+                  </button>
+                </div>
                 <div className="space-y-1.5 max-h-64 overflow-y-auto">
-                  {[...sterneData.history].reverse().map((entry, i) => {
-                    const isAlex = entry.person === 'alex';
-                    // Die Liste ist umgedreht — echter Index im gespeicherten Verlauf:
-                    const echterIndex = sterneData.history.length - 1 - i;
-                    const wer = isAlex ? managers.aek.name : managers.real.name;
+                  {[...sterneData.history].reverse().map((entry) => {
+                    const s = SEITEN.find((x) => x.key === entry.person);
+                    const wer = managers[s.team].name;
+                    const g = dezKurz(entry.gained ?? gutschriftFuer(entry.stars));
                     return (
-                      <div
-                        key={`${entry.timestamp}-${echterIndex}`}
-                        className={`flex items-center justify-between gap-2 px-3 py-2 rounded-lg ${isAlex ? 'panel-blue' : 'panel-red'}`}
-                      >
-                        <div className="flex items-center gap-2 flex-wrap min-w-0">
-                          <TeamLogo team={isAlex ? 'aek' : 'real'} size="xs" />
-                          <span className={`font-semibold text-sm ${isAlex ? 'text-system-blue' : 'text-system-red'}`}>
-                            {wer}
-                          </span>
-                          <span className="text-xs text-text-tertiary">{entry.stars}★ Team</span>
-                          <span className={`text-xs font-bold ${isAlex ? 'text-system-blue' : 'text-system-green'}`}>
-                            {(() => { const g = entry.gained ?? gutschriftFuer(entry.stars); return `+${g % 1 === 0 ? g : g.toFixed(1)}★`; })()}
-                          </span>
-                          {entry.info && (
-                            <span className="text-[11px] text-text-tertiary truncate max-w-full">{entry.info}</span>
-                          )}
+                      <div key={entry._ereignis?.id || entry.timestamp}
+                           className={`flex items-center gap-2 px-3 py-2 rounded-lg ${s.panel}`}>
+                        <TeamLogo team={s.team} size="xs" />
+                        <div className="min-w-0 flex-1">
+                          <div className="flex items-baseline gap-2">
+                            <span className={`font-semibold text-footnote truncate ${s.text}`}>{wer}</span>
+                            <span className={`text-footnote font-bold num-tabular ${s.text}`}>+{g} ★</span>
+                            {entry.stars != null && (
+                              <span className="text-caption2 text-text-tertiary whitespace-nowrap">{dezKurz(entry.stars)}★ Team</span>
+                            )}
+                          </div>
+                          {entry.info && <div className="text-caption2 text-text-tertiary truncate">{entry.info}</div>}
                         </div>
-                        <div className="flex items-center gap-1.5 flex-shrink-0">
-                          <span className="text-xs text-text-tertiary">
-                            {new Date(entry.timestamp).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          <button
-                            onClick={() => {
-                              const g = entry.gained ?? gutschriftFuer(entry.stars);
-                              if (window.confirm(`Eintrag löschen? ${wer} verliert ${g % 1 === 0 ? g : g.toFixed(1)} ★.`)) {
-                                deleteSterneEintrag(entry);
-                              }
-                            }}
-                            aria-label={`Eintrag von ${wer} löschen`}
-                            className="btn-compact w-7 h-7 rounded-full bg-white/70 text-system-red hover:bg-system-red/15 flex items-center justify-center"
-                          >
-                            <Icon name="trash" size={13} strokeWidth={2.2} />
-                          </button>
-                        </div>
+                        <span className="text-caption1 text-text-tertiary num-tabular">{uhrzeit(entry.timestamp)}</span>
+                        <button
+                          onClick={() => { if (window.confirm(`Eintrag löschen? ${wer} verliert ${g} ★.`)) removeSterneEintrag(entry); }}
+                          aria-label={`Eintrag von ${wer} löschen`}
+                          className="btn-compact w-8 h-8 rounded-full bg-bg-elevated text-system-red flex items-center justify-center flex-shrink-0"
+                        >
+                          <Icon name="trash" size={14} strokeWidth={2.2} />
+                        </button>
                       </div>
                     );
                   })}
                 </div>
+                <button
+                  onClick={() => { if (window.confirm('Alle Sterne im Zähler löschen? Das lässt sich nicht zurücknehmen.')) alleSterneLoeschen(); }}
+                  className="btn-compact mt-3 px-3 py-2 rounded-lg text-footnote font-medium text-system-red bg-system-red/10"
+                >
+                  Zähler löschen
+                </button>
               </div>
             )}
           </>
@@ -1419,47 +1230,26 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               <Icon name="chart" size={17} strokeWidth={2.2} />Übersicht
             </h4>
             
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              {/* Game Counter with Progress Bar */}
-              <div className="p-4 bg-bg-elevated rounded-lg border border-system-purple/25 text-center">
-                <div className="text-3xl font-bold text-system-purple mb-1">
-                  {bjTracking.gameCounter}
-                </div>
-                <div className="text-sm text-system-purple mb-3">Gespielte Spiele</div>
-                
-                {/* Progress Bar for Current Round Games */}
-                {bjTracking.currentRound.active && (
-                  <div className="mt-3">
-                    <GameProgressBar 
-                      currentGames={bjTracking.currentRound.games.length} 
-                      maxGames={10} 
-                    />
-                  </div>
-                )}
+            {/* Drei Zahlen nebeneinander statt drei Kaesten untereinander. */}
+            <div className="grid grid-cols-3 gap-2">
+              <div className="panel-blue rounded-xl p-3 text-center min-w-0">
+                <div className="text-caption1 font-semibold text-system-blue truncate">{managers.aek.name}</div>
+                <div className="stat-display num-tabular text-[17px] text-text-primary mt-1">{plusEuro(bjTracking.alexander.balance)}</div>
               </div>
-
-              {/* Alexander Balance */}
-              <div className="p-4 bg-system-blue/10 rounded-lg border border-system-blue/25 text-center">
-                <h5 className="font-bold text-system-blue mb-2 flex items-center justify-center gap-2">
-                  {managers.aek.name}
-                </h5>
-                <div className="text-2xl font-bold text-system-green mb-1">
-                  +{euro(bjTracking.alexander.balance)}
-                </div>
-                <div className="text-xs text-system-blue">Kontostand</div>
+              <div className="panel-gray rounded-xl p-3 text-center min-w-0">
+                <div className="text-caption1 font-semibold text-text-secondary truncate">Spiele</div>
+                <div className="stat-display num-tabular text-[17px] text-text-primary mt-1">{bjTracking.gameCounter}</div>
               </div>
-
-              {/* Philip Balance */}
-              <div className="p-4 bg-system-green/10 rounded-lg border border-system-green/25 text-center">
-                <h5 className="font-bold text-system-green mb-2 flex items-center justify-center gap-2">
-                  {managers.real.name}
-                </h5>
-                <div className="text-2xl font-bold text-system-green mb-1">
-                  +{euro(bjTracking.philip.balance)}
-                </div>
-                <div className="text-xs text-system-green">Kontostand</div>
+              <div className="panel-red rounded-xl p-3 text-center min-w-0">
+                <div className="text-caption1 font-semibold text-system-red truncate">{managers.real.name}</div>
+                <div className="stat-display num-tabular text-[17px] text-text-primary mt-1">{plusEuro(bjTracking.philip.balance)}</div>
               </div>
             </div>
+            {bjTracking.currentRound.active && (
+              <div className="mt-3">
+                <GameProgressBar currentGames={bjTracking.currentRound.games.length} maxGames={10} />
+              </div>
+            )}
           </div>
 
           {/* Main Action Buttons */}
@@ -1468,34 +1258,34 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               <Icon name="play" size={17} strokeWidth={2.2} className="inline mr-1.5 -mt-0.5" />Gewinn eintragen
             </h4>
             
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {/* Alexander Main Buttons */}
               <div className="space-y-3">
                 <h5 className="font-medium text-system-blue text-center mb-3 inline-flex items-center justify-center gap-2 w-full"><span className="w-2 h-2 rounded-full bg-system-blue" />{managers.aek.name}</h5>
                 
                 {/* Main action buttons - Always visible for mobile */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
                   <button
                     onClick={() => addToPlayerAccount('alexander', 5.00)}
-                    className="btn-soft btn-soft-green px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
+                    className="btn-soft btn-soft-green px-1 py-3 rounded-xl font-bold text-caption1 whitespace-nowrap min-h-[56px]"
                   >
                     Win<br/>+5,00 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 7.50)}
-                    className="btn-soft btn-soft-purple px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
+                    className="btn-soft btn-soft-purple px-1 py-3 rounded-xl font-bold text-caption1 whitespace-nowrap min-h-[56px]"
                   >
                     Blackjack<br/>+7,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 2.50)}
-                    className="btn-soft btn-soft-orange px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
+                    className="btn-soft btn-soft-orange px-1 py-3 rounded-xl font-bold text-caption1 whitespace-nowrap min-h-[56px]"
                   >
                     BJ-Push<br/>+2,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('alexander', 10.00)}
-                    className="btn-soft btn-soft-red px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
+                    className="btn-soft btn-soft-red px-1 py-3 rounded-xl font-bold text-caption1 whitespace-nowrap min-h-[56px]"
                   >
                     Double<br/>+10,00 €
                   </button>
@@ -1552,28 +1342,28 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <h5 className="font-medium text-system-red text-center mb-3 inline-flex items-center justify-center gap-2 w-full"><span className="w-2 h-2 rounded-full bg-system-red" />{managers.real.name}</h5>
                 
                 {/* Main action buttons - Always visible for mobile */}
-                <div className="grid grid-cols-2 gap-2">
+                <div className="grid grid-cols-4 gap-1.5">
                   <button
                     onClick={() => addToPlayerAccount('philip', 5.00)}
-                    className="btn-soft btn-soft-green px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
+                    className="btn-soft btn-soft-green px-1 py-3 rounded-xl font-bold text-caption1 whitespace-nowrap min-h-[56px]"
                   >
                     Win<br/>+5,00 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 7.50)}
-                    className="btn-soft btn-soft-purple px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
+                    className="btn-soft btn-soft-purple px-1 py-3 rounded-xl font-bold text-caption1 whitespace-nowrap min-h-[56px]"
                   >
                     Blackjack<br/>+7,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 2.50)}
-                    className="btn-soft btn-soft-orange px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
+                    className="btn-soft btn-soft-orange px-1 py-3 rounded-xl font-bold text-caption1 whitespace-nowrap min-h-[56px]"
                   >
                     BJ-Push<br/>+2,50 €
                   </button>
                   <button
                     onClick={() => addToPlayerAccount('philip', 10.00)}
-                    className="btn-soft btn-soft-red px-3 py-4 rounded-xl font-bold text-sm min-h-[56px]"
+                    className="btn-soft btn-soft-red px-1 py-3 rounded-xl font-bold text-caption1 whitespace-nowrap min-h-[56px]"
                   >
                     Double<br/>+10,00 €
                   </button>
@@ -1583,7 +1373,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <div className="text-center">
                   <button
                     onClick={() => toggleAdvancedButtons('philip')}
-                    className="bg-system-green/15 hover:bg-system-green/25 text-system-green px-4 py-2 rounded-lg text-sm font-medium transition-all border border-system-green/45 hover:border-system-green/45 min-h-[44px]"
+                    className="bg-system-red/15 hover:bg-system-red/25 text-system-red px-4 py-2 rounded-lg text-sm font-medium transition-all border border-system-red/45 hover:border-system-red/45 min-h-[44px]"
                   >
                     {showAdvancedButtons.philip ? 'Weniger Beträge' : 'Mehr Beträge'}
                   </button>
@@ -1596,7 +1386,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       <button
                         key={amount}
                         onClick={() => addToPlayerAccount('philip', amount)}
-                        className="bg-system-green/15 hover:bg-system-green/25 text-system-green px-3 py-3 rounded-md text-sm font-medium transition-all border border-system-green/45 hover:border-system-green/45 min-h-[44px]"
+                        className="bg-system-red/15 hover:bg-system-red/25 text-system-red px-3 py-3 rounded-md text-sm font-medium transition-all border border-system-red/45 hover:border-system-red/45 min-h-[44px]"
                       >
                         +{euro(amount)}
                       </button>
@@ -1605,19 +1395,19 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 )}
 
                 {/* Custom Amount Input - Always visible */}
-                <div className="mt-3 p-2 bg-system-green/10 rounded-lg border border-system-green/25">
-                  <h6 className="text-xs font-medium text-system-green mb-1 inline-flex items-center gap-1"><Icon name="euro" size={12} strokeWidth={2.4} />Eigener Betrag:</h6>
+                <div className="mt-3 p-2 bg-system-red/10 rounded-lg border border-system-red/25">
+                  <h6 className="text-xs font-medium text-system-red mb-1 inline-flex items-center gap-1"><Icon name="euro" size={12} strokeWidth={2.4} />Eigener Betrag:</h6>
                   <div className="flex gap-1">
                     <ZahlFeld
                       wert={customAmounts.philip}
                       onChange={(w) => handleCustomAmountChange('philip', w)}
                       placeholder="0,00"
-                      className="flex-1 px-2 py-2 border border-system-green/45 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-system-green min-h-[36px] max-w-[80px]"
+                      className="flex-1 px-2 py-2 border border-system-red/45 rounded-md text-xs text-center focus:outline-none focus:ring-1 focus:ring-system-red min-h-[36px] max-w-[80px]"
                     />
                     <button
                       onClick={() => addCustomAmount('philip')}
                       disabled={!(zahl(customAmounts.philip) > 0)}
-                      className="bg-system-green hover:bg-system-green disabled:bg-border-strong text-white px-2 py-2 rounded-md text-xs font-medium transition-all min-h-[36px] min-w-[36px]"
+                      className="bg-system-red hover:bg-system-red disabled:bg-border-strong text-white px-2 py-2 rounded-md text-xs font-medium transition-all min-h-[36px] min-w-[36px]"
                     >
                       +€
                     </button>
@@ -1630,7 +1420,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             <div className="mt-6 text-center">
               <button
                 onClick={addTieGame}
-                className="bg-system-green hover:opacity-90 text-white px-8 py-4 rounded-lg transition-all duration-200 font-bold shadow-md hover:shadow-lg transform hover:scale-105 min-h-[56px]"
+                className="btn-secondary w-full"
               >
                 Unentschieden (0 €)
               </button>
@@ -1711,7 +1501,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
               
               <div className="space-y-4">
                 {bjTracking.rounds.slice().reverse().map((round) => (
-                  <div key={round.id} className="p-4 bg-system-green rounded-lg border border-border-light">
+                  <div key={round.id} className="panel-gray rounded-xl p-4">
                     <div className="flex justify-between items-start mb-3">
                       <div className="flex items-center gap-2">
                         <h5 className="font-bold text-text-secondary">
@@ -1730,8 +1520,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       <div className="p-3 bg-system-blue/10 rounded-lg border border-system-blue/25">
                         <div className="text-center">
                           <div className="font-bold text-system-blue">{managers.aek.name}</div>
-                          <div className="text-xl font-bold text-system-green">
-                            +{euro(round.alexanderTotal)}
+                          <div className="text-xl font-bold text-system-blue">
+                            {plusEuro(round.alexanderTotal)}
                           </div>
                         </div>
                       </div>
@@ -1739,7 +1529,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                         <div className="text-center">
                           <div className="font-bold text-system-red">{managers.real.name}</div>
                           <div className="text-xl font-bold text-system-red">
-                            +{euro(round.philipTotal)}
+                            {plusEuro(round.philipTotal)}
                           </div>
                         </div>
                       </div>
@@ -1789,41 +1579,13 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
             </div>
           )}
 
-          {/* Statistics */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Alexander Stats */}
-            <div className="modern-card panel-blue">
-              <h5 className="font-bold text-system-blue mb-3 flex items-center gap-2">
-                {managers.aek.name} - Statistiken
-              </h5>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-system-blue text-sm">Aktueller Kontostand:</span>
-                  <span className="font-bold text-system-green">+{euro(bjTracking.alexander.balance)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-system-blue text-sm">Gesamt-Verdienst:</span>
-                  <span className="font-bold text-system-green">+{euro(bjTracking.alexander.totalEarnings)}</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Philip Stats */}
-            <div className="modern-card panel-green">
-              <h5 className="font-bold text-system-green mb-3 flex items-center gap-2">
-                {managers.real.name} - Statistiken
-              </h5>
-              <div className="space-y-2">
-                <div className="flex justify-between">
-                  <span className="text-system-green text-sm">Aktueller Kontostand:</span>
-                  <span className="font-bold text-system-green">+{euro(bjTracking.philip.balance)}</span>
-                </div>
-                <div className="flex justify-between">
-                  <span className="text-system-green text-sm">Gesamt-Verdienst:</span>
-                  <span className="font-bold text-system-green">+{euro(bjTracking.philip.totalEarnings)}</span>
-                </div>
-              </div>
-            </div>
+          <div className="modern-card">
+            <h4 className="karten-titel mb-1">Insgesamt verdient</h4>
+            <Kraefteverhaeltnis
+              label="Gesamt-Verdienst"
+              aek={bjTracking.alexander.totalEarnings} real={bjTracking.philip.totalEarnings}
+              anzeige={euro}
+              aekName={managers.aek.name} realName={managers.real.name} />
           </div>
         </>
       )}

@@ -90,8 +90,7 @@ export default function SaisonZeitstrahl({ matches, aekName, realName, onMatchWa
           </div>
         ) : (
           <div className="text-caption2 text-text-tertiary leading-tight">
-            {aekName} nach oben, {realName} nach unten — Höhe ist die Tordifferenz.
-            <span className="block">Zum Erkunden über die Saison streichen.</span>
+            Oben {aekName}, unten {realName}. Zum Erkunden streichen.
           </div>
         )}
       </div>

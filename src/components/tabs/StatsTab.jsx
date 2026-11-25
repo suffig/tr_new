@@ -58,10 +58,13 @@ function Kennzahl({ wert, label, zusatz, gross = false }) {
         {wert}
       </div>
       <div className="text-caption2 text-text-tertiary mt-0.5">{label}</div>
-      {zusatz && <div className="text-caption2 text-text-quaternary mt-0.5 num-tabular">{zusatz}</div>}
+      {zusatz && <div className="text-caption2 text-text-tertiary mt-0.5 num-tabular">{zusatz}</div>}
     </div>
   );
 }
+
+/** Immer zweistellig: „01.08.2026" unter „12.08.2026". */
+const datumLang = (d) => new Date(d).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
 /** Dezimalzahl deutsch: 2,33 statt 2.33. */
 const dez = (n, stellen = 2) =>
@@ -1056,7 +1059,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             was="Größter Sieg"
             zeilen={headToHead.biggestAekWin.diff > 0 ? [
               `gegen ${headToHead.biggestAekWin.opponent}`,
-              new Date(headToHead.biggestAekWin.date).toLocaleDateString('de-DE'),
+              datumLang(headToHead.biggestAekWin.date),
             ] : []}
           />
           <HighlightKarte
@@ -1067,7 +1070,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             was="Größter Sieg"
             zeilen={headToHead.biggestRealWin.diff > 0 ? [
               `gegen ${headToHead.biggestRealWin.opponent}`,
-              new Date(headToHead.biggestRealWin.date).toLocaleDateString('de-DE'),
+              datumLang(headToHead.biggestRealWin.date),
             ] : []}
           />
           <HighlightKarte
@@ -1077,7 +1080,7 @@ export default function StatsTab({ onNavigate, showHints = false }) { // eslint-
             wert={mostGoalsInMatch?.player ? mostGoalsInMatch.player.split(' ').slice(-1)[0] : '–'}
             was={`Meiste Tore in einem Spiel: ${mostGoalsInMatch?.count || 0}`}
             zeilen={[mostGoalsInMatch?.date
-              ? new Date(mostGoalsInMatch.date).toLocaleDateString('de-DE') : null]}
+              ? datumLang(mostGoalsInMatch.date) : null]}
           />
         </div>
 

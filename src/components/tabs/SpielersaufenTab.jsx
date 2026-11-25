@@ -1,4 +1,5 @@
 ﻿import Icon from '../icons/Icon';
+import HorizontalNavigation from '../HorizontalNavigation';
 import { useState, useEffect, useRef } from 'react';
 import ZahlFeld from '../ZahlFeld';
 import { zahl } from '../../utils/zahlen';
@@ -375,10 +376,11 @@ export default function SpielersaufenTab() {
 
   // ─────────────────────────────────────────────────────────────────────────
   const navItems = [
-    { id:'setup',       label:'Setup',      icon:'settings' },
+    { id:'setup',       label:'Regeln',      icon:'settings' },
     { id:'aufstellung', label:'Aufstellung', icon:'clipboard' },
     { id:'auslosung',   label:'Auslosung',   icon:'target' },
-    { id:'counter',     label:'Counter',     icon:'bell' },
+    { id:'counter',     label:'Zähler',     icon:'bell',
+      abzeichen: data.currentGame.active ? <span className="w-1.5 h-1.5 rounded-full bg-system-green status-ping" /> : null },
     { id:'endergebnis', label:'Ergebnis',    icon:'trophy' },
   ];
 
@@ -405,37 +407,12 @@ export default function SpielersaufenTab() {
           <span className="w-2.5 h-2.5 rounded-full bg-bg-elevated animate-pulse flex-shrink-0" />
           <span className="font-bold text-sm flex-1 text-left">Spiel läuft – {fmtElapsed(elapsed)}</span>
           <span className="text-sm font-black">{totalShotsAll()} <Icon name="glass" size={15} strokeWidth={2.2} /></span>
-          <span className="text-white/80 text-xs">→ Counter</span>
+          <span className="text-white/80 text-xs">→ Zähler</span>
         </button>
       )}
 
       {/* ── Sub-nav ────────────────────────────────────────────────────────── */}
-      {/* UMBRUCH STATT UNSICHTBAREM SCROLLEN.
-          Der Streifen war `overflow-x-auto scrollbar-hide` mit `min-w-max`:
-          fuenf Reiter in einer erzwungenen Zeile, zusammen rund 540 px. Auf
-          375 px lag "Ergebnis" damit 165 px ausserhalb — und weil die
-          Bildlaufleiste ausgeblendet ist, gab es keinerlei Hinweis, dass dort
-          ueberhaupt noch etwas steht. Wer den Reiter nicht kennt, findet ihn
-          nicht.
-
-          Mit Umbruch sind alle fuenf sichtbar, auf dem Handy in zwei Zeilen,
-          auf breiten Schirmen weiterhin in einer. Kein Scrollen, keine
-          versteckten Reiter. */}
-      <div className="mb-5">
-        <div className="flex flex-wrap gap-1 bg-bg-tertiary rounded-2xl p-1">
-          {navItems.map(n => (
-            <button key={n.id} onClick={() => setSection(n.id)}
-              // KEIN flex-1: es erzwingt gleiche Breiten, und mit
-              // whitespace-nowrap wird der laengste Text dann abgeschnitten —
-              // "Aufstellung" braucht 66 px, bekam aber nur 48. Jede Schaltflaeche
-              // nimmt sich jetzt die Breite ihres Textes, der Rest bricht um.
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold transition-all whitespace-nowrap min-h-[44px] ${section===n.id ? 'bg-bg-secondary text-system-orange shadow-sm' : 'text-text-tertiary hover:text-text-secondary'}`}>
-              <Icon name={n.icon} size={15} strokeWidth={2.1} /><span>{n.label}</span>
-              {n.id==='counter' && data.currentGame.active && <span className="w-1.5 h-1.5 rounded-full bg-system-green status-ping ml-0.5" />}
-            </button>
-          ))}
-        </div>
-      </div>
+      <HorizontalNavigation kompakt views={navItems} selectedView={section} onViewChange={setSection} />
 
       {/* ══════════════════════════════════════════════════════════════════════
           SETUP
@@ -465,7 +442,7 @@ export default function SpielersaufenTab() {
             </div>
             <div className="bg-system-orange/10 rounded-xl px-3 py-2 text-xs text-system-orange font-medium">
               Beispiel: Teilnehmer hat Spieler A + B → A: 1 Nennung + B: 1 Nennung
-              = <strong>2 Gesamt</strong> → {data.settings.mentionsPerShot <= 2 ? '→ 1 Shot' : `noch kein Shot (Schwelle ${data.settings.mentionsPerShot})`}
+              = <strong>2 gesamt</strong> → {data.settings.mentionsPerShot <= 2 ? `${Math.floor(2 / data.settings.mentionsPerShot)} ${data.settings.mentionsPerShot === 1 ? 'Shots' : 'Shot'}` : `noch kein Shot (Schwelle ${data.settings.mentionsPerShot})`}
             </div>
           </div>
 

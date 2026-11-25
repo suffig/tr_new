@@ -27,7 +27,8 @@ export default function BottomNavigation({ activeTab, onTabChange, user }) {
       role="navigation"
       aria-label="Hauptnavigation"
     >
-      <div className="nav-floating pointer-events-auto mx-auto max-w-2xl">
+      <div className="mx-auto max-w-2xl flex items-stretch gap-2">
+      <div className="nav-floating pointer-events-auto flex-1 min-w-0">
         {/* Gleich breite Spalten statt justify-around: so bekommt jeder Bereich
             denselben Platz und nichts rutscht auf schmalen Handys aus der
             Leiste, wenn Admin den sechsten Eintrag sieht. */}
@@ -41,7 +42,7 @@ export default function BottomNavigation({ activeTab, onTabChange, user }) {
               <button
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
-                className={`nav-tab flex flex-col items-center justify-center min-w-0 px-1 py-1.5 rounded-ios-lg transition-colors duration-ios touch-target ${
+                className={`nav-tab flex flex-col items-center justify-center min-w-0 px-0 py-1.5 rounded-ios-lg transition-colors duration-ios touch-target ${
                   // Der aktive Bereich traegt die MARKE, nicht Gruen: Gruen
                   // heisst in dieser App jetzt "positiv" (Erfolg, Sieg,
                   // Haken). "Hier bin ich" ist keine Wertung, sondern die
@@ -55,13 +56,26 @@ export default function BottomNavigation({ activeTab, onTabChange, user }) {
                 <span className="nav-icon relative mb-0.5">
                   <Icon name={tab.icon} size={22} strokeWidth={isActive ? 2.2 : 1.8} />
                 </span>
-                <span className="nav-label text-caption2 font-medium leading-none relative max-w-full truncate">
+                <span className="nav-label text-caption2 font-medium leading-none relative max-w-full whitespace-nowrap">
                   {tab.label}
                 </span>
               </button>
             );
           })}
         </div>
+      </div>
+      {/* Schnell eintragen. Schwebte vorher frei über der Seite und verdeckte
+          auf jeder den Anfang einer Zeile. Über offenen Dialogen schwebt er
+          weiter, siehe Schnellerfassung. */}
+      <button
+        type="button"
+        onClick={() => window.dispatchEvent(new Event('schnellerfassung-oeffnen'))}
+        aria-label="Schnell eintragen: Schnaps und Sperre"
+        className="nav-floating pointer-events-auto flex-shrink-0 w-[58px] flex items-center justify-center
+                   text-system-purple active:scale-95 transition-transform"
+      >
+        <Icon name="glass" size={23} strokeWidth={2.1} />
+      </button>
       </div>
     </nav>
   );

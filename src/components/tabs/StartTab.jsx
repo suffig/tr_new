@@ -518,7 +518,7 @@ export default function StartTab({ onNavigate }) {
             <Icon name="beer" size={18} strokeWidth={2.1} />
           </span>
           <span className="text-footnote font-semibold text-text-primary leading-tight">
-            Getränk<br />eintragen
+            Getränk{darfEintragen ? <br /> : ' '}eintragen
           </span>
         </button>
       </div>

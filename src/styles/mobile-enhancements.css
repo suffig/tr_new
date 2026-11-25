@@ -59,7 +59,7 @@ button:active::after {
 }
 
 /* Enhanced card animations with staggered delays */
-@media (max-width: 640px) {
+@media (max-width: 640px) and (hover: hover) {
   .modern-card,
   .enhanced-card,
   .stat-card,
@@ -488,10 +488,6 @@ button:active {
     padding: 12px 16px;
   }
   
-  .modern-card {
-    padding: 1rem;
-    margin-bottom: 1rem;
-  }
   
   /* Better table responsiveness */
   .overflow-x-auto {
@@ -823,11 +819,6 @@ button:focus {
 }
   
   /* Prevent content overlap on iPhone */
-  .modern-card {
-    margin: 0.75rem 0.5rem;
-    padding: 1.25rem;
-    border-radius: 16px;
-  }
   
   /* Better spacing for iPhone */
   .p-4 {
@@ -875,11 +866,6 @@ button:focus {
     padding: 6px 4px;
   }
   
-  /* Ensure no overlap in landscape mode */
-  .modern-card {
-    margin: 0.5rem 0.25rem;
-    padding: 1rem;
-  }
   
   .p-4 {
     padding: 1rem 0.75rem;
@@ -993,11 +979,27 @@ button:focus {
   select {
     font-size: max(16px, 1rem) !important; /* Prevent iPhone zoom */
     min-height: 48px;
-    padding: 0.75rem;
-    border-radius: 8px;
+    padding-block: 0.75rem;
     -webkit-appearance: none;
     appearance: none;
   }
+
+  /* Seitlich nur, wo das Feld nichts Eigenes verlangt: hier stand
+     padding: 0.75rem, und damit lag in jeder Suche die Lupe auf dem Text. */
+  input[type="number"]:not([class*="pl-"]),
+  input[type="text"]:not([class*="pl-"]),
+  input[type="date"]:not([class*="pl-"]),
+  select:not([class*="pl-"]) { padding-left: 0.75rem; }
+
+  input[type="number"]:not([class*="pr-"]),
+  input[type="text"]:not([class*="pr-"]),
+  input[type="date"]:not([class*="pr-"]),
+  select:not([class*="pr-"]) { padding-right: 0.75rem; }
+
+  input[type="number"]:not([class*="rounded"]),
+  input[type="text"]:not([class*="rounded"]),
+  input[type="date"]:not([class*="rounded"]),
+  select:not([class*="rounded"]) { border-radius: 8px; }
 
   /* Special handling for number spinners on iPhone */
   input[type="number"]::-webkit-outer-spin-button,
@@ -1213,11 +1215,6 @@ button:focus {
     margin-left: 0.25rem;
   }
   
-  /* Better spacing for cards */
-  .modern-card {
-    margin: 0.5rem 0.25rem;
-    padding: 0.875rem;
-  }
   
   /* Improved text hierarchy */
   .text-lg {
