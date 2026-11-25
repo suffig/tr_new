@@ -150,7 +150,7 @@ export default function Transferliste() {
                         {saldo > 0 ? '+' : ''}{euro(saldo)}
                       </div>
                       <div className="text-caption2 text-text-tertiary truncate">
-                        unterm Strich · {getTeamDisplay(t)}
+                        Saldo · {getTeamDisplay(t)}
                       </div>
                     </div>
                   );

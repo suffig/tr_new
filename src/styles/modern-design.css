@@ -650,7 +650,7 @@ textarea.form-input {
   resize: vertical;
 }
 
-.form-input::placeholder { color: var(--text-quaternary); }
+.form-input::placeholder { color: var(--text-tertiary); }
 
 .form-input:focus {
   outline: none;

@@ -735,11 +735,11 @@ function BoersenKarte({ boerse, verkostungen, katalog, offen, onToggle, onNeuesB
           {/* Das Plus steht auch bei ZUGEKLAPPTER Karte da: dann traegt man
               ein Bier ein, ohne den Abend erst aufklappen zu muessen. */}
           <button onClick={onNeuesBier}
-                  className="w-9 h-9 rounded-xl bg-system-yellow/12 text-system-yellow flex items-center justify-center flex-shrink-0"
+                  className="btn-compact w-11 h-11 rounded-xl bg-system-yellow/12 text-system-yellow flex items-center justify-center flex-shrink-0"
                   aria-label={`Bier bei ${boerse.name} eintragen`} title="Bier eintragen">
             <Icon name="plus" size={18} strokeWidth={2.8} />
           </button>
-          <button onClick={onToggle} className="flex-shrink-0 mt-1 text-text-tertiary"
+          <button onClick={onToggle} className="btn-compact w-7 h-11 flex items-center justify-center flex-shrink-0 text-text-tertiary"
                   aria-label={offen ? 'Zuklappen' : 'Aufklappen'} aria-expanded={offen}>
             <Icon name={offen ? 'chevronUp' : 'chevronDown'} size={18} strokeWidth={2.4} />
           </button>

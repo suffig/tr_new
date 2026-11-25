@@ -49,8 +49,8 @@ import { getTeamShort } from '../constants/teams';
  */
 
 const PERSONEN = [
-  { id: 'alexander', name: 'Alexander', farbe: 'text-system-blue', flaeche: 'panel-blue' },
-  { id: 'philip', name: 'Philip', farbe: 'text-system-red', flaeche: 'panel-red' },
+  { id: 'alexander', name: 'Alexander', farbe: 'text-system-blue', flaeche: 'panel-blue', voll: 'bg-system-blue' },
+  { id: 'philip', name: 'Philip', farbe: 'text-system-red', flaeche: 'panel-red', voll: 'bg-system-red' },
 ];
 
 /**
@@ -337,27 +337,28 @@ export default function Schnellerfassung() {
                     {PERSONEN.map((p) => {
                       const wert = stand[z.art]?.[p.id] ?? 0;
                       return (
-                        <div key={p.id} className={`${p.flaeche} rounded-lg px-2 py-1.5 flex-1 min-w-0
-                                                    flex items-center gap-1.5`}>
-                          <span className={`text-caption2 font-semibold truncate min-w-0 flex-1 ${p.farbe}`}>
+                        <div key={p.id} className={`${p.flaeche} rounded-xl p-2.5 flex-1 min-w-0`}>
+                          <span className={`block text-footnote font-semibold truncate mb-1.5 ${p.farbe}`}>
                             {p.name}
                           </span>
+                          <div className="flex items-center justify-between gap-1.5">
                           <button type="button" aria-label={`${z.label} für ${p.name} eins weniger`}
                                   disabled={wert <= 0}
                                   onClick={() => buchen(p.id, z.art, -1)}
-                                  className="btn-compact stepper-btn w-7 h-7 rounded-md bg-bg-elevated
-                                             text-text-secondary font-semibold disabled:opacity-40 flex-shrink-0">
+                                  className="btn-compact stepper-btn w-11 h-11 rounded-xl bg-bg-elevated
+                                             text-text-secondary text-title3 font-semibold disabled:opacity-40 flex-shrink-0">
                             −
                           </button>
-                          <span className="num-tabular text-callout font-bold text-text-primary w-5 text-center flex-shrink-0">
+                          <span key={wert} className="zahl-sprung stat-display num-tabular text-title2 text-text-primary text-center">
                             {wert}
                           </span>
                           <button type="button" aria-label={`${z.label} für ${p.name} eins mehr`}
                                   onClick={() => buchen(p.id, z.art, 1)}
-                                  className="btn-compact stepper-btn w-7 h-7 rounded-md bg-bg-elevated
-                                             text-text-primary font-semibold disabled:opacity-40 flex-shrink-0">
+                                  className={`btn-compact stepper-btn w-11 h-11 rounded-xl text-white
+                                             text-title3 font-semibold flex-shrink-0 ${p.voll}`}>
                             +
                           </button>
+                          </div>
                         </div>
                       );
                     })}
@@ -383,7 +384,7 @@ export default function Schnellerfassung() {
               <div className="flex flex-wrap gap-1.5">
                 <select value={sperreSpieler} onChange={(e) => setSperreSpieler(e.target.value)}
                         aria-label="Spieler für die Sperre"
-                        className="btn-compact flex-1 min-w-[8rem] bg-bg-elevated rounded-lg px-2 py-1.5
+                        className="btn-compact w-full bg-bg-elevated rounded-lg px-2 py-1.5
                                    text-footnote text-text-primary focus:outline-none">
                   <option value="">Spieler …</option>
                   {(spieler || []).map((s) => (
@@ -399,7 +400,7 @@ export default function Schnellerfassung() {
                           if (t) setSperreSpiele(t.duration ?? 1);
                         }}
                         aria-label="Art der Sperre"
-                        className="btn-compact flex-1 min-w-[8rem] bg-bg-elevated rounded-lg px-2 py-1.5
+                        className="btn-compact flex-1 min-w-[9rem] bg-bg-elevated rounded-lg px-2 py-1.5
                                    text-footnote text-text-primary focus:outline-none">
                   {BAN_TYPES.map((b) => (
                     <option key={b.value} value={b.value}>{b.label}</option>
