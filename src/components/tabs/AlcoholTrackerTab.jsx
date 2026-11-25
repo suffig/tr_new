@@ -1373,7 +1373,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                 <div className="text-center">
                   <button
                     onClick={() => toggleAdvancedButtons('philip')}
-                    className="bg-system-red/15 hover:bg-system-red/25 text-system-red px-4 py-2 rounded-lg text-sm font-medium transition-all border border-system-red/45 hover:border-system-red/45 min-h-[44px]"
+                    className="bg-system-red/15 hover:bg-system-red/25 text-system-red px-4 py-2 rounded-lg text-sm font-medium transition-all border border-system-red/45 min-h-[44px]"
                   >
                     {showAdvancedButtons.philip ? 'Weniger Beträge' : 'Mehr Beträge'}
                   </button>
@@ -1386,7 +1386,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       <button
                         key={amount}
                         onClick={() => addToPlayerAccount('philip', amount)}
-                        className="bg-system-red/15 hover:bg-system-red/25 text-system-red px-3 py-3 rounded-md text-sm font-medium transition-all border border-system-red/45 hover:border-system-red/45 min-h-[44px]"
+                        className="bg-system-red/15 hover:bg-system-red/25 text-system-red px-3 py-3 rounded-md text-sm font-medium transition-all border border-system-red/45 min-h-[44px]"
                       >
                         +{euro(amount)}
                       </button>
