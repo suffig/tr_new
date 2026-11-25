@@ -156,6 +156,7 @@ export default function Schnellerfassung() {
 
   // Nur Offenes: nach "Abend beenden" zählt der Rest des Abends von null.
   const stand = standFuer(offene, datum);
+  const letzterOffener = offene.map((e) => e.datum).filter(Boolean).sort().pop();
   const abgeschlossen = Boolean(ladeAbschluesse()[datum]) && stand.anzahl === 0;
   // Für die Nachfrage beim Beenden: gab es an diesem Abend überhaupt etwas?
   //
@@ -474,6 +475,19 @@ export default function Schnellerfassung() {
                             className="btn-primary flex-1">Ja, abschließen</button>
                   </div>
                 </div>
+              ) : stand.anzahl === 0 ? (
+                // Einen leeren Abend nicht beenden: am 24.11. wurde so der
+                // laufende geschlossen, bevor er anfing, statt des letzten.
+                letzterOffener ? (
+                  <button type="button" onClick={() => setDatum(letzterOffener)}
+                          className="btn-secondary w-full">
+                    Offen ist noch der {kurzesDatum(letzterOffener)}
+                  </button>
+                ) : (
+                  <p className="text-footnote text-text-tertiary text-center">
+                    Noch nichts eingetragen, also nichts zu beenden.
+                  </p>
+                )
               ) : (
                 <button type="button" onClick={() => setBeendenGefragt(true)}
                         className="btn-secondary w-full inline-flex items-center justify-center gap-2">
