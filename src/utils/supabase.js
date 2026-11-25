@@ -690,6 +690,9 @@ const createDatabaseOperations = (client) => {
     },
 
     async insert(table, data) {
+      // Haelt den laufenden Abend offen, siehe beendeFaellige in abende.js.
+      try { localStorage.setItem('fusta_letzte_eingabe', new Date().toISOString()); } catch { /* Quota */ }
+
       // Add FIFA version for versioned tables — but respect an explicitly
       // provided fifa_version (e.g. the edit flow re-inserting an old-season
       // match must NOT re-stamp it with the current version).

@@ -93,12 +93,23 @@ function App() {
       toast.error(text + grund, { id: 'abend-fehler', duration: 6000 });
     });
 
+    const automatisch = (e) => {
+      const tage = e.detail.map((d) => `${d.slice(8)}.${d.slice(5, 7)}.`).join(', ');
+      toast(`${e.detail.length === 1 ? 'Abend vom' : 'Abende vom'} ${tage} beendet: 24 Stunden ohne Eintrag. Steht im Rückblick.`,
+        { id: 'abend-automatisch', duration: 7000 });
+    };
+    window.addEventListener('abend-automatisch-beendet', automatisch);
+
     const zurueck = () => { if (document.visibilityState === 'visible') synchronisiere(); };
+    // Die App bleibt auch mal offen liegen — dann holt sie hier nach.
+    const takt = setInterval(zurueck, 10 * 60 * 1000);
     document.addEventListener('visibilitychange', zurueck);
     window.addEventListener('online', synchronisiere);
     window.addEventListener('fifaVersionChanged', synchronisiere);
     return () => {
       onAbendFehler(null);
+      clearInterval(takt);
+      window.removeEventListener('abend-automatisch-beendet', automatisch);
       document.removeEventListener('visibilitychange', zurueck);
       window.removeEventListener('online', synchronisiere);
       window.removeEventListener('fifaVersionChanged', synchronisiere);

@@ -14,7 +14,8 @@ import { supabase, usingFallback } from './supabase';
 import { markSelfInsert } from './selfActivity';
 import { getCurrentFifaVersion } from './fifaVersionManager';
 import { fuehreZusammen } from './abendAbgleich';
-import { uebernimmAbschluesse } from './abendAbschluss';
+import { beendeRuhende, nurOffene, uebernimmAbschluesse } from './abendAbschluss';
+import { loadPulls } from './teamCollection';
 
 const SPEICHER = 'fusta_abend_ereignisse_v1';
 
@@ -263,8 +264,31 @@ export function synchronisiere() {
   return laeuft;
 }
 
+/** Wann zuletzt etwas in die App eingetragen wurde (Spiel, Sperre, Bier …). */
+function letzteSonstigeEingabe() {
+  try { return localStorage.getItem('fusta_letzte_eingabe'); } catch { return null; }
+}
+
+/** Abende beenden, an denen seit 24 Stunden nichts mehr passiert ist. */
+async function beendeFaellige() {
+  const letzte = new Map();
+  const merke = (datum, ts) => letzte.set(datum, Math.max(letzte.get(datum) || 0, new Date(ts).getTime() || 0));
+  for (const e of nurOffene(ladeLokal())) if (e.datum) merke(e.datum, e.ts);
+  // Ein gezogenes Team oder ein Spiel haelt den Abend offen, eroeffnet aber
+  // keinen: zu beenden gibt es nur, was der Zaehler zeigt.
+  for (const ts of [...loadPulls().map((p) => p.ts), letzteSonstigeEingabe()]) {
+    if (ts && letzte.has(logischesDatum(ts))) merke(logischesDatum(ts), ts);
+  }
+  const beendet = await beendeRuhende(letzte);
+  if (!beendet.length) return;
+  try { window.dispatchEvent(new CustomEvent('abend-automatisch-beendet', { detail: beendet })); } catch { /* kein DOM */ }
+}
+
 async function abgleich() {
-  if (usingFallback) return { ok: false, offline: true };
+  if (usingFallback) {
+    await beendeFaellige();
+    return { ok: false, offline: true };
+  }
   try {
     // Ohne Anmeldung liefert RLS eine leere Liste OHNE Fehler — das saehe aus
     // wie eine geleerte Datenbank.
@@ -290,6 +314,8 @@ async function abgleich() {
       const version = e.fifa_version || (saisons.length === 1 ? saisons[0] : saison);
       await ladeHoch({ ...e, fifa_version: version });
     }
+    // Erst jetzt: vorher koennte das andere Geraet noch Spaeteres eingetragen haben.
+    await beendeFaellige();
     return { ok: true, nachgereicht: hochladen.length };
   } catch (error) {
     console.warn('[Abend] Abgleich fehlgeschlagen:', error?.message || error);

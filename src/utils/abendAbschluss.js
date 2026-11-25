@@ -27,7 +27,11 @@ function endeDesAbends(datum) {
   return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
 }
 
-/** @returns {Object<string, {am: string, db?: boolean, alt?: boolean}>} je Datum */
+/**
+ * Je Datum entweder `am` (abgeschlossen) oder `offen` (von Hand wieder
+ * geöffnet — zählt als Eingabe, sonst wäre er nach 24 Stunden sofort wieder zu).
+ * @returns {Object<string, {am?: string, offen?: string, db?: boolean, alt?: boolean}>}
+ */
 export function ladeAbschluesse() {
   try {
     const roh = JSON.parse(localStorage.getItem(SPEICHER) || 'null');
@@ -59,78 +63,115 @@ const ms = (ts) => new Date(ts).getTime() || 0;
 /** Ereignisse, die noch zählen: ohne Abschluss oder nach ihm eingetragen. */
 export function nurOffene(ereignisse) {
   const zu = ladeAbschluesse();
-  return (ereignisse || []).filter((e) => !zu[e.datum] || ms(e.ts) > ms(zu[e.datum].am));
+  return (ereignisse || []).filter((e) => !zu[e.datum]?.am || ms(e.ts) > ms(zu[e.datum].am));
 }
 
-async function schreibeInDB(datum, am) {
+// Ein Wiederöffnen steht als Notiz am Abend, damit auch das andere Gerät die
+// 24 Stunden neu zählt.
+const NOTIZ = 'Wieder geöffnet ';
+const ausNotiz = (notiz) => (notiz?.startsWith(NOTIZ) ? notiz.slice(NOTIZ.length) : null);
+
+async function schreibeInDB(datum, { am, offen }) {
   try {
     const version = getCurrentFifaVersion();
+    const werte = { abgeschlossen_am: am || null, notiz: offen ? NOTIZ + offen : null };
     const { data, error } = await supabase.from('abende')
-      .update({ abgeschlossen_am: am })
+      .update(werte)
       .eq('datum', datum).eq('fifa_version', version)
       .select('id');
     if (error) return error;
-    if (data.length || am === null) return null;
-    const neu = await supabase.from('abende')
-      .insert({ datum, fifa_version: version, abgeschlossen_am: am });
+    if (data.length || !am) return null;
+    const neu = await supabase.from('abende').insert({ datum, fifa_version: version, ...werte });
     return neu.error || null;
   } catch (fehler) {
     return fehler;
   }
 }
 
-async function reicheEin(datum, am) {
+const stempel = (a) => ms(a?.am || a?.offen);
+
+async function reicheEin(datum, eintrag) {
   // Offline nicht als "in der Datenbank" vermerken — der Abgleich reicht nach.
   if (usingFallback) return { ok: true };
-  const fehler = await schreibeInDB(datum, am);
+  const fehler = await schreibeInDB(datum, eintrag);
   if (fehler) return { ok: true, nurLokal: true, fehler };
   const jetzt = ladeAbschluesse();
-  // Nur vermerken, wenn inzwischen nicht wieder geöffnet oder neu beendet wurde.
-  if (jetzt[datum]?.am === am) speichere({ ...jetzt, [datum]: { am, db: true } });
+  // Nur vermerken, wenn inzwischen nichts Neues entschieden wurde.
+  if (stempel(jetzt[datum]) === stempel(eintrag)) {
+    speichere({ ...jetzt, [datum]: { am: eintrag.am, offen: eintrag.offen, db: true } });
+  }
   return { ok: true };
+}
+
+function setze(datum, eintrag) {
+  speichere({ ...ladeAbschluesse(), [datum]: eintrag });
+  return reicheEin(datum, eintrag);
 }
 
 /**
  * Einen Abend abschließen. Lokal sofort, die Datenbank folgt.
+ * @param {string} datum
+ * @param {string} [am] bis wann — Standard jetzt
  * @returns {Promise<{ok: boolean, nurLokal?: boolean, fehler?: unknown}>}
  */
-export async function beende(datum) {
+export async function beende(datum, am = new Date().toISOString()) {
   if (!datum) return { ok: false, fehler: new Error('Kein Datum') };
-  const am = new Date().toISOString();
-  speichere({ ...ladeAbschluesse(), [datum]: { am } });
-  return reicheEin(datum, am);
+  return setze(datum, { am });
 }
 
 /** Abschluss zurücknehmen — der ganze Abend zählt wieder mit. */
 export async function wiederOeffnen(datum) {
-  const rest = { ...ladeAbschluesse() };
-  delete rest[datum];
-  speichere(rest);
-  if (usingFallback) return { ok: true };
-  const fehler = await schreibeInDB(datum, null);
-  return fehler ? { ok: true, nurLokal: true, fehler } : { ok: true };
+  return setze(datum, { offen: new Date().toISOString() });
 }
 
 /**
  * Abschlüsse aus der Datenbank übernehmen und fehlende nachreichen.
- * @param {Array} abende Zeilen der laufenden Saison (datum, abgeschlossen_am)
+ * @param {Array} abende Zeilen der laufenden Saison (datum, abgeschlossen_am, notiz)
  */
 export async function uebernimmAbschluesse(abende) {
   const lokal = { ...ladeAbschluesse() };
   const vorher = JSON.stringify(lokal);
   for (const z of abende) {
     const l = lokal[z.datum];
-    if (z.abgeschlossen_am) {
-      const neuerHier = l && !l.db && !l.alt && ms(l.am) > ms(z.abgeschlossen_am);
-      if (!neuerHier) lokal[z.datum] = { am: z.abgeschlossen_am, db: true };
-    } else if (l?.db) {
-      delete lokal[z.datum]; // woanders wieder geöffnet
-    }
+    const offen = ausNotiz(z.notiz);
+    const oben = z.abgeschlossen_am ? { am: z.abgeschlossen_am } : offen ? { offen } : null;
+    const neuerHier = l && !l.db && !l.alt && stempel(l) > stempel(oben);
+    if (neuerHier) continue;
+    if (oben) lokal[z.datum] = { ...oben, db: true };
+    else if (l?.db) delete lokal[z.datum]; // woanders wieder geöffnet
   }
   if (JSON.stringify(lokal) !== vorher) speichere(lokal);
 
   for (const [datum, a] of Object.entries(lokal)) {
     // Alte Einträge nicht hochladen: ihr Zeitpunkt ist geraten.
-    if (!a.db && !a.alt) await reicheEin(datum, a.am);
+    if (!a.db && !a.alt) await reicheEin(datum, a);
   }
+}
+
+/* --------------------------------------------------------------------------
+   Von selbst beenden
+   -------------------------------------------------------------------------- */
+
+export const RUHE_MS = 24 * 3600 * 1000;
+
+/**
+ * Abende beenden, an denen seit 24 Stunden nichts mehr eingetragen wurde.
+ *
+ * Der Abschluss liegt genau 24 Stunden nach der letzten Eingabe und nicht auf
+ * „jetzt": so kommen beide Geräte auf denselben Zeitpunkt, egal wann sie das
+ * nächste Mal geöffnet werden, und ein später Nachtrag zählt wieder.
+ *
+ * @param {Map<string, number>} letzteEingabe je offenem Abend, in ms
+ * @returns {Promise<string[]>} die beendeten Abende
+ */
+export async function beendeRuhende(letzteEingabe, jetzt = Date.now()) {
+  const zu = ladeAbschluesse();
+  const beendet = [];
+  for (const [datum, ts] of letzteEingabe) {
+    const bis = Math.max(ts, ms(zu[datum]?.offen)) + RUHE_MS;
+    if (bis > jetzt) continue;
+    beendet.push(datum);
+    await beende(datum, new Date(bis).toISOString());
+  }
+  return beendet;
 }

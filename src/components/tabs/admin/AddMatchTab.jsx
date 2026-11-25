@@ -336,7 +336,7 @@ export default function AddMatchTab({ eingebettet = false, startModus = null, on
       setFormData(makeEmptyForm());
       setShowModal(true);
     }
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const closeModal = () => {
     if (hasMeaningfulInput()) {

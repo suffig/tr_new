@@ -157,7 +157,7 @@ export default function Schnellerfassung() {
   // Nur Offenes: nach "Abend beenden" zählt der Rest des Abends von null.
   const stand = standFuer(offene, datum);
   const letzterOffener = offene.map((e) => e.datum).filter(Boolean).sort().pop();
-  const abgeschlossen = Boolean(ladeAbschluesse()[datum]) && stand.anzahl === 0;
+  const abgeschlossen = Boolean(ladeAbschluesse()[datum]?.am) && stand.anzahl === 0;
   // Für die Nachfrage beim Beenden: gab es an diesem Abend überhaupt etwas?
   //
   // Schnaps UND Sterne, weil der Abschluss beide Zähler zurücksetzt. Nur den
@@ -499,7 +499,8 @@ export default function Schnellerfassung() {
 
             <p className="text-caption2 text-text-tertiary mt-3">
               Landet im selben Protokoll wie der Alkohol-Bereich. Ein Abend
-              läuft bis 6 Uhr morgens.
+              läuft bis 6 Uhr morgens und endet von selbst, wenn 24 Stunden
+              nichts mehr eingetragen wird.
             </p>
           </div>
         </div>
