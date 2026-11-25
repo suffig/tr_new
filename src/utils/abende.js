@@ -10,8 +10,11 @@
 //   * localStorage bleibt als Zwischenspeicher fuer den Offline-Fall.
 //   * Schreibfehler werden gemeldet, nicht geschluckt.
 
-import { supabaseDb, usingFallback } from './supabase';
+import { supabase, usingFallback } from './supabase';
 import { markSelfInsert } from './selfActivity';
+import { getCurrentFifaVersion } from './fifaVersionManager';
+import { fuehreZusammen } from './abendAbgleich';
+import { uebernimmAbschluesse } from './abendAbschluss';
 
 const SPEICHER = 'fusta_abend_ereignisse_v1';
 
@@ -60,7 +63,12 @@ function melde(aktion, fehler) {
    Lokaler Zwischenspeicher
    -------------------------------------------------------------------------- */
 
+// Nur gesetzt, wenn der Browser nichts mehr speichern will (voll, privat).
+// Vorher verschwand der Eintrag dann wortlos und der Zaehler blieb stehen.
+let notbehelf = null;
+
 export function ladeLokal() {
+  if (notbehelf) return notbehelf;
   try {
     const roh = JSON.parse(localStorage.getItem(SPEICHER) || 'null');
     return Array.isArray(roh) ? roh : [];
@@ -68,13 +76,16 @@ export function ladeLokal() {
 }
 
 function speichereLokal(liste) {
-  try { localStorage.setItem(SPEICHER, JSON.stringify(liste)); } catch { /* Quota */ }
-  return liste;
-}
-
-/** Den Stand aus der Datenbank uebernehmen. */
-export function ersetzeLokal(liste) {
-  return speichereLokal(liste);
+  try {
+    localStorage.setItem(SPEICHER, JSON.stringify(liste));
+    notbehelf = null;
+  } catch (fehler) {
+    notbehelf = liste;
+    melde('Geraetespeicher', fehler);
+  }
+  // Schnellerfassung, Alkohol-Bereich, Rueckblick und Start zeigen dasselbe
+  // Protokoll — wer offen ist, rechnet neu.
+  try { window.dispatchEvent(new CustomEvent('abend-log-geaendert')); } catch { /* kein DOM */ }
 }
 
 /* --------------------------------------------------------------------------
@@ -86,7 +97,8 @@ function zeileZuLokal(z) {
     id: `db_${z.id}`,
     dbId: z.id,
     abendId: z.abend_id,
-    datum: z.datum || null,
+    fifa_version: z.fifa_version,
+    datum: z.datum || logischesDatum(z.created_at),
     person: PERSON_APP[z.person] || String(z.person || '').toLowerCase(),
     art: z.art,
     menge: Number(z.menge) || 0,
@@ -99,29 +111,19 @@ function zeileZuLokal(z) {
    Lesen
    -------------------------------------------------------------------------- */
 
-/**
- * Alle Ereignisse der laufenden Saison, aeltestes zuerst.
- * Die Saison-Filterung uebernimmt die supabaseDb-Schicht.
- */
-export async function ladeAusDB() {
-  if (usingFallback) return { ok: false, offline: true, ereignisse: [] };
-  try {
-    const res = await supabaseDb.select('abend_ereignisse', '*', {
-      order: { column: 'created_at', ascending: true },
-    });
-    if (res?.error) return { ok: false, error: res.error, ereignisse: [] };
-
-    // Die Datumsangabe haengt am Abend, nicht am Ereignis — einmal nachladen
-    // und zuordnen, statt je Ereignis einzeln zu fragen.
-    const abende = await supabaseDb.select('abende', '*', {});
-    const datumVon = new Map((abende?.data || []).map((a) => [a.id, a.datum]));
-
-    const ereignisse = (res?.data || []).map((z) =>
-      zeileZuLokal({ ...z, datum: datumVon.get(z.abend_id) })
-    );
-    return { ok: true, ereignisse };
-  } catch (error) {
-    return { ok: false, error, ereignisse: [] };
+// Direkt am Client und nicht ueber supabaseDb.select(): das faengt Fehler ab
+// und liefert Demo-Daten. Beim Abgleich hiesse das, ein Funkloch fuer "in der
+// Datenbank steht nichts" zu halten. Seitenweise, weil Supabase bei 1000
+// Zeilen stillschweigend abschneidet.
+async function alleZeilen(tabelle) {
+  const SEITE = 1000;
+  const raus = [];
+  for (let von = 0; ; von += SEITE) {
+    const { data, error } = await supabase.from(tabelle).select('*')
+      .order('id', { ascending: true }).range(von, von + SEITE - 1);
+    if (error) throw error;
+    raus.push(...data);
+    if (data.length < SEITE) return raus;
   }
 }
 
@@ -129,27 +131,78 @@ export async function ladeAusDB() {
    Schreiben
    -------------------------------------------------------------------------- */
 
+/** ids, deren Upload gerade laeuft, und dbIds, die hier geloescht wurden. */
+const unterwegs = new Set();
+const geloescht = new Set();
+
+async function loescheZeile(dbId) {
+  geloescht.add(dbId);
+  const { error } = await supabase.from('abend_ereignisse').delete().eq('id', dbId);
+  if (error) { geloescht.delete(dbId); throw error; }
+}
+
 /**
  * Den Abend zu einem Datum holen — oder anlegen.
  * Ein Abend je Saison und Datum; wer zweimal am selben Tag spielt, fuellt
  * denselben weiter.
  */
-async function abendFuer(datum) {
-  const tag = datum || logischesDatum();
-  const vorhanden = await supabaseDb.select('abende', '*', { eq: { datum: tag } });
-  const treffer = (vorhanden?.data || [])[0];
-  if (treffer) return treffer.id;
+async function abendFuer(tag, version) {
+  const suche = async () => {
+    const { data, error } = await supabase.from('abende').select('id')
+      .eq('datum', tag).eq('fifa_version', version).limit(1);
+    if (error) throw error;
+    return data[0]?.id;
+  };
+  const id = await suche();
+  if (id != null) return id;
 
-  const neu = await supabaseDb.insert('abende', { datum: tag });
-  if (neu?.error) throw neu.error;
-  // insert liefert je nach Client ein Objekt oder eine Liste zurueck.
-  const zeile = Array.isArray(neu?.data) ? neu.data[0] : neu?.data;
-  return zeile?.id;
+  const neu = await supabase.from('abende')
+    .insert({ datum: tag, fifa_version: version }).select('id').single();
+  if (!neu.error) return neu.data.id;
+  // 23505: das andere Telefon hat denselben Abend gerade angelegt.
+  if (neu.error.code !== '23505') throw neu.error;
+  return suche();
+}
+
+/** Ein lokales Ereignis hochladen und seine dbId merken. Wirft bei Fehlern. */
+async function ladeHoch(e) {
+  if (unterwegs.has(e.id)) return;
+  unterwegs.add(e.id);
+  try {
+    const version = e.fifa_version || getCurrentFifaVersion();
+    const { data: zeile, error } = await supabase.from('abend_ereignisse').insert({
+      abend_id: await abendFuer(e.datum, version),
+      fifa_version: version,
+      person: PERSON_DB[e.person] || e.person,
+      art: e.art,
+      menge: e.menge,
+      info: e.info,
+      // Die Zeit des Tippens, nicht die des Ankommens: daran haengt, ob der
+      // Eintrag vor oder nach einem Abschluss liegt.
+      created_at: e.ts,
+    }).select('id').single();
+    if (error) throw error;
+    // Eigenes Insert vormerken, damit das Realtime-Echo keine Meldung an den
+    // ausloest, der gerade selbst getippt hat.
+    markSelfInsert('abend_ereignisse', zeile.id);
+
+    const liste = ladeLokal();
+    if (liste.some((x) => x.id === e.id)) {
+      const fertig = { dbId: zeile.id, fifa_version: version, hoch: Date.now() };
+      speichereLokal(liste.map((x) => (x.id === e.id ? { ...x, ...fertig } : x)));
+    } else {
+      // Waehrend des Hochladens zurueckgenommen — dann auch oben weg.
+      await loescheZeile(zeile.id);
+    }
+  } finally {
+    unterwegs.delete(e.id);
+  }
 }
 
 /**
  * Ein Ereignis erfassen. Schreibt sofort lokal (damit die Oberflaeche
- * reagiert) und danach in die Datenbank.
+ * reagiert) und danach in die Datenbank. Schlaegt das fehl, bleibt es lokal
+ * stehen und synchronisiere() reicht es nach.
  *
  * @param {object} e
  * @param {string} e.person 'alexander' | 'philip'
@@ -166,71 +219,82 @@ export async function erfasse({ person, art, menge = 1, info = null, datum = nul
     person, art, menge: Number(menge) || 0, info,
     datum: datum || logischesDatum(),
     ts: new Date().toISOString(),
+    fifa_version: getCurrentFifaVersion(),
   };
-  const liste = [...ladeLokal(), lokal];
-  speichereLokal(liste);
+  speichereLokal([...ladeLokal(), lokal]);
 
-  if (usingFallback) return { ok: true, offline: true, ereignisse: liste };
-
+  if (usingFallback) return { ok: true, offline: true };
   try {
-    const abendId = await abendFuer(lokal.datum);
-    const res = await supabaseDb.insert('abend_ereignisse', {
-      abend_id: abendId,
-      person: PERSON_DB[person] || person,
-      art,
-      menge: lokal.menge,
-      info,
-    });
-    if (res?.error) { melde('Eintrag', res.error); return { ok: false, error: res.error, ereignisse: liste }; }
-    // Eigenes Insert vormerken, damit das Realtime-Echo keine Meldung an den
-    // ausloest, der gerade selbst getippt hat.
-    const zeile = Array.isArray(res?.data) ? res.data[0] : res?.data;
-    if (zeile?.id != null) markSelfInsert('abend_ereignisse', zeile.id);
-    return { ok: true, ereignisse: liste };
+    await ladeHoch(lokal);
+    return { ok: true };
   } catch (error) {
     melde('Eintrag', error);
-    return { ok: false, error, ereignisse: liste };
+    return { ok: false, error };
   }
 }
 
 /** Ein Ereignis zuruecknehmen (Rueckgaengig-Knopf). */
 export async function entferne(ereignis) {
-  const liste = ladeLokal().filter((e) => e.id !== ereignis.id);
-  speichereLokal(liste);
+  // Frisch nachsehen: die Oberflaeche kann es aus der Zeit vor dem Hochladen
+  // kennen, dann fehlt ihr die dbId und die Zeile bliebe oben stehen.
+  const liste = ladeLokal();
+  const aktuell = liste.find((e) => e.id === ereignis.id) || ereignis;
+  speichereLokal(liste.filter((e) => e.id !== ereignis.id));
 
-  if (usingFallback || !ereignis.dbId) return { ok: true, ereignisse: liste };
+  if (usingFallback || !aktuell.dbId) return { ok: true };
   try {
-    const res = await supabaseDb.delete('abend_ereignisse', ereignis.dbId);
-    if (res?.error) { melde('Rueckgaengig', res.error); return { ok: false, error: res.error, ereignisse: liste }; }
-    return { ok: true, ereignisse: liste };
+    await loescheZeile(aktuell.dbId);
+    return { ok: true };
   } catch (error) {
     melde('Rueckgaengig', error);
-    return { ok: false, error, ereignisse: liste };
+    return { ok: false, error };
   }
 }
 
-/** Lokal vorhandene Ereignisse einmalig uebertragen (Altbestand). */
-export async function uebertrageLokale() {
-  if (usingFallback) return { ok: false, offline: true, uebertragen: 0 };
-  let n = 0;
-  for (const e of ladeLokal()) {
-    if (e.dbId) continue; // stammt schon aus der Datenbank
-    try {
-      const abendId = await abendFuer(e.datum);
-      const res = await supabaseDb.insert('abend_ereignisse', {
-        abend_id: abendId,
-        person: PERSON_DB[e.person] || e.person,
-        art: e.art,
-        menge: e.menge,
-        info: e.info,
-      });
-      if (res?.error) return { ok: false, error: res.error, uebertragen: n };
-      n++;
-    } catch (error) {
-      return { ok: false, error, uebertragen: n };
+let laeuft = null;
+
+/**
+ * Geraet und Datenbank auf denselben Stand bringen: fehlende Ereignisse
+ * holen, nie hochgeladene nachreichen, Abschluesse uebernehmen. Laeuft beim
+ * Start, beim Zurueckkehren in die App und wenn das Netz wiederkommt.
+ */
+export function synchronisiere() {
+  if (!laeuft) laeuft = abgleich().finally(() => { laeuft = null; });
+  return laeuft;
+}
+
+async function abgleich() {
+  if (usingFallback) return { ok: false, offline: true };
+  try {
+    // Ohne Anmeldung liefert RLS eine leere Liste OHNE Fehler — das saehe aus
+    // wie eine geleerte Datenbank.
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return { ok: false, offline: true };
+
+    const start = Date.now();
+    const saison = getCurrentFifaVersion();
+    const [abende, zeilen] = await Promise.all([alleZeilen('abende'), alleZeilen('abend_ereignisse')]);
+    await uebernimmAbschluesse(abende.filter((a) => a.fifa_version === saison));
+
+    const datumVon = new Map(abende.map((a) => [a.id, a.datum]));
+    const db = zeilen
+      .filter((z) => !geloescht.has(z.id))
+      .map((z) => zeileZuLokal({ ...z, datum: datumVon.get(z.abend_id) }));
+    const { liste, hochladen } = fuehreZusammen({ lokal: ladeLokal(), db, saison, unterwegs, start });
+    speichereLokal(liste);
+
+    for (const e of hochladen) {
+      // Aeltere Eintraege kennen ihre Saison nicht: die ihres Abends nehmen,
+      // wenn sie eindeutig ist.
+      const saisons = [...new Set(abende.filter((a) => a.datum === e.datum).map((a) => a.fifa_version))];
+      const version = e.fifa_version || (saisons.length === 1 ? saisons[0] : saison);
+      await ladeHoch({ ...e, fifa_version: version });
     }
+    return { ok: true, nachgereicht: hochladen.length };
+  } catch (error) {
+    console.warn('[Abend] Abgleich fehlgeschlagen:', error?.message || error);
+    return { ok: false, error };
   }
-  return { ok: true, uebertragen: n };
 }
 
 /* --------------------------------------------------------------------------

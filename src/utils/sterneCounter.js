@@ -15,7 +15,7 @@
 // aussen sichtbare Form ({ philip, alex, history }) bleibt gleich, damit die
 // Oberflaechen unveraendert weiterlaufen.
 
-import { ladeLokal, erfasse, entferne, ladeAusDB, ersetzeLokal } from './abende';
+import { ladeLokal, erfasse, entferne } from './abende';
 import { nurOffene } from './abendAbschluss';
 
 const ALT_KEY = 'sterneData'; // nur noch fuer die einmalige Uebernahme
@@ -116,51 +116,23 @@ export function addSterneEintrag({ person, stars, info = null, duell = null }) {
     info: { stars, ...(info ? { text: info } : {}), ...(duell ? { duell } : {}) },
   });
 
-  return { gained, data: loadSterne() };
+  return { gained };
 }
 
 /**
  * Einen einzelnen Verlaufseintrag entfernen.
- * @param {number} index Position im Verlauf (aelteste = 0)
- */
-export function removeSterneEintrag(index) {
-  const daten = loadSterne();
-  const eintrag = daten.history[index];
-  if (!eintrag?._ereignis) return daten;
-  entferne(eintrag._ereignis);
-  return loadSterne();
-}
-
-/** Alle Sterne-Ereignisse zuruecknehmen (frueher: saveSterne mit Nullwerten). */
-export function alleSterneLoeschen() {
-  for (const v of loadSterne().history) {
-    if (v._ereignis) entferne(v._ereignis);
-  }
-  return loadSterne();
-}
-
-/* --------------------------------------------------------------------------
-   Abgleich mit der Datenbank
-   -------------------------------------------------------------------------- */
-
-/**
- * Beim Start: Stand aus der Datenbank holen. Bringt das Geraet auf denselben
- * Stand wie das andere — genau das ging vorher nicht.
  *
- * Sicherung wie beim Team-Tracker: enthaelt die Datenbank WENIGER Ereignisse
- * als der lokale Speicher, wird NICHT ueberschrieben. Sonst waeren Eintraege
- * weg, die nie hochgeladen wurden.
+ * Der Eintrag selbst und nicht seine Position: die Anzeige laesst
+ * abgeschlossene Abende weg, der volle Verlauf nicht — mit einem Index wurde
+ * dadurch ein fremder, alter Eintrag geloescht.
  */
-export async function sterneAbgleichen() {
-  const res = await ladeAusDB();
-  if (!res.ok) return { ok: false, offline: res.offline, error: res.error };
+export function removeSterneEintrag(eintrag) {
+  if (eintrag?._ereignis) entferne(eintrag._ereignis);
+}
 
-  const lokal = ladeLokal();
-  if (res.ereignisse.length < lokal.length) {
-    return { ok: false, lokalMehr: true, lokal: lokal.length, db: res.ereignisse.length };
-  }
-  ersetzeLokal(res.ereignisse);
-  return { ok: true, anzahl: res.ereignisse.length };
+/** Alle Sterne zuruecknehmen, die der Zaehler zeigt — Abgeschlossenes bleibt. */
+export function alleSterneLoeschen() {
+  for (const v of loadSterne({ ohneAbgeschlossene: true }).history) removeSterneEintrag(v);
 }
 
 /**

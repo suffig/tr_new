@@ -1,129 +1,136 @@
-import { supabaseDb } from './supabase';
+import { supabase, usingFallback } from './supabase';
 import { getCurrentFifaVersion } from './fifaVersionManager';
 
 /**
- * Welche Abende sind abgeschlossen?
+ * Welche Abende sind abgeschlossen — und ab wann?
  *
- * WOZU
- * Die Zähler im Alkohol-Bereich lasen das Ereignisprotokoll OHNE Datumsfilter
- * und wuchsen damit über alle Abende hinweg endlos. Ein Abend endet aber
- * irgendwann, und danach soll bei Null angefangen werden.
+ * EIN ABSCHLUSS IST EIN ZEITPUNKT, KEINE SPERRE.
+ * Zuerst war er nur das Datum des Abends. Dann zählte an diesem Abend nichts
+ * mehr: wer zu früh abschloss, konnte bis 6 Uhr weder Schnaps noch Sterne
+ * sehen — sie wurden gespeichert, aber ausgeblendet, und das Plus war
+ * gesperrt. Jetzt ist abgeschlossen, was BIS zum Abschluss eingetragen war;
+ * alles danach zählt wieder von null.
  *
- * WARUM NICHTS GELÖSCHT WIRD
- * Ein Abschluss ist eine Markierung, kein Löschen. Die Ereignisse bleiben
- * vollständig stehen — der Abendrückblick rechnet seine Zahlen daraus, je
- * Datum. „Zurücksetzen" heißt deshalb: die Zähler lassen abgeschlossene
- * Abende weg. Es kann nichts verloren gehen, auch nicht durch einen
- * Fehlgriff: ein Abschluss ist umkehrbar (`wiederOeffnen`).
+ * Gelöscht wird nichts. Der Abendrückblick rechnet aus dem vollen Protokoll.
  *
- * WARUM EINE MENGE VON DATEN UND KEIN EINZELNER ZEITPUNKT
- * Erst stand hier die Idee „abgeschlossen bis <Datum>". Das geht schief, wenn
- * man einen Abend vergisst: schließt man heute ab, wäre der vergessene von
- * vorgestern mit abgeschlossen, ohne dass ihn jemand angesehen hat. Mit einer
- * Menge bleibt jeder Abend einzeln zu beantworten — und das Nachtragen Tage
- * später bleibt möglich.
- *
- * WARUM localStorage UND DATENBANK
- * Die Zähler arbeiten ohnehin auf dem lokalen Protokoll, der Abschluss wirkt
- * also sofort. In der Datenbank steht er zusätzlich, damit das andere Gerät
- * denselben Abend als beendet sieht. Das braucht die Spalte
- * `abende.abgeschlossen_am` aus db/33_abend_abschluss.sql — fehlt sie, sagt
- * `beende()` es über `nurLokal`, statt stillschweigend nur lokal zu wirken.
+ * In der Datenbank steht der Zeitpunkt in abende.abgeschlossen_am (db/33). Er
+ * wird beim Abgleich auch GELESEN (uebernimmAbschluesse) — vorher wurde er nur
+ * geschrieben, das andere Gerät hat nie davon erfahren.
  */
 
 const SPEICHER = 'fusta_abende_abgeschlossen_v1';
 
-/** @returns {string[]} Abende als 'YYYY-MM-DD', ohne Reihenfolge-Garantie. */
-export function ladeAbgeschlossene() {
+/** Ohne bekannten Zeitpunkt (alte Einträge): das Ende dieses Abends, 6 Uhr. */
+function endeDesAbends(datum) {
+  const d = new Date(`${datum}T06:00:00`);
+  d.setDate(d.getDate() + 1);
+  return Number.isNaN(d.getTime()) ? new Date(0).toISOString() : d.toISOString();
+}
+
+/** @returns {Object<string, {am: string, db?: boolean, alt?: boolean}>} je Datum */
+export function ladeAbschluesse() {
   try {
     const roh = JSON.parse(localStorage.getItem(SPEICHER) || 'null');
-    return Array.isArray(roh) ? roh.filter((d) => typeof d === 'string') : [];
+    // Bis zum 25.11.2026 stand hier eine Liste von Daten.
+    if (Array.isArray(roh)) {
+      // Ab jetzt zaehlt es wieder, auch wenn der Abend noch bis 6 Uhr liefe.
+      const jetzt = new Date().toISOString();
+      const neu = Object.fromEntries(roh
+        .filter((d) => typeof d === 'string')
+        .map((d) => [d, { am: [endeDesAbends(d), jetzt].sort()[0], alt: true }]));
+      localStorage.setItem(SPEICHER, JSON.stringify(neu));
+      return neu;
+    }
+    return roh && typeof roh === 'object' ? roh : {};
   } catch {
-    return [];
+    return {};
   }
 }
 
-function speichere(liste) {
-  try { localStorage.setItem(SPEICHER, JSON.stringify([...new Set(liste)])); } catch { /* Quota */ }
-
-  // ANDEREN BESCHEID SAGEN.
-  // Ohne das hier wirkte der Abschluss erst nach einem Neuladen: gemessen
-  // stand der Alkohol-Bereich nach „Abend beenden" weiter auf 3/18 und
-  // Sterne 2, nach dem Neuladen dann auf 0/18. Der Abschluss kommt aus der
-  // Schnellerfassung, also aus einer Ebene DARÜBER — die Zähler darunter
-  // erfahren von sich aus nichts davon.
-  //
-  // Ein Fensterereignis und kein gemeinsamer Zustand: dasselbe Muster, mit
-  // dem App.jsx schon die Saison-Hydrierung und die globale Suche meldet
-  // ('fifaVersionsHydrated', 'global-search-toggle'). Wer zuhört, rechnet
-  // neu; wer nicht, merkt nichts.
-  try {
-    window.dispatchEvent(new CustomEvent('abend-abschluss-geaendert'));
-  } catch { /* kein window — etwa in einem Test ohne DOM */ }
+function speichere(abschluesse) {
+  try { localStorage.setItem(SPEICHER, JSON.stringify(abschluesse)); } catch { /* Quota */ }
+  // Der Abschluss kommt aus der Schnellerfassung, die Zähler liegen darunter —
+  // ohne Meldung stehen sie bis zum Neuladen auf dem alten Stand.
+  try { window.dispatchEvent(new CustomEvent('abend-abschluss-geaendert')); } catch { /* kein DOM */ }
 }
 
-export function istAbgeschlossen(datum) {
-  return ladeAbgeschlossene().includes(datum);
-}
+const ms = (ts) => new Date(ts).getTime() || 0;
 
-/**
- * Ereignisse ohne die abgeschlossenen Abende — das ist die „Zurücksetzung".
- *
- * Als Funktion hier und nicht als Filter an der Aufrufstelle: sonst steht die
- * Regel, was ein Zähler zeigt, an jeder Stelle einzeln und läuft auseinander.
- */
+/** Ereignisse, die noch zählen: ohne Abschluss oder nach ihm eingetragen. */
 export function nurOffene(ereignisse) {
-  const zu = new Set(ladeAbgeschlossene());
-  return (ereignisse || []).filter((e) => !zu.has(e.datum));
+  const zu = ladeAbschluesse();
+  return (ereignisse || []).filter((e) => !zu[e.datum] || ms(e.ts) > ms(zu[e.datum].am));
+}
+
+async function schreibeInDB(datum, am) {
+  try {
+    const version = getCurrentFifaVersion();
+    const { data, error } = await supabase.from('abende')
+      .update({ abgeschlossen_am: am })
+      .eq('datum', datum).eq('fifa_version', version)
+      .select('id');
+    if (error) return error;
+    if (data.length || am === null) return null;
+    const neu = await supabase.from('abende')
+      .insert({ datum, fifa_version: version, abgeschlossen_am: am });
+    return neu.error || null;
+  } catch (fehler) {
+    return fehler;
+  }
+}
+
+async function reicheEin(datum, am) {
+  // Offline nicht als "in der Datenbank" vermerken — der Abgleich reicht nach.
+  if (usingFallback) return { ok: true };
+  const fehler = await schreibeInDB(datum, am);
+  if (fehler) return { ok: true, nurLokal: true, fehler };
+  const jetzt = ladeAbschluesse();
+  // Nur vermerken, wenn inzwischen nicht wieder geöffnet oder neu beendet wurde.
+  if (jetzt[datum]?.am === am) speichere({ ...jetzt, [datum]: { am, db: true } });
+  return { ok: true };
 }
 
 /**
- * Einen Abend abschließen.
- *
- * Lokal sofort, in der Datenbank danach. Das Ergebnis sagt, ob beides
- * geklappt hat — „abgeschlossen" zu melden, während nur der localStorage
- * beschrieben wurde, fällt erst auf dem anderen Gerät auf.
- *
+ * Einen Abend abschließen. Lokal sofort, die Datenbank folgt.
  * @returns {Promise<{ok: boolean, nurLokal?: boolean, fehler?: unknown}>}
  */
 export async function beende(datum) {
   if (!datum) return { ok: false, fehler: new Error('Kein Datum') };
-  speichere([...ladeAbgeschlossene(), datum]);
-
-  try {
-    const version = getCurrentFifaVersion();
-    const vorhanden = await supabaseDb.select('abende', '*', {
-      eq: { datum, fifa_version: version }, limit: 1,
-    });
-    const zeile = (vorhanden?.data || [])[0];
-    const jetzt = new Date().toISOString();
-
-    const erg = zeile
-      ? await supabaseDb.update('abende', { abgeschlossen_am: jetzt }, zeile.id)
-      : await supabaseDb.insert('abende', { datum, abgeschlossen_am: jetzt });
-
-    if (erg?.error) return { ok: true, nurLokal: true, fehler: erg.error };
-    return { ok: true };
-  } catch (fehler) {
-    return { ok: true, nurLokal: true, fehler };
-  }
+  const am = new Date().toISOString();
+  speichere({ ...ladeAbschluesse(), [datum]: { am } });
+  return reicheEin(datum, am);
 }
 
-/** Abschluss zurücknehmen — der Abend zählt wieder mit. */
+/** Abschluss zurücknehmen — der ganze Abend zählt wieder mit. */
 export async function wiederOeffnen(datum) {
-  speichere(ladeAbgeschlossene().filter((d) => d !== datum));
-  try {
-    const version = getCurrentFifaVersion();
-    const vorhanden = await supabaseDb.select('abende', '*', {
-      eq: { datum, fifa_version: version }, limit: 1,
-    });
-    const zeile = (vorhanden?.data || [])[0];
-    if (zeile) {
-      const erg = await supabaseDb.update('abende', { abgeschlossen_am: null }, zeile.id);
-      if (erg?.error) return { ok: true, nurLokal: true, fehler: erg.error };
+  const rest = { ...ladeAbschluesse() };
+  delete rest[datum];
+  speichere(rest);
+  if (usingFallback) return { ok: true };
+  const fehler = await schreibeInDB(datum, null);
+  return fehler ? { ok: true, nurLokal: true, fehler } : { ok: true };
+}
+
+/**
+ * Abschlüsse aus der Datenbank übernehmen und fehlende nachreichen.
+ * @param {Array} abende Zeilen der laufenden Saison (datum, abgeschlossen_am)
+ */
+export async function uebernimmAbschluesse(abende) {
+  const lokal = { ...ladeAbschluesse() };
+  const vorher = JSON.stringify(lokal);
+  for (const z of abende) {
+    const l = lokal[z.datum];
+    if (z.abgeschlossen_am) {
+      const neuerHier = l && !l.db && !l.alt && ms(l.am) > ms(z.abgeschlossen_am);
+      if (!neuerHier) lokal[z.datum] = { am: z.abgeschlossen_am, db: true };
+    } else if (l?.db) {
+      delete lokal[z.datum]; // woanders wieder geöffnet
     }
-    return { ok: true };
-  } catch (fehler) {
-    return { ok: true, nurLokal: true, fehler };
+  }
+  if (JSON.stringify(lokal) !== vorher) speichere(lokal);
+
+  for (const [datum, a] of Object.entries(lokal)) {
+    // Alte Einträge nicht hochladen: ihr Zeitpunkt ist geraten.
+    if (!a.db && !a.alt) await reicheEin(datum, a.am);
   }
 }

@@ -6,6 +6,7 @@ import LoadingSpinner from '../LoadingSpinner';
 import { useSupabaseQuery } from '../../hooks/useSupabase';
 import { offeneRechnung } from './finanzen/OffeneRechnung';
 import { ladeLokal, bierStand, schnapsStand, logischesDatum } from '../../utils/abende';
+import { useAbendProtokoll } from '../../hooks/useAbendProtokoll';
 import { dez } from '../../utils/zahlen';
 import { ladeWechsel } from '../../utils/spielerWechsel';
 import { useIchBin } from '../../hooks/useIchBin';
@@ -263,6 +264,7 @@ export default function StartTab({ onNavigate }) {
 
   // Läuft gerade ein Abend? Die Ereignisse liegen lokal; "heute" endet erst
   // morgens um sechs, sonst wäre ein Abend um halb zwei schon Geschichte.
+  const protokollStand = useAbendProtokoll();
   const abend = useMemo(() => {
     try {
       const ereignisse = ladeLokal();
@@ -277,7 +279,7 @@ export default function StartTab({ onNavigate }) {
         anzahl: vonHeute.length,
       };
     } catch { return null; }
-  }, []);
+  }, [protokollStand]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (mLoading || fLoading) return <LoadingSpinner message="Lade Übersicht…" />;
 

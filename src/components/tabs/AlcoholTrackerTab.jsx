@@ -1,14 +1,15 @@
 ﻿import Icon from '../icons/Icon';
 import {
   gutschriftFuer, loadSterne, addSterneEintrag, removeSterneEintrag,
-  alleSterneLoeschen, sterneAbgleichen, altenSterneStandUebernehmen,
+  alleSterneLoeschen, altenSterneStandUebernehmen,
 } from '../../utils/sterneCounter';
 import SterneVerlauf from './alkohol/SterneVerlauf';
 import {
   ladeLokal as ladeAbendLokal, erfasse as erfasseAbend, entferne as entferneAbend,
-  bierStand, shotStand, schnapsStand,
+  bierStand, shotStand, schnapsStand, synchronisiere,
 } from '../../utils/abende';
 import { nurOffene } from '../../utils/abendAbschluss';
+import { useAbendProtokoll } from '../../hooks/useAbendProtokoll';
 import { useState, useEffect, useCallback } from 'react';
 import ZahlFeld from '../ZahlFeld';
 import { zahl, dez, dezKurz } from '../../utils/zahlen';
@@ -154,7 +155,6 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     // daraus abgeleitet — vorher lagen sie als eigene localStorage-Objekte vor,
     // also pro Geraet und ohne Abgleich.
     uebernimmAlteZaehler();
-    aktualisiereAusLog();
 
     // Load drinking start time from localStorage (keeping this in localStorage for now)
     const savedStartTime = localStorage.getItem('drinkingStartTime');
@@ -170,35 +170,10 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
 
     // Sterne-Zaehler laden (gemeinsame Quelle: utils/sterneCounter)
     // Reihenfolge zaehlt: erst den alten localStorage-Bestand als Ereignisse
-    // uebernehmen, DANN mit der Datenbank abgleichen — sonst wuerde der
-    // Abgleich den Altbestand ueberschreiben, bevor er hochgeladen ist.
+    // uebernehmen, DANN mit der Datenbank abgleichen. Die Anzeige selbst zieht
+    // ueber useAbendProtokoll nach.
     altenSterneStandUebernehmen();
-    // `ohneAbgeschlossene`: hier steht ein ZAEHLER, und der soll nach
-    // "Abend beenden" bei Null anfangen — genau wie der Schnaps-Zaehler
-    // darunter. Ohne den Schalter liefen die Sterne weiter, waehrend der
-    // Schnaps schon zurueckgesetzt war: zwei Zaehler, zwei Regeln.
-    setSterneData(loadSterne({ ohneAbgeschlossene: true }));
-
-    // NEU RECHNEN, WENN EIN ABEND ABGESCHLOSSEN WIRD.
-    // Der Abschluss passiert in der Schnellerfassung, also in einer Ebene
-    // ueber diesem Bereich. Ohne dieses Zuhoeren stand hier nach
-    // "Abend beenden" weiter der alte Stand — gemessen 3/18 und Sterne 2 —
-    // und sprang erst nach einem Neuladen auf 0. Man haette gedacht, der
-    // Abschluss habe nicht gegriffen.
-    const neuRechnen = () => {
-      aktualisiereAusLog();
-      setSterneData(loadSterne({ ohneAbgeschlossene: true }));
-    };
-    window.addEventListener('abend-abschluss-geaendert', neuRechnen);
-    // Abgemeldet wird am Ende dieses Effekts, zusammen mit dem
-    // managerSettingsChanged-Zuhoerer — eine Stelle fuers Aufraeumen.
-
-    sterneAbgleichen().then((r) => {
-      if (r.ok) setSterneData(loadSterne({ ohneAbgeschlossene: true }));
-      else if (r.lokalMehr) {
-        console.warn(`[Sterne] Lokal ${r.lokal} Ereignisse, Datenbank ${r.db} — nicht ueberschrieben.`);
-      }
-    });
+    synchronisiere();
 
     // Load BJ tracking data from localStorage
     const savedBjTracking = localStorage.getItem('bjTracking');
@@ -234,32 +209,22 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     window.addEventListener('managerSettingsChanged', handleManagerChange);
     return () => {
       window.removeEventListener('managerSettingsChanged', handleManagerChange);
-      window.removeEventListener('abend-abschluss-geaendert', neuRechnen);
     };
   }, [loadManagersFromDatabase]);
 
   // Stand IMMER aus dem Ereignis-Log ableiten. Der Tab fuehrt keine eigenen
-  // Summen mehr fort; das lag vorher doppelt vor und konnte auseinanderlaufen.
-  const aktualisiereAusLog = () => {
-    // ABGESCHLOSSENE ABENDE ZAEHLEN NICHT MIT.
-    // Hier stand `ladeAbendLokal()` pur — ohne jeden Datumsfilter. Die Zaehler
-    // summierten damit ueber ALLE Abende und wuchsen endlos; nach Wochen stand
-    // dort eine Zahl, die niemandem mehr etwas sagte.
-    //
-    // `nurOffene` laesst die Abende weg, die ueber "Abend beenden" in der
-    // Schnellerfassung abgeschlossen wurden. Geloescht wird nichts: der
-    // Abendrueckblick rechnet weiter aus dem vollen Protokoll, je Datum.
+  // Summen fort; das lag vorher doppelt vor und konnte auseinanderlaufen.
+  // Haengt am Protokoll selbst: ein Duell oder die Schnellerfassung bucht,
+  // waehrend dieser Bereich offen ist.
+  const protokollStand = useAbendProtokoll();
+  useEffect(() => {
+    // Abgeschlossenes zaehlt nicht mit, steht aber weiter im Rueckblick.
     const log = nurOffene(ladeAbendLokal());
     setBeerConsumption(bierStand(log));
     setShotConsumption(shotStand(log));
     setSchnapsShotsData((d) => ({ ...d, ...schnapsStand(log) }));
-  };
-
-  /** Ein Ereignis erfassen und die Anzeige nachziehen. */
-  const erfasseUndZeige = (person, art) => {
-    erfasseAbend({ person, art });
-    aktualisiereAusLog();
-  };
+    setSterneData(loadSterne({ ohneAbgeschlossene: true }));
+  }, [protokollStand]);
 
   /**
    * Einmalige Uebernahme der alten Zaehler aus dem localStorage.
@@ -301,19 +266,18 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   };
 
   const addBeer = (person) => {
-    erfasseUndZeige(person, 'bier');
+    erfasseAbend({ person, art: 'bier' });
     merkeStartzeit();
   };
 
   const addBeerToBoth = () => {
     erfasseAbend({ person: 'alexander', art: 'bier' });
     erfasseAbend({ person: 'philip', art: 'bier' });
-    aktualisiereAusLog();
     merkeStartzeit();
   };
 
   const addShot = (person, alcoholPercent) => {
-    erfasseUndZeige(person, alcoholPercent === 40 ? 'shot40' : 'shot20');
+    erfasseAbend({ person, art: alcoholPercent === 40 ? 'shot40' : 'shot20' });
     merkeStartzeit();
   };
 
@@ -321,10 +285,9 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     // Zuruecksetzen heisst jetzt: die Ereignisse zuruecknehmen. Frueher wurde
     // nur der Zaehler auf 0 geschrieben — der Verlauf blieb als Geisterwert
     // liegen und tauchte nach einem Neuladen wieder auf.
-    for (const e of ladeAbendLokal()) {
+    for (const e of nurOffene(ladeAbendLokal())) {
       if (['bier', 'shot20', 'shot40'].includes(e.art)) entferneAbend(e);
     }
-    aktualisiereAusLog();
     setDrinkingStartTime(null);
     localStorage.removeItem('drinkingStartTime');
   };
@@ -736,8 +699,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // Einstellung und bleibt geraetelokal — es beschreibt den Abend, nicht was
   // passiert ist.
   const addSchnapShot = (person) => {
-    if (schnapsShotsData.alex + schnapsShotsData.philip >= schnapsShotsData.target) return;
-    erfasseUndZeige(person === 'alex' ? 'alexander' : 'philip', 'schnaps');
+    // Das Ziel begrenzt nichts: wer darueber hinaus trinkt, traegt es auch ein.
+    erfasseAbend({ person: person === 'alex' ? 'alexander' : 'philip', art: 'schnaps' });
   };
 
   const undoLastShot = () => {
@@ -745,14 +708,12 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
     const letzter = verlauf[verlauf.length - 1];
     if (!letzter?._ereignis) return;
     entferneAbend(letzter._ereignis);
-    aktualisiereAusLog();
   };
 
   const resetSchnapsShotsData = () => {
     for (const v of (schnapsShotsData.history || [])) {
       if (v._ereignis) entferneAbend(v._ereignis);
     }
-    aktualisiereAusLog();
   };
 
   const applySchnapsTarget = () => {
@@ -771,22 +732,15 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // Alexander und Philip verschiedene Zahlen sahen.
   const addSterne = () => {
     const { person, stars } = sterneInput;
-    setSterneData(addSterneEintrag({ person, stars }).data);
+    addSterneEintrag({ person, stars });
   };
 
-  const undoLastSterne = () => {
-    if (sterneData.history.length === 0) return;
-    setSterneData(removeSterneEintrag(sterneData.history.length - 1));
-  };
+  const undoLastSterne = () => removeSterneEintrag(sterneData.history[sterneData.history.length - 1]);
 
   // Einzelnen Verlaufseintrag loeschen (Gutschrift faellt damit weg).
-  const deleteSterneEintrag = (index) => {
-    setSterneData(removeSterneEintrag(index));
-  };
+  const deleteSterneEintrag = removeSterneEintrag;
 
-  const resetSterneData = () => {
-    setSterneData(alleSterneLoeschen());
-  };
+  const resetSterneData = alleSterneLoeschen;
 
   // Render filled / half / empty stars
   const renderStars = (value, maxStars = 5) => {
@@ -805,13 +759,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
   // ─────────────────────────────────────────────────────────────────────────
 
   const addSchnapShotToBoth = () => {
-    // Bleibt nur noch EIN Platz bis zum Ziel, bekommt ihn Alexander — so war es
-    // vorher auch, nur ueber eine unnoetig verschachtelte Bedingung.
-    const frei = schnapsShotsData.target - (schnapsShotsData.alex + schnapsShotsData.philip);
-    if (frei <= 0) return;
     erfasseAbend({ person: 'alexander', art: 'schnaps' });
-    if (frei >= 2) erfasseAbend({ person: 'philip', art: 'schnaps' });
-    aktualisiereAusLog();
+    erfasseAbend({ person: 'philip', art: 'schnaps' });
   };
   // ─────────────────────────────────────────────────────────────────────────
 
@@ -1069,7 +1018,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     {isDone ? (
                       <>
                         <div className="text-3xl font-bold text-system-green mb-1">Fertig!</div>
-                        <div className="text-system-green font-medium">Alle {schnapsShotsData.target} Shots getrunken</div>
+                        <div className="text-system-green font-medium">{total} von {schnapsShotsData.target} Shots getrunken</div>
                       </>
                     ) : (
                       <>
@@ -1133,7 +1082,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     </div>
                     {/* Individual shot bubbles */}
                     <div className="flex flex-wrap gap-1 mt-2">
-                      {Array.from({ length: schnapsShotsData.target }).map((_, i) => {
+                      {Array.from({ length: Math.max(schnapsShotsData.target, total) }).map((_, i) => {
                         const isAlex = i < schnapsShotsData.alex;
                         const isPhilip = !isAlex && i < total;
                         return (
@@ -1175,9 +1124,8 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                     </div>
                   </div>
 
-                  {/* Action buttons */}
-                  {!isDone ? (
-                    <>
+                  {/* Das Ziel nimmt die Knoepfe nicht weg: am 18. Shot ist der
+                      Abend nicht vorbei, und ohne Knopf geht kein Eintrag. */}
                       <div className="grid grid-cols-2 gap-4 mb-3">
                         <button
                           onClick={() => addSchnapShot('alex')}
@@ -1196,15 +1144,10 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                       </div>
                       <button
                         onClick={addSchnapShotToBoth}
-                        disabled={schnapsShotsData.alex + schnapsShotsData.philip >= schnapsShotsData.target}
                         className="w-full mb-4 bg-system-orange hover:opacity-90 active:scale-95 text-white py-4 rounded-2xl transition-all duration-150 font-bold text-base shadow-lg border-b-4 border-system-orange disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         Beide +1 (je ein Shot)
                       </button>
-                    </>
-                  ) : (
-                    <div className="flex justify-center mb-4 text-system-green"><Icon name="trophy" size={34} strokeWidth={1.8} /></div>
-                  )}
 
                   {/* Secondary actions */}
                   <div className="flex gap-3">
@@ -1437,7 +1380,7 @@ export default function AlcoholTrackerTab({ onNavigate, showHints = false }) { /
                             onClick={() => {
                               const g = entry.gained ?? gutschriftFuer(entry.stars);
                               if (window.confirm(`Eintrag löschen? ${wer} verliert ${g % 1 === 0 ? g : g.toFixed(1)} ★.`)) {
-                                deleteSterneEintrag(echterIndex);
+                                deleteSterneEintrag(entry);
                               }
                             }}
                             aria-label={`Eintrag von ${wer} löschen`}

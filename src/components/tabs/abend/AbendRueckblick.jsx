@@ -5,6 +5,7 @@ import LoadingSpinner from '../../LoadingSpinner';
 import { useSupabaseQuery } from '../../../hooks/useSupabase';
 import { getTeamDisplay } from '../../../constants/teams';
 import { ladeLokal, standFuer, logischesDatum } from '../../../utils/abende';
+import { useAbendProtokoll } from '../../../hooks/useAbendProtokoll';
 import { loadPulls } from '../../../utils/teamCollection';
 import { boersenStatistik } from '../../../utils/bierboerse';
 
@@ -68,6 +69,7 @@ export default function AbendRueckblick() {
 
   const { data: bierKatalog } = useSupabaseQuery('bier_katalog', '*', opt);
 
+  const protokollStand = useAbendProtokoll();
   const abende = useMemo(() => {
     const ereignisse = ladeLokal();
     const pulls = loadPulls();
@@ -105,7 +107,7 @@ export default function AbendRueckblick() {
         getraenke: stand.bier.gesamt + stand.shot20.gesamt + stand.shot40.gesamt + stand.schnaps.gesamt,
       };
     }).filter((a) => a.spiele.length || a.ziehungen.length || a.stand.anzahl || a.bStat);
-  }, [matches, boersen, verkostungen, bierKatalog]);
+  }, [matches, boersen, verkostungen, bierKatalog, protokollStand]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (loading) return <LoadingSpinner message="Lade Abende…" />;
 

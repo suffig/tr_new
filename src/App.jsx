@@ -7,6 +7,7 @@ import { useRealtimeNotifications } from './hooks/useRealtimeNotifications.js';
 import { useKeyboardAvoidance } from './hooks/useKeyboardAvoidance.js';
 import { usePullToRefresh } from './hooks/usePullToRefresh.js';
 import { hydrateFifaVersionsFromDB } from './utils/fifaVersionsSync.js';
+import { onAbendFehler, synchronisiere } from './utils/abende.js';
 import { OfflineIndicator } from './hooks/useOfflineManager.jsx';
 import { ThemeProvider } from './contexts/ThemeContext';
 import Login from './components/Login';
@@ -77,7 +78,31 @@ function App() {
   // Pull the shared FIFA-version registry from the DB once per session so both
   // devices agree on the version list, the active version and team names/logos.
   useEffect(() => {
-    if (user) hydrateFifaVersionsFromDB();
+    if (!user) return undefined;
+    // Erst die Saison, dann der Abend: der Abgleich holt die laufende Saison.
+    hydrateFifaVersionsFromDB().finally(synchronisiere);
+
+    // Schlägt das Speichern fehl, muss man es sehen — vorher stand es nur in
+    // der Konsole. Eine Meldung, nicht eine je Eintrag.
+    onAbendFehler((aktion, fehler) => {
+      const grund = fehler?.message ? ` (${fehler.message})` : '';
+      const text = {
+        Rueckgaengig: 'Nicht gelöscht, der Eintrag kommt beim Abgleich zurück',
+        Geraetespeicher: 'Der Speicher dieses Geräts ist voll — Einträge gehen beim Schließen verloren',
+      }[aktion] || 'Nur auf diesem Gerät gespeichert, wird nachgereicht';
+      toast.error(text + grund, { id: 'abend-fehler', duration: 6000 });
+    });
+
+    const zurueck = () => { if (document.visibilityState === 'visible') synchronisiere(); };
+    document.addEventListener('visibilitychange', zurueck);
+    window.addEventListener('online', synchronisiere);
+    window.addEventListener('fifaVersionChanged', synchronisiere);
+    return () => {
+      onAbendFehler(null);
+      document.removeEventListener('visibilitychange', zurueck);
+      window.removeEventListener('online', synchronisiere);
+      window.removeEventListener('fifaVersionChanged', synchronisiere);
+    };
   }, [user]);
 
   // Spieltag-Reminder: einmal am Spieltag beim Öffnen erinnern.

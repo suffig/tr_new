@@ -1,11 +1,12 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import toast from 'react-hot-toast';
 import Icon from './icons/Icon';
 import {
   ARTEN, erfasse, entferne, ladeLokal, logischesDatum, standFuer,
 } from '../utils/abende';
-import { beende, istAbgeschlossen, nurOffene, wiederOeffnen } from '../utils/abendAbschluss';
+import { beende, ladeAbschluesse, nurOffene, wiederOeffnen } from '../utils/abendAbschluss';
+import { useAbendProtokoll } from '../hooks/useAbendProtokoll';
 import { BAN_TYPES } from '../constants/banTypes';
 import { useSupabaseQuery } from '../hooks/useSupabase';
 import { supabaseDb } from '../utils/supabase';
@@ -87,18 +88,19 @@ ZEILEN.forEach((z) => {
  * tauchte er in der Auswahl gar nicht auf, und man konnte ihn nicht
  * abschließen. Genau das war gemeldet.
  *
- * Jetzt: der laufende Abend immer (dort trägt man gerade ein), dazu jeder
- * Abend, von dem noch Einträge offen sind. Absteigend, der jüngste zuerst.
+ * Jetzt: der laufende Abend immer (dort trägt man gerade ein), jeder Abend
+ * mit offenen Einträgen, und die der letzten zwei Wochen — auch die
+ * abgeschlossenen, sonst ließe sich ein Abschluss nicht zurücknehmen.
  *
  * @param {Array} ereignisse Das Protokoll (voll, nicht gefiltert).
- * @returns {string[]} Datumswerte 'YYYY-MM-DD'.
+ * @returns {string[]} Datumswerte 'YYYY-MM-DD', der jüngste zuerst.
  */
 function waehlbareAbende(ereignisse) {
-  const heute = logischesDatum();
-  const mit = new Set([heute]);
-  for (const e of nurOffene(ereignisse)) {
-    if (e?.datum) mit.add(e.datum);
-  }
+  const mit = new Set([logischesDatum()]);
+  for (const e of nurOffene(ereignisse)) if (e?.datum) mit.add(e.datum);
+  const grenze = logischesDatum(Date.now() - 14 * 24 * 3600 * 1000);
+  for (const e of ereignisse) if (e?.datum >= grenze) mit.add(e.datum);
+  for (const d of Object.keys(ladeAbschluesse())) if (d >= grenze) mit.add(d);
   return [...mit].sort((a, b) => (a < b ? 1 : -1));
 }
 
@@ -111,8 +113,6 @@ const kurzesDatum = (iso) => {
 export default function Schnellerfassung() {
   const [offen, setOffen] = useState(false);
   const [datum, setDatum] = useState(logischesDatum);
-  const [log, setLog] = useState([]);
-  const [laeuft, setLaeuft] = useState(null);
 
   // Sperren: Spieler nur laden, wenn die Erfassung offen ist — sonst zieht
   // jede Seite der App diese Abfrage mit, nur weil der Knopf unten links
@@ -125,20 +125,17 @@ export default function Schnellerfassung() {
 
   // Beenden: Nachfrage statt Sofortwirkung, siehe Kommentar am Knopf.
   const [beendenGefragt, setBeendenGefragt] = useState(false);
-  const [abgeschlossen, setAbgeschlossen] = useState(false);
 
-  const auffrischen = useCallback(() => setLog(ladeLokal()), []);
+  // Rechnet neu, sobald sich Protokoll oder Abschlüsse ändern.
+  useAbendProtokoll();
+  const log = offen ? ladeLokal() : [];
+  const offene = nurOffene(log);
 
-  // Beim Öffnen frisch lesen: zwischenzeitlich kann der Alkohol-Bereich
-  // gezählt haben. Ein gemerkter Stand wäre dann falsch.
-  useEffect(() => { if (offen) auffrischen(); }, [offen, auffrischen]);
-
-  // Ob der gewählte Abend schon abgeschlossen ist, hängt am Datum — und das
-  // kann man hier umstellen. Deshalb bei jedem Wechsel neu nachsehen.
-  useEffect(() => {
-    setAbgeschlossen(istAbgeschlossen(datum));
-    setBeendenGefragt(false);
-  }, [datum, offen]);
+  // Beim Öffnen auf den laufenden Abend. Die App bleibt als PWA tagelang im
+  // Speicher — ohne das stand hier der Abend vom letzten Start, und die
+  // Einträge landeten auf dem falschen Tag.
+  useEffect(() => { if (offen) setDatum(logischesDatum()); }, [offen]);
+  useEffect(() => { setBeendenGefragt(false); }, [datum, offen]);
 
   // Von überall aufrufbar, ohne die Komponente durchzureichen — dasselbe
   // Muster wie die globale Suche ('global-search-toggle' in App.jsx).
@@ -157,7 +154,9 @@ export default function Schnellerfassung() {
     return () => document.removeEventListener('keydown', esc, true);
   }, [offen]);
 
-  const stand = standFuer(log, datum);
+  // Nur Offenes: nach "Abend beenden" zählt der Rest des Abends von null.
+  const stand = standFuer(offene, datum);
+  const abgeschlossen = Boolean(ladeAbschluesse()[datum]) && stand.anzahl === 0;
   // Für die Nachfrage beim Beenden: gab es an diesem Abend überhaupt etwas?
   //
   // Schnaps UND Sterne, weil der Abschluss beide Zähler zurücksetzt. Nur den
@@ -168,25 +167,18 @@ export default function Schnellerfassung() {
   // in der Nachfrage, die sie mit zurueckzusetzen verspricht.
   const gesamtAmAbend = (stand.schnaps?.gesamt || 0) + (stand.sterne?.gesamt || 0);
 
-  const buchen = async (person, art, richtung) => {
-    const schluessel = `${person}-${art}`;
-    setLaeuft(schluessel);
-    try {
-      if (richtung > 0) {
-        await erfasse({ person, art, datum });
-      } else {
-        // Den JÜNGSTEN passenden Strich zurücknehmen, nicht irgendeinen:
-        // sonst verschwindet ein Eintrag von vor zwei Stunden und der
-        // Fehlgriff von gerade bleibt stehen.
-        const treffer = ladeLokal()
-          .filter((e) => e.person === person && e.art === art && e.datum === datum)
-          .sort((a, b) => String(b.ts || '').localeCompare(String(a.ts || '')))[0];
-        if (treffer) await entferne(treffer);
-      }
-    } finally {
-      auffrischen();
-      setLaeuft(null);
-    }
+  // Nicht auf das Netz warten: der Eintrag steht sofort auf dem Gerät, die
+  // Datenbank folgt. Vorher war das Plus bei schlechtem Empfang so lange
+  // gesperrt, wie die Anfrage hing.
+  const buchen = (person, art, richtung) => {
+    if (richtung > 0) { erfasse({ person, art, datum }); return; }
+    // Den JÜNGSTEN passenden Strich zurücknehmen, nicht irgendeinen:
+    // sonst verschwindet ein Eintrag von vor zwei Stunden und der
+    // Fehlgriff von gerade bleibt stehen.
+    const treffer = nurOffene(ladeLokal())
+      .filter((e) => e.person === person && e.art === art && e.datum === datum)
+      .sort((a, b) => String(b.ts || '').localeCompare(String(a.ts || '')))[0];
+    if (treffer) entferne(treffer);
   };
 
   /**
@@ -226,21 +218,20 @@ export default function Schnellerfassung() {
   };
 
   const abendBeenden = async () => {
-    const { nurLokal } = await beende(datum);
-    setAbgeschlossen(true);
+    const { nurLokal, fehler } = await beende(datum);
     setBeendenGefragt(false);
     if (nurLokal) {
-      toast.error('Abend nur auf diesem Gerät abgeschlossen — die Datenbank hat '
-        + 'es nicht angenommen. Fehlt db/33_abend_abschluss.sql?', { duration: 7000 });
+      toast.error('Abend nur auf diesem Gerät abgeschlossen, wird nachgereicht'
+        + (fehler?.message ? ` (${fehler.message})` : ''), { duration: 7000 });
     } else {
       toast.success('Abend abgeschlossen. Die Zahlen stehen im Rückblick.');
     }
   };
 
   const abendWiederOeffnen = async () => {
-    await wiederOeffnen(datum);
-    setAbgeschlossen(false);
-    toast.success('Abend zählt wieder mit.');
+    const { nurLokal } = await wiederOeffnen(datum);
+    if (nurLokal) toast.error('Nur auf diesem Gerät wieder geöffnet — die Datenbank hat es nicht angenommen.');
+    else toast.success('Abend zählt wieder mit.');
   };
 
   return (
@@ -327,22 +318,14 @@ export default function Schnellerfassung() {
                   <div className="flex gap-2">
                     {PERSONEN.map((p) => {
                       const wert = stand[z.art]?.[p.id] ?? 0;
-                      const beschaeftigt = laeuft === `${p.id}-${z.art}`;
                       return (
                         <div key={p.id} className={`${p.flaeche} rounded-lg px-2 py-1.5 flex-1 min-w-0
                                                     flex items-center gap-1.5`}>
                           <span className={`text-caption2 font-semibold truncate min-w-0 flex-1 ${p.farbe}`}>
                             {p.name}
                           </span>
-                          {/* Bei abgeschlossenem Abend nicht bedienbar.
-                              Die Zahlen bleiben sichtbar — sie sind der
-                              Stand dieses Abends, und ihn nach dem Beenden
-                              zu verstecken hiesse, die eigene Auskunft
-                              wieder einzusammeln. Aber hinzufügen lässt sich
-                              nichts mehr, ohne den Abend wieder zu öffnen:
-                              sonst wäre „abgeschlossen" eine Behauptung. */}
                           <button type="button" aria-label={`${z.label} für ${p.name} eins weniger`}
-                                  disabled={beschaeftigt || wert <= 0 || abgeschlossen}
+                                  disabled={wert <= 0}
                                   onClick={() => buchen(p.id, z.art, -1)}
                                   className="btn-compact stepper-btn w-7 h-7 rounded-md bg-bg-elevated
                                              text-text-secondary font-semibold disabled:opacity-40 flex-shrink-0">
@@ -352,7 +335,6 @@ export default function Schnellerfassung() {
                             {wert}
                           </span>
                           <button type="button" aria-label={`${z.label} für ${p.name} eins mehr`}
-                                  disabled={beschaeftigt || abgeschlossen}
                                   onClick={() => buchen(p.id, z.art, 1)}
                                   className="btn-compact stepper-btn w-7 h-7 rounded-md bg-bg-elevated
                                              text-text-primary font-semibold disabled:opacity-40 flex-shrink-0">
@@ -426,8 +408,8 @@ export default function Schnellerfassung() {
             {/* ABEND BEENDEN.
                 Der Abschluss ist eine MARKIERUNG, kein Löschen: die
                 Ereignisse bleiben stehen, der Rückblick rechnet weiter daraus.
-                „Zurücksetzen" heißt nur, dass die Zähler diesen Abend nicht
-                mehr mitzählen — deshalb ist er auch umkehrbar.
+                „Zurücksetzen" heißt nur, dass die Zähler das bisher
+                Eingetragene weglassen — deshalb ist er auch umkehrbar.
 
                 Mit Nachfrage, weil der Knopf die Zähler auf Null stellt und
                 das ohne Rückfrage wie ein Datenverlust aussieht. Die
@@ -438,7 +420,7 @@ export default function Schnellerfassung() {
                 <div className="flex items-center gap-2">
                   <Icon name="check" size={16} strokeWidth={2.6} className="text-system-green flex-shrink-0" />
                   <span className="text-footnote text-text-secondary flex-1 min-w-0">
-                    {kurzesDatum(datum)} ist abgeschlossen.
+                    {kurzesDatum(datum)} ist abgeschlossen. Neues zählt ab null.
                   </span>
                   <button type="button" onClick={abendWiederOeffnen}
                           className="btn-compact text-footnote font-semibold text-system-blue px-2 py-1">
